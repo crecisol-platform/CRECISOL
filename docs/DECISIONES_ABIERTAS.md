@@ -10,4 +10,6 @@
 - **ADR-008 — NO BLOQUEANTE PARA CODIFICAR:** protección de ramas en repositorio privado sin activación verificada; ver `docs/REPOSITORY_GATES.md`. No comprar servicios ni publicar el repositorio para intentar activarla.
 - **ADR-009 — CERRADA DOCUMENTALMENTE (2026-11-08):** Documento Maestro Único institucional con logotipo incorporado y sus formatos Word/PDF verificados contra el contenido binario cargado en GitHub; tamaños y huellas en `docs/MASTER_REFERENCE.md`. La reconciliación de ramas se realiza preservando los objetos binarios nuevos y eliminando referencias a versiones antiguas. No implica software implementado ni certificado.
 
+- **ADR-010 — ABIERTA / NO BLOQUEANTE PARA C01:** propietario reporta posible MySQL en VPS Hostinger y dominio disponible/configurado, sin verificación de estado ni acceso. Futuro destino previsto; preparar configuración backend parametrizada y sin secretos. Conexiones reales, DNS, TLS, migración productiva y despliegue requieren comprobación y autorización expresa en etapa posterior; prohibido asumir que ya existen o están seguros.
+
 **Estado actual de software: 0/37 capítulos certificados.** Mantener abiertas las decisiones técnicas pendientes; no bloquear la preparación de C01 por compras, despliegue o reglas GitHub indisponibles.
