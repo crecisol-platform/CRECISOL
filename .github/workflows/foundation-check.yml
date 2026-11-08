@@ -19,6 +19,8 @@ jobs:
         run: python3 qa/validate_foundation.py
       - name: Validate C01 contract and approved logo source (static only)
         run: python3 qa/c01_preflight.py
+      - name: Verify C01-01 canonical source coverage
+        run: python3 qa/c01_verify_source.py
       - name: Verify approved logo extraction from canonical Word
         run: python3 frontend/scripts/extract_brand_logo.py
       - name: Execute native Node brand contract tests (no packages)
