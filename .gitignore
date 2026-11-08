@@ -61,3 +61,5 @@ temp/
 __pycache__/
 .pytest_cache/
 *.pyc
+# Imagen generada desde el maestro institucional de CRECISOL
+/frontend/public/assets/crecisol-logo-oficial.png
