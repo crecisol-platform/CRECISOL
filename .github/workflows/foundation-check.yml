@@ -17,3 +17,11 @@ jobs:
           persist-credentials: false
       - name: Validate foundation and scope
         run: python3 qa/validate_foundation.py
+      - name: Audit A / C01-01 canonical source and traceability
+        run: |
+          python3 qa/c01_verify_source.py
+          python3 qa/c01_01_three_audits.py A
+      - name: Audit B / C01-01 scope, security and non-deployment
+        run: python3 qa/c01_01_three_audits.py B
+      - name: Audit C / C01-01 documentation, phases and consistency
+        run: python3 qa/c01_01_three_audits.py C
