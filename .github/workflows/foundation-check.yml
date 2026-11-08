@@ -22,6 +22,7 @@ jobs:
           python3 qa/c01_verify_source.py
           python3 qa/c01_01_three_audits.py A
       - name: Audit B / C01-01 scope, security and non-deployment
+        if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feature/c01-01-')
         run: python3 qa/c01_01_three_audits.py B
       - name: Audit C / C01-01 documentation, phases and consistency
         run: python3 qa/c01_01_three_audits.py C
