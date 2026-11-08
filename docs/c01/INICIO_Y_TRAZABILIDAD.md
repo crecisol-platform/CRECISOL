@@ -86,3 +86,9 @@ Esta entrega solo comienza C01. No es un prototipo React ni una certificación d
 **Skill externa consultada solo en modo lectura:** EXT-10 Angular Developer, repositorio original `angular/angular`, commit `6808966993bf2b2d455d9b6245e960a59a01b9a9`, ruta `skills/dev-skills/angular-developer/SKILL.md`. No se instaló ni copió; se verificó compatibilidad y disciplina de build.
 
 **Rollback:** revertir los commits de C01 en `feature/c01-identidad` o cerrar PR #10. Sin cambios en `main`, `dev`, VPS, datos reales ni SOLQARYN.
+
+## C01-01 · Inventario original y discrepancia de numeración
+
+La matriz [C01_01_MATRIZ_REQUISITOS.md](C01_01_MATRIZ_REQUISITOS.md) identifica 34 párrafos del original (27 de contenido y 7 encabezados) y 21 filas en tres tablas (24 con encabezados). El contrato añadido incluye otras 2 tablas de implementación, distintas del original. La lectura automatizada y el conteo se comprobaron en https://github.com/solqaryn-platform/CRECISOL/actions/runs/42518139216 mediante qa/c01_verify_source.py.
+
+**DIF-C01-01:** el maestro usa C01-01...08 como Extraer/Diseñar/Codificar/Probar/Auditar A/B/C/Acta, mientras el plan operativo posterior usa las ocho microtareas técnicas. La [tabla de equivalencia](C01_01_DEPENDENCIAS_Y_GATE.md) preserva ambos recorridos y queda pendiente de aceptación. **C01-01 aún no cerrada formalmente** y C01-02 no empieza por este control; no se revierte el código preliminar ya versionado.

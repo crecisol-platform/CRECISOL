@@ -67,3 +67,11 @@ El propietario informó que **podría existir una base de datos en un VPS de Hos
 ### Formato obligatorio de reporte por avance
 
 Informar siempre: capítulo N/37, capítulos certificados; número total de microtareas de C01; cerradas/activas/pendientes; microtarea actual y la siguiente; rama y PR (borrador/abierto/fusionado); pruebas efectivamente ejecutadas, hallazgos y riesgos; estado de integración a dev/main y prohibición de pasar a C02 antes del acta. **Estado inicial del control secuencial: 0 de 8 microtareas con cierre formal; activa C01-01.** El trabajo preliminar existente mantiene sus evidencias parciales.
+
+## Control documental de la microtarea C01-01
+
+- [Matriz de 34 párrafos y 21 filas originales](c01/C01_01_MATRIZ_REQUISITOS.md).
+- [Puertas, dependencias, riesgos y discrepancia DIF-C01-01](c01/C01_01_DEPENDENCIAS_Y_GATE.md).
+- [Prueba de cobertura y procedencia](../qa/c01_verify_source.py): aprobó en https://github.com/solqaryn-platform/CRECISOL/actions/runs/42518139216.
+
+**Estado:** C01-01 extraída y verificada en lo documental; pendiente confirmación humana de equivalencia de numeración y aceptación de fase. **0/8 microtareas cerradas formalmente; 0/37 capítulos certificados.** No comenzar C01-02 hasta el cierre de C01-01; el código adelantado en PR #10 sigue provisional.

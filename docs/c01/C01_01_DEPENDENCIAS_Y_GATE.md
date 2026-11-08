@@ -91,9 +91,18 @@ En C01-03 solo se prepararán nombres de parámetros (sin valores secretos): Con
 - [x] Hostinger, dominio y datos jurídicos marcados NO VERIFICADO.
 - [x] Prueba reproducible de integridad y cobertura creada (ejecutar y conservar evidencia).
 - [ ] **DIF-C01-01:** aceptar la correspondencia de secuencias o resolver su denominación.
-- [ ] Confirmar ejecución PASS del control automático sobre el commit actual.
+- [x] Verificación PASS del control de cobertura sobre el commit 04cfa9cc7e2711a15893f21c8f9e2c53a8bc0785; GitHub Actions #42518139216, tres trabajos aprobados.
 - [ ] Aceptación humana de cierre de C01-01.
 
 **Decisión actual:** C01-01 **PREPARADA PARA VALIDACIÓN, NO CERRADA FORMALMENTE**. C01-02 no se inicia mientras falten sus puertas. El software continúa con **0/37 capítulos certificados**.
 
 **Rollback:** revertir solo documentación y QA de C01-01 en feature/c01-identidad; sin escrituras en dev, main, VPS, producción o SOLQARYN.
+
+### Evidencia reproducible de C01-01
+
+- **CI verificada:** https://github.com/solqaryn-platform/CRECISOL/actions/runs/42518139216
+- **Commit probado:** 04cfa9cc7e2711a15893f21c8f9e2c53a8bc0785.
+- **Script:** python3 qa/c01_verify_source.py — verificación OOXML de 34 párrafos (27 de contenido, 7 encabezados), 3 tablas originales con 21 filas de datos, 2 tablas suplementarias, 7 controles TEN y 55 IDs únicos en matriz.
+- **Resultado:** PASS; sin omisiones ni duplicaciones de identificadores. El test verifica **estructura y presencia**, no prueba implementación real de cada requisito ni reemplaza revisión semántica y aceptación humana.
+- **CI restante:** frontend, backend y MySQL también aprobaron en la misma ejecución; son pruebas preliminares de C01, no cierres automáticos de fases futuras.
+- **No se han escrito datos productivos ni realizado despliegues.**
