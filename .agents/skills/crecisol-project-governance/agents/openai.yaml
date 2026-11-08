@@ -1,0 +1,4 @@
+interface:
+  display_name: "CRECISOL Project Governance"
+  short_description: "Gobierna arquitectura, seguridad multitenant y 37 capítulos de CRECISOL"
+  brand_color: "#146B53"
