@@ -1,6 +1,6 @@
 # Fase 1 · Capítulo 01 — CRECISOL: identidad, visión, alcance y principios
 
-**Estado:** LISTO PARA INICIAR IMPLEMENTACIÓN; NO DESARROLLADO, NO PROBADO, NO CERTIFICADO. Progreso: **0/37 capítulos certificados**. Fuente: edición canónica de `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` y `docs/MASTER_REFERENCE.md`.
+**Estado:** EN DESARROLLO; IMPLEMENTACIÓN PARCIAL; NO PROBADO INTEGRALMENTE, NO CERTIFICADO. Progreso: **0/37 capítulos certificados**. Fuente: edición canónica de `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` y `docs/MASTER_REFERENCE.md`.
 
 ## Contrato de alcance
 
@@ -28,3 +28,7 @@ No usar credenciales ni datos de SOLQARYN, ni desplegar VPS/dominios, ni activar
 La [biblioteca curada](referencias-visuales/README.md) conserva siete capturas diferenciadas del origen comercial, dos capturas de Atlas/auditoría y un análisis de interacciones de los HTML antiguos. La biblioteca es material histórico **no normativo**: sus estilos verdes, datos de demo y código se descartan.
 
 Durante C01 se evaluarán composición editorial, cabecera/pie, tipografía, jerarquía y vistas previas, siempre con el logo azul oficial y marcas separadas entre plataforma y tenant. Ninguna captura justifica desarrollar prematuramente los flujos de venta, catálogo, pagos o auditoría previstos en otros capítulos. El HTML original no necesita subirse a GitHub para arrancar C01.
+
+## Inicio de implementación — primer corte
+
+Se creó un read-model de marca de plataforma versionado, una API pública de lectura, esquema relacional previsto y estructura Angular 22 con identidad azul y extracción del logotipo original. Son componentes iniciales sin endpoints de escritura ni resolución de tenant. Ver docs/c01/INICIO_Y_TRAZABILIDAD.md para alcance, riesgos y pruebas pendientes. La biblioteca visual es referencia, no código base. C01 sigue abierto.

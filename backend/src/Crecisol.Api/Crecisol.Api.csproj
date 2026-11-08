@@ -10,7 +10,7 @@
     <ProjectReference Include="../Crecisol.Infrastructure/Crecisol.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Configuration/platform-brand.published.json"
+    <Content Update="Configuration/platform-brand.published.json"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>

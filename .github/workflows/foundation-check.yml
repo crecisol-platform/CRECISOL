@@ -17,3 +17,5 @@ jobs:
           persist-credentials: false
       - name: Validate foundation and scope
         run: python3 qa/validate_foundation.py
+      - name: Validate C01 contract and approved logo source (static only)
+        run: python3 qa/c01_preflight.py

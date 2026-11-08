@@ -37,7 +37,7 @@ app.MapGet("/api/v1/public/branding/platform",
     {
         var brand = await read.ExecuteAsync(ct);
         context.Response.Headers.CacheControl = "no-store";
-        context.Response.Headers.XContentTypeOptions = "nosniff";
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
         return Results.Ok(brand);
     })
     .WithName("GetPublishedPlatformBrand")
