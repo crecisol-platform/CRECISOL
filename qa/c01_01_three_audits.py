@@ -128,7 +128,7 @@ def audit_c():
     require("ADR-010" in decisions and "ADR-011" in decisions,
             "Missing Hostinger/phase numbering ADR")
     require("0/37" in plan,"Whole chapter must remain uncertified")
-    require("C01-08" in gate and "auditoría A" in gate.casefold(),
+    require("C01-08" in gate and "auditoría a" in gate.casefold(),
             "Full chapter audit retained for C01-08")
     print(f"AUDIT C PASS: {link_count} Markdown links, 8 dependency gates,")
     print("dual nomenclature, 0/37 and broken-link negative test.")
