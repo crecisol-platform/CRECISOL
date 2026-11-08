@@ -37,7 +37,7 @@ El usuario autorizó el 8 de noviembre de 2026 que cada microfase se **valide, r
 
 | Microfase técnica | Entregable y dependencia | Estado |
 | --- | --- | --- |
-| C01-01 | Matriz de 34 párrafos + 21 filas, anexos, dependencias, tres auditorías del entregable, acta | EN AUDITORÍA (no cerrada hasta CI verde) |
+| C01-01 | Matriz de 34 párrafos + 21 filas, anexos, dependencias, tres auditorías del entregable, acta | CERRADA DOCUMENTALMENTE (tres auditorías A/B/C PASS; PR #11 autorizado a dev) |
 | C01-02 | Contratos tipados y modelo de ámbito; requiere C01-01 cerrada | PENDIENTE; código adelantado en PR #10 solo provisional |
 | C01-03 | Diseño MySQL 8.4, migración/configuración futura; requiere C01-02 | PENDIENTE |
 | C01-04 | Caso de uso y API .NET; requiere C01-03 | PENDIENTE |
@@ -49,3 +49,7 @@ El usuario autorizó el 8 de noviembre de 2026 que cada microfase se **valide, r
 **Repositorio:** PR #10 contiene código adelantado de fases 02–07 y permanece en borrador. Se integra solamente el alcance documental de C01-01 mediante un PR independiente, sin adelantar implementación privada ni certificar software.
 
 **Infraestructura informada, NO VERIFICADA:** MySQL en VPS Hostinger y dominio `crecisol.com` posiblemente provisionados; esta etapa solo documenta una futura conexión externa parametrizada. Ni credenciales, ni configuración de DNS, ni conexión al VPS, ni despliegue productivo.
+
+### Cierre técnico delegado de C01-01
+
+C01-01 conserva **55 identificadores** (34 párrafos y 21 filas de tablas) y registra otras dos tablas suplementarias. **Tres auditorías diferenciadas PASS** en la CI de solo lectura: https://github.com/solqaryn-platform/CRECISOL/actions/runs/42520142623. El usuario autorizó verificaciones y cierres rutinarios sin nueva consulta; PR documental #11 queda autorizado para integración en `dev` una vez aprobado el commit final. **Progreso: 1/8 microfases cerradas, 0/37 capítulos certificados**; C01-02 es la siguiente fase por dependencia. Esto no certifica software productivo ni autoriza tocar Hostinger.

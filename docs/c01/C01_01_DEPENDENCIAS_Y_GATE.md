@@ -92,9 +92,9 @@ En C01-03 solo se prepararán nombres de parámetros (sin valores secretos): Con
 - [x] Prueba reproducible de integridad y cobertura creada (ejecutar y conservar evidencia).
 - [x] **DIF-C01-01:** doble nomenclatura definida; 8 equivalencias documentadas sin modificar la fuente; decisión operativa bajo delegación del usuario.
 - [x] Verificación PASS del control de cobertura sobre el commit 04cfa9cc7e2711a15893f21c8f9e2c53a8bc0785; GitHub Actions #42518139216, tres trabajos aprobados.
-- [ ] Cierre automático delegado de C01-01 **solo tras triple auditoría real y CI verde**, con acta técnica; esto no es la aprobación del capítulo completo.
+- [x] Cierre técnico de C01-01 bajo delegación: auditorías A/B/C reales aprobadas en CI #42520142623 y acta de microfase emitida; NO equivale a certificación de capítulo.
 
-**Decisión actual:** C01-01 **PREPARADA PARA TRIPLE AUDITORÍA**, su cierre dependerá de evidencia CI verificable y acta de microfase. C01-02 permanece bloqueada hasta ese cierre. **0/37 capítulos certificados**.
+**Decisión actual:** C01-01 **CERRADA TÉCNICAMENTE EN SU ALCANCE DOCUMENTAL**, con triple auditoría PASS verificada y acta de microfase; integración a dev mediante PR #11. C01-02 pasa a ser la siguiente microfase habilitada tras el merge; **0/37 capítulos certificados**.
 
 **Rollback:** revertir solo documentación y QA de C01-01 en feature/c01-identidad; sin escrituras en dev, main, VPS, producción o SOLQARYN.
 
@@ -110,3 +110,11 @@ En C01-03 solo se prepararán nombres de parámetros (sin valores secretos): Con
 ### Nota de autoridad delegada de microfases
 
 El propietario autorizó expresamente revisión, pruebas, auditoría repetida, cierre técnico y merge a `dev` de microfases **sin nueva consulta rutinaria**, siempre que no existan bloqueantes y se preserve el Documento Maestro. Esta autorización no habilita producciones, compras, VPS, cobros, exposición de datos, escritura a SOLQARYN ni eludir las tres auditorías y el acta final del capítulo C01. El alcance C01-01 es documental: controles P0 de un SaaS todavía no desarrollado se mantienen abiertos, pero no se introducen interfaces privadas.
+
+### Cierre documental verificado
+
+- Auditoría A (funcional/trazabilidad): **PASS** — 34 anclas semánticas y 21 encabezados de fila fuente, 55 IDs, negativas por referencias omitidas y duplicadas.
+- Auditoría B (seguridad de alcance): **PASS** — PR #11 sin código de aplicación ni SQL; sin secretos, DSN o acceso remoto, con negativo de cadena insegura.
+- Auditoría C (arquitectura documental): **PASS** — 6 enlaces comprobados, ocho puertas secuenciales, nomenclatura MAE versus operativa y prueba negativa de enlace roto.
+- Evidencia: https://github.com/solqaryn-platform/CRECISOL/actions/runs/42520142623 (job Foundation, los tres pasos SUCCESS). Tras la actualización de esta acta, requiere una nueva ejecución PASS del commit final.
+- **Hallazgos dentro del alcance C01-01:** cero P0/P1 abiertos. Los P0/P1 del SaaS no implementado continúan pendientes para capítulos y microfases siguientes; no se han reinterpretado como resueltos.
