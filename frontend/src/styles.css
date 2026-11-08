@@ -28,7 +28,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid #078fe8; outline-offs
   display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(40px, 6vw, 100px);
   align-items: center; max-width: 1320px; min-height: 550px; margin: 40px auto;
   padding: clamp(38px, 6vw, 80px); border-radius: 28px; overflow: hidden;
-  background: linear-gradient(125deg,#081d42,#06427f 58%,#0b7abf);
+  background: linear-gradient(125deg, #081d42, var(--brand-primary) 58%, var(--brand-accent));
   color: white; position: relative; box-shadow: 0 24px 64px rgba(4,42,88,.14);
 }
 .hero::before { content: ""; position: absolute; width: 600px; height: 600px;

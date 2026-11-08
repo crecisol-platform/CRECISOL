@@ -3,11 +3,11 @@
        [style.--brand-accent]="identity.accentColor">
     <a href="#contenido" class="skip-link">Saltar al contenido</a>
     <header class="topbar">
-      <div class="wordmark" aria-label="Identidad institucional de CRECISOL">
+      <div class="wordmark" [attr.aria-label]="'Identidad institucional de ' + identity.name">
         <strong class="wordmark-name">{{ identity.name }}</strong>
         <span class="wordmark-sub">Plataforma en construcción</span>
       </div>
-      <nav aria-label="Navegación inicial de CRECISOL">
+      <nav [attr.aria-label]="'Navegación inicial de ' + identity.name">
         <a href="#vision">Nuestra visión</a>
         <a href="#principios">Principios</a>
       </nav>
@@ -34,7 +34,7 @@
         </div>
         <div class="hero-brand">
           <img [src]="identity.logoUrl" width="520" height="344"
-               alt="Logotipo oficial de CRECISOL" />
+               [alt]="'Logotipo oficial de ' + identity.name" />
           <p>Identidad institucional · Revisión {{ identity.revision }}</p>
         </div>
       </section>
@@ -57,7 +57,7 @@
         <article>
           <span class="pillar-number">02</span>
           <h3>Identidad adaptable</h3>
-          <p>Marca de CRECISOL y de cada negocio claramente separadas.</p>
+          <p>Marca de {{ identity.name }} y de cada negocio claramente separadas.</p>
         </article>
         <article>
           <span class="pillar-number">03</span>

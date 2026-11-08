@@ -61,6 +61,11 @@ check("isPublicPlatformBrand(payload)" in service and
       "this.identity.set(null)" in service, "Frontend must fail closed on invalid payload")
 check("innerHTML" not in get("frontend/src/app/app.component.html"),
       "Do not introduce dynamic HTML rendering")
+check("CRECISOL" not in get("frontend/src/app/app.component.html"),
+      "Brand name must not be hardcoded into template content or accessibility labels")
+check("[alt]" in get("frontend/src/app/app.component.html") and
+      "[attr.aria-label]" in get("frontend/src/app/app.component.html"),
+      "Accessible identity labels must reflect the published brand snapshot")
 
 package = json.loads(get("frontend/package.json"))
 check(package["dependencies"]["@angular/core"].startswith("22."),
