@@ -1,19 +1,16 @@
-# CRECISOL — Frontend inicial del capítulo 01
+# CRECISOL — Frontend del capítulo 01
 
-**Estado:** fuente Angular 22 creada, todavía sin compilación verificada.
-Identidad pública de solo lectura; no hay pagos, tenant selector ni administración.
+**Estado:** Angular 22.2.2 compiló en GitHub Actions con Node 24.22.2, TS 6.0.3 y `npm ci`. No se ha probado aún la UI en navegador ni certificado el capítulo.
 
-## Herramientas requeridas
-Node 24.15+ compatible con Angular 22, npm, Python 3 y API local .NET 10.
-El logo se extrae sin alteraciones del Documento Maestro Único Word,
-cuya huella SHA-256 debe coincidir con la versión aprobada.
+Vista inicial pública de solo lectura; sin pagos, tenant selector ni administración.
 
-## Arranque exclusivamente local
-1. Ejecutar la API en http://127.0.0.1:5180 según backend/README.md.
-2. Instalar Node 24 compatible; ejecutar npm install desde frontend/.
-3. Versionar package-lock.json generado con el toolchain correcto antes de fusionar.
-4. Ejecutar npm start y abrir http://127.0.0.1:4200.
-5. Ejecutar npm run build, npm run test:contract y registrar logs y capturas reales.
+## Inicio local
 
-El entorno de esta ejecución tiene Node 22.16 y TypeScript 5.8, incompatibles
-con Angular 22. No se declaran compilación, rendimiento ni accesibilidad probados.
+1. Iniciar la API en http://127.0.0.1:5180 según `backend/README.md`.
+2. Disponer de Node 24.15+ y Python 3. Desde `frontend/`, ejecutar `npm ci --no-audit --no-fund`.
+3. Ejecutar `npm start` y abrir http://127.0.0.1:4200.
+4. Ejecutar `npm run build` y `npm run test:contract`.
+
+El logo se extrae sin alteraciones del Word maestro tras verificar hashes SHA-256. El contenedor local conserva Node 22.16, pero la compilación real se efectuó en CI #42516130198.
+
+**Pendiente:** accesibilidad, móvil, SEO/SSR y revisión visual reales; ninguna UI determina permisos ni acceso a tenants.

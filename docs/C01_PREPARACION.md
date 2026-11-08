@@ -32,3 +32,7 @@ Durante C01 se evaluarán composición editorial, cabecera/pie, tipografía, jer
 ## Inicio de implementación — primer corte
 
 Se creó un read-model de marca de plataforma versionado, una API pública de lectura, esquema relacional previsto y estructura Angular 22 con identidad azul y extracción del logotipo original. Son componentes iniciales sin endpoints de escritura ni resolución de tenant. Ver docs/c01/INICIO_Y_TRAZABILIDAD.md para alcance, riesgos y pruebas pendientes. La biblioteca visual es referencia, no código base. C01 sigue abierto.
+
+## Verificación técnica parcial real
+
+La compilación Angular 22 / .NET 10, el contrato HTTP inicial y las claves de MySQL 8.4 aprobaron en https://github.com/solqaryn-platform/CRECISOL/actions/runs/42516130198. Es evidencia técnica del primer segmento de C01, no certificación. Siguen pendientes la UI en navegador, la autorización y aislamiento multitenant, la seguridad integral y las tres auditorías. Ver [trazabilidad de C01](c01/INICIO_Y_TRAZABILIDAD.md).

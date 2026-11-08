@@ -1,13 +1,9 @@
-# CRECISOL · Diseño relacional de identidad (C01)
+# CRECISOL · Modelo de marca del capítulo 01
 
-MySQL 8.4 LTS, InnoDB y separación explícita de ámbitos de marca.
-El archivo migrations/0001_c01_brand_identity.sql define:
-- Brand scope, con identidad PLATFORM y, como previsión, TENANT.
-- Revisiones de marca versionadas y un puntero separado de publicación.
-- Claves compuestas y relaciones que impiden enlazar revisiones entre ámbitos.
+Esquema relacional InnoDB para MySQL 8.4 LTS: ámbitos PLATFORM/TENANT, revisiones y puntero de publicación, claves y FK compuestas.
 
-**NO EJECUTADO / NO APROBADO PARA PRODUCCIÓN.**
-La vinculación de scope TENANT al catálogo autorizado y la autenticación,
-triggers o permisos de inmutabilidad, auditoría y publicación se incorporarán
-con sus capítulos y pruebas reales de MySQL. La existencia del DDL no permite
-a un usuario elegir conexiones ni leer marcas ajenas por URL.
+**Prueba real aislada:** CI #42516130198 ejecutó el DDL y fixtures en MySQL 8.4.13 dentro de contenedor desechable sin red. Verificó dos publicaciones sintéticas y cinco negativas rechazadas (scope cero incorrecto, ID de plataforma incorrecto, case, FK entre tenants y revisión cero).
+
+Scripts: `database/migrations/0001_c01_brand_identity.sql` y `database/tests/c01_brand_schema_smoke.sh`.
+
+**NO es una migración productiva:** no se conectó a bases reales. Falta vínculo al catálogo confiable de tenants, servicios de autorización, auditoría inmutable, rollback y pruebas del modo dedicado/compartido. Ningún cliente puede elegir la conexión desde URL.
