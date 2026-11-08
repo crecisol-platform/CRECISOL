@@ -38,7 +38,7 @@ El usuario autorizó el 8 de noviembre de 2026 que cada microfase se **valide, r
 | Microfase técnica | Entregable y dependencia | Estado |
 | --- | --- | --- |
 | C01-01 | Matriz de 34 párrafos + 21 filas, anexos, dependencias, tres auditorías del entregable, acta | CERRADA DOCUMENTALMENTE (tres auditorías A/B/C PASS; PR #11 autorizado a dev) |
-| C01-02 | Contratos tipados y modelo de ámbito; requiere C01-01 cerrada | CIERRE TÉCNICO EN VALIDACIÓN FINAL (51 pruebas PASS y auditorías A/B/C PASS; PR #13) |
+| C01-02 | Contratos tipados y modelo de ámbito; requiere C01-01 cerrada | **CERRADA TÉCNICAMENTE**: 51/51 aserciones, A/B/C PASS, PR #13 fusionado a dev |
 | C01-03 | Diseño MySQL 8.4, migración/configuración futura; requiere C01-02 | PENDIENTE |
 | C01-04 | Caso de uso y API .NET; requiere C01-03 | PENDIENTE |
 | C01-05 | UI Angular, responsive, accesibilidad y navegador; requiere C01-04 | PENDIENTE |
@@ -56,4 +56,8 @@ C01-01 conserva **55 identificadores** (34 párrafos y 21 filas de tablas) y reg
 
 ### C01-02: evidencia y cierre delegado
 
-[C01-02 · Contratos](c01/C01_02_CONTRATOS.md) y [acta de microfase](c01/C01_02_ACTA_MICROFASE.md). El Domain .NET 10 compiló con **0 errores y 0 advertencias**, se ejecutaron **51 aserciones** y las tres auditorías A/B/C aprobaron en [CI #42521639367](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42521639367). La decisión final de cierre se toma solo si el commit de acta y el PR #13 vuelven a pasar CI y GitHub confirma el merge. **C01-03 sigue bloqueada hasta entonces; 0/37 capítulos certificados.** Ningún endpoint, base de datos, panel ni infraestructura fue activado.
+[C01-02 · Contratos](c01/C01_02_CONTRATOS.md) y [acta de microfase](c01/C01_02_ACTA_MICROFASE.md). El Domain .NET 10 compiló con **0 errores y 0 advertencias**, se ejecutaron **51 aserciones** y las tres auditorías A/B/C aprobaron en [CI #42521639367](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42521639367). Se comprobó la CI final [#42521796435](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42521796435), merge [#13](https://github.com/solqaryn-platform/CRECISOL/pull/13) en dev y CI post-merge [#42521854143](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42521854143). **C01-02 cerrada, 2 de 8 microfases concluidas; siguiente C01-03; 0/37 capítulos certificados.** Ningún endpoint, base de datos, panel ni infraestructura fue activado.
+
+### C01-02 — cierre integrado a dev
+
+La microfase C01-02 quedó fusionada con SHA `f0992d659e2a9535649d7a9cb0596d8ec9927479`, tras compilar el dominio net10.0 sin errores, ejecutar 51 pruebas y superar tres auditorías específicas A/B/C en CI. La CI post-merge de dev también aprobó. Los contratos no crean autorización de tenant ni servicios operativos; las obligaciones P0 de producto permanecen sin desplegar. [Acta verificable](c01/C01_02_ACTA_MICROFASE.md). La próxima microfase en secuencia es C01-03; el capítulo sigue sin certificación.

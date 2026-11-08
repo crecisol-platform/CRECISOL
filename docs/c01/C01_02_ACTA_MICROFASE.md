@@ -1,6 +1,6 @@
 # C01-02 · Acta de cierre técnico de contratos de identidad
 
-**Fecha de auditoría:** 2026-11-08. **Estado:** CIERRE TÉCNICO CONDICIONADO A CI FINAL Y MERGE del PR específico. **No certifica** el capítulo C01.
+**Fecha de auditoría:** 2026-11-08. **Estado:** **CERRADA TÉCNICAMENTE EN DEV** después de las auditorías y CI completas. **No certifica** el capítulo C01.
 **PR:** [#13](https://github.com/solqaryn-platform/CRECISOL/pull/13), rama feature/c01-02-contratos → dev.
 **Documento Maestro Único:** SHA-256 e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e, sin modificaciones.
 
@@ -14,7 +14,7 @@
 | Auditoría B · seguridad | Scope Platform/Tenant, Draft/Published, exposición anónima restringida, datos, rutas/URL y negativas, ausencia de endpoints/DSN | **PASS** |
 | Auditoría C · arquitectura/calidad | Dominio net10 independiente, referencias y docs, cero migraciones y límites de fase | **PASS** |
 
-**Primera ejecución verificada:** https://github.com/solqaryn-platform/CRECISOL/actions/runs/42521639367 (2 jobs SUCCESS, pasos de prueba y A/B/C SUCCESS). Las tres auditorías son del **alcance C01-02**, no del SaaS terminado.
+**Ejecuciones verificadas:** primera CI https://github.com/solqaryn-platform/CRECISOL/actions/runs/42521639367, **última CI del PR** https://github.com/solqaryn-platform/CRECISOL/actions/runs/42521796435 (2/2 trabajos SUCCESS, .NET10 51/51 y auditorías A/B/C), y **post-merge dev** https://github.com/solqaryn-platform/CRECISOL/actions/runs/42521854143 (SUCCESS). Las auditorías son del **alcance C01-02**, no del SaaS terminado.
 
 ## Verificación de diff y seguridad de alcance
 
@@ -26,9 +26,9 @@ El PR añade Domain/Branding con BrandSnapshot, BrandValidation, BrandPresentati
 
 ## Cierre, reversión y continuidad
 
-- **Puerta del commit final:** nueva CI A/B/C y contrato .NET10 con resultado PASS para el último SHA, diff confirmado y merge a dev. Si falla algo, mantener abierta la microfase.
+- **Puerta del commit final:** cumplida. Los cinco pasos de .NET/contratos/A/B/C del PR #13 aprobaron en SHA 12a903f351d6de332d1d3448304446ba868f38d7; el merge de PR #13 quedó confirmado en `dev` en SHA f0992d659e2a9535649d7a9cb0596d8ec9927479.
 - **Autoridad:** propietario delegó comprobaciones, triple auditoría y merge a dev por microfase sin consulta rutinaria, pero C01-08 retiene acta y aceptación del capítulo completo.
 - **Rollback:** revertir PR #13. Ninguna base persistente, DNS o VPS se ha alterado.
-- **Progreso tras merge:** C01-01 y C01-02 cerradas (2/8); siguiente C01-03 · diseño MySQL y configuración futura; capítulos certificados: **0/37**.
+- **Progreso efectivo:** C01-01 y C01-02 cerradas (2/8); siguiente C01-03 · diseño MySQL y configuración futura; capítulos certificados: **0/37**.
 
-**Nota:** no confundir este acta condicionada con una CI final o merge ya comprobados; contrastar ambos por GitHub.
+**Cierre verificado en GitHub:** PR #13 fusionado y CI de integración aprobada. El acta **no equivale** a la certificación del SaaS ni a la autorización de VPS.
