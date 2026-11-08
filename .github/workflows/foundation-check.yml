@@ -26,3 +26,32 @@ jobs:
         run: python3 qa/c01_01_three_audits.py B
       - name: Audit C / C01-01 documentation, phases and consistency
         run: python3 qa/c01_01_three_audits.py C
+
+  c01-02-contracts:
+    name: C01-02 .NET10 contract build and 3 microphase audits
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feature/c01-02-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Confirm .NET 10 version
+        run: dotnet --version
+      - name: Compile pure Domain and contract test runner
+        run: dotnet build backend/tests/Crecisol.Branding.ContractsTests/Crecisol.Branding.ContractsTests.csproj -c Release --nologo
+      - name: Execute positive and negative contract cases
+        run: dotnet run --no-build -c Release --project backend/tests/Crecisol.Branding.ContractsTests/Crecisol.Branding.ContractsTests.csproj
+      - name: C01-02 Audit A traceability
+        run: python3 qa/c01_02_three_audits.py A
+      - name: C01-02 Audit B security
+        run: python3 qa/c01_02_three_audits.py B
+      - name: C01-02 Audit C architecture and documentation
+        run: python3 qa/c01_02_three_audits.py C
