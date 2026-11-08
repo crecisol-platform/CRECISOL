@@ -48,6 +48,12 @@ jobs:
       - name: Install frontend dependencies and generate lockfile for review
         working-directory: frontend
         run: npm install --no-audit --no-fund
+      - name: Record generated npm lockfile for reproducible commit
+        working-directory: frontend
+        run: |
+          printf 'C01_LOCK_BEGIN\n'
+          base64 -w 512 package-lock.json
+          printf '\nC01_LOCK_END\n'
       - name: Build Angular 22 with the original logo
         working-directory: frontend
         run: npm run build
