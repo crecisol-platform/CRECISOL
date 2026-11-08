@@ -28,3 +28,7 @@ Revisar `AGENTS.md`, la Skill local y el maestro canónico antes de escribir. Un
 No copiar credenciales, fuentes, configuraciones ni recursos de `solqaryn/Solqaryn`. Solo consulta autorizada; ningún cambio en SOLQARYN. No desplegar ni activar servicios externos durante la fase local.
 
 **Comprobación inicial:** `python3 qa/validate_foundation.py` verifica estructura y alcance, **no compila ni certifica** Angular, .NET o MySQL.
+
+## Referencias visuales históricas
+
+La [biblioteca de diseño curada](docs/referencias-visuales/README.md) documenta cómo nació la idea y los prototipos aprobados como **inspiración visual**, no como código ni como documentación normativa. Se mantendrá el logo oficial azul y se construirá el frontend de CRECISOL desde cero.
