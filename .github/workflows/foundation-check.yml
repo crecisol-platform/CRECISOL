@@ -64,3 +64,31 @@ jobs:
         run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo
       - name: Execute C01 domain negative tests
         run: dotnet run --project backend/tests/Crecisol.Branding.SmokeTests/Crecisol.Branding.SmokeTests.csproj -c Release
+      - name: Smoke-test running local API and deny untrusted requests
+        run: |
+          set -euo pipefail
+          ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5180 \
+            dotnet run --no-build --no-launch-profile --configuration Release \
+            --project backend/src/Crecisol.Api/Crecisol.Api.csproj >/tmp/crecisol-c01-api.log 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          if ! python3 qa/c01_http_smoke.py; then
+            cat /tmp/crecisol-c01-api.log
+            exit 1
+          fi
+
+
+  c01-mysql-schema:
+    name: C01 MySQL 8.4 isolated schema and negative checks
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feature/c01-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Exercise only disposable MySQL 8.4 with networking disabled
+        run: bash database/tests/c01_brand_schema_smoke.sh

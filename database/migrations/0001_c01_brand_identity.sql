@@ -5,15 +5,19 @@
 -- the backend tenant registry, never by untrusted browser IDs or Host headers.
 
 CREATE TABLE brand_scopes (
-  scope_kind VARCHAR(8) NOT NULL,
+  scope_kind VARCHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   scope_id BINARY(16) NOT NULL,
   created_at_utc DATETIME(6) NOT NULL,
   PRIMARY KEY (scope_kind, scope_id),
-  CONSTRAINT ck_brand_scope_kind CHECK (scope_kind IN ('PLATFORM', 'TENANT'))
+  CONSTRAINT ck_brand_scope_kind CHECK (scope_kind IN ('PLATFORM', 'TENANT')),
+  CONSTRAINT ck_brand_scope_id CHECK (
+    (scope_kind = 'PLATFORM' AND scope_id = X'00000000000000000000000000000000') OR
+    (scope_kind = 'TENANT' AND scope_id <> X'00000000000000000000000000000000')
+  )
 ) ENGINE=InnoDB;
 
 CREATE TABLE brand_revisions (
-  scope_kind VARCHAR(8) NOT NULL,
+  scope_kind VARCHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   scope_id BINARY(16) NOT NULL,
   revision_number BIGINT UNSIGNED NOT NULL,
   name VARCHAR(100) NOT NULL,
@@ -31,7 +35,7 @@ CREATE TABLE brand_revisions (
 ) ENGINE=InnoDB;
 
 CREATE TABLE brand_publications (
-  scope_kind VARCHAR(8) NOT NULL,
+  scope_kind VARCHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   scope_id BINARY(16) NOT NULL,
   revision_number BIGINT UNSIGNED NOT NULL,
   published_at_utc DATETIME(6) NOT NULL,

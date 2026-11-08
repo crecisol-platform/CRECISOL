@@ -25,7 +25,7 @@ ExpectDenied(good with { WebsiteUrl = "http://crecisol.invalid" }, "Insecure sit
 ExpectDenied(good with { ScopeId = Guid.NewGuid() }, "Invalid platform scope");
 ExpectDenied(good with { Revision = 0 }, "Invalid version");
 
-Console.WriteLine("C01 branding smoke: 10 assertions/groups passed. No HTTP, UI or MySQL was exercised.");
+Console.WriteLine("C01 branding smoke: 11 assertions/groups passed. No HTTP, UI or MySQL was exercised.");
 
 void ExpectDenied(BrandSnapshot snapshot, string scenario)
 {
