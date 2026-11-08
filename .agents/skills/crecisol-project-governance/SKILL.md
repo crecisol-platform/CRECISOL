@@ -50,3 +50,8 @@ description: "Gobernanza técnica exclusiva del repositorio privado CRECISOL. Ap
 - Explicar archivos modificados, impacto en frontend/backend/database, contratos API/DTO, auth, datos y migraciones, pruebas ejecutadas con salida real, limitaciones, riesgos y rollback.
 - Nunca falsificar CI ni atribuir pruebas a un SaaS no implementado.
 - Si existen instrucciones contradictorias, detener solo el cambio inseguro y registrar el conflicto para decisión expresa.
+
+## 7. Referencias externas condicionadas
+- Leer docs/REFERENCIAS_EXTERNAS_SKILLS.md cuando una microtarea precise guía original de UI, motion, Angular, seguridad, documentación o rendimiento.
+- Mantener UNA sola Skill local de CRECISOL. No copiar ni instalar las doce fuentes externas; consultar original + SHA + ruta, verificar al momento de uso, registrar en PR y aplicar solo los principios compatibles con este proyecto.
+- No atribuir como consultada o ejecutada una referencia solo porque figure en el registro. Ante pin no verificable, omitir referencia y continuar con gobierno local si es seguro.

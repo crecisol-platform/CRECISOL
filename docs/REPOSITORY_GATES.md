@@ -1,15 +1,23 @@
-# GitHub — protección deseada y estado real
+# GitHub — protecciones deseadas y realidad comprobada
 
-Repo: solqaryn-platform/CRECISOL (Private). Owner: solqaryn-platform.
+Repositorio: solqaryn-platform/CRECISOL (privado, propietario cuenta personal).
 
-Estado leído antes de crear dev: main.protected=false. Se preparó un workflow mínimo con permisos read-only, pero **este archivo no configura reglas de GitHub por sí mismo**.
+**Verificado el 2026-11-08:** main.protected=false y dev.protected=false.
+**Al consultar la API de rulesets de este repositorio, GitHub devolvió HTTP 403**: "Upgrade to GitHub Pro or make this repository public to enable this feature."
+Por tanto, NI rulesets NI branch protection clásica están acreditados como aplicables con el plan actual en este repositorio privado. GitHub indica que estas funciones en privados requieren Pro/Team/Enterprise; **NO convertir el repo a público** ni comprar un plan sin decisión explícita.
 
-## Configuración requerida en GitHub → Settings → Rules → Rulesets
-- main: impedir push directo, PR obligatorio, bloquear borrado/force push, exigir revisión independiente y resolución de conversaciones.
-- exigir CI foundation y, cuando existan, pruebas Angular/.NET/MySQL; no fijar checks que aún no han ejecutado satisfactoriamente.
-- dev: prohibir borrado y force push; integrar microtareas por PR cuando esté operacional.
-- Requerir acciones seguras y vigilancia de secretos/dependencias según disponibilidad de la cuenta/plan. No afirmar que una opción está activa sin readback.
-- Limitar quién puede editar configuración de repo. MFA para cuentas administrativas.
-- Mantener despliegues deshabilitados: no workflows de producción, VPS, DNS ni conexiones Cloudflare.
+## Política operacional mientras no haya enforcement de plataforma
+- Solo GitHub privado, autenticación reforzada y acceso mínimo.
+- Todo cambio en feature/cNN-* -> dev; todo paso a main vía PR con revisión y CI, aunque no pueda exigirse automáticamente.
+- Nada de force-push, borrar ramas principales, subir secretos ni bypass por automatización.
+- GitHub Actions foundation es validación inicial estática, no CI suficiente para certificar SaaS.
+- No fusionar capítulos sin evidencia de QA, tres auditorías, ausencia P0/P1 y aprobación.
+- El PR #1 de fundación fue fusionado manualmente a main, sin protección de ramas. Revisar diff de próximos PR.
 
-**Acción humana de administración pendiente:** configurar ruleset en la UI si el conector no permite escritura de reglas, verificar readback en Settings y reportar si el plan no aplica sus restricciones a repositorios privados.
+## Reglas deseadas al disponer de un plan que las admita
+**main:** Required pull request; al menos una aprobación independiente cuando exista revisor; require status checks *solo después de que hayan corrido*; block deletion y block force push; no bypass rutinario.
+**dev:** block deletion y block force push; PR antes de integrar cambios de capítulo; CI mínimo y pruebas por módulo cuando existan.
+
+No activar reglas para un check que nunca haya corrido ni declarar protegido hasta obtener readback positivo. No desplegar a VPS ni publicar ambientes desde GitHub todavía.
+
+Documentación: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets-for-a-repository
