@@ -1,28 +1,30 @@
 # CRECISOL
-**Tu negocio, a tu manera.** · SaaS multitenant para comercio, servicios y membresías.
 
-Repositorio privado independiente de SOLQARYN. Solo contiene fundamentos de desarrollo, **no un SaaS implementado**.
+**Tu negocio, a tu manera.** — SaaS multitenant para comercio, servicios y membresías.
 
-## Estado inicial (2026-11-08)
-- main conserva el commit inicial; trabajo de configuración en dev.
-- Capítulos del Documento Maestro Único: 37. Certificados en código: 0.
-- Controles de seguridad pendientes de habilitación en GitHub: revisar docs/REPOSITORY_GATES.md.
-- Entorno: programación y pruebas locales; no existe despliegue de CRECISOL.
+Repositorio privado e independiente. El Documento Maestro Único institucional se conserva en `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` con su exportación PDF. La trazabilidad de versión y las huellas verificadas constan en `docs/MASTER_REFERENCE.md`.
+
+## Estado inicial del desarrollo — 8 de noviembre de 2026
+
+- **37 capítulos documentados, 0 capítulos certificados en código.** La fase 1 corresponde al capítulo 01: identidad, visión, alcance y principios.
+- `main`: integración estable de documentación y cambios revisados; no presume software ya certificado.
+- `dev`: integración de desarrollo; tareas nuevas en `feature/cNN-*` y PR.
+- El repositorio contiene arquitectura, normas, estructura y verificaciones preliminares; **todavía no existe un SaaS operativo, infraestructura desplegada ni cobros**.
+- En este repositorio privado la protección automática de ramas no está activa por las condiciones del plan GitHub. Seguimos con PR, revisión manual y CI disponible; ver `docs/REPOSITORY_GATES.md`.
 
 ## Estructura
-- frontend/ — Angular 22, Node 24 para tooling, dos experiencias públicas/administrativas cuando se construyan.
-- backend/ — ASP.NET Core 10, Clean Architecture / monolito modular.
-- database/ — MySQL 8.4 LTS, datos relacionales y tenancy compartida o dedicada.
-- docs/ — referencia al único maestro, plan y decisiones.
-- qa/ — verificaciones reproducibles sin credenciales.
-- .agents/skills/crecisol-project-governance/ — única Skill local propia.
 
-## Disciplina
-Un capítulo por vez; tres auditorías y evidencia positiva/negativa antes de certificar. Aislamiento estricto de tenants, control del SuperAdmin auditado, parametrización completa de datos comerciales y seguridad server-side obligatoria.
+- `frontend/` — Angular 22 y Node.js 24 para herramientas, sujetos a pruebas reales.
+- `backend/` — ASP.NET Core 10, arquitectura limpia y monolito modular.
+- `database/` — MySQL 8.4 LTS, esquema relacional con protección por tenant.
+- `docs/` — fuente maestra, diseño y secuencia de 37 capítulos.
+- `qa/` — verificaciones reproducibles y pruebas con evidencia.
+- `.agents/skills/crecisol-project-governance/` — Skill local de gobierno exclusiva de CRECISOL.
 
-Leer AGENTS.md, la Skill local y docs/MASTER_REFERENCE.md antes de editar. No copiar código, recursos ni configuraciones de solqaryn/Solqaryn.
+## Reglas de contribución
 
-## Comprobación local inicial
-Ejecutar: python3 qa/validate_foundation.py
+Revisar `AGENTS.md`, la Skill local y el maestro canónico antes de escribir. Un capítulo a la vez, con pruebas positivas/negativas y triple auditoría A/B/C antes de certificar. Aislamiento tenant/sucursal y autorización server-side obligatorios.
 
-**Documentación maestra:** el único archivo oficial de planificación es CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx (y su exportación PDF). Ver docs/MASTER_REFERENCE.md para estado, hash y ubicación prevista; la copia binaria todavía NO está subida a este repositorio.
+No copiar credenciales, fuentes, configuraciones ni recursos de `solqaryn/Solqaryn`. Solo consulta autorizada; ningún cambio en SOLQARYN. No desplegar ni activar servicios externos durante la fase local.
+
+**Comprobación inicial:** `python3 qa/validate_foundation.py` verifica estructura y alcance, **no compila ni certifica** Angular, .NET o MySQL.

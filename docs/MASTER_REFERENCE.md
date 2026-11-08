@@ -1,21 +1,25 @@
-# Documento Maestro Único — fuente canónica CRECISOL
+# Documento Maestro Único — referencia canónica CRECISOL
 
-**Estado documental:** cargado y verificado en GitHub (2026-11-08). **No implica software implementado ni seguridad certificada.**
+**Estado:** EDICIÓN INSTITUCIONAL VIGENTE para planificación, aprobada para versionamiento el 8 de noviembre de 2026. **No equivale a software implementado ni a certificación de seguridad.**
 
-| Formato | Ruta | Tamaño | Git blob SHA-1 | SHA-256 del archivo original |
+| Formato | Ruta canónica | Tamaño real | Git blob SHA-1 | SHA-256 del archivo |
 | --- | --- | ---: | --- | --- |
-| Word editable, autoridad | `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` | 262754 bytes | `33148ae1b4c3a1c89efba7cae9fea73a8ff2fb2a` | `a43a0ea0c7988cd52dc6a7912b63a3055abdff2188062014e69caa19c69e3c71` |
-| PDF de lectura / impresión | `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf` | 3396652 bytes | `b56d038dc891ad4cdafd26884704190c8b7069b0` | `305c36e803310f0ab473d80ae2b2cf825bec7d5944d2c9037836a53c526a1992` |
+| Word editable — autoridad | `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` | 1 344 481 bytes | `214bf9c3d9763be23a77b7e0c464359584edde46` | `e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e` |
+| PDF de lectura e impresión | `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf` | 4 490 865 bytes | `455847ae0cc3bf02b9b9c4c3435476d093918ea2` | `17ffe48aab3b224cc9b11927c498e4f49c162d96bf639c894b84259f597738dd` |
 
-## Evidencia de integridad
-- Se calcularon SHA-256 y blob hash Git sobre los dos archivos originales disponibles en el entorno de trabajo.
-- Se compararon los blob hashes y tamaños con los objetos reales almacenados en `solqaryn-platform/CRECISOL` en las ramas `dev` y `main`. Los dos coincidieron exactamente.
-- SHA-256 acredita los originales locales; la coincidencia exacta del Git blob enlaza esos originales con el contenido subido. No se infiere el SHA-256 de un mero nombre de archivo.
-- Para futuras modificaciones, recalcular y registrar ambos hashes en el mismo PR; no generar otra autoridad maestra.
+## Validación de procedencia y alcance
 
-## Alcance
-Este es el único Documento Maestro Único de CRECISOL, de 37 capítulos, con sus ampliaciones transversales de aislamiento de tenants (shared y dedicated), identidades y accesos, login contextual sin selector, SuperAdmin con acceso auditado, parametrización, diseño visual, previsualizaciones y seguimiento universal de pedidos/citas/expedientes.
+- Los archivos binarios subidos a `dev` (commit `a9c678e89a1e562c9c32c784ba331e1c59c014d7`) coinciden con los originales de la entrega final por **tamaño y SHA de blob Git**. Sus SHA-256 locales se consignan en la tabla.
+- Word: 37 capítulos de producto y arquitectura; además, reglamento técnico y secciones transversales. Comprobación de estructura: 189 tablas y una imagen de marca incrustada.
+- PDF: 229 páginas; portada con el logotipo oficial de CRECISOL, tabla de contenido y capítulos. El PDF es la representación del Word, **no un segundo documento maestro**.
+- El plan anterior está absorbido como contenido histórico de referencia; no debe reintegrarse ni reemplazar esta edición. La autoridad documental reside únicamente en el Word señalado.
+- La rama `main` deberá conservar **estos mismos blobs** tras integrar el PR documental de reconciliación; el control se realiza comparando los SHA Git, no por nombre o apariencia.
 
-**Regla de trabajo:** consultar el documento por capítulo; desarrollar C01 antes de C02, y así sucesivamente hasta C37. Tres auditorías, pruebas reales y aceptación para declarar un capítulo CERTIFICADO. Este documento no sustituye pruebas de Angular/.NET/MySQL ni una certificación.
+## Reglas de gobierno
 
-**Proyecto exclusivamente CRECISOL:** prohibidas las escrituras a `solqaryn/Solqaryn`; etapa actual solo desarrollo local, código, documentación y pruebas; sin despliegues ni producción.
+- Usar esta edición para requisitos de producto, arquitectura, seguridad, parametrización, diseño e implementación secuencial de los **37 capítulos**.
+- El alcance incluye MySQL compartido por defecto con aislamiento obligatorio, modalidad dedicada opcional, login contextual sin selector, SuperAdmin con acceso excepcional auditado, componentes UI y multimedia seguros, y seguimiento universal de expedientes.
+- Trabajar un capítulo por vez. Ninguno se considera IMPLEMENTADO, PROBADO o CERTIFICADO por el solo hecho de figurar en este documento; el estado actual de software es **0/37 certificados**.
+- Las versiones de Angular, Node.js, .NET y MySQL y los proveedores concretos requieren compatibilidad comprobada mediante ejecución de pruebas.
+- Está prohibida toda escritura sobre `solqaryn/Solqaryn`. No realizar VPS, DNS, cobros reales, producción ni despliegues durante la etapa actual.
+- Si cambia el Word, se deberá generar de ese mismo Word el PDF, recalcular tamaños, SHA-256 y blobs Git, revisar los 37 capítulos y aprobar un PR en CRECISOL. **No conservar dos maestros divergentes.**
