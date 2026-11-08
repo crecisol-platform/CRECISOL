@@ -23,3 +23,44 @@ jobs:
         run: python3 frontend/scripts/extract_brand_logo.py
       - name: Execute native Node brand contract tests (no packages)
         run: node --test frontend/scripts/brand_contract.test.mjs
+
+  c01-build:
+    name: C01 build Angular 22 and .NET 10 (no deploy)
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feature/c01-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Set up Node.js 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Verify runtime versions
+        run: |
+          node --version
+          npm --version
+          node -e 'const [major,minor]=process.versions.node.split(".").map(Number);if(major!==24||minor<15)process.exit(1)'
+      - name: Install frontend dependencies and generate lockfile for review
+        working-directory: frontend
+        run: npm install --no-audit --no-fund
+      - name: Build Angular 22 with the original logo
+        working-directory: frontend
+        run: npm run build
+      - name: Run public branding contract tests
+        working-directory: frontend
+        run: npm run test:contract
+      - name: Set up .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Report SDK version
+        run: dotnet --version
+      - name: Build ASP.NET Core API
+        run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo
+      - name: Execute C01 domain negative tests
+        run: dotnet run --project backend/tests/Crecisol.Branding.SmokeTests/Crecisol.Branding.SmokeTests.csproj -c Release
