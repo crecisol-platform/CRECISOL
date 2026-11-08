@@ -1,20 +1,28 @@
-# CRECISOL · Biblioteca histórica de referencias visuales
+# CRECISOL · Biblioteca visual histórica
 
-**Propósito:** conservar dentro del repositorio privado CRECISOL las capturas y los prototipos aportados por el propietario para recordar cómo nació la idea y qué experiencias visuales se consideraron.
+**Estado:** DEPURADA y preparada para orientar el capítulo 01. Es una biblioteca de **inspiración**, no código de producción, documento maestro ni especificación adicional.
 
-## Carpetas
-- [Imágenes del origen de la idea](imagenes-origen-idea/README.md): capturas de pantallas, fotografías o bocetos de referencia.
-- [Prototipos anteriores](prototipos-anteriores/README.md): capturas, ZIP, HTML u otras maquetas históricas de CRECISOL.
+## Material conservado
 
-## Regla de interpretación
-Estas piezas son **referencias e inspiración, no implementaciones ni requisitos obligatorios**. El diseño definitivo se construirá con identidad propia de CRECISOL y se evaluará frente al Documento Maestro Único, su logo aprobado y los criterios de usabilidad, accesibilidad, rendimiento y seguridad.
+- [Imágenes del origen de la idea](imagenes-origen-idea/README.md): **7 capturas distintas** de la tienda «Cumbre Café» y una síntesis de lecciones.
+- [Prototipos anteriores](prototipos-anteriores/README.md): **2 capturas** de Atlas y del centro de auditoría.
+- [Referencias curadas y decisiones](REFERENCIAS_CURADAS.md): qué conservar, qué descartar, qué aportaban los HTML y cómo diseñaremos la nueva UI.
 
-**Prioridad de fuentes:** 1) Documento Maestro Único de CRECISOL; 2) decisiones aprobadas y especificaciones del capítulo activo; 3) estas referencias visuales. Si hay contradicciones, prevalece el maestro.
+**Total activo:** 9 capturas y 2 archivos de análisis, además de los archivos README de navegación. Se eliminaron tres capturas del árbol actual por duplicidad o por mostrar credenciales de prueba.
 
-## Manejo seguro
-- Almacenar únicamente material autorizado y pertinente para CRECISOL. Nunca subir secretos, tokens, contraseñas, datos personales reales, bases productivas ni configuraciones de SOLQARYN.
-- No reutilizar automáticamente código, marca, diseño protegido o archivos ejecutables de terceros. Los prototipos con scripts se tratan como **archivos históricos no confiables**; no se ejecutan ni se copian a `frontend/`, `backend/` o `database/` sin revisión y autorización.
-- Conservar los nombres originales cuando sean claros; evitar duplicados y utilizar el historial Git para rastrear versiones.
-- Antes de convertir alguna idea en una interfaz definitiva, registrar qué referencia se utilizó y qué se modificó para adaptarla a CRECISOL.
+## Jerarquía de autoridad
 
-**Estado:** carpetas preparadas; los materiales los aportará el usuario. No confundir estas carpetas con el logotipo oficial ni con recursos de producción.
+1. Documento Maestro Único de CRECISOL (Word; PDF de lectura).
+2. Especificación y criterios aprobados del capítulo 01.
+3. Estas referencias, únicamente como ideas de composición, navegación y experiencia de usuario.
+
+Usaremos el logotipo azul oficial de CRECISOL y su identidad propia. El diseño visual y el código de los prototipos verdes no son obligatorios ni se copiarán.
+
+## Seguridad y mantenimiento
+
+- No subir credenciales, sesiones, datos reales, bases de datos, `node_modules`, archivos RAR de apps ni código de otros proyectos.
+- Las capturas históricas pueden mostrar contenidos demostrativos. No atribuir esos valores a clientes, permisos, hechos o pruebas reales.
+- Los archivos eliminados del árbol pueden persistir en commits históricos. No volver a incorporarlos.
+- Un nuevo archivo solo se incorpora si agrega un patrón distinto y pasa revisión de pertinencia, privacidad y derechos.
+
+**Fuera de alcance:** ninguna modificación en SOLQARYN; ningún despliegue ni certificación de software.
