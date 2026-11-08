@@ -58,3 +58,12 @@
 - Acta de C01: **NO EMITIDA**. Aprobación: **PENDIENTE**. Siguiente capítulo C02: **BLOQUEADO**.
 
 Esta entrega solo comienza C01. No es un prototipo React ni una certificación del SaaS.
+
+## Evidencia verificable de la primera CI de C01
+
+- Commit evaluado: `e83efe2e379437e2e9830ed12cbd19a23ad30de7`.
+- GitHub Actions: https://github.com/solqaryn-platform/CRECISOL/actions/runs/42513216018
+- Resultado comprobado por los pasos individuales de GitHub: `Foundation scope and secrets baseline` = SUCCESS; `Validate C01 contract and approved logo source (static only)` = SUCCESS; `Verify approved logo extraction from canonical Word` = SUCCESS; `Execute native Node brand contract tests (no packages)` = SUCCESS.
+- Estas pruebas solo validaron estructura, fuente autorizada, extracción y campos de marca. No prueban la API .NET, ejecución Angular, rutas de tenant ni MySQL; no son certificación de C01.
+- El entorno local usado para revisar el origen tampoco cuenta con el SDK .NET 10 ni MySQL 8.4; Angular 22 requiere Node 24.15+ y TypeScript 6.0.x. Instalar/probar este toolchain sigue siendo condición previa a la compilación.
+- El PR #10 sigue en borrador. La regla de avance permanece: auditorías A/B/C, pruebas positivas y negativas reales, hallazgos P0/P1 resueltos y aprobación antes de C02.
