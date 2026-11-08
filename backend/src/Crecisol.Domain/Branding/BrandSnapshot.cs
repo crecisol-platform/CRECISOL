@@ -1,13 +1,12 @@
-using System.Text.RegularExpressions;
-
 namespace Crecisol.Domain.Branding;
 
-public enum BrandScope { Platform, Tenant }
-public enum BrandPublicationStatus { Draft, Published }
+public enum BrandScope { Platform = 1, Tenant = 2 }
+public enum BrandPublicationStatus { Draft = 1, Published = 2 }
 
 /// <summary>
-/// A typed immutable snapshot. Scope and actor are NEVER chosen by browser input.
-/// This is a C01 read-model; tenant resolution and administrative writes are out of scope.
+/// Immutable versioned identity. PLATFORM and TENANT must remain separated.
+/// This is a CONTRACT, not an authorization decision or persistence service.
+/// Preview is a restricted read of a Draft, NOT a third publication status.
 /// </summary>
 public sealed record BrandSnapshot(
     BrandScope Scope,
@@ -23,10 +22,11 @@ public sealed record BrandSnapshot(
     string? WebsiteUrl,
     DateTimeOffset PublishedAt)
 {
-    private static readonly Regex HexColor = new(
-        "^#[0-9a-fA-F]{6}$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
-    private static readonly Regex AssetPath = new(
-        "^/assets/[a-zA-Z0-9-]+[.]png$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    /// <summary>
+    /// Optional extra presentation tokens, validated if supplied. Current initial
+    /// read model is intentionally backward-compatible with the draft PR #10.
+    /// </summary>
+    public BrandPresentation? Presentation { get; init; }
 
     public BrandSnapshot Validate()
     {
@@ -35,36 +35,35 @@ public sealed record BrandSnapshot(
         if ((Scope == BrandScope.Platform && ScopeId != Guid.Empty) ||
             (Scope == BrandScope.Tenant && ScopeId == Guid.Empty))
             throw new InvalidOperationException("Brand scope and identifier disagree.");
-        if (Revision < 1) throw new InvalidOperationException("Brand revision must be positive.");
-        CheckText(Name, 2, 100, nameof(Name));
-        CheckText(Slogan, 2, 160, nameof(Slogan));
-        CheckText(Descriptor, 2, 180, nameof(Descriptor));
-        if (!HexColor.IsMatch(PrimaryColor) || !HexColor.IsMatch(AccentColor))
-            throw new InvalidOperationException("Invalid brand color.");
-        if (!AssetPath.IsMatch(LogoUrl))
-            throw new InvalidOperationException("Logo must be an approved local PNG path.");
-        if (WebsiteUrl is not null &&
-            (!Uri.TryCreate(WebsiteUrl, UriKind.Absolute, out var url) ||
-             url.Scheme != Uri.UriSchemeHttps || url.UserInfo.Length != 0))
-            throw new InvalidOperationException("Website URL requires HTTPS and no user info.");
-        if (Status == BrandPublicationStatus.Published && PublishedAt == default)
-            throw new InvalidOperationException("Published brand requires a publication timestamp.");
+        if (Revision < 1)
+            throw new InvalidOperationException("Brand revision must be positive.");
+
+        BrandValidation.RequireText(Name, 2, 100, nameof(Name));
+        BrandValidation.RequireText(Slogan, 2, 160, nameof(Slogan));
+        BrandValidation.RequireText(Descriptor, 2, 180, nameof(Descriptor));
+        BrandValidation.RequireRgb(PrimaryColor, nameof(PrimaryColor));
+        BrandValidation.RequireRgb(AccentColor, nameof(AccentColor));
+        BrandValidation.RequireLocalAsset(LogoUrl, nameof(LogoUrl));
+        BrandValidation.RequireHttpsOrigin(WebsiteUrl, nameof(WebsiteUrl));
+        Presentation?.Validate();
+
+        if (Status == BrandPublicationStatus.Draft && PublishedAt != default)
+            throw new InvalidOperationException("Draft must not carry a publication timestamp.");
+        if (Status == BrandPublicationStatus.Published &&
+            (PublishedAt == default || PublishedAt.Offset != TimeSpan.Zero))
+            throw new InvalidOperationException("Published brand requires a UTC publication timestamp.");
         return this;
     }
 
+    /// <summary>
+    /// Only publication approved for anonymous PLATFORM metadata.
+    /// No tenant, preview or draft data may pass this public-only gate.
+    /// </summary>
     public BrandSnapshot RequirePublicPlatform()
     {
         Validate();
-        if (Scope != BrandScope.Platform || ScopeId != Guid.Empty ||
-            Status != BrandPublicationStatus.Published)
-            throw new InvalidOperationException("Only the published platform brand is public.");
+        if (Scope != BrandScope.Platform || Status != BrandPublicationStatus.Published)
+            throw new InvalidOperationException("Only published PLATFORM identity is public.");
         return this;
-    }
-
-    private static void CheckText(string? value, int min, int max, string name)
-    {
-        if (string.IsNullOrWhiteSpace(value) || value.Length < min || value.Length > max ||
-            value.Any(c => char.IsControl(c) || c is '<' or '>' or '\u202e' or '\u202d'))
-            throw new InvalidOperationException($"Invalid brand field: {name}.");
     }
 }

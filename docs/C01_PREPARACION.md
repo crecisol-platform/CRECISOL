@@ -1,6 +1,6 @@
 # Fase 1 · Capítulo 01 — CRECISOL: identidad, visión, alcance y principios
 
-**Estado:** EN DESARROLLO; IMPLEMENTACIÓN PARCIAL; NO PROBADO INTEGRALMENTE, NO CERTIFICADO. Progreso: **0/37 capítulos certificados**. Fuente: edición canónica de `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` y `docs/MASTER_REFERENCE.md`.
+**Estado:** EN DESARROLLO; C01-01 cerrada, C01-02 con código de dominio compilado y auditado; capítulo NO CERTIFICADO. Progreso: **0/37 capítulos certificados**. Fuente: edición canónica de `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` y `docs/MASTER_REFERENCE.md`.
 
 ## Contrato de alcance
 
@@ -29,53 +29,35 @@ La [biblioteca curada](referencias-visuales/README.md) conserva siete capturas d
 
 Durante C01 se evaluarán composición editorial, cabecera/pie, tipografía, jerarquía y vistas previas, siempre con el logo azul oficial y marcas separadas entre plataforma y tenant. Ninguna captura justifica desarrollar prematuramente los flujos de venta, catálogo, pagos o auditoría previstos en otros capítulos. El HTML original no necesita subirse a GitHub para arrancar C01.
 
-## Inicio de implementación — primer corte
+## Control secuencial de ocho microfases y delegación de cierre
 
-Se creó un read-model de marca de plataforma versionado, una API pública de lectura, esquema relacional previsto y estructura Angular 22 con identidad azul y extracción del logotipo original. Son componentes iniciales sin endpoints de escritura ni resolución de tenant. Ver docs/c01/INICIO_Y_TRAZABILIDAD.md para alcance, riesgos y pruebas pendientes. La biblioteca visual es referencia, no código base. C01 sigue abierto.
+El usuario autorizó el 8 de noviembre de 2026 que cada microfase se **valide, revise tres veces (auditorías A/B/C de su alcance), documente y fusione a dev sin consulta rutinaria**, únicamente con evidencia real y sin bloqueos P0/P1 atribuibles a su entrega. Ninguna fase posterior podrá empezar sin cierre de la anterior. **La certificación del capítulo completo y el avance a C02 requieren las auditorías integrales, acta y aceptación de C01-08; la delegación de microfases no certifica el capítulo.**
 
-## Verificación técnica parcial real
+**Numeraciones distintas sin alterar maestro:** las fases técnicas operativas siguen C01-01...C01-08; la secuencia literal del contrato de implementación del Word se referencia como MAE-C01-01...MAE-C01-08 y se enlaza mediante [tabla de equivalencia](c01/C01_01_DEPENDENCIAS_Y_GATE.md).
 
-La compilación Angular 22 / .NET 10, el contrato HTTP inicial y las claves de MySQL 8.4 aprobaron en https://github.com/solqaryn-platform/CRECISOL/actions/runs/42516130198. Es evidencia técnica del primer segmento de C01, no certificación. Siguen pendientes la UI en navegador, la autorización y aislamiento multitenant, la seguridad integral y las tres auditorías. Ver [trazabilidad de C01](c01/INICIO_Y_TRAZABILIDAD.md).
+| Microfase técnica | Entregable y dependencia | Estado |
+| --- | --- | --- |
+| C01-01 | Matriz de 34 párrafos + 21 filas, anexos, dependencias, tres auditorías del entregable, acta | CERRADA DOCUMENTALMENTE (tres auditorías A/B/C PASS; PR #11 autorizado a dev) |
+| C01-02 | Contratos tipados y modelo de ámbito; requiere C01-01 cerrada | **CERRADA TÉCNICAMENTE**: 51/51 aserciones, A/B/C PASS, PR #13 fusionado a dev |
+| C01-03 | Diseño MySQL 8.4, migración/configuración futura; requiere C01-02 | PENDIENTE |
+| C01-04 | Caso de uso y API .NET; requiere C01-03 | PENDIENTE |
+| C01-05 | UI Angular, responsive, accesibilidad y navegador; requiere C01-04 | PENDIENTE |
+| C01-06 | Logo y su presencia visual verificados; requiere C01-05 | PENDIENTE |
+| C01-07 | Pruebas positivas, negativas, seguridad y regresión; requiere C01-06 | PENDIENTE |
+| C01-08 | Auditorías integrales A/B/C, acta, conformidad del capítulo; requiere C01-07 | PENDIENTE |
 
-## Gobierno operativo: ocho microtareas en orden obligatorio
+**Repositorio:** PR #10 contiene código adelantado de fases 02–07 y permanece en borrador. Se integra solamente el alcance documental de C01-01 mediante un PR independiente, sin adelantar implementación privada ni certificar software.
 
-**Acuerdo operativo de 2026-11-08.** El bloque C01 se divide en **8 microtareas, C01-01 a C01-08**, en orden ascendente y de dependencia. Una microtarea no se considera CERRADA por tener código escrito, compilación aislada o capturas; requiere requisitos trazados, evidencia pertinente, pruebas positivas y negativas aplicables, revisión y aceptación de su alcance. La **certificación institucional** del capítulo solo ocurre después de C01-08 con las auditorías A/B/C y aceptación expresa. No equivale a ocho certificaciones de producto independientes.
+**Infraestructura informada, NO VERIFICADA:** MySQL en VPS Hostinger y dominio `crecisol.com` posiblemente provisionados; esta etapa solo documenta una futura conexión externa parametrizada. Ni credenciales, ni configuración de DNS, ni conexión al VPS, ni despliegue productivo.
 
-| Fase | Dependencia formal | Entregable / condición para cerrarla | Estado de cierre |
-| --- | --- | --- | --- |
-| C01-01 | Documento Maestro Único vigente | Matriz completa de los 34 párrafos y 21 filas fuente, dependencias, criterios verificables, riesgos y límites de C01 | **CERRADA TÉCNICAMENTE (tres auditorías PASS; PR #11 en dev)** |
-| C01-02 | C01-01 cerrada | Contratos tipados plataforma/tenant, borrador, vista previa, publicación y validaciones; definir reglas sin habilitar edición insegura | Pendiente de cierre; existe código preliminar |
-| C01-03 | C01-02 cerrada | Modelo MySQL 8.4, llaves, scopes, plan de migraciones, pruebas aisladas y estrategia de conexión parametrizada | Pendiente de cierre; DDL temporal ya probado |
-| C01-04 | C01-03 cerrada | Domain/Application/Infrastructure/API, solo lectura de marca publicada y seguridad de rutas privadas por denegación | Pendiente de cierre; API pública preliminar ya compilada |
-| C01-05 | C01-04 cerrada | Angular 22 de identidad, cabecera/pie, SEO, diseño responsivo, estados, teclado, accesibilidad y UI verificada en navegador | Pendiente de cierre; primer shell compilado |
-| C01-06 | C01-05 cerrada | Cotejar de extremo a extremo el logotipo oficial original en todas las vistas de C01, sin alterar ni deformar activo | Pendiente de cierre; extracción por SHA ya aprobada |
-| C01-07 | C01-06 cerrada | Pruebas positivas/negativas pertinentes de contratos, tenant/host, caché, XSS, permisos, regresión y rendimiento, con evidencia | Pendiente de cierre; pruebas técnicas parciales ya aprobadas |
-| C01-08 | C01-07 cerrada | Auditorías A (trazabilidad), B (seguridad) y C (arquitectura/rendimiento/UI); corrección P0/P1, acta y aceptación del C01 | Pendiente |
+### Cierre técnico delegado de C01-01
 
-**Regla de continuidad:** no iniciar trabajo nuevo de una microtarea posterior hasta cerrar la anterior. El código que se adelantó en el PR #10 se conserva únicamente como **implementación provisional que deberá revalidarse** cuando llegue su turno; no constituye cierre ni salta puertas. No abrir C02 sin acta C01.
+C01-01 conserva **55 identificadores** (34 párrafos y 21 filas de tablas) y registra otras dos tablas suplementarias. **Tres auditorías diferenciadas PASS** en la CI de solo lectura: https://github.com/solqaryn-platform/CRECISOL/actions/runs/42520142623. El usuario autorizó verificaciones y cierres rutinarios sin nueva consulta; PR documental #11 queda autorizado para integración en `dev` una vez aprobado el commit final. **Progreso: 1/8 microfases cerradas, 0/37 capítulos certificados**; C01-02 es la siguiente fase por dependencia. Esto no certifica software productivo ni autoriza tocar Hostinger.
 
-### Hostinger, MySQL y dominio: destino previsto, estado no verificado
+### C01-02: evidencia y cierre delegado
 
-El propietario informó que **podría existir una base de datos en un VPS de Hostinger** y que **el dominio podría estar libre o ya configurado**. Son datos **reportados, no comprobados**. No afirmar existencia, compatibilidad, acceso, propiedad de dominio, TLS, registros DNS ni disponibilidad hasta realizar comprobación autorizada posterior.
+[C01-02 · Contratos](c01/C01_02_CONTRATOS.md) y [acta de microfase](c01/C01_02_ACTA_MICROFASE.md). El Domain .NET 10 compiló con **0 errores y 0 advertencias**, se ejecutaron **51 aserciones** y las tres auditorías A/B/C aprobaron en [CI #42521639367](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42521639367). Se comprobó la CI final [#42521796435](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42521796435), merge [#13](https://github.com/solqaryn-platform/CRECISOL/pull/13) en dev y CI post-merge [#42521854143](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42521854143). **C01-02 cerrada, 2 de 8 microfases concluidas; siguiente C01-03; 0/37 capítulos certificados.** Ningún endpoint, base de datos, panel ni infraestructura fue activado.
 
-- Preparar en código **configuración externa** para el host, puerto, nombre lógico de base, usuario de servicio, secreto, modo TLS y dominio público; no fijar direcciones ni contraseñas en código, commit o documento. Ejemplos de *nombres de parámetros*, sin valores: \`ConnectionStrings__CrecisolDb\`, \`Crecisol__PublicBaseUrl\`, \`Crecisol__AllowedHosts\`.
-- La conexión MySQL **solo corresponde al backend**, bajo control de identidad, tenant y permisos. El frontend nunca recibe una cadena de conexión ni puede elegir DSN, host, base o tenant.
-- La futura conexión al VPS **no consiste solamente en tres líneas de texto**: exige compatibilidad de proveedor .NET/MySQL, TLS, permisos mínimos, esquema/migraciones validadas, seguridad de red, respaldo, rollback y controles de tenants shared/dedicated.
-- Utilizar base MySQL local/temporal con datos ficticios en la fase actual. No conectarse a VPS, importar producción, modificar DNS, desplegar ni activar servicios externos sin nueva decisión y autorización expresa del usuario.
-- En C01-03 se prepara el contrato de configuración y migración **sin credenciales reales**. La activación de Hostinger y el dominio queda fuera del alcance actual y no es bloqueo para desarrollar C01.
+### C01-02 — cierre integrado a dev
 
-### Formato obligatorio de reporte por avance
-
-Informar siempre: capítulo N/37, capítulos certificados; número total de microtareas de C01; cerradas/activas/pendientes; microtarea actual y la siguiente; rama y PR (borrador/abierto/fusionado); pruebas efectivamente ejecutadas, hallazgos y riesgos; estado de integración a dev/main y prohibición de pasar a C02 antes del acta. **Estado actual del control secuencial: 1 de 8 microtareas cerradas; C01-02 es la siguiente fase en orden.** El trabajo preliminar existente mantiene sus evidencias parciales.
-
-## Control documental de la microtarea C01-01
-
-- [Matriz de 34 párrafos y 21 filas originales](c01/C01_01_MATRIZ_REQUISITOS.md).
-- [Puertas, dependencias, riesgos y discrepancia DIF-C01-01](c01/C01_01_DEPENDENCIAS_Y_GATE.md).
-- [Prueba de cobertura y procedencia](../qa/c01_verify_source.py): aprobó en https://github.com/solqaryn-platform/CRECISOL/actions/runs/42518139216.
-
-**Estado:** C01-01 CERRADA TÉCNICAMENTE según [acta](c01/C01_01_ACTA_MICROFASE.md), tres auditorías A/B/C PASS, PR #11 fusionado. **1/8 microfases cerradas; 0/37 capítulos certificados.** C01-02 es la siguiente fase. Los códigos previos a C01-02 siguen provisionales en PR #10.
-
-## Auditoría y cierre delegado del primer hito
-
-La [microfase C01-01](c01/C01_01_ACTA_MICROFASE.md) fue cerrada documentalmente mediante tres auditorías reales A/B/C en CI [#42520255078](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42520255078) y PR [#11](https://github.com/solqaryn-platform/CRECISOL/pull/11) fusionado a `dev`. La nomenclatura literal del maestro MAE-C01-01…08 y la técnica C01-01…08 se mantienen explícitamente separadas y equivalentes sin editar Word. El propietario delegó cierre rutinario de microfases bajo evidencia; el capítulo sigue 0/37 certificado hasta C01-08 y su acta.
+La microfase C01-02 quedó fusionada con SHA `f0992d659e2a9535649d7a9cb0596d8ec9927479`, tras compilar el dominio net10.0 sin errores, ejecutar 51 pruebas y superar tres auditorías específicas A/B/C en CI. La CI post-merge de dev también aprobó. Los contratos no crean autorización de tenant ni servicios operativos; las obligaciones P0 de producto permanecen sin desplegar. [Acta verificable](c01/C01_02_ACTA_MICROFASE.md). La próxima microfase en secuencia es C01-03; el capítulo sigue sin certificación.
