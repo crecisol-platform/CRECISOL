@@ -1,0 +1,14 @@
+{
+  "scope": "Platform",
+  "scopeId": "00000000-0000-0000-0000-000000000000",
+  "revision": 1,
+  "status": "Published",
+  "name": "CRECISOL",
+  "slogan": "Tu negocio, a tu manera.",
+  "descriptor": "Comercio · Servicios · Membresías · Crecimiento",
+  "primaryColor": "#062E65",
+  "accentColor": "#078FE8",
+  "logoUrl": "/assets/crecisol-logo-oficial.png",
+  "websiteUrl": null,
+  "publishedAt": "2026-11-08T00:00:00Z"
+}
