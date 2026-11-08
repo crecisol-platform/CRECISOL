@@ -1,0 +1,63 @@
+# Credenciales y secretos — NUNCA versionar
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.kdbx
+secrets/
+**/secrets/
+**/appsettings.*.local.json
+**/appsettings.Production.json
+**/appsettings.Development.local.json
+**/service-account*.json
+**/credentials*.json
+**/id_rsa
+**/id_ed25519
+# Frontend / Node
+node_modules/
+.angular/
+.nx/
+dist/
+coverage/
+.playwright/
+test-results/
+playwright-report/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+# .NET
+bin/
+obj/
+.vs/
+TestResults/
+*.user
+*.suo
+# DB / local runtime
+*.sql.gz
+*.dump
+*.bak
+*.db
+*.sqlite
+*.sqlite3
+backups/
+data/
+mysql-data/
+*.log
+*.pid
+# Sistema y editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+# Build / render / QA temporal
+tmp/
+temp/
+.cache/
+__pycache__/
+.pytest_cache/
+*.pyc
