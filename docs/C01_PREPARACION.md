@@ -43,7 +43,7 @@ La compilación Angular 22 / .NET 10, el contrato HTTP inicial y las claves de M
 
 | Fase | Dependencia formal | Entregable / condición para cerrarla | Estado de cierre |
 | --- | --- | --- | --- |
-| C01-01 | Documento Maestro Único vigente | Matriz completa de los 34 párrafos y 21 filas fuente, dependencias, criterios verificables, riesgos y límites de C01 | **ACTIVA: sin cierre** |
+| C01-01 | Documento Maestro Único vigente | Matriz completa de los 34 párrafos y 21 filas fuente, dependencias, criterios verificables, riesgos y límites de C01 | **CERRADA TÉCNICAMENTE (tres auditorías PASS; PR #11 en dev)** |
 | C01-02 | C01-01 cerrada | Contratos tipados plataforma/tenant, borrador, vista previa, publicación y validaciones; definir reglas sin habilitar edición insegura | Pendiente de cierre; existe código preliminar |
 | C01-03 | C01-02 cerrada | Modelo MySQL 8.4, llaves, scopes, plan de migraciones, pruebas aisladas y estrategia de conexión parametrizada | Pendiente de cierre; DDL temporal ya probado |
 | C01-04 | C01-03 cerrada | Domain/Application/Infrastructure/API, solo lectura de marca publicada y seguridad de rutas privadas por denegación | Pendiente de cierre; API pública preliminar ya compilada |
@@ -66,7 +66,7 @@ El propietario informó que **podría existir una base de datos en un VPS de Hos
 
 ### Formato obligatorio de reporte por avance
 
-Informar siempre: capítulo N/37, capítulos certificados; número total de microtareas de C01; cerradas/activas/pendientes; microtarea actual y la siguiente; rama y PR (borrador/abierto/fusionado); pruebas efectivamente ejecutadas, hallazgos y riesgos; estado de integración a dev/main y prohibición de pasar a C02 antes del acta. **Estado inicial del control secuencial: 0 de 8 microtareas con cierre formal; activa C01-01.** El trabajo preliminar existente mantiene sus evidencias parciales.
+Informar siempre: capítulo N/37, capítulos certificados; número total de microtareas de C01; cerradas/activas/pendientes; microtarea actual y la siguiente; rama y PR (borrador/abierto/fusionado); pruebas efectivamente ejecutadas, hallazgos y riesgos; estado de integración a dev/main y prohibición de pasar a C02 antes del acta. **Estado actual del control secuencial: 1 de 8 microtareas cerradas; C01-02 es la siguiente fase en orden.** El trabajo preliminar existente mantiene sus evidencias parciales.
 
 ## Control documental de la microtarea C01-01
 
@@ -74,4 +74,8 @@ Informar siempre: capítulo N/37, capítulos certificados; número total de micr
 - [Puertas, dependencias, riesgos y discrepancia DIF-C01-01](c01/C01_01_DEPENDENCIAS_Y_GATE.md).
 - [Prueba de cobertura y procedencia](../qa/c01_verify_source.py): aprobó en https://github.com/solqaryn-platform/CRECISOL/actions/runs/42518139216.
 
-**Estado:** C01-01 extraída y verificada en lo documental; pendiente confirmación humana de equivalencia de numeración y aceptación de fase. **0/8 microtareas cerradas formalmente; 0/37 capítulos certificados.** No comenzar C01-02 hasta el cierre de C01-01; el código adelantado en PR #10 sigue provisional.
+**Estado:** C01-01 CERRADA TÉCNICAMENTE según [acta](c01/C01_01_ACTA_MICROFASE.md), tres auditorías A/B/C PASS, PR #11 fusionado. **1/8 microfases cerradas; 0/37 capítulos certificados.** C01-02 es la siguiente fase. Los códigos previos a C01-02 siguen provisionales en PR #10.
+
+## Auditoría y cierre delegado del primer hito
+
+La [microfase C01-01](c01/C01_01_ACTA_MICROFASE.md) fue cerrada documentalmente mediante tres auditorías reales A/B/C en CI [#42520255078](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42520255078) y PR [#11](https://github.com/solqaryn-platform/CRECISOL/pull/11) fusionado a `dev`. La nomenclatura literal del maestro MAE-C01-01…08 y la técnica C01-01…08 se mantienen explícitamente separadas y equivalentes sin editar Word. El propietario delegó cierre rutinario de microfases bajo evidencia; el capítulo sigue 0/37 certificado hasta C01-08 y su acta.

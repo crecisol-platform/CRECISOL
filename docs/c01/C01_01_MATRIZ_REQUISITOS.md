@@ -1,6 +1,6 @@
 # C01-01 · Matriz de requisitos y dependencias de la fuente canónica
 
-**Proyecto:** CRECISOL · **Fecha de control:** 2026-11-08 · **Estado:** inventario extraído y clasificado; cierre de fase sujeto a validación y conciliación de códigos.
+**Proyecto:** CRECISOL · **Fecha de control:** 2026-11-08 · **Estado:** inventario extraído y auditado para cierre técnico de C01-01; no significa que los requisitos de producto estén implementados.
 
 **Única autoridad:** `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx`, SHA-256 `e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e`, sección «01. CRECISOL: identidad, visión, alcance y principios», desde su introducción hasta §1.7. La matriz es **derivada, no segundo documento maestro**; las síntesis no sustituyen el texto fuente.
 
@@ -79,7 +79,7 @@ Se conservan tres identificadores por tabla y fila: `T01-Rnn` (capacidades), `T0
 
 **Inventariado** significa localizado, sintetizado y enlazado a un criterio observable; **no significa implementado ni probado**. Los encabezados P03, P11, P13, P16, P23, P30 y P34 son estructurales.
 
-- La API pública de marca y su compilación, el PNG extraído y las negativas SQL actuales constituyen **evidencia técnica preliminar** de algunas filas. La revisión funcional/visual integral y la validación cross-tenant siguen abiertas.
+- La API pública de marca y su compilación, el PNG extraído y las negativas SQL desarrolladas en **PR #10 (borrador, aún no integrado a dev)** constituyen **evidencia técnica preliminar** de algunas filas. La revisión funcional/visual integral y la validación cross-tenant siguen abiertas.
 - Pruebas de cobros, membresías, nómina, Cloudflare R2, DNS, mail, ERP y cumplimiento legal se **difieren a los capítulos específicos**; sus invariantes P0 no se omiten, solo se prohíbe afirmar cobertura prematura.
 - Hostinger VPS y `crecisol.com` son **destinos previstos por el maestro y datos reportados por el propietario**, sin verificación de propiedad, DNS, TLS ni accesos. No hay permiso para conectar ni desplegar ahora.
 - Se conserva una única instancia de cada obligación fuente; la presencia en ambos párrafo y tabla no permite considerarla duplicadamente completada.

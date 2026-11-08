@@ -1,6 +1,6 @@
 # C01-01 · Dependencias, discrepancia de secuencia y puerta de aceptación
 
-**Objeto:** extraer y analizar íntegramente el capítulo 01 conforme al Documento Maestro Único, sin desarrollar más fases. **Estado:** inventario preparado y sujeto a verificación y aceptación. No implica certificación de C01.
+**Objeto:** extraer y analizar íntegramente el capítulo 01 conforme al Documento Maestro Único, sin desarrollar más fases. **Estado:** inventario y dependencias validados en C01-01; cierre técnico pendiente de los tres controles y la integración por PR. No certifica C01. No implica certificación de C01.
 
 ## 1. Procedencia, recuento y límites
 
@@ -12,13 +12,13 @@
 
 ## 2. DIF-C01-01 · Dos secuencias con los mismos códigos
 
-**Hallazgo real:** el contrato interno del Word dice literalmente:
+**Hallazgo identificado y resuelto operativamente por doble nomenclatura:** el contrato interno del Word dice literalmente:
 
 > C01-01 Extraer / C01-02 Diseñar / C01-03 Codificar / C01-04 Probar / C01-05 Auditar A / C01-06 Auditar B / C01-07 Auditar C / C01-08 Acta.
 
 El plan operativo acordado después con el propietario define las ocho microtareas por entregables técnicos: requisitos, contratos, MySQL, API, Angular, logotipo, pruebas y auditorías/cierre. Ambas secuencias reutilizan C01-01…C01-08 pero **no expresan las mismas unidades de trabajo**. No se edita ni se silencia el maestro.
 
-Para mantener la secuencia operativa aprobada y garantizar todas las obligaciones originales, se propone la siguiente **equivalencia funcional**, que necesita validación humana antes del cierre formal de C01-01:
+Para mantener la secuencia operativa aprobada y garantizar todas las obligaciones originales, se conserva la siguiente **equivalencia funcional** aprobada para gestión técnica bajo la delegación expresa del propietario (8 de noviembre de 2026), sin alterar ni sustituir el Word:
 
 | Ciclo literal del Word | Microtarea(s) operativa(s) que entregan la evidencia | Criterio |
 | --- | --- | --- |
@@ -31,7 +31,7 @@ Para mantener la secuencia operativa aprobada y garantizar todas las obligacione
 | C01-07 Auditar C | C01-08: auditoría C independiente | Arquitectura, rendimiento, UI y accesibilidad |
 | C01-08 Acta | C01-08: acta de cierre | Aprobación expresa y habilitación de C02 |
 
-**Decisión pendiente:** aprobar esta distinción entre ciclo documental original y microtareas técnicas operativas. No certificar ni marcar C01-01 formalmente cerrada hasta aceptarla. La extracción y el análisis sí se pueden completar con seguridad antes de esa decisión.
+**Resolución de DIF-C01-01:** referencias **MAE-C01-01...MAE-C01-08** para los ocho pasos literales del maestro; referencias **C01-01...C01-08** para las ocho microfases técnicas operativas acordadas. La equivalencia de la tabla es exhaustiva (8 de 8). Es una convención documental derivada, no una enmienda al maestro. El usuario delegó auditoría y cierre rutinario de microfases sujetas a pruebas; la **certificación completa de C01** sigue reservada a C01-08 con acta y aceptación del capítulo.
 
 ## 3. Puertas de fase en orden estricto
 
@@ -75,7 +75,7 @@ En C01-03 solo se prepararán nombres de parámetros (sin valores secretos): Con
 
 | Hallazgo | Prioridad | Acción |
 | --- | --- | --- |
-| DIF-C01-01 · numeración duplicada | **P1 documental para cierre de C01-01** | Validación expresa de equivalencia; no cambiar Word |
+| DIF-C01-01 · numeración duplicada | **RESUELTO en C01-01** | Dos espacios de identificadores (MAE-C01-xx para maestro y C01-xx operativos); tabla 8/8, sin editar Word |
 | C01-RISK-02 · auth/tenant no implementados | **P0 producto** | No habilitar endpoints ni datos privados |
 | C01-RISK-03 · VPS/DNS no comprobados | P1 preparación futura | Usar únicamente configuración parametrizada sin secretos |
 | C01-RISK-04 · emisor/legal sin evidencia | P1 legal | No inventar entidad jurídica, compra de dominio ni emails |
@@ -90,11 +90,11 @@ En C01-03 solo se prepararán nombres de parámetros (sin valores secretos): Con
 - [x] Dependencias posteriores y los siete controles TEN identificados.
 - [x] Hostinger, dominio y datos jurídicos marcados NO VERIFICADO.
 - [x] Prueba reproducible de integridad y cobertura creada (ejecutar y conservar evidencia).
-- [ ] **DIF-C01-01:** aceptar la correspondencia de secuencias o resolver su denominación.
+- [x] **DIF-C01-01:** doble nomenclatura definida; 8 equivalencias documentadas sin modificar la fuente; decisión operativa bajo delegación del usuario.
 - [x] Verificación PASS del control de cobertura sobre el commit 04cfa9cc7e2711a15893f21c8f9e2c53a8bc0785; GitHub Actions #42518139216, tres trabajos aprobados.
-- [ ] Aceptación humana de cierre de C01-01.
+- [x] Cierre técnico de C01-01 bajo delegación: auditorías A/B/C reales aprobadas en CI #42520142623 y acta de microfase emitida; NO equivale a certificación de capítulo.
 
-**Decisión actual:** C01-01 **PREPARADA PARA VALIDACIÓN, NO CERRADA FORMALMENTE**. C01-02 no se inicia mientras falten sus puertas. El software continúa con **0/37 capítulos certificados**.
+**Decisión actual:** C01-01 **CERRADA TÉCNICAMENTE EN SU ALCANCE DOCUMENTAL**, con triple auditoría PASS verificada y acta de microfase; integración a dev mediante PR #11. C01-02 pasa a ser la siguiente microfase habilitada tras el merge; **0/37 capítulos certificados**.
 
 **Rollback:** revertir solo documentación y QA de C01-01 en feature/c01-identidad; sin escrituras en dev, main, VPS, producción o SOLQARYN.
 
@@ -106,3 +106,15 @@ En C01-03 solo se prepararán nombres de parámetros (sin valores secretos): Con
 - **Resultado:** PASS; sin omisiones ni duplicaciones de identificadores. El test verifica **estructura y presencia**, no prueba implementación real de cada requisito ni reemplaza revisión semántica y aceptación humana.
 - **CI restante:** frontend, backend y MySQL también aprobaron en la misma ejecución; son pruebas preliminares de C01, no cierres automáticos de fases futuras.
 - **No se han escrito datos productivos ni realizado despliegues.**
+
+### Nota de autoridad delegada de microfases
+
+El propietario autorizó expresamente revisión, pruebas, auditoría repetida, cierre técnico y merge a `dev` de microfases **sin nueva consulta rutinaria**, siempre que no existan bloqueantes y se preserve el Documento Maestro. Esta autorización no habilita producciones, compras, VPS, cobros, exposición de datos, escritura a SOLQARYN ni eludir las tres auditorías y el acta final del capítulo C01. El alcance C01-01 es documental: controles P0 de un SaaS todavía no desarrollado se mantienen abiertos, pero no se introducen interfaces privadas.
+
+### Cierre documental verificado
+
+- Auditoría A (funcional/trazabilidad): **PASS** — 34 anclas semánticas y 21 encabezados de fila fuente, 55 IDs, negativas por referencias omitidas y duplicadas.
+- Auditoría B (seguridad de alcance): **PASS** — PR #11 sin código de aplicación ni SQL; sin secretos, DSN o acceso remoto, con negativo de cadena insegura.
+- Auditoría C (arquitectura documental): **PASS** — 6 enlaces comprobados, ocho puertas secuenciales, nomenclatura MAE versus operativa y prueba negativa de enlace roto.
+- Evidencia: https://github.com/solqaryn-platform/CRECISOL/actions/runs/42520142623 (job Foundation, los tres pasos SUCCESS). Tras la actualización de esta acta, requiere una nueva ejecución PASS del commit final.
+- **Hallazgos dentro del alcance C01-01:** cero P0/P1 abiertos. Los P0/P1 del SaaS no implementado continúan pendientes para capítulos y microfases siguientes; no se han reinterpretado como resueltos.

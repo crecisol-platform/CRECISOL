@@ -17,10 +17,17 @@ jobs:
           persist-credentials: false
       - name: Validate foundation and scope
         run: python3 qa/validate_foundation.py
+      - name: Audit A / C01-01 canonical source and traceability
+        run: |
+          python3 qa/c01_verify_source.py
+          python3 qa/c01_01_three_audits.py A
+      - name: Audit B / C01-01 scope, security and non-deployment
+        if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feature/c01-01-')
+        run: python3 qa/c01_01_three_audits.py B
+      - name: Audit C / C01-01 documentation, phases and consistency
+        run: python3 qa/c01_01_three_audits.py C
       - name: Validate C01 contract and approved logo source (static only)
         run: python3 qa/c01_preflight.py
-      - name: Verify C01-01 canonical source coverage
-        run: python3 qa/c01_verify_source.py
       - name: Verify approved logo extraction from canonical Word
         run: python3 frontend/scripts/extract_brand_logo.py
       - name: Execute native Node brand contract tests (no packages)
