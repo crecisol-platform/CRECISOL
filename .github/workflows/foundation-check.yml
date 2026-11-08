@@ -26,6 +26,81 @@ jobs:
         run: python3 qa/c01_01_three_audits.py B
       - name: Audit C / C01-01 documentation, phases and consistency
         run: python3 qa/c01_01_three_audits.py C
+      - name: Validate C01 contract and approved logo source (static only)
+        run: python3 qa/c01_preflight.py
+      - name: Verify approved logo extraction from canonical Word
+        run: python3 frontend/scripts/extract_brand_logo.py
+      - name: Execute native Node brand contract tests (no packages)
+        run: node --test frontend/scripts/brand_contract.test.mjs
+
+  c01-build:
+    name: C01 build Angular 22 and .NET 10 (no deploy)
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feature/c01-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Set up Node.js 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Verify runtime versions
+        run: |
+          node --version
+          npm --version
+          node -e 'const [major,minor]=process.versions.node.split(".").map(Number);if(major!==24||minor<15)process.exit(1)'
+      - name: Install frontend dependencies and generate lockfile for review
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+      - name: Build Angular 22 with the original logo
+        working-directory: frontend
+        run: npm run build
+      - name: Run public branding contract tests
+        working-directory: frontend
+        run: npm run test:contract
+      - name: Set up .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Report SDK version
+        run: dotnet --version
+      - name: Build ASP.NET Core API
+        run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo
+      - name: Execute C01 domain negative tests
+        run: dotnet run --project backend/tests/Crecisol.Branding.SmokeTests/Crecisol.Branding.SmokeTests.csproj -c Release
+      - name: Smoke-test running local API and deny untrusted requests
+        run: |
+          set -euo pipefail
+          ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5180 \
+            dotnet run --no-build --no-launch-profile --configuration Release \
+            --project backend/src/Crecisol.Api/Crecisol.Api.csproj >/tmp/crecisol-c01-api.log 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          if ! python3 qa/c01_http_smoke.py; then
+            cat /tmp/crecisol-c01-api.log
+            exit 1
+          fi
+
+
+  c01-mysql-schema:
+    name: C01 MySQL 8.4 isolated schema and negative checks
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feature/c01-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Exercise only disposable MySQL 8.4 with networking disabled
+        run: bash database/tests/c01_brand_schema_smoke.sh
 
   c01-02-contracts:
     name: C01-02 .NET10 contract build and 3 microphase audits

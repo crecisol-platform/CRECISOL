@@ -1,16 +1,16 @@
-# Backend CRECISOL
+# CRECISOL · Backend del capítulo 01
 
-Área reservada para ASP.NET Core 10 / net10.0, Clean Architecture y módulos verticales ligeros. Domain independiente, Application por casos de uso, Infrastructure con adaptadores, API delgada, Workers con outbox cuando se implementen.
+API pública de marca con ASP.NET Core 10, Domain / Application / Infrastructure. Solo lectura, sin autorización de tenant ni edición.
 
-Tenancy, auth, privacidad, historial y superadministración se validan en servidor. No existe API ejecutable todavía.
+**CI verificada:** SDK .NET 10.0.403, compilación Release, 11 grupos de pruebas de dominio y contrato HTTP local, aprobados en https://github.com/solqaryn-platform/CRECISOL/actions/runs/42516130198.
 
-## C01-02 · Contratos de identidad (código real)
+## Ejecución local (requiere SDK .NET 10)
 
-El Domain (net10.0) está implementado sin dependencias NuGet de terceros. Contiene BrandSnapshot, validación de marca y estilos, estados Draft/Published, preview descriptivo y propuesta de publicación SIN ejecutor. Se puede reproducir la prueba con SDK .NET 10:
+```bash
+ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5180 dotnet run --project backend/src/Crecisol.Api/Crecisol.Api.csproj
+dotnet run --project backend/tests/Crecisol.Branding.SmokeTests/Crecisol.Branding.SmokeTests.csproj
+```
 
-~~~sh
-dotnet build backend/tests/Crecisol.Branding.ContractsTests/Crecisol.Branding.ContractsTests.csproj -c Release
-dotnet run --no-build -c Release --project backend/tests/Crecisol.Branding.ContractsTests/Crecisol.Branding.ContractsTests.csproj
-~~~
+Endpoint público: `GET /api/v1/public/branding/platform`.
 
-En GitHub Actions #42521639367 compiló con cero advertencias/errores y ejecutó 51 aserciones. **Aún no existe API ejecutable integrada en dev, MySQL conectado, login ni endpoints administrativos**; las futuras integraciones requieren pruebas propias. [Contrato y límites](../docs/c01/C01_02_CONTRATOS.md).
+La fuente JSON está versionada para bootstrap, **no** es un CMS ni persistencia MySQL real. No hay endpoints de tenant, login, SuperAdmin ni escritura. No habilitar esas superficies sin autenticación y autorización backend; la consulta pública no otorga permisos.

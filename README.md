@@ -6,7 +6,7 @@ Repositorio privado e independiente. El Documento Maestro Único institucional s
 
 ## Estado inicial del desarrollo — 8 de noviembre de 2026
 
-- **37 capítulos documentados, 0 capítulos certificados en código.** La fase 1 corresponde al capítulo 01: identidad, visión, alcance y principios.
+- **37 capítulos documentados, 0 capítulos certificados en código.** La fase 1 (capítulo 01: identidad, visión, alcance y principios) está en desarrollo, sin certificación.
 - `main`: integración estable de documentación y cambios revisados; no presume software ya certificado.
 - `dev`: integración de desarrollo; tareas nuevas en `feature/cNN-*` y PR.
 - El repositorio contiene arquitectura, normas, estructura y verificaciones preliminares; **todavía no existe un SaaS operativo, infraestructura desplegada ni cobros**.
