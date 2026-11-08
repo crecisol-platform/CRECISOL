@@ -8,6 +8,6 @@
 - ADR-006: modalidades de cobro/PSP definitivos y cumplimiento legal quedan fuera de código local hasta integración autorizada.
 - ADR-007: presupuestos de rendimiento y máximos por plan se fijan tras benchmarks sintéticos.
 - ADR-008: protección de ramas y políticas de merge deben confirmarse realmente en GitHub; ver docs/REPOSITORY_GATES.md.
-- ADR-009: subir la copia exacta del Documento Maestro Único al repositorio y validar su SHA; pendiente.
+- ADR-009 (CERRADA, 2026-11-08): Documento Maestro Único Word y PDF subidos y comparados con originales por blob Git y SHA-256; evidencia en docs/MASTER_REFERENCE.md. No acredita certificación del software.
 
 Las decisiones abiertas no bloquean leer el plan ni preparar la estructura, pero sí los cierres técnicos correspondientes. No cerrarlas por intuición.

@@ -1,14 +1,21 @@
-# Único Documento Maestro CRECISOL — autoridad documental
+# Documento Maestro Único — fuente canónica CRECISOL
 
-**Nombre canónico:** CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx  
-**Versión de lectura:** CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf  
-**Fecha de consolidación aportada:** 2026-11-08  
-**SHA-256 de la copia DOCX recibida en esta conversación:** a43a0ea0c7988cd52dc6a7912b63a3055abdff2188062014e69caa19c69e3c71
+**Estado documental:** cargado y verificado en GitHub (2026-11-08). **No implica software implementado ni seguridad certificada.**
 
-La copia editada de Word y su PDF existen como artefactos de la conversación. **Los archivos binarios todavía no se han incorporado a este repositorio.** Para evitar duplicación, no crear otros planes maestros o resúmenes alternativos que pretendan sustituirlos.
+| Formato | Ruta | Tamaño | Git blob SHA-1 | SHA-256 del archivo original |
+| --- | --- | ---: | --- | --- |
+| Word editable, autoridad | `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` | 262754 bytes | `33148ae1b4c3a1c89efba7cae9fea73a8ff2fb2a` | `a43a0ea0c7988cd52dc6a7912b63a3055abdff2188062014e69caa19c69e3c71` |
+| PDF de lectura / impresión | `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf` | 3396652 bytes | `b56d038dc891ad4cdafd26884704190c8b7069b0` | `305c36e803310f0ab473d80ae2b2cf825bec7d5944d2c9037836a53c526a1992` |
 
-**Ubicación prevista al cargarlos:** docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx y docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf. Verificar el hash de Word al subirlo, nunca tratar un enlace sin copia verificada como documentación certificada.
+## Evidencia de integridad
+- Se calcularon SHA-256 y blob hash Git sobre los dos archivos originales disponibles en el entorno de trabajo.
+- Se compararon los blob hashes y tamaños con los objetos reales almacenados en `solqaryn-platform/CRECISOL` en las ramas `dev` y `main`. Los dos coincidieron exactamente.
+- SHA-256 acredita los originales locales; la coincidencia exacta del Git blob enlaza esos originales con el contenido subido. No se infiere el SHA-256 de un mero nombre de archivo.
+- Para futuras modificaciones, recalcular y registrar ambos hashes en el mismo PR; no generar otra autoridad maestra.
 
-El documento contiene 37 capítulos y el contrato transversal actualizado de seguridad, bases compartidas/dedicadas, registro, login automático sin selector, superadministración y seguimiento universal de expedientes. Esta referencia informa alcance; **no acredita pruebas de software**.
+## Alcance
+Este es el único Documento Maestro Único de CRECISOL, de 37 capítulos, con sus ampliaciones transversales de aislamiento de tenants (shared y dedicated), identidades y accesos, login contextual sin selector, SuperAdmin con acceso auditado, parametrización, diseño visual, previsualizaciones y seguimiento universal de pedidos/citas/expedientes.
 
-Hasta que exista una copia canónica accesible con hash aprobado en el repositorio: NO_GO para certificar cualquier capítulo. No bloquea estructurar el repositorio ni iniciar documentación preliminar del capítulo 01.
+**Regla de trabajo:** consultar el documento por capítulo; desarrollar C01 antes de C02, y así sucesivamente hasta C37. Tres auditorías, pruebas reales y aceptación para declarar un capítulo CERTIFICADO. Este documento no sustituye pruebas de Angular/.NET/MySQL ni una certificación.
+
+**Proyecto exclusivamente CRECISOL:** prohibidas las escrituras a `solqaryn/Solqaryn`; etapa actual solo desarrollo local, código, documentación y pruebas; sin despliegues ni producción.
