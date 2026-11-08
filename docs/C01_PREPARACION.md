@@ -1,6 +1,6 @@
 # Fase 1 · Capítulo 01 — CRECISOL: identidad, visión, alcance y principios
 
-**Estado:** LISTO PARA INICIAR IMPLEMENTACIÓN; NO DESARROLLADO, NO PROBADO, NO CERTIFICADO. Progreso: **0/37 capítulos certificados**. Fuente: edición canónica de `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` y `docs/MASTER_REFERENCE.md`.
+**Estado:** EN DESARROLLO; C01-01 cerrada, C01-02 con código de dominio compilado y auditado; capítulo NO CERTIFICADO. Progreso: **0/37 capítulos certificados**. Fuente: edición canónica de `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` y `docs/MASTER_REFERENCE.md`.
 
 ## Contrato de alcance
 
@@ -38,7 +38,7 @@ El usuario autorizó el 8 de noviembre de 2026 que cada microfase se **valide, r
 | Microfase técnica | Entregable y dependencia | Estado |
 | --- | --- | --- |
 | C01-01 | Matriz de 34 párrafos + 21 filas, anexos, dependencias, tres auditorías del entregable, acta | CERRADA DOCUMENTALMENTE (tres auditorías A/B/C PASS; PR #11 autorizado a dev) |
-| C01-02 | Contratos tipados y modelo de ámbito; requiere C01-01 cerrada | PENDIENTE; código adelantado en PR #10 solo provisional |
+| C01-02 | Contratos tipados y modelo de ámbito; requiere C01-01 cerrada | CIERRE TÉCNICO EN VALIDACIÓN FINAL (51 pruebas PASS y auditorías A/B/C PASS; PR #13) |
 | C01-03 | Diseño MySQL 8.4, migración/configuración futura; requiere C01-02 | PENDIENTE |
 | C01-04 | Caso de uso y API .NET; requiere C01-03 | PENDIENTE |
 | C01-05 | UI Angular, responsive, accesibilidad y navegador; requiere C01-04 | PENDIENTE |
@@ -53,3 +53,7 @@ El usuario autorizó el 8 de noviembre de 2026 que cada microfase se **valide, r
 ### Cierre técnico delegado de C01-01
 
 C01-01 conserva **55 identificadores** (34 párrafos y 21 filas de tablas) y registra otras dos tablas suplementarias. **Tres auditorías diferenciadas PASS** en la CI de solo lectura: https://github.com/solqaryn-platform/CRECISOL/actions/runs/42520142623. El usuario autorizó verificaciones y cierres rutinarios sin nueva consulta; PR documental #11 queda autorizado para integración en `dev` una vez aprobado el commit final. **Progreso: 1/8 microfases cerradas, 0/37 capítulos certificados**; C01-02 es la siguiente fase por dependencia. Esto no certifica software productivo ni autoriza tocar Hostinger.
+
+### C01-02: evidencia y cierre delegado
+
+[C01-02 · Contratos](c01/C01_02_CONTRATOS.md) y [acta de microfase](c01/C01_02_ACTA_MICROFASE.md). El Domain .NET 10 compiló con **0 errores y 0 advertencias**, se ejecutaron **51 aserciones** y las tres auditorías A/B/C aprobaron en [CI #42521639367](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42521639367). La decisión final de cierre se toma solo si el commit de acta y el PR #13 vuelven a pasar CI y GitHub confirma el merge. **C01-03 sigue bloqueada hasta entonces; 0/37 capítulos certificados.** Ningún endpoint, base de datos, panel ni infraestructura fue activado.
