@@ -1,0 +1,63 @@
+name: CRECISOL C01-03 MySQL integrity gate
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'database/c01_03_brand_schema.sql'
+      - 'database/tests/c01_03_mysql_smoke.sh'
+      - 'qa/c01_03_three_audits.py'
+      - 'docs/c01/C01_03_MODELO_MYSQL.md'
+      - 'docs/c01/C01_03_ACTA_MICROFASE.md'
+      - '.github/workflows/c01-03-check.yml'
+permissions:
+  contents: read
+
+jobs:
+  c01-03-audits:
+    name: C01-03 audits A B C
+    if: startsWith(github.head_ref, 'feature/c01-03-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Audit A canonical requirements and tests
+        run: python3 qa/c01_03_three_audits.py A
+      - name: Audit B cross-scope negative integrity and secret boundary
+        run: python3 qa/c01_03_three_audits.py B
+      - name: Audit C NET10 mapping, indexes, reversibility and documentation
+        run: python3 qa/c01_03_three_audits.py C
+
+  c01-03-mysql:
+    name: C01-03 real MySQL 8.4 isolated SQL tests
+    if: startsWith(github.head_ref, 'feature/c01-03-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Exercise DDL on disposable network-disabled MySQL 8.4
+        run: bash database/tests/c01_03_mysql_smoke.sh
+
+  c01-03-domain:
+    name: C01-03 NET10 domain regression
+    if: startsWith(github.head_ref, 'feature/c01-03-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile Domain contract tests
+        run: dotnet build backend/tests/Crecisol.Branding.ContractsTests/Crecisol.Branding.ContractsTests.csproj -c Release --nologo
+      - name: Execute Domain positive and negative regression tests
+        run: dotnet run --no-build -c Release --project backend/tests/Crecisol.Branding.ContractsTests/Crecisol.Branding.ContractsTests.csproj
