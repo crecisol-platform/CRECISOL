@@ -1,0 +1,139 @@
+name: CRECISOL C02-09 integral chapter audit and acceptance gate
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c02/C02_09_*'
+      - 'docs/C02_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'qa/c02_09_*'
+      - '.github/workflows/c02-09-integral.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c02/C02_09_*'
+      - 'docs/C02_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'qa/c02_09_*'
+      - '.github/workflows/c02-09-integral.yml'
+permissions:
+  contents: read
+jobs:
+  c02-integral:
+    name: C02-09 real Word + A/B/C + 58 C02 Chromium + MySQL8.4/.NET10
+    if: startsWith(github.head_ref, 'feature/c02-09-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout CRECISOL with no persisted write token
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Validate canonical Word chapter 02, original matrix, Python and shell
+        run: |
+          python3 -m py_compile qa/c02_01_source.py qa/c02_02_audits.py qa/c02_03_audits.py qa/c02_04_audits.py qa/c02_05_audits.py qa/c02_06_audits.py qa/c02_07_audits.py qa/c02_08_audits.py qa/c02_09_integral_audits.py
+          bash -n qa/c01_07_real_stack.sh
+          python3 -m json.tool docs/c02/C02_08_RECORRIDOS_CONTRATOS.json > /dev/null
+          python3 qa/c02_01_source.py A
+          mkdir -p .c02-09-ci-proof
+          printf 'PASS: source\n' > .c02-09-ci-proof/source
+      - name: Regress all A/B/C gates C02-01 through C02-08 and negative mutations
+        run: |
+          python3 qa/c02_01_source.py B
+          python3 qa/c02_01_source.py C
+          for script in qa/c02_02_audits.py qa/c02_03_audits.py qa/c02_04_audits.py qa/c02_05_audits.py qa/c02_06_audits.py qa/c02_07_audits.py qa/c02_08_audits.py; do
+            python3 "$script" A
+            python3 "$script" B
+            python3 "$script" C
+          done
+          printf 'PASS: c02-regressions\n' > .c02-09-ci-proof/c02-regressions
+      - name: Install .NET10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install Node24.15.0 for Angular22
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Restore lockfile without lifecycle scripts and audit production dependencies
+        run: |
+          npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
+          cd frontend && npm audit --omit=dev --audit-level=high
+      - name: Install real Chromium in disposable runner
+        run: cd frontend && npx playwright install --with-deps chromium
+      - name: Typecheck and build production Angular22 with approved canonical assets
+        run: |
+          cd frontend
+          npm run check:types
+          npm run build
+          npm run test:assets
+          printf 'PASS: build\n' > ../.c02-09-ci-proof/build
+      - name: Reject isolated pattern harness within production browser bundle
+        run: |
+          cd frontend
+          test -f dist/crecisol-web/browser/index.html
+          if grep -R -F 'Patrones de formularios y tablas' dist/crecisol-web/browser/ --include='*.js'; then
+            echo 'ERROR: synthetic UI reached public production bundle'
+            exit 1
+          fi
+          if grep -R -F 'cs-pattern-harness' dist/crecisol-web/browser/ --include='*.js'; then
+            echo 'ERROR: synthetic Angular bootstrap reached production'
+            exit 1
+          fi
+          npx ng build --configuration pattern-harness
+          printf 'PASS: harness\n' > ../.c02-09-ci-proof/harness
+      - name: Regression C01 25 public Chromium brand, version and accessible identity checks
+        run: |
+          cd frontend
+          npx playwright test tests/c01-05.public-brand.spec.ts tests/c01-06.official-integration.spec.ts tests/c01-08.brand-revision.spec.ts --reporter=line
+          printf 'PASS: c01-browser\n' > ../.c02-09-ci-proof/c01-browser
+      - name: Regression C02 19 public route and state Chromium
+        run: |
+          cd frontend
+          npx playwright test tests/c02-03.public-information.spec.ts tests/c02-04.private-paths.spec.ts tests/c02-05.interaction-states.spec.ts --reporter=line
+      - name: Regression C02 8 isolated synthetic form/table Chromium
+        run: cd frontend && npm run test:c02-06
+      - name: Regression C02 10 public mobile WCAG automated Chromium
+        run: cd frontend && npx playwright test tests/c02-07.mobile-accessibility.spec.ts --reporter=line
+      - name: Regression C02 5 isolated mobile-accessibility Chromium
+        run: cd frontend && npx playwright test --config=playwright.patterns-a11y.config.ts --reporter=line
+      - name: Regression C02 11 public journey and private-denial Chromium
+        run: cd frontend && npx playwright test tests/c02-08.journeys-public.spec.ts --reporter=line
+      - name: Regression C02 5 isolated synthetic journey Chromium
+        run: |
+          cd frontend
+          npx playwright test --config=playwright.journeys-patterns.config.ts --reporter=line
+          printf 'PASS: c02-browser\n' > ../.c02-09-ci-proof/c02-browser
+      - name: Compile existing ASP.NET Core10 public branding API Release
+        run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo
+      - name: Run 51 positive/negative Domain contract assertions
+        run: |
+          dotnet run -c Release --project backend/tests/Crecisol.Branding.ContractsTests/Crecisol.Branding.ContractsTests.csproj
+          printf 'PASS: domain\n' > .c02-09-ci-proof/domain
+      - name: Run 19 Application contract assertions
+        run: |
+          dotnet run -c Release --project backend/tests/Crecisol.Branding.ApplicationTests/Crecisol.Branding.ApplicationTests.csproj
+          printf 'PASS: application\n' > .c02-09-ci-proof/application
+      - name: Live disposable MySQL8.4 API Angular Chromium and 37 HTTP security cases
+        run: |
+          bash qa/c01_07_real_stack.sh
+          printf 'PASS: live-stack\n' > .c02-09-ci-proof/live-stack
+      - name: INTEGRAL AUDIT A - Word, 17 source IDs and eight technical actas
+        run: python3 qa/c02_09_integral_audits.py A
+      - name: INTEGRAL AUDIT B - tenant/privacy boundaries and public live-stack
+        run: python3 qa/c02_09_integral_audits.py B
+      - name: INTEGRAL AUDIT C - Angular, .NET, MySQL, mobile UX and build isolation
+        run: python3 qa/c02_09_integral_audits.py C
+      - name: Upload diagnostics only after a real failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: C02-09-integral-failure-only
+          path: |
+            frontend/test-results/
+            frontend/test-results-patterns/
+            frontend/test-results-c02-07-harness/
+            frontend/test-results-c02-08-harness/
+          if-no-files-found: ignore
+          retention-days: 3
