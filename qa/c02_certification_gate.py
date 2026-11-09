@@ -3,7 +3,7 @@
 
 MUST be invoked in CI AFTER all C02-09 A/B/C, Angular, Chromium, .NET and
 disposable MySQL integration steps have actually succeeded. This does not
-grant backend-private security or permit production/C03 development.
+grant backend-private security, C04 progress or production deployment.
 """
 from copy import deepcopy
 from pathlib import Path
@@ -47,14 +47,30 @@ def validate_content(files):
             "C03 **HABILITABLE PERO NO INICIADO**" in prep[:1700],
             "Effective C02 and C03 status not updated")
     require("2/37 capítulos certificados (C01 y C02)" in plan[:2000] and
-            "**CERTIFICADO C02" in chapter_row and
-            "9/9" in chapter_row and
-            "**HABILITABLE UNA VEZ CERTIFICADO C02**; NO INICIADO" in c03_row,
-            "37-chapter plan promotes next chapter prematurely or loses C02")
+            "**CERTIFICADO C02" in chapter_row and "9/9" in chapter_row,
+            "C02 certification/2-of-37 was changed")
+    # After C02 certification, opening *only* C03-01 is legitimate. Historical
+    # C02 acta remains a snapshot; C04 must stay locked until C03 acceptance.
+    c03_active = "**EN DESARROLLO C03-01 (0/10)**" in c03_row
+    if c03_active:
+        c03_file = ROOT / "docs/C03_PREPARACION.md"
+        require(c03_file.is_file(), "C03 opened with no preparation/impact gate")
+        c03_doc = c03_file.read_text(encoding="utf-8")
+        require("0/10" in c03_doc and "C03-01" in c03_doc and
+                "C03 NO CERTIFICADO" in c03_doc and
+                "C04 BLOQUEADO" in c03_doc and
+                "C03 NO CERTIFICADO" in c03_row and
+                "C04 BLOQUEADO" in c03_row and
+                "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE" in plan,
+                "Unauthorized C03/C04 promotion after C02 certification")
+    else:
+        require("**HABILITABLE UNA VEZ CERTIFICADO C02**; NO INICIADO" in c03_row,
+                "C03 started without a controlled C03-01 entry gate")
     require("2/37 capítulos certificados (C01 y C02)" in reference and
             "«APROBADO»" in reference and
-            "C03 será habilitable pero **no iniciado**" in reference,
-            "Canonical master reference conflicts with certified state")
+            (("C03-01 activada" in reference) if c03_active
+             else ("C03 será habilitable pero **no iniciado**" in reference)),
+            "Canonical master reference conflicts with C03 sequential state")
     require("C02 CERTIFICADO POR ACEPTACIÓN EXPRESA «APROBADO»" in timeline[:600] and
             "9/9" in timeline[:600] and
             "**NO INICIADO**" in timeline[:1500],
@@ -78,8 +94,9 @@ def validate_content(files):
     require("WCAG" in acceptance and "panel administrativo" in acceptance
             and "pagos" in acceptance and "producción" in acceptance,
             "Certification may not imply private/production feature readiness")
-    require("HABILITABLE UNA VEZ CERTIFICADO C02" in c03_row and
-            "NO INICIADO" in c03_row,
+    require(("EN DESARROLLO C03-01 (0/10)" in c03_row) if c03_active
+            else ("HABILITABLE UNA VEZ CERTIFICADO C02" in c03_row
+                  and "NO INICIADO" in c03_row),
             "C03 planning boundary missing")
     # Old audit statutes remain clearly labelled historical, not current.
     require("Antecedente histórico" in plan and
@@ -103,9 +120,9 @@ def main():
         ("falsified chapter count", "plan",
          "2/37 capítulos certificados (C01 y C02)",
          "3/37 capítulos certificados (C01 y C02)"),
-        ("C03 started without scope", "plan",
-         "**HABILITABLE UNA VEZ CERTIFICADO C02**; NO INICIADO",
-         "**YA INICIADO**"),
+        ("C03 advanced beyond C03-01", "plan",
+         "**EN DESARROLLO C03-01 (0/10)**",
+         "**C03 CERTIFICADO 10/10**"),
         ("forged technical evidence SHA", "acta", HEAD_PRECERT, "0" * 40),
         ("missing privacy caveat", "acta", "NO** se certifican", "SI** se certifican"),
     ]
