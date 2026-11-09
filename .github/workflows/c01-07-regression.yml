@@ -1,0 +1,88 @@
+name: CRECISOL C01-07 real full-stack security regression
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'qa/c01_07_*'
+      - 'frontend/playwright.c01-07.config.ts'
+      - 'frontend/tests/c01-07.real-stack.spec.ts'
+      - 'docs/c01/C01_07_*'
+      - '.github/workflows/c01-07-regression.yml'
+      - 'docs/C01_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+  push:
+    branches: [dev]
+    paths:
+      - 'qa/c01_07_*'
+      - 'frontend/playwright.c01-07.config.ts'
+      - 'frontend/tests/c01-07.real-stack.spec.ts'
+      - 'docs/c01/C01_07_*'
+      - '.github/workflows/c01-07-regression.yml'
+      - 'docs/C01_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+permissions:
+  contents: read
+jobs:
+  real-stack:
+    name: C01-07 MySQL 8.4 + ASP.NET 10 + Angular 22 + Chromium + A B C
+    if: startsWith(github.head_ref, 'feature/c01-07-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Read-only checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install Node 24.15.0
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Verify canonical Word and traceability source
+        run: python3 qa/c01_verify_source.py
+      - name: Syntax-check real-stack shell and final Python auditor
+        run: |
+          bash -n qa/c01_07_real_stack.sh
+          python3 -m py_compile qa/c01_07_audits.py
+      - name: Restore pinned Angular dependencies
+        run: npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
+      - name: Verify no high-severity production dependency vulnerabilities
+        run: cd frontend && npm audit --omit=dev --audit-level=high
+      - name: Install Chromium in temporary runner
+        run: cd frontend && npx playwright install --with-deps chromium
+      - name: Compile Angular types
+        run: cd frontend && npm run check:types
+      - name: Build Angular with production bundle budgets and real official assets
+        run: cd frontend && npm run build && npm run test:assets
+      - name: Re-run C01-05 and C01-06 Chromium regression on unchanged public UI
+        run: |
+          cd frontend
+          npx playwright test tests/c01-05.public-brand.spec.ts tests/c01-06.official-integration.spec.ts --reporter=line
+          mkdir -p ../.c01-07-ci-proof
+          printf 'PASS: browser-legacy\n' > ../.c01-07-ci-proof/browser-legacy
+      - name: Build actual .NET API in Release
+        run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo
+      - name: Regression 51 Domain contracts
+        run: dotnet run -c Release --project backend/tests/Crecisol.Branding.ContractsTests/Crecisol.Branding.ContractsTests.csproj
+      - name: Regression Application positive and negative cases
+        run: dotnet run -c Release --project backend/tests/Crecisol.Branding.ApplicationTests/Crecisol.Branding.ApplicationTests.csproj
+      - name: Live disposable MySQL/API/Angular/Chromium positive and negative suite
+        run: bash qa/c01_07_real_stack.sh
+      - name: FINAL A audit — canonical traceability and actual cases
+        run: python3 qa/c01_07_audits.py A
+      - name: FINAL B audit — platform/tenant, auth, host, cache, fail-closed
+        run: python3 qa/c01_07_audits.py B
+      - name: FINAL C audit — runtime architecture, performance budgets, WCAG
+        run: python3 qa/c01_07_audits.py C
+      - name: Preserve test diagnostics ONLY if runner fails
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: C01-07-failed-browser-diagnostics
+          path: frontend/test-results/
+          if-no-files-found: ignore
+          retention-days: 3
