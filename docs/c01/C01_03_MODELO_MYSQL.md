@@ -33,3 +33,7 @@ Para un esquema **de prueba** vacío, eliminar en este orden: `brand_publication
 ## Evidencia de validación
 
 [CI MySQL 8.4 + Domain .NET 10 + A/B/C #42541568404](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42541568404): MySQL 8.4.13 con 9 positivos, 22 negativos y reversión sintética, 51 pruebas Domain .NET 10, tres auditorías A/B/C aprobadas. La [acta C01-03](C01_03_ACTA_MICROFASE.md) conserva límites y condiciones de cierre. Pin de imagen de MySQL y acta deben pasar CI del último HEAD antes de integrar, sin acceso a producción.
+
+## Evaluación de compatibilidad del proveedor .NET (sin incorporarlo)
+
+Se verificó el 8 de noviembre de 2026 el candidato **MySqlConnector 2.6.2** en el [registro oficial NuGet](https://www.nuget.org/packages/MySqlConnector/2.6.2), que declara compatibilidad de paquetes con **net10.0**, y la [matriz oficial de servidores MySqlConnector](https://mysqlconnector.net/), que contempla **MySQL 8.4**. Esto es una **evaluación documental de compatibilidad declarada**, no una prueba de conexión .NET↔MySQL ni una selección aprobada de proveedor. C01-03 sí ejecutó el DDL en MySQL 8.4.13 real y compiló los contratos .NET 10; la prueba de adapter/proveedor, GUID bytes, UTC, autenticación y pooling sigue bloqueada para C01-04 antes de uso operativo. La dependencia NuGet no se introduce al Domain ni a la solución de producción.
