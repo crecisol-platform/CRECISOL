@@ -118,7 +118,9 @@ def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else None
     require(mode in ('A', 'B', 'C'), 'invalid audit mode')
     {'A': audit_a, 'B': audit_b, 'C': audit_c}[mode]()
+    certified = 'ESTADO: CERTIFICADO C01' in read('docs/c01/C01_08_AUDITORIA_Y_ACTA.md')
     print('PASS C01-08 INTEGRAL audit', mode,
+          '(technical evidence; acceptance registered)' if certified else
           '(technical evidence only; owner acceptance PENDING)')
 
 
