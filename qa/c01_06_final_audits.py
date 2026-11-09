@@ -29,9 +29,15 @@ def audit(kind):
         page = read('frontend/src/app/pages/platform-home.component.html')
         check('assetPattern' in contract and 'safeAsset' in contract,
               'Same-origin published asset validation absent')
+        typescript = read('frontend/src/app/pages/platform-home.component.ts')
+        index = read('frontend/src/index.html')
         check('onHeaderAssetError' in page and 'onLogoError' in page
-              and '/assets/crecisol-emblem.png' in page,
-              'Header and hero missing-asset handling absent')
+              and '[src]="asset.url"' in page
+              and 'headerAssetFailedKey' in typescript
+              and 'brand.presentation?.faviconUrl' in typescript
+              and '/assets/crecisol-emblem.png' not in page
+              and '/assets/crecisol-emblem.png' not in index,
+              'Header/hero fallback and published-icon validation absent')
         check(sha256(full).hexdigest() == APPROVED_SHA, 'Wrong official logo bytes')
     else:
         check(BOX == (390,16,948,553), 'Emblem geometry changed')
