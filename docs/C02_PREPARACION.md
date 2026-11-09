@@ -1,6 +1,6 @@
 # CRECISOL — Capítulo 02 · Personas, experiencias y arquitectura de producto
 
-**Estado:** C02 EN DESARROLLO; **C02-01, C02-02 y C02-03 CERRADAS TÉCNICAMENTE (3/9)**; actas [C02-01](c02/C02_01_ACTA_MICROFASE.md), [C02-02](c02/C02_02_ACTA_MICROFASE.md) y [C02-03](c02/C02_03_ACTA_MICROFASE.md). Solo C01 certificado (**1/37 capítulos**); C02 **NO CERTIFICADO**, C03 bloqueado. C02-04 **EN DESARROLLO** (diseño contractual de navegación privada sin rutas activas ni autorización implementada), con avance **3/9** hasta completar A/B/C, CI, acta y postmerge.
+**Estado:** C02 EN DESARROLLO; **C02-01, C02-02, C02-03 y C02-04 CERRADAS TÉCNICAMENTE (4/9)**; actas [C02-01](c02/C02_01_ACTA_MICROFASE.md), [C02-02](c02/C02_02_ACTA_MICROFASE.md), [C02-03](c02/C02_03_ACTA_MICROFASE.md) y [C02-04](c02/C02_04_ACTA_MICROFASE.md). Solo C01 certificado (**1/37 capítulos**); C02 **NO CERTIFICADO**, C03 bloqueado. C02-04 es **diseño de navegación privada no operativa** y C02-05 la siguiente microfase habilitable después de CI del acta, **aún no iniciada**.
 
 **Puerta de entrada ya comprobada:** C01 certificado en PR [#29](https://github.com/solqaryn-platform/CRECISOL/pull/29), SHA integrado `c4f688edeb63d8b032ea40a85559486cddd00809`, con 4 GitHub Actions postmerge SUCCESS, incluida [C01-08 #42613271746](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42613271746). Aceptación expresa del propietario en acta `docs/c01/C01_08_AUDITORIA_Y_ACTA.md`. Fuente maestra única Word SHA-256 `e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e`.
 
@@ -17,8 +17,8 @@ El capítulo 02 del Word establece seis experiencias: landing SaaS, contratació
 | C02-01 | Inventario de personas, contextos, seis experiencias y restricciones | **CERRADA TÉCNICAMENTE**: PR #30, merge `f40ab1ec47731eddd4b55a4f28a311b3800e68f4`, PR acta #31 y CI postmerge #42617017733 SUCCESS |
 | C02-02 | Necesidades y tareas por experiencia | **CERRADA TÉCNICAMENTE**: PR #32, merge `455987893827cb5b25d4b127457efd81225267b7`; 6 experiencias, 18 necesidades, 7 pasos, 11 negativos de contrato, A/B/C y CI postmerge #42619923854 SUCCESS, acta documentada (2/9) |
 | C02-03 | Arquitectura de información y rutas públicas | **CERRADA TÉCNICAMENTE**: PR #34, merge `6ccd98960f36dce3407392fd26406366b4cd0650`, 4 rutas públicas (3 lazy informativas), 8/8 Chromium y A/B/C; CI postmerge #42624454291 SUCCESS, C01-08 integral #42624454085 SUCCESS; acta de cierre (3/9) |
-| C02-04 | Navegación privada propuesta y controles backend requeridos | **EN DESARROLLO**: cuatro contextos E03–E06, doce tareas N07–N18, matriz backend deny-by-default, parametrización administrativa prevista y negativos de rutas privadas; diseño **NO OPERATIVO** hasta C05/C06 |
-| C02-05 | Estados universales de interacción | PENDIENTE |
+| C02-04 | Navegación privada propuesta y controles backend requeridos | **CERRADA TÉCNICAMENTE (diseño)**: PR #36, SHA `ecb7807e79427d5059c8b5f4ee0c5dd2195b7cb5`; 4 contextos E03–E06 y 12 necesidades, 18 negativos de contrato, 12/12 Chromium, auditorías A/B/C y CI postmerge #42630487933 SUCCESS; **sin rutas privadas, backend auth ni DB** (4/9) |
+| C02-05 | Estados universales de interacción | **SIGUIENTE habilitable**, todavía PENDIENTE; C02-04 no implementó pantallas privadas |
 | C02-06 | Patrones de formularios y tablas UX | PENDIENTE |
 | C02-07 | Diseño móvil y accesibilidad basal | PENDIENTE |
 | C02-08 | Recorridos y contratos de experiencia; tests reales | PENDIENTE |
