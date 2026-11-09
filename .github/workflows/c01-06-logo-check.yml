@@ -18,12 +18,32 @@ on:
       - 'qa/c01_06_official_assets.py'
       - 'qa/c01_06_final_audits.py'
       - '.gitignore'
+      - 'docs/C01_PREPARACION.md'
+  push:
+    branches: [dev]
+    paths:
+      - 'qa/c01_06_logo_candidate.py'
+      - 'docs/c01/C01_06_LOGO_CANDIDATO.md'
+      - '.github/workflows/c01-06-logo-check.yml'
+      - 'frontend/tests/c01-06.logo-candidate.spec.ts'
+      - 'frontend/tests/c01-06.platform-logo-preview.spec.ts'
+      - 'frontend/src/app/pages/platform-home.component.ts'
+      - 'frontend/src/app/pages/platform-home.component.html'
+      - 'frontend/src/app/pages/platform-home.component.css'
+      - 'frontend/src/index.html'
+      - 'frontend/package.json'
+      - 'frontend/tests/c01-05.public-brand.spec.ts'
+      - 'frontend/tests/c01-06.official-integration.spec.ts'
+      - 'qa/c01_06_official_assets.py'
+      - 'qa/c01_06_final_audits.py'
+      - '.gitignore'
+      - 'docs/C01_PREPARACION.md'
 permissions:
   contents: read
 jobs:
   candidate:
     name: C01-06 canonical extraction and preliminary security checks
-    if: startsWith(github.head_ref, 'feature/c01-06-')
+    if: startsWith(github.head_ref, 'feature/c01-06-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -52,7 +72,7 @@ jobs:
 
   c01-06-browser-isolated:
     name: C01-06 integrated Angular logo header, regression and final A B C audits
-    if: startsWith(github.head_ref, 'feature/c01-06-')
+    if: startsWith(github.head_ref, 'feature/c01-06-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
