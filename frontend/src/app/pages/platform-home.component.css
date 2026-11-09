@@ -35,11 +35,16 @@
   min-height: 90px; display: flex; align-items: center;
   justify-content: space-between; gap: 2rem;
 }
-.wordmark {
-  display: inline-flex; align-items: center; gap: 12px; font-weight: 850;
-  font-size: 1.18rem; letter-spacing: .075em; text-decoration: none;
-  min-height: 48px; text-transform: uppercase; color: #102c52;
+ .wordmark {
+  display: inline-flex; align-items: center; gap: 11px; font-weight: 850;
+  font-size: 1.12rem; letter-spacing: .035em; text-decoration: none;
+  min-height: 56px; text-transform: uppercase; color: #102c52;
 }
+.header-brand-icon {
+  display: block; flex: 0 0 auto; width: 52px; height: 50px;
+  object-fit: contain; border-radius: 9px; background: white;
+}
+.wordmark-name { overflow-wrap: normal; white-space: nowrap; }
 .wordmark-line {
   display: inline-block; width: 4px; height: 26px;
   border-radius: 10px; background: var(--brand-primary); flex-shrink: 0;
@@ -224,8 +229,9 @@
 }
 @media (max-width: 700px) {
   .content-wrap, .header-inner { width: min(100% - 36px, 1180px); }
-  .header-inner { min-height: 76px; align-items: flex-start; flex-direction: column; gap: 1px; padding-block: 13px; }
-  .wordmark { min-height: 37px; font-size: 1rem; }
+  .header-inner { min-height: 76px; align-items: flex-start; flex-direction: column; gap: 1px; padding-block: 12px; }
+  .wordmark { min-height: 51px; font-size: .99rem; gap: 9px; }
+  .header-brand-icon { width: 45px; height: 44px; }
   .wordmark-line { height: 20px; }
   .primary-nav { gap: 4px; width: 100%; }
   .primary-nav a { padding: .62rem .83rem; font-size: .85rem; }
@@ -249,4 +255,18 @@
   .art-tile-front { top: 78px; min-height: 175px; }
   .art-tile-back { top: 31px; }
   .hero-description { font-size: 1.04rem; }
+}
+
+/* C01-06: published-platform logo slot, not an embedded or approved graphic. */
+.brand-art-decor { position: absolute; inset: 0; }
+.brand-art-logo {
+  position: absolute; z-index: 2; inset: 0; margin: auto;
+  width: min(92%, 600px); height: calc(100% - 48px);
+  background: #fff; object-fit: contain; border-radius: 18px;
+  opacity: 0; pointer-events: none;
+}
+.brand-art--logo-ready .brand-art-logo { opacity: 1; }
+.brand-art--logo-ready .brand-art-decor { visibility: hidden; }
+@media (max-width: 700px) {
+  .brand-art-logo { width: min(94%, 600px); height: calc(100% - 28px); border-radius: 12px; }
 }

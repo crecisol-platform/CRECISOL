@@ -61,3 +61,7 @@ temp/
 __pycache__/
 .pytest_cache/
 *.pyc
+
+# C01-06: deterministic, SHA-verified assets generated from the approved Word
+frontend/public/assets/crecisol-oficial.png
+frontend/public/assets/crecisol-emblem.png
