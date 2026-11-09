@@ -1,6 +1,6 @@
 # Fase 1 · Capítulo 01 — CRECISOL: identidad, visión, alcance y principios
 
-**Estado:** EN DESARROLLO; C01-01, C01-02 y C01-03 cerradas técnicamente; C01 continúa NO CERTIFICADO, 0/37; capítulo NO CERTIFICADO. Progreso: **0/37 capítulos certificados**. Fuente: edición canónica de `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` y `docs/MASTER_REFERENCE.md`.
+**Estado:** EN DESARROLLO; C01-01, C01-02, C01-03 y C01-04 cerradas técnicamente (4/8); capítulo C01 NO CERTIFICADO, 0/37. Progreso: **0/37 capítulos certificados**. Fuente: edición canónica de `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` y `docs/MASTER_REFERENCE.md`.
 
 ## Contrato de alcance
 
@@ -40,7 +40,7 @@ El usuario autorizó el 8 de noviembre de 2026 que cada microfase se **valide, r
 | C01-01 | Matriz de 34 párrafos + 21 filas, anexos, dependencias, tres auditorías del entregable, acta | CERRADA DOCUMENTALMENTE (tres auditorías A/B/C PASS; PR #11 autorizado a dev) |
 | C01-02 | Contratos tipados y modelo de ámbito; requiere C01-01 cerrada | **CERRADA TÉCNICAMENTE**: 51/51 aserciones, A/B/C PASS, PR #13 fusionado a dev |
 | C01-03 | Diseño MySQL 8.4, migración/configuración futura; requiere C01-02 | **CERRADA TÉCNICAMENTE**: MySQL 8.4 9/9+22/22, 51 contratos net10, A/B/C PASS, PR #16 fusionado a dev |
-| C01-04 | Caso de uso y API .NET; requiere C01-03 | VALIDADA EN CI #42556858527: .NET 10 51+19 aserciones, MySQL 8.4.13, 37 HTTP, A/B/C PASS; cierre sujeto a merge PR #18 |
+| C01-04 | Caso de uso y API .NET; requiere C01-03 | **CERRADA TÉCNICAMENTE**: PR #18 integrado; .NET10 51+19, MySQL 8.4.13, 37 HTTP, A/B/C PASS, CI post-merge |
 | C01-05 | UI Angular, responsive, accesibilidad y navegador; requiere C01-04 | PENDIENTE |
 | C01-06 | Logo y su presencia visual verificados; requiere C01-05 | PENDIENTE |
 | C01-07 | Pruebas positivas, negativas, seguridad y regresión; requiere C01-06 | PENDIENTE |
@@ -70,4 +70,4 @@ El PR #15 incorporó el DDL inicial a dev antes de las pruebas, sin certificaci�
 
 Rama `feature/c01-04-public-brand-api`, partiendo de `dev` SHA `abf0351ff4400eb1b999abaf5659549cfacbe3fa`. Alcance: puerto y caso de uso de identidad pública, adaptador MySQL read-only, único GET de marca PLATFORM publicada y pruebas SQL/HTTP negativas con contenedor MySQL 8.4 descartable. [Contrato y límites](c01/C01_04_API_PUBLICA.md). No se integra PR #10, ni se inicia C01-05. Cierre de C01-04 condicionado a build real net10, pruebas positivas/negativas, auditorías A/B/C, acta y PR revisado. El capítulo C01 permanece **0/37 certificados**.
 
-**C01-04 validación:** [CI real #42556858527](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42556858527) y [acta técnica](c01/C01_04_ACTA_MICROFASE.md), verificados contra MySQL 8.4.13 y API net10. El primer run falló al limpiar un volumen temporal (corregido); el último pasó 3/3 jobs. Para declarar microfase cerrada falta CI final del HEAD y merge revisado a dev. No certifica C01 ni autoriza C01-05 antes del cierre.
+**C01-04 validación:** [CI real #42556858527](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42556858527) y [acta técnica](c01/C01_04_ACTA_MICROFASE.md), verificados contra MySQL 8.4.13 y API net10. El primer run falló al limpiar un volumen temporal (corregido); el último pasó 3/3 jobs. Cierre verificado: [CI final #42557022367](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42557022367), [PR #18 fusionado](https://github.com/solqaryn-platform/CRECISOL/pull/18) a SHA `9addbedd3c33c77c9be15fe25a391f9167a05ef5` y [post-merge #42557167001](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42557167001). C01-04 CERRADA técnicamente (4/8); C01-05 habilitada como siguiente microfase sin saltar pruebas. C01 sigue NO CERTIFICADO, 0/37.
