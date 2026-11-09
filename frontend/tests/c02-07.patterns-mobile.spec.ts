@@ -73,7 +73,7 @@ test('synthetic scope changes require keyboard-operable modal before discarding 
   await page.getByTestId('switch-context').click();
   const dialog = page.getByRole('dialog', { name: '¿Cambiar el ejemplo?' });
   await expect(dialog).toBeVisible();
-  await checkControls(page, 'cs-pattern-harness dialog button');
+  await checkControls(page, 'cs-pattern-harness > main > dialog button');
   await expect(dialog.getByRole('button', { name: 'Conservar borrador' })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(dialog).not.toBeVisible();
