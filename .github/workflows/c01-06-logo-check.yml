@@ -1,0 +1,39 @@
+name: CRECISOL C01-06 candidate graphic gate
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'qa/c01_06_logo_candidate.py'
+      - 'docs/c01/C01_06_LOGO_CANDIDATO.md'
+      - '.github/workflows/c01-06-logo-check.yml'
+permissions:
+  contents: read
+jobs:
+  candidate:
+    name: C01-06 canonical logo candidate and audits A B C
+    if: startsWith(github.head_ref, 'feature/c01-06-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Extract exact unapproved candidate to disposable runner
+        run: python3 qa/c01_06_logo_candidate.py --extract-dir /tmp/c01-06-candidate
+      - name: Execute positive and adversarial negative tests
+        run: python3 qa/c01_06_logo_candidate.py --tests
+      - name: Preliminary audit A
+        run: python3 qa/c01_06_logo_candidate.py --audit A
+      - name: Preliminary audit B
+        run: python3 qa/c01_06_logo_candidate.py --audit B
+      - name: Preliminary audit C
+        run: python3 qa/c01_06_logo_candidate.py --audit C
+      - name: Upload private candidate for human comparison (NOT APPROVED)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: C01-06-candidate-NOT-APPROVED
+          path: /tmp/c01-06-candidate/*
+          if-no-files-found: error
+          retention-days: 3
+          compression-level: 0
