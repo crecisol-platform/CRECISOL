@@ -1,3 +1,5 @@
+using Crecisol.Domain.Common;
+
 namespace Crecisol.Domain.Branding;
 
 public enum BrandScope { Platform = 1, Tenant = 2 }
@@ -30,13 +32,10 @@ public sealed record BrandSnapshot(
 
     public BrandSnapshot Validate()
     {
-        if (!Enum.IsDefined(Scope) || !Enum.IsDefined(Status))
-            throw new InvalidOperationException("Unknown brand scope or publication status.");
-        if ((Scope == BrandScope.Platform && ScopeId != Guid.Empty) ||
-            (Scope == BrandScope.Tenant && ScopeId == Guid.Empty))
-            throw new InvalidOperationException("Brand scope and identifier disagree.");
-        if (Revision < 1)
-            throw new InvalidOperationException("Brand revision must be positive.");
+        BrandScopeKey.Create(Scope, ScopeId);
+        if (!Enum.IsDefined(Status))
+            throw new InvalidOperationException("Unknown publication status.");
+        DomainRevision.From(Revision);
 
         BrandValidation.RequireText(Name, 2, 100, nameof(Name));
         BrandValidation.RequireText(Slogan, 2, 160, nameof(Slogan));
