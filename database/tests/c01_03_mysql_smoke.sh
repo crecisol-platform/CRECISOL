@@ -44,7 +44,7 @@ expect_denied() {
 }
 
 docker run --rm -d --network none --name "$CONTAINER" \
-  -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -e MYSQL_DATABASE="$DB" mysql:8.4 >/dev/null
+  -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -e MYSQL_DATABASE="$DB" mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902 >/dev/null
 
 ready=0
 for i in $(seq 1 90); do
