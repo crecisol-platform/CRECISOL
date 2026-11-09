@@ -1,7 +1,7 @@
 # C01-05 · Acta técnica de Angular 22, SEO, responsive y accesibilidad
 
 **Fecha:** 2026-11-08 en Honduras (evidencias GitHub Actions 2026-11-09 UTC).  
-**Estado:** AUDITORÍAS Y PRUEBAS APROBADAS; **CI y cierre definitivo sujetos al último HEAD del PR #20, revisión del diff y merge a dev.**  
+**Estado:** **C01-05 CERRADA TÉCNICAMENTE EN DEV (5/8 microfases)** tras auditorías A/B/C, Angular22/Chromium/WCAG y merge con CI post-merge confirmado. **Capítulo C01 NO CERTIFICADO (0/37)**.  
 **Avance permitido:** C01-01/02/03/04 ya cerradas; C01-05 en validación; C01 NO CERTIFICADO, 0/37 capítulos.  
 **Origen:** único Documento Maestro CRECISOL SHA-256 e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e, matriz C01-01, C01_PREPARACION y API C01-04.
 
@@ -34,8 +34,12 @@
 
 ## Revisión final y reversión
 
-**Pendiente para certificar/cerrar esta microfase:** CI final verde sobre el HEAD que incluya esta acta, revisar exactamente los archivos afectados, comprobar sin secrets/otros proyectos, integrar PR #20 solo a dev, ver CI post-merge y documentar el cierre en PR documental. La delegación de cierre técnico de microfases figura en docs/C01_PREPARACION.md; no autoriza C02 ni despliegues.
+**Cierre acreditado:** [CI final PR #20 #42558828236](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42558828236) SUCCESS 3/3 sobre HEAD `a605deba5015425638afa25fb48101c889a9d4bf` (incluye esta acta), [foundation #42558828156](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42558828156) SUCCESS; [PR #20](https://github.com/solqaryn-platform/CRECISOL/pull/20) fusionado solo a `dev`, SHA `b902193b954d29f22dbdf8da9b22e48680f45dcd`; [CI de fundación post-merge #42558999820](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42558999820) SUCCESS sobre ese merge. Diff revisado: 26 archivos exclusivamente de frontend, qa, CI y documentación C01-05, sin código backend/database ni secretos. Delegación de cierres de microfase en docs/C01_PREPARACION.md; no autoriza C02 ni despliegues.
 
 **Reversión:** revertir el PR #20 vía PR independiente. Sin datos reales, infraestructura, fichero gráfico oficial o servicios de producción que restaurar.
 
 **Secuencia:** tras C01-05 CERRADA, iniciar **C01-06** únicamente para el logo aprobado; C01-07 seguridad/regresión integral y C01-08 auditorías/aceptación; 0/37 capítulos certificados hasta evidencia posterior.
+
+## Cierre documental y siguiente dependencia
+
+**Resultado C01-05:** CERRADA TÉCNICAMENTE (Angular 22, interfaz pública, SEO limitado, responsive, automatización WCAG y negativas navegador), tras CI final del código y post-merge dev. Son **5/8 microfases** cerradas. Siguiente permitida **C01-06**: identidad visual del logotipo aprobado, sin redibujar, deformar ni sustituir; requiere el archivo individual auténtico y evidencia de procedencia. C01-07/08 siguen pendientes; **0/37 capítulos certificados**.
