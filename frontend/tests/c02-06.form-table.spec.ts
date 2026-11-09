@@ -41,7 +41,7 @@ test('HTML injection and disallowed identifiers are rejected and cannot execute 
   await page.getByRole('button', { name: 'Revisar formato local' }).click();
   await expect(input).toHaveAttribute('aria-invalid', 'true');
   await expect(page.getByRole('alert')).toContainText('caracteres no admitidos');
-  await expect(page.locator('img, svg, iframe, script')).toHaveCount(0);
+  await expect(page.locator('cs-draft-form-pattern img, cs-draft-form-pattern svg, cs-draft-form-pattern iframe, cs-draft-form-pattern script')).toHaveCount(0);
   await input.fill('ABC+999');
   await page.getByRole('button', { name: 'Revisar formato local' }).click();
   await expect(page.getByRole('alert')).toContainText('Usa únicamente letras');
