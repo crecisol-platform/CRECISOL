@@ -54,3 +54,9 @@ Se auditan **seis recorridos J01..J06**, cinco estados universales, **18 necesid
 4. Rollback: revert por PR de los cambios C02-09 en `dev`; cero migraciones, producción, secretos, datos reales o activos externos. La rama `main` queda sin cambios.
 
 **El alcance certificable, cuando proceda la aceptación, es solamente diseño/contratos y superficies públicas y sintéticas C02, no módulos privados ni SaaS terminado.**
+## 6. Registro de incidencia de ejecución GitHub Actions (9 de noviembre de 2026)
+
+El PR técnico [#46](https://github.com/solqaryn-platform/CRECISOL/pull/46) produjo los runs [C02-09 #42671364236](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42671364236) y [Foundation #42671364308](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42671364308), ambos con `conclusion=failure`, pero **0 jobs registrados** según `/actions/runs/{id}/jobs`; ningún comando de prueba llegó a ejecutarse. El panel GitHub mostró literalmente `Internal server error`, correlation ID `29b94ae6-a363-4b4f-8e85-0495c23fc0b1` para el primero. El reintento de trabajos fallidos desde API devolvió `403: This workflow run cannot be retried`, al no existir jobs. Esto **no** acredita fallos de código, pero **tampoco es un PASS**. No hay evidencia de un problema de facturación.
+
+Para obtener evidencia sin eludir controles se registra este incidente en una nueva revisión de documentación del **mismo PR**, lo que dispara un workflow de `pull_request` sobre un HEAD distinto. Se conserva íntegro el YAML de las pruebas, los requisitos A/B/C y los gates de 58 Chromium, .NET10 y MySQL8.4. Si GitHub vuelve a fallar antes de crear jobs, corresponde escalar a GitHub Support aportando el correlation ID: **NO_GO, no fusionar, no crear acta de 9/9 y no certificar**. Solo la ejecución real y completa de todos los checks habilita su revisión posterior. El estado vigente es **8/9 técnicas cerradas, C02 NO CERTIFICADO, C03 BLOQUEADO**.
+
