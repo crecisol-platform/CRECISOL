@@ -179,11 +179,22 @@ def audit_c():
         next_acta_path = ROOT / "docs/c02/C02_02_ACTA_MICROFASE.md"
         if next_acta_path.exists():
             next_acta = next_acta_path.read_text(encoding="utf-8")
-            require("2/9" in plan and "C02-02" in plan and
+            third_path = ROOT / "docs/c02/C02_03_ACTA_MICROFASE.md"
+            if third_path.exists():
+                third = third_path.read_text(encoding="utf-8")
+                require("3/9" in plan and
+                        "C02-03 CERRADA TÉCNICAMENTE" in third and
+                        "6ccd98960f36dce3407392fd26406366b4cd0650" in third and
+                        "42624454291" in third,
+                        "C02-03 advancement requires SHA and real postmerge evidence")
+            else:
+                require("2/9" in plan,
+                        "C02-02 closure must remain 2/9 until C02-03 acta")
+            require("C02-02" in plan and
                     "C02-02 CERRADA TÉCNICAMENTE" in next_acta and
                     "455987893827cb5b25d4b127457efd81225267b7" in next_acta and
                     "42619923854" in next_acta,
-                    "C02-02 advancement requires original technical SHA and real CI")
+                    "C02-02 provenance requires technical SHA and real CI")
         else:
             require("1/9" in plan,
                     "Closed C02-01 must retain 1/9 until following acta")

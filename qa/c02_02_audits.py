@@ -230,8 +230,18 @@ def audit_c():
             "NO CERTIFICADO" in plan, "Chapter certification/sequence gate changed")
     if ACTA.is_file():
         acta = ACTA.read_text(encoding="utf-8")
-        require("2/9" in plan and "C02-02" in plan and "CERRADA TÉCNICAMENTE" in plan,
-                "Closed C02-02 needs consistent 2/9 status")
+        next_acta_path = ROOT / "docs/c02/C02_03_ACTA_MICROFASE.md"
+        if next_acta_path.exists():
+            next_acta = next_acta_path.read_text(encoding="utf-8")
+            require("3/9" in plan and
+                    "C02-03 CERRADA TÉCNICAMENTE" in next_acta and
+                    "6ccd98960f36dce3407392fd26406366b4cd0650" in next_acta and
+                    "42624454291" in next_acta,
+                    "C02-03 advancement requires technical SHA and postmerge CI")
+        else:
+            require("2/9" in plan, "C02-02 closure must remain 2/9 until next acta")
+        require("C02-02" in plan and "CERRADA TÉCNICAMENTE" in plan,
+                "Earlier microphase closure cannot be removed")
         require(all(m in acta for m in (
             "C02-02 CERRADA TÉCNICAMENTE", "POSTMERGE", "NO CERTIFICADO",
             "C02-03", "PR #32", "455987893827cb5b25d4b127457efd81225267b7",
