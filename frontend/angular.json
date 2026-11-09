@@ -45,6 +45,15 @@
             "development": {
               "optimization": false,
               "sourceMap": true
+            },
+            "pattern-harness": {
+              "optimization": false,
+              "sourceMap": true,
+              "browser": "tests/pattern-harness/main.ts",
+              "index": "tests/pattern-harness/index.html",
+              "tsConfig": "tsconfig.patterns.json",
+              "outputPath": "dist/crecisol-pattern-harness",
+              "assets": []
             }
           },
           "defaultConfiguration": "production"
@@ -55,6 +64,9 @@
             "development": {
               "buildTarget": "crecisol-web:build:development",
               "proxyConfig": "proxy.conf.json"
+            },
+            "pattern-harness": {
+              "buildTarget": "crecisol-web:build:pattern-harness"
             }
           },
           "defaultConfiguration": "development"
