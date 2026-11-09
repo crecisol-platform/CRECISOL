@@ -1,6 +1,6 @@
 # CRECISOL — Capítulo 03 · Arquitectura técnica limpia y dependencias
 
-**ESTADO VIGENTE: C03-01 CERRADA TÉCNICAMENTE Y ACEPTADA EXPRESAMENTE PARA CERTIFICACIÓN (1/10 microfases); formalización documental condicionada a CI PREMERGE y POSTMERGE del acta. C03 NO CERTIFICADO; C04 BLOQUEADO.** El capítulo anterior C02 está certificado por aceptación humana expresa el 9 de noviembre de 2026; C01+C02 = **2/37 capítulos certificados**. No se inicia C03-02 ni se habilita C04.
+**ESTADO VIGENTE: 2/37 capítulos CERTIFICADOS (C01+C02); C03-01 CERTIFICADA y C03-02 CERRADA TÉCNICAMENTE CON ACEPTACIÓN HUMANA ESPECÍFICA (2/10 microfases), formalización C03-02 condicionada a CI PREMERGE/POSTMERGE del acta. C03 NO CERTIFICADO; C04 BLOQUEADO.** La certificación previa C03-01 y los tres workflows exitosos del PR técnico #51 permiten formalizar C03-02 sin habilitar C03-03 automáticamente. C01+C02 siguen siendo los únicos **2/37 capítulos** certificados.
 
 ## Puerta de entrada verificada
 
@@ -12,9 +12,9 @@
 
 | Microfase | Entrega técnica | Estado vigente |
 | --- | --- | --- |
-| C03-01 | Inventario y mapa de módulos, grafo acíclico .NET/Angular y negativos | **CERRADA TÉCNICAMENTE (1/10) CON ACEPTACIÓN HUMANA EXPRESA**, sujeta a CI PREMERGE y POSTMERGE del PR documental de cierre. [Acta y evidencia 7/7 CI](c03/C03_01_ACTA_MICROFASE.md), [especificación](c03/C03_01_ESPECIFICACION.md), [grafo máquina](c03/C03_01_MODULOS_DEPENDENCIAS.json); [PR técnico #49](https://github.com/solqaryn-platform/CRECISOL/pull/49) fusionado a `dev` SHA `7217fb1e720f16c71d5a654f605eca96d81deb58` |
-| C03-02 | Contratos Domain puros | **HABILITABLE TRAS CI FINAL C03-01, PERO NO INICIADA**; necesita rama, especificación y tres auditorías propias |
-| C03-03 | Puertos y casos de uso Application | **PENDIENTE** |
+| C03-01 | Inventario y mapa de módulos, grafo acíclico .NET/Angular y negativos | **CERTIFICADA (1/10)**: acta [C03-01](c03/C03_01_ACTA_MICROFASE.md), PR #50 a `dev` SHA `8e4f25073a3f11150e4323ecb66380647f0cdc0b`, 7/7 CI POSTMERGE SUCCESS; alcance previo histórico preservado |
+| C03-02 | Contratos Domain puros | **CERRADA TÉCNICAMENTE, ACEPTADA PARA CERTIFICACIÓN (2/10)**, formalización CI del acta pendiente: [acta](c03/C03_02_ACTA_MICROFASE.md), [especificación](c03/C03_02_ESPECIFICACION.md), PR [#51](https://github.com/solqaryn-platform/CRECISOL/pull/51) SHA `adc975c7bcf4b6a772cc160a5b377d26af2b5fa6` 3/3 POSTMERGE SUCCESS; A/B/C y contratos reales |
+| C03-03 | Puertos y casos de uso Application | **HABILITABLE PARA PLANIFICAR TRAS CI FINAL C03-02; NO INICIADA** |
 | C03-04 | Adaptadores Infrastructure | **PENDIENTE** |
 | C03-05 | Contratos API/DTO, validación y errores | **PENDIENTE** |
 | C03-06 | Módulos verticales/DI, sin Service Locator | **PENDIENTE** |
@@ -25,7 +25,7 @@
 
 Este calendario técnico deriva de la [propuesta C03](planificacion-futura/C03_MICROFASES_PROPUESTAS.md) ya contrastada con el Word y queda subordinado a su texto; no reescribe las ocho puertas normativas ni certifica fases futuras.
 
-## Alcance de la primera microfase y arquitectura real
+## Arquitectura real y límites de C03-01/C03-02
 
 - **Backend físico actual:** `Crecisol.Domain` puro; `Crecisol.Application` → Domain; `Crecisol.Infrastructure` → Application (adaptador MySqlConnector); `Crecisol.Api` → Application e Infrastructure. Comprobar con `ProjectReference` reales, ciclos, paquetes y compilación .NET 10, sin crear nuevos módulos de negocio.
 - **Frontend actual:** una aplicación pública Angular 22 con rutas allowlist y laboratorio `pattern-harness` aislado, no las dos apps sugeridas por el Maestro. No añadir login, editor, shells privados ni guards como autorización.
@@ -38,3 +38,8 @@ Este calendario técnico deriva de la [propuesta C03](planificacion-futura/C03_M
 Auditoría **A**: fuente Word real y matriz 16 IDs; **B**: diez mutaciones adversariales y denegación de avances/cambios ilegales; **C**: grafo .NET exacto, Angular público, .NET10/Angular22 y MySQL8.4/API solo de publicación pública mediante CI real. Revisión del diff, secretos, enlaces, impacto en permisos/PII, rollback por revert, CI PREMERGE y POSTMERGE del SHA exacto. El [acta C03-01](c03/C03_01_ACTA_MICROFASE.md) registra aceptación humana literal «CERTIFICA POR FAVOR LA MICROFASE 1 DEL BLOQUE 3», evidencia 7/7 CI POSTMERGE del PR técnico y decisión **C03-01 CERRADA TÉCNICAMENTE (1/10)**. Su formalización definitiva se subordina a **todas** las CI PREMERGE/POSTMERGE del PR documental de cierre, sin confundirlas con el PR técnico. **Capítulo C03 NO CERTIFICADO, C04 BLOQUEADO**.
 
 **Ambiente y costes:** exclusivamente documentación, QA, CI y código de prueba; sin modificar `frontend/src/`, `backend/src/`, `database/` ni `main`, SOLQARYN, VPS, DNS, hosting, pagos o producción. No activar automatizaciones ni servicios externos.
+
+
+## Puerta de salida C03-02 (formalización específica)
+
+El [PR técnico #51](https://github.com/solqaryn-platform/CRECISOL/pull/51) se fusionó solo a `dev` SHA `adc975c7bcf4b6a772cc160a5b377d26af2b5fa6`; GitHub verificó **3/3 CI POSTMERGE SUCCESS**: [Domain A/B/C #42701725556](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42701725556), [Foundation #42701724980](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42701724980), [C03-01 integral #42701725339](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42701725339). .NET10 Release 0 errores, 35 nuevos casos Domain, 51 C01 Domain, 19 Application, 5 mutaciones adversariales rechazadas; 83 Chromium y MySQL8.4/API/Angular públicos en regresión. El propietario autorizó específicamente formalizar C03-02 en respuesta a la solicitud explícita de acta/certificación: «adelante con ello por favor» (9 noviembre 2026). [Acta C03-02](c03/C03_02_ACTA_MICROFASE.md). **Esta autorización no extiende la cobertura a autenticación privada, tenant routing dedicado, C03-03, C04, producción, pagos ni VPS**. Al verificar CI PREMERGE y POSTMERGE del PR documental, **C03-02 CERTIFICADA (2/10)**; antes de ese gate sigue **CERRADA TÉCNICAMENTE / FORMALIZACIÓN EN CURSO**. C03 no certificado.
