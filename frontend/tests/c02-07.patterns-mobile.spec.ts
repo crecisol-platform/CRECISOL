@@ -11,7 +11,9 @@ async function noDocumentOverflow(page: Page): Promise<void> {
 }
 
 async function checkControls(page: Page, selector: string): Promise<void> {
-  for (const item of await page.locator(selector).all()) {
+  const controls = page.locator(selector);
+  expect(await controls.count(), 'At least one relevant control must exist').toBeGreaterThan(0);
+  for (const item of await controls.all()) {
     await expect(item).toBeVisible();
     const box = await item.boundingBox();
     expect(box).not.toBeNull();
@@ -33,7 +35,7 @@ test('synthetic form and table reflow at 320, 360, 768 and 1280 CSS pixels', asy
     await expect(page.getByRole('heading', { level: 1, name: 'Patrones de formularios y tablas' })).toBeVisible();
     await expect(page.getByRole('table', { name: 'Tabla sintética de lectura' })).toBeVisible();
     await noDocumentOverflow(page);
-    await checkControls(page, '.testing-controls button, cs-draft-form-pattern button:not([disabled]), cs-table-pattern th button');
+    await checkControls(page, '.testing-controls button, cs-draft-form-pattern form button:not([disabled]), cs-table-pattern th button');
     if (width === 320) {
       const scroll = await page.locator('.table-scroll').evaluate(el => ({
         total: el.scrollWidth, visible: el.clientWidth
@@ -71,7 +73,7 @@ test('synthetic scope changes require keyboard-operable modal before discarding 
   await page.getByTestId('switch-context').click();
   const dialog = page.getByRole('dialog', { name: '¿Cambiar el ejemplo?' });
   await expect(dialog).toBeVisible();
-  await checkControls(page, 'cs-pattern-harness > dialog button');
+  await checkControls(page, 'cs-pattern-harness dialog button');
   await expect(dialog.getByRole('button', { name: 'Conservar borrador' })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(dialog).not.toBeVisible();
