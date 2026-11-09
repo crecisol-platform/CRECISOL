@@ -1,0 +1,96 @@
+name: CRECISOL C02-05 universal interaction states and fail-closed UX
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c02/C02_05_*'
+      - 'docs/C02_PREPARACION.md'
+      - 'qa/c02_05_*'
+      - 'frontend/src/app/ui/interaction-state.*'
+      - 'frontend/src/app/pages/public-information.component.ts'
+      - 'frontend/src/app/pages/public-information.component.html'
+      - 'frontend/tests/c02-05.interaction-states.spec.ts'
+      - '.github/workflows/c02-05-interaction-states.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c02/C02_05_*'
+      - 'docs/C02_PREPARACION.md'
+      - 'qa/c02_05_*'
+      - 'frontend/src/app/ui/interaction-state.*'
+      - 'frontend/src/app/pages/public-information.component.ts'
+      - 'frontend/src/app/pages/public-information.component.html'
+      - 'frontend/tests/c02-05.interaction-states.spec.ts'
+      - '.github/workflows/c02-05-interaction-states.yml'
+permissions:
+  contents: read
+jobs:
+  c02-universal-states:
+    name: C02-05 Word + five states A/B/C + real Chromium + Angular22/.NET10
+    if: startsWith(github.head_ref, 'feature/c02-05-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout CRECISOL read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify pinned Word, QA syntax and state JSON
+        run: |
+          python3 -m py_compile qa/c02_01_source.py qa/c02_02_audits.py qa/c02_03_audits.py qa/c02_04_audits.py qa/c02_05_audits.py
+          python3 -m json.tool docs/c02/C02_05_ESTADOS_INTERACCION.json > /dev/null
+          python3 qa/c02_01_source.py A
+          python3 qa/c02_02_audits.py A
+      - name: Regress prior C02-01 through C02-04 gates A/B/C
+        run: |
+          python3 qa/c02_01_source.py B
+          python3 qa/c02_01_source.py C
+          python3 qa/c02_02_audits.py B
+          python3 qa/c02_02_audits.py C
+          python3 qa/c02_03_audits.py A
+          python3 qa/c02_03_audits.py B
+          python3 qa/c02_03_audits.py C
+          python3 qa/c02_04_audits.py A
+          python3 qa/c02_04_audits.py B
+          python3 qa/c02_04_audits.py C
+      - name: Audit A canonical five-state and six-experience contract
+        run: python3 qa/c02_05_audits.py A
+      - name: Audit B P0 tenancy and authorization boundaries and nine mutations
+        run: python3 qa/c02_05_audits.py B
+      - name: Install pinned Node 24.15.0
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Restore Angular dependencies without lifecycle scripts
+        run: npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
+      - name: Audit production dependency vulnerabilities
+        run: cd frontend && npm audit --omit=dev --audit-level=high
+      - name: Install Chromium and system dependencies
+        run: cd frontend && npx playwright install --with-deps chromium
+      - name: Angular22 typecheck, production build and canonical assets
+        run: |
+          cd frontend
+          npm run check:types
+          npm run build
+          npm run test:assets
+      - name: Browser C02-03/04 and C02-05 interactions, negatives and WCAG
+        run: |
+          cd frontend
+          npx playwright test tests/c02-03.public-information.spec.ts tests/c02-04.private-paths.spec.ts tests/c02-05.interaction-states.spec.ts --reporter=line
+      - name: Install .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile existing .NET 10 API Release
+        run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo
+      - name: Audit C architecture, accessibility, parametrization and four mutations
+        run: python3 qa/c02_05_audits.py C
+      - name: Upload browser failure diagnostics only if failed
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: C02-05-interaction-states-failure
+          path: frontend/test-results/
+          retention-days: 3
+          if-no-files-found: ignore

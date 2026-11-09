@@ -1,0 +1,45 @@
+:host {
+  display: block;
+  color: #152b47;
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.interaction-state {
+  width: 100%; min-width: 0;
+  display: flex; flex-direction: column; align-items: flex-start;
+}
+.interaction-mark {
+  display: block; height: 5px; width: 42px; border-radius: 10px;
+  margin-bottom: 24px; background: #1a609e;
+}
+.interaction-kicker {
+  margin: 0 0 10px; color: #365879; font-size: .78rem;
+  font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+}
+h1 {
+  margin: 0 0 16px; line-height: 1.15;
+  letter-spacing: -.04em; font-size: clamp(1.7rem, 6vw, 2.7rem);
+  overflow-wrap: anywhere;
+}
+.interaction-description {
+  margin: 0; color: #405a76; line-height: 1.7; max-width: 58ch;
+  overflow-wrap: anywhere;
+}
+.interaction-retry {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 48px; min-width: 44px; margin-top: 24px;
+  padding: 12px 22px; border: 0; border-radius: 10px;
+  background: #123d6b; color: #fff; font: inherit; font-weight: 750;
+  cursor: pointer; text-align: center;
+}
+.interaction-retry:hover { background: #0c3056; }
+.interaction-retry:focus-visible { outline: 3px solid #1473d0; outline-offset: 4px; }
+.interaction-progress {
+  display: block; width: min(100%, 210px); height: 4px; margin-top: 25px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #c9d9ef, #1d659f, #c9d9ef);
+  background-size: 200% 100%; animation: state-pulse 1.8s ease-in-out infinite;
+}
+@keyframes state-pulse { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .interaction-progress { animation: none; background: #1d659f; }
+}
