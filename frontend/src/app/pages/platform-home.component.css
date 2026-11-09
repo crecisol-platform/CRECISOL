@@ -53,9 +53,10 @@
   display: inline-block; width: 4px; height: 26px;
   border-radius: 10px; background: var(--brand-primary); flex-shrink: 0;
 }
-.primary-nav { display: flex; flex-wrap: wrap; align-items: center; gap: clamp(.35rem, 2vw, 1.2rem); }
+.primary-nav { display: flex; flex-wrap: wrap; align-items: center; gap: clamp(.35rem, 2vw, 1.2rem); min-width: 0; }
 .primary-nav a {
-  padding: .75rem 1rem; min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 44px; padding: .75rem 1rem; min-height: 44px;
   text-decoration: none; font-size: .9rem; font-weight: 620;
   color: #405776; border-radius: 8px; transition: background-color .15s;
 }
@@ -79,12 +80,12 @@
 .hero h1 {
   max-width: 11ch; font-size: clamp(3.4rem, 5.8vw, 5.8rem);
   letter-spacing: -.075em; font-weight: 800; line-height: 1.02;
-  margin: 0 0 26px; text-wrap: balance;
+  margin: 0 0 26px; text-wrap: balance; overflow-wrap: anywhere;
 }
 .hero-description {
   max-width: 33rem; margin: 0; color: #50657f;
   font-size: clamp(1.05rem, 1.6vw, 1.27rem); line-height: 1.7;
-  text-wrap: pretty;
+  text-wrap: pretty; overflow-wrap: anywhere;
 }
 .hero-actions { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; margin-top: 34px; }
 .primary-action {
@@ -238,6 +239,7 @@
   .header-brand-icon { width: 45px; height: 44px; }
   .wordmark-line { height: 20px; }
   .primary-nav { gap: 4px; width: 100%; }
+  .primary-nav a { min-width: 44px; min-height: 44px; }
   .primary-nav a { padding: .62rem .83rem; font-size: .85rem; }
   .hero { padding-block: 57px 66px; gap: 44px; }
   .hero h1 { font-size: clamp(2.95rem, 12vw, 4.5rem); }
@@ -271,6 +273,11 @@
 }
 .brand-art--logo-ready .brand-art-logo { opacity: 1; }
 .brand-art--logo-ready .brand-art-decor { visibility: hidden; }
+/* C02-07: no user interaction is placed inside the decorative illustration. */
+@media (forced-colors: active) {
+  .wordmark-line, .eyebrow-dot, .version-dot { background: Highlight; }
+  .primary-action, .retry-button { border: 1px solid ButtonText; }
+}
 @media (max-width: 700px) {
   .brand-art-logo { width: min(94%, 600px); height: calc(100% - 28px); border-radius: 12px; }
 }
