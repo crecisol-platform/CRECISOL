@@ -357,14 +357,26 @@ def audit_c():
     plan = PLAN.read_text(encoding="utf-8")
     if ACTA.exists():
         acta = ACTA.read_text(encoding="utf-8")
-        require("4/9" in plan and
-                "C02-04 CERRADA TÉCNICAMENTE" in acta and
+        fifth_acta_path = ROOT / "docs/c02/C02_05_ACTA_MICROFASE.md"
+        if fifth_acta_path.exists():
+            fifth = fifth_acta_path.read_text(encoding="utf-8")
+            require("5/9" in plan and
+                    "C02-05 CERRADA TÉCNICAMENTE" in fifth and
+                    "24e3b3c73133a35bdb336269517f123765734e86" in fifth and
+                    all(run in fifth for run in (
+                        "42639836939", "42639836403", "42639836651",
+                        "42639836641", "42639836721", "42639836413")),
+                    "C02-05 closure requires its six real postmerge runs")
+        else:
+            require("4/9" in plan,
+                    "C02-04 closure must remain 4/9 until C02-05 acta")
+        require("C02-04 CERRADA TÉCNICAMENTE" in acta and
                 "POSTMERGE" in acta and "C02-05" in acta and
                 "ecb7807e79427d5059c8b5f4ee0c5dd2195b7cb5" in acta and
                 all(run in acta for run in (
                     "42630487933", "42630487964", "42630487996",
                     "42630487889", "42630487985")),
-                "C02-04 closure acta requires technical SHA and five real postmerge runs")
+                "C02-04 provenance requires technical SHA and five postmerge runs")
     else:
         require("3/9" in plan and "C02-04" in plan,
                 "Cannot advance to 4/9 without an audited acta")
