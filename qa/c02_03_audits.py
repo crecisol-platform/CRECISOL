@@ -128,7 +128,7 @@ def must_reject(data, mutator, reason):
 
 def actual_route_paths():
     contents = ROUTES.read_text(encoding="utf-8")
-    return re.findall(r"^\s*path: '([^']+)'", contents, re.M), contents
+    return re.findall(r"^\s*path: '([^']*)'", contents, re.M), contents
 
 
 def audit_a():
