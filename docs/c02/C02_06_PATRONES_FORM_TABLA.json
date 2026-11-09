@@ -216,7 +216,7 @@
     },
     {
       "id": "NEG02",
-      "attack": "omit mandatory value",
+      "attack": "submit an empty required field while claiming the local preview is valid",
       "expected": "inline accessible error, no save or successful transaction acknowledgement"
     },
     {
