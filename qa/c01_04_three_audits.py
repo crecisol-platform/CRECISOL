@@ -72,7 +72,7 @@ def audit_b():
                    "X-Tenant-Id", "Authorization", "QueryString.HasValue",
                    "CacheControl = \"no-store\"", "Results.StatusCode"):
         require(marker in api, "Missing request security gate: " + marker)
-    for marker in ("UseExceptionHandler", "Catch", "catch (Exception)", "RequirePublicPlatform",
+    for marker in ("UseExceptionHandler", "catch (Exception)", "RequirePublicPlatform",
                    "PublicPlatformBrand"):
         require(marker in api + app, "Missing safe response gate: " + marker)
     for marker in ("unapproved Host", "forwarded Host spoof", "scope injection",
@@ -94,8 +94,8 @@ def audit_c():
         APP/"Crecisol.Application.csproj",
         INF/"Crecisol.Infrastructure.csproj",
         API/"Crecisol.Api.csproj"))
-    require("<TargetFramework>net10.0</TargetFramework>" in domain + app + infra + api,
-            "net10 must be configured")
+    require(all("<TargetFramework>net10.0</TargetFramework>" in p for p in (domain, app, infra, api)),
+            "Each layer must target net10")
     require("<ProjectReference" not in domain and "<PackageReference" not in domain,
             "Domain must remain framework/dependency-free")
     require("Crecisol.Domain.csproj" in app and "Crecisol.Infrastructure" not in app,
