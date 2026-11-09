@@ -3,7 +3,7 @@
 Fuente de nombres: Documento Maestro Único. Estado general: **1/37 capítulos certificados (C01, 9 noviembre 2026)**. Certificación con aceptación expresa del propietario, tres auditorías integrales y CI postmerge del SHA `b85ba613bfb8616697226a3252e89919aa38ced2`; acta en `docs/c01/C01_08_AUDITORIA_Y_ACTA.md`. C02–C37 NO implementados ni certificados. Cada capítulo requiere implementación específica, pruebas ejecutadas, triple auditoría A/B/C, acta y aceptación antes de abrir desarrollo del siguiente. Los títulos no son evidencia de software.
 
 C01 | CRECISOL: identidad, visión, alcance y principios | **CERTIFICADO** (C01-01 a C01-08, 8/8; A/B/C integrales PASS; aprobación expresa 2026-11-09; alcance únicamente C01)
-C02 | Personas, experiencias y arquitectura de producto | **EN DESARROLLO** (C02-01..C02-05 cerradas técnicamente, **5/9**; C02-05 cinco estados, solo 3 públicos activos, PR #38, SHA `24e3b3c73133a35bdb336269517f123765734e86` y seis CI postmerge SUCCESS incluyendo #42639836939; C02-06 siguiente; capítulo C02 **NO CERTIFICADO**, C03 bloqueado)
+C02 | Personas, experiencias y arquitectura de producto | **EN DESARROLLO** (C02-01..C02-06 cerradas técnicamente, **6/9**; C02-06 patrones de formulario/tabla exclusivamente en harness Angular no productivo, PR #40 SHA `d82cfc0a57561f21266a1f3e2e8c328dd3c4aeb4` y 8 CI postmerge SUCCESS incluido #42649577691; C02-07 siguiente; capítulo C02 **NO CERTIFICADO**, C03 bloqueado)
 C03 | Arquitectura técnica limpia y dependencias | PENDIENTE
 C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE
 C05 | Identidad, autenticación y recuperación segura | PENDIENTE
