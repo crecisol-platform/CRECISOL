@@ -1,0 +1,123 @@
+name: CRECISOL C02-06 form/table UX patterns and isolation gate
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c02/C02_06_*'
+      - 'docs/C02_PREPARACION.md'
+      - 'qa/c02_06_*'
+      - 'frontend/src/app/ui/patterns/**'
+      - 'frontend/tests/c02-06.form-table.spec.ts'
+      - 'frontend/tests/pattern-harness/**'
+      - 'frontend/angular.json'
+      - 'frontend/package.json'
+      - 'frontend/tsconfig.patterns.json'
+      - 'frontend/playwright.patterns.config.ts'
+      - '.github/workflows/c02-06-form-table-patterns.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c02/C02_06_*'
+      - 'docs/C02_PREPARACION.md'
+      - 'qa/c02_06_*'
+      - 'frontend/src/app/ui/patterns/**'
+      - 'frontend/tests/c02-06.form-table.spec.ts'
+      - 'frontend/tests/pattern-harness/**'
+      - 'frontend/angular.json'
+      - 'frontend/package.json'
+      - 'frontend/tsconfig.patterns.json'
+      - 'frontend/playwright.patterns.config.ts'
+      - '.github/workflows/c02-06-form-table-patterns.yml'
+permissions:
+  contents: read
+jobs:
+  form-table-ux:
+    name: C02-06 Word + A/B/C + 27 Chromium + prod isolation + Angular22/.NET10
+    if: startsWith(github.head_ref, 'feature/c02-06-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout CRECISOL read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Pinned Word, JSON and QA syntax
+        run: |
+          python3 -m py_compile qa/c02_01_source.py qa/c02_02_audits.py qa/c02_03_audits.py qa/c02_04_audits.py qa/c02_05_audits.py qa/c02_06_audits.py
+          python3 -m json.tool docs/c02/C02_06_PATRONES_FORM_TABLA.json > /dev/null
+          python3 qa/c02_01_source.py A
+          python3 qa/c02_02_audits.py A
+      - name: Regress all previous C02-01..05 A B C gates
+        run: |
+          python3 qa/c02_01_source.py B
+          python3 qa/c02_01_source.py C
+          python3 qa/c02_02_audits.py B
+          python3 qa/c02_02_audits.py C
+          python3 qa/c02_03_audits.py A
+          python3 qa/c02_03_audits.py B
+          python3 qa/c02_03_audits.py C
+          python3 qa/c02_04_audits.py A
+          python3 qa/c02_04_audits.py B
+          python3 qa/c02_04_audits.py C
+          python3 qa/c02_05_audits.py A
+          python3 qa/c02_05_audits.py B
+          python3 qa/c02_05_audits.py C
+      - name: Audit A — canonical form/table scope and six traceability mutations
+        run: python3 qa/c02_06_audits.py A
+      - name: Audit B — P0 authorization, dirty state, XSS, scope and eight mutations
+        run: python3 qa/c02_06_audits.py B
+      - name: Node24 for Angular22
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Restore locked dependencies without lifecycle scripts
+        run: npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
+      - name: Audit production dependency vulnerabilities
+        run: cd frontend && npm audit --omit=dev --audit-level=high
+      - name: Chromium browser and OS libraries
+        run: cd frontend && npx playwright install --with-deps chromium
+      - name: Angular22 typecheck and production build, official assets
+        run: |
+          cd frontend
+          npm run check:types
+          npm run build
+          npm run test:assets
+      - name: Reject synthetic harness in production bundle
+        run: |
+          cd frontend
+          test -f dist/crecisol-web/browser/index.html
+          if grep -R -F 'Patrones de formularios y tablas' dist/crecisol-web/browser/ --include='*.js'; then
+            echo 'ERROR synthetic harness leaked into production bundle'
+            exit 1
+          fi
+          if grep -R -F 'cs-pattern-harness' dist/crecisol-web/browser/ --include='*.js'; then
+            echo 'ERROR synthetic test-only bootstrap leaked into production'
+            exit 1
+          fi
+      - name: Build isolated Angular test harness (never a production route)
+        run: cd frontend && npx ng build --configuration pattern-harness
+      - name: Real Chromium C02-03, 04 and 05 public/private boundary regressions
+        run: |
+          cd frontend
+          npx playwright test tests/c02-03.public-information.spec.ts tests/c02-04.private-paths.spec.ts tests/c02-05.interaction-states.spec.ts --reporter=line
+      - name: Real Chromium Angular form/table keyboard, XSS and discard harness
+        run: cd frontend && npm run test:c02-06
+      - name: Install .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile existing ASP.NET Core 10 API Release (no API changes)
+        run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo
+      - name: Audit C — Angular production isolation and accessible UX four mutations
+        run: python3 qa/c02_06_audits.py C
+      - name: Preserve browser diagnostics only on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: C02-06-form-table-failure-only
+          path: |
+            frontend/test-results/
+            frontend/test-results-patterns/
+          retention-days: 3
+          if-no-files-found: ignore
