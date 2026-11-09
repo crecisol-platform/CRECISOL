@@ -1,6 +1,6 @@
 # CRECISOL — C03-02 · Contratos Domain puros
 
-**ESTADO: INICIADA EN RAMA TÉCNICA; NO CERTIFICADA.** Solo C03-01 está certificada (1/10). **C03 NO CERTIFICADO; C04 BLOQUEADO.** No existe aprobación humana anticipada para C03-02.
+**ESTADO VIGENTE: C03-02 CERRADA TÉCNICAMENTE, ACEPTADA PARA CERTIFICACIÓN (2/10), FORMALIZACIÓN DOCUMENTAL PENDIENTE DE CI PREMERGE/POSTMERGE.** C03-01 certificada previamente (1/10). **C03 NO CERTIFICADO; C04 BLOQUEADO; C03-03 NO INICIADA.** La aceptación se produjo después de la integración técnica; no se presume aprobación anticipada.
 
 ## Autoridad, entrada y trazabilidad
 
@@ -33,7 +33,7 @@ La autoridad es el Documento Maestro Único Word SHA-256 `e45c2017e62bbbaa685329
 | B — seguridad/arquitectura | .csproj puro, grafo físico y mutaciones de paquetes ORM, dependencia Infrastructure, HTTP/SQL y localizador | Deben ser rechazadas |
 | C — compilación/regresiones | Compilar .NET10 Release API y ejecutable nuevo, reejecutar contratos de Domain C01 y Application, pruebas nuevas positivas/negativas | Revisión inválida/obsoleta/overflow, ámbito falsificado y vista previa inválida |
 
-La CI **PREMERGE** y la CI **POSTMERGE** deben comprobarse sobre el SHA exacto. No se afirma **PASS**, cierre técnico ni **CERTIFICADA** por escribir esta especificación. Para certificación de C03-02 aún se necesitan las tres auditorías reales, acta y autorización expresa posterior.
+El PR técnico [#51](https://github.com/solqaryn-platform/CRECISOL/pull/51) fue integrado exclusivamente a `dev` SHA `adc975c7bcf4b6a772cc160a5b377d26af2b5fa6` con **3/3 CI POSTMERGE SUCCESS**, A/B/C, 35 aserciones C03 Domain + 51 C01 Domain + 19 Application y cinco mutaciones rechazadas. La aceptación humana posterior está registrada en el [acta C03-02](C03_02_ACTA_MICROFASE.md). **CERTIFICADA** solo tras verificar las CI PREMERGE/POSTMERGE de la formalización documental de ese acta; mientras tanto cierre técnico aprobado, formalización pendiente.
 
 ## Riesgos y rollback
 

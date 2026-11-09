@@ -35,7 +35,7 @@ permissions:
 jobs:
   c03-source-and-deps:
     name: C03-01 real Word + C# dependency map + 83 Chromium + MySQL8.4/.NET10
-    if: startsWith(github.head_ref, 'feature/c03-01-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    if: startsWith(github.head_ref, 'feature/c03-01-') || startsWith(github.head_ref, 'feature/c03-02-certificacion-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:

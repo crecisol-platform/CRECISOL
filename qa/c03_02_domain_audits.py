@@ -63,9 +63,10 @@ def audit_a():
             "Original Domain table row changed")
     spec = SPEC.read_text(encoding="utf-8")
     for key in ("C03-02", "T01-R02", "P03", "P04", "DIF-C03-01", WORD_SHA,
-                "MAE-C03-01..08", "INICIADA", "NO CERTIFICADA",
-                "C03 NO CERTIFICADO", "C04 BLOQUEADO", "BOLA/IDOR/MFA",
-                "DomainRevision", "BrandScopeKey", "Rollback"):
+                "MAE-C03-01..08", "CERRADA TÉCNICAMENTE", "2/10",
+                "FORMALIZACIÓN DOCUMENTAL PENDIENTE",
+                "C03-03 NO INICIADA", "C03 NO CERTIFICADO", "C04 BLOQUEADO",
+                "BOLA/IDOR/MFA", "DomainRevision", "BrandScopeKey", "Rollback"):
         require(key in spec, "Missing C03-02 traceability: " + key)
     require((ROOT / "backend/tests/Crecisol.Domain.ContractsTests/Program.cs").is_file(),
             "New Domain contract test project not found")

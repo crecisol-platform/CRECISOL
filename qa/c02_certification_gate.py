@@ -52,7 +52,8 @@ def validate_content(files):
     # After C02 certification, opening *only* C03-01 is legitimate. Historical
     # C02 acta remains a snapshot; C04 must stay locked until C03 acceptance.
     c03_active = "**EN DESARROLLO C03-01 (0/10)**" in c03_row
-    c03_closed = "**C03-01 CERRADA TÉCNICAMENTE (1/10)**" in c03_row
+    c03_closed_two = "**C03-01 CERTIFICADA (1/10) Y C03-02 CERRADA TÉCNICAMENTE/APROBADA PARA CERTIFICACIÓN (2/10)**" in c03_row
+    c03_closed = "**C03-01 CERRADA TÉCNICAMENTE (1/10)**" in c03_row or c03_closed_two
     require(not (c03_active and c03_closed), "Conflicting current C03 state")
     if c03_active or c03_closed:
         c03_file = ROOT / "docs/C03_PREPARACION.md"
@@ -68,15 +69,27 @@ def validate_content(files):
             c03_acta = ROOT / "docs/c03/C03_01_ACTA_MICROFASE.md"
             require(c03_acta.is_file(), "C03-01 closed with no acta")
             act = c03_acta.read_text(encoding="utf-8")
-            require("1/10" in c03_doc and
-                    "C03-01 CERRADA TÉCNICAMENTE" in c03_doc and
-                    "C03-02" in c03_doc and "NO INICIADA" in c03_doc and
-                    "C03-01 CERRADA TÉCNICAMENTE (1/10)" in act and
+            require("C03-01 CERRADA TÉCNICAMENTE (1/10)" in act and
                     "CERTIFICA POR FAVOR LA MICROFASE 1 DEL BLOQUE 3" in act and
                     "7217fb1e720f16c71d5a654f605eca96d81deb58" in act and
                     "42691620500" in act and "7/7" in act and
                     "C03 NO CERTIFICADO" in act and "C04 BLOQUEADO" in act,
-                    "C03-01 closure lacks owner authorization or technical evidence")
+                    "C03-01 historical owner acceptance was lost")
+            if c03_closed_two:
+                next_acta_path = ROOT / "docs/c03/C03_02_ACTA_MICROFASE.md"
+                require(next_acta_path.is_file(), "C03-02 status without formal acta")
+                next_acta = next_acta_path.read_text(encoding="utf-8")
+                require("2/10" in c03_doc and "C03-02 CERRADA TÉCNICAMENTE" in c03_doc
+                        and "C03-03" in c03_doc and "NO INICIADA" in c03_doc
+                        and "adc975c7bcf4b6a772cc160a5b377d26af2b5fa6" in next_acta
+                        and "adelante con ello por favor." in next_acta
+                        and "C03 NO CERTIFICADO" in next_acta
+                        and "C04 BLOQUEADO" in next_acta,
+                        "C03-02 progression lacks verified evidence or owner acceptance")
+            else:
+                require("1/10" in c03_doc and "C03-01 CERRADA TÉCNICAMENTE" in c03_doc
+                        and "C03-02" in c03_doc and "NO INICIADA" in c03_doc,
+                        "Prior C03-01 closure must not automatically open C03-02")
         else:
             require("0/10" in c03_doc and "C03-01" in c03_doc,
                     "Active C03-01 missing zero-closed baseline")
@@ -85,10 +98,13 @@ def validate_content(files):
                 "C03 started without a controlled C03-01 entry gate")
     require("2/37 capítulos certificados (C01 y C02)" in reference and
             "«APROBADO»" in reference and
-            (("C03-01 CERRADA TÉCNICAMENTE" in reference and "1/10" in reference)
-             if c03_closed else
+            (("C03-02 **CERRADA TÉCNICAMENTE" in reference and "2/10" in reference
+               and "C03-01 **CERTIFICADA**" in reference)
+             if c03_closed_two else
+             (("C03-01 CERRADA TÉCNICAMENTE" in reference and "1/10" in reference)
+              if c03_closed else
              (("C03-01 activada" in reference) if c03_active else
-              ("C03 será habilitable pero **no iniciado**" in reference))),
+               ("C03 será habilitable pero **no iniciado**" in reference)))),
             "Canonical master reference conflicts with C03 sequential state")
     require("C02 CERTIFICADO POR ACEPTACIÓN EXPRESA «APROBADO»" in timeline[:600] and
             "9/9" in timeline[:600] and
@@ -113,7 +129,7 @@ def validate_content(files):
     require("WCAG" in acceptance and "panel administrativo" in acceptance
             and "pagos" in acceptance and "producción" in acceptance,
             "Certification may not imply private/production feature readiness")
-    require(("C03-01 CERRADA TÉCNICAMENTE (1/10)" in c03_row) if c03_closed
+    require((c03_closed_two or ("C03-01 CERRADA TÉCNICAMENTE (1/10)" in c03_row)) if c03_closed
             else (("EN DESARROLLO C03-01 (0/10)" in c03_row) if c03_active
                   else ("HABILITABLE UNA VEZ CERTIFICADO C02" in c03_row
                         and "NO INICIADO" in c03_row)),
@@ -141,9 +157,11 @@ def main():
          "2/37 capítulos certificados (C01 y C02)",
          "3/37 capítulos certificados (C01 y C02)"),
         ("C03 advanced beyond C03-01", "plan",
-         ("**C03-01 CERRADA TÉCNICAMENTE (1/10)**"
-          if "**C03-01 CERRADA TÉCNICAMENTE (1/10)**" in docs["plan"]
-          else "**EN DESARROLLO C03-01 (0/10)**"),
+         ("**C03-01 CERTIFICADA (1/10) Y C03-02 CERRADA TÉCNICAMENTE/APROBADA PARA CERTIFICACIÓN (2/10)**"
+          if "**C03-01 CERTIFICADA (1/10) Y C03-02 CERRADA TÉCNICAMENTE/APROBADA PARA CERTIFICACIÓN (2/10)**" in docs["plan"]
+          else ("**C03-01 CERRADA TÉCNICAMENTE (1/10)**"
+                if "**C03-01 CERRADA TÉCNICAMENTE (1/10)**" in docs["plan"]
+                else "**EN DESARROLLO C03-01 (0/10)**")),
          "**C03 CERTIFICADO 10/10**"),
         ("forged technical evidence SHA", "acta", HEAD_PRECERT, "0" * 40),
         ("missing privacy caveat", "acta", "NO** se certifican", "SI** se certifican"),
@@ -158,7 +176,7 @@ def main():
             continue
         raise AssertionError("Unsafe certification mutation was accepted: " + label)
     print("C02 CERTIFICATION GATE PASS: Word verified, 9/9, "
-          "explicit post-audit APROBADO, 2/37, C03-01 at most 1/10, C04 blocked, "
+          "explicit post-audit APROBADO, 2/37, C03-01/C03-02 at most 2/10, C04 blocked, "
           "all real A/B/C and integration proofs present, "
           "5 adversarial certification mutations rejected.")
     print("LIMIT: private authorization, admin panel, manual WCAG, "
