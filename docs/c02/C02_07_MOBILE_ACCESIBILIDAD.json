@@ -155,7 +155,7 @@
         "caption-sort-and-filter",
         "local-horizontal-scroll",
         "no-document-scroll",
-        "keyboard",
+        "keyboard-operable-table",
         "text-interpolation"
       ]
     }
