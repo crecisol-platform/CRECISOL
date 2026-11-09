@@ -21,8 +21,10 @@ PLAN = ROOT / "docs/C02_PREPARACION.md"
 ACTA = ROOT / "docs/c02/C02_07_ACTA_MICROFASE.md"
 SRC = ROOT / "frontend/src/styles.css"
 HOME_CSS = ROOT / "frontend/src/app/pages/platform-home.component.css"
+HOME_TS = ROOT / "frontend/src/app/pages/platform-home.component.ts"
 HOME_HTML = ROOT / "frontend/src/app/pages/platform-home.component.html"
 INFO_CSS = ROOT / "frontend/src/app/pages/public-information.component.css"
+INFO_TS = ROOT / "frontend/src/app/pages/public-information.component.ts"
 INFO_HTML = ROOT / "frontend/src/app/pages/public-information.component.html"
 NOTFOUND = ROOT / "frontend/src/app/pages/not-found.component.ts"
 HARNESS = ROOT / "frontend/tests/pattern-harness/pattern-harness.component.ts"
@@ -117,8 +119,10 @@ ARCH = {
     "production_routes": ["", "experiencias", "demostraciones", "alta-empresas", "**"],
     "frontend_only": [
         "frontend/src/styles.css",
+        "frontend/src/app/pages/platform-home.component.ts",
         "frontend/src/app/pages/platform-home.component.css",
         "frontend/src/app/pages/platform-home.component.html",
+        "frontend/src/app/pages/public-information.component.ts",
         "frontend/src/app/pages/public-information.component.css",
         "frontend/src/app/pages/public-information.component.html",
         "frontend/src/app/pages/not-found.component.ts",
@@ -253,6 +257,10 @@ def audit_b():
     html = HOME_HTML.read_text(encoding="utf-8") + INFO_HTML.read_text(encoding="utf-8")
     source = NOTFOUND.read_text(encoding="utf-8")
     harness = HARNESS.read_text(encoding="utf-8")
+    require(all('focusMainContent()' in p.read_text(encoding="utf-8")
+                for p in (HOME_TS, INFO_TS)), "Skip handlers must focus main explicitly")
+    require(all('(click)="focusMainContent()"' in p.read_text(encoding="utf-8")
+                for p in (HOME_HTML, INFO_HTML)), "Both skip links need a real focus action")
     for text in ('tabindex="-1"', 'main', 'Saltar al contenido principal'):
         require(text in html, f"Skip link cannot focus real main: {text}")
     require('id="contenido" tabindex="-1"' in html and
