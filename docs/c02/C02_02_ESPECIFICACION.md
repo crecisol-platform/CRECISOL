@@ -1,6 +1,6 @@
 # CRECISOL — C02-02 · Mapa de necesidades, tareas y criterios observables
 
-**Estado: DISEÑO DOCUMENTADO / NO IMPLEMENTADO.** C02-02 es la segunda de las 9 microfases técnicas; **1/9** está cerrada hasta que las auditorías, la integración y el acta de C02-02 concluyan. El capítulo 02 continúa **NO CERTIFICADO**, 1/37 capítulos certificados (solo C01), C03 BLOQUEADO. La presente especificación no concede acceso, habilita rutas ni crea servicios privados.
+**Estado: DISEÑO DOCUMENTADO / NO IMPLEMENTADO.** C02-02 es la segunda de las 9 microfases técnicas; **1/9** está cerrada hasta que las auditorías, la integración y el acta de C02-02 concluyan. El estado institucional sigue **C02 NO CERTIFICADO**, 1/37 capítulos certificados (solo C01), C03 BLOQUEADO. La presente especificación no concede acceso, habilita rutas ni crea servicios privados.
 
 **Fuente exclusiva de requisitos:** [Documento Maestro Único](../MASTER_REFERENCE.md), Word `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` SHA-256 `e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e`. Capítulo 02: 11 párrafos originales P01..P11, tabla de seis perfiles/contextos T01-R01..R06; prefacio de precedencia 07-11-2026 y anexos G.6/G.7. [Inventario certificado técnicamente C02-01](C02_01_ACTA_MICROFASE.md), cierre integrado `5f0b45e5c8584fbcf5d7d783051ebac3f3dd9c72`, cuatro CI postmerge SUCCESS, incluida [#42617017733](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42617017733).
 
