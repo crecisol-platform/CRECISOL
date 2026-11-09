@@ -1,0 +1,14 @@
+<section class="interaction-state" [attr.data-interaction-state]="view().kind">
+  <span class="interaction-mark" aria-hidden="true"></span>
+  <p class="interaction-kicker">{{ view().eyebrow }}</p>
+  <h1>{{ view().title }}</h1>
+  <p class="interaction-description">{{ view().description }}</p>
+  @if (view().kind === 'loading') {
+    <span class="interaction-progress" aria-hidden="true"></span>
+  }
+  @if ((view().kind === 'error' || view().kind === 'offline') && view().retryLabel) {
+    <button class="interaction-retry" type="button" (click)="requestRetry()">
+      {{ view().retryLabel }}
+    </button>
+  }
+</section>
