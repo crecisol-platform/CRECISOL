@@ -76,6 +76,22 @@ export class PlatformHomeComponent {
     }
   }
 
+  /** C02-07: fragment scrolling alone does not reliably move keyboard focus.
+   * Only the local public main landmark is targeted; this grants no access.
+   */
+  focusMainContent(event: Event): void {
+    // Preserve the public #contenido deep link without triggering a second
+    // Angular/browser navigation that could recreate the focused main node.
+    event.preventDefault();
+    const main = this.document.getElementById('contenido');
+    if (!main) return;
+    const browser = this.document.defaultView;
+    if (browser && browser.location.hash !== '#contenido') {
+      browser.history.replaceState(browser.history.state, '', '#contenido');
+    }
+    main.focus({ preventScroll: false });
+  }
+
   retry(): void {
     void this.brandSource.load();
   }

@@ -7,7 +7,7 @@
       [class.font-humanist]="model.brand.presentation?.typographyToken === 'humanist'"
       [class.font-editorial]="model.brand.presentation?.typographyToken === 'editorial'"
     >
-      <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+      <a class="skip-link" href="#contenido" (click)="focusMainContent($event)">Saltar al contenido principal</a>
 
       <header class="site-header">
         <div class="header-inner">
@@ -32,7 +32,7 @@
         </div>
       </header>
 
-      <main id="contenido">
+      <main id="contenido" tabindex="-1">
         <section class="hero content-wrap" id="inicio" aria-labelledby="hero-title">
           <div class="hero-copy">
             <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span> Identidad de plataforma</p>
@@ -139,7 +139,7 @@
     </div>
   } @else {
     <div class="state-page">
-      <main class="state-main" id="contenido">
+      <main class="state-main" id="contenido" tabindex="-1">
         <div class="state-mark" aria-hidden="true"></div>
         @if (model.kind === 'loading') {
           <div class="state-content" role="status" aria-live="polite" aria-busy="true">

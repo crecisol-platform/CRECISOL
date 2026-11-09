@@ -34,14 +34,19 @@
   display: inline-block; width: 6px; height: 31px;
   flex-shrink: 0; border-radius: 4px; background: var(--brand-primary);
 }
-.public-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.public-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }
 .public-nav a {
-  display: inline-flex; align-items: center; min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; min-width: 44px;
   color: #284867; border-radius: .6rem; font-weight: 680;
   padding: .6rem .72rem; font-size: .9rem; text-decoration: none;
 }
 .public-nav a:hover { background: #e8eff9; }
 .public-nav a[aria-current="page"] { color: #102d52; background: #e4effb; font-weight: 850; }
+@media (forced-colors: active) {
+  .public-wordmark-mark { background: Highlight; }
+  .public-nav a[aria-current="page"] { outline: 1px solid ButtonText; }
+}
 .public-intro { padding-block: clamp(45px, 7vw, 85px) 30px; max-width: 850px; }
 .public-kicker {
   color: #365879; text-transform: uppercase; font-size: .77rem;
@@ -123,6 +128,7 @@
   .public-grid { grid-template-columns: 1fr; gap: 12px; padding-bottom: 48px; }
   .public-container { width: min(100% - 32px, 1100px); }
   .public-nav { width: 100%; gap: 2px 5px; }
+  .public-wordmark, .public-nav a { overflow-wrap: anywhere; }
   .public-nav a { font-size: .83rem; padding: .5rem .62rem; }
   .public-note { margin-bottom: 50px; }
 }

@@ -5,7 +5,7 @@
       [style.--brand-accent]="model.brand.accentColor"
       [class.font-humanist]="model.brand.presentation?.typographyToken === 'humanist'"
       [class.font-editorial]="model.brand.presentation?.typographyToken === 'editorial'">
-      <a href="#contenido" class="skip-link">Saltar al contenido principal</a>
+      <a href="#contenido" class="skip-link" (click)="focusMainContent($event)">Saltar al contenido principal</a>
 
       <header class="public-header">
         <div class="public-container public-header-inner">
@@ -26,7 +26,7 @@
         </div>
       </header>
 
-      <main id="contenido" class="public-container">
+      <main id="contenido" class="public-container" tabindex="-1">
         <div class="public-intro">
           <p class="public-kicker">{{ page.kicker }}</p>
           <h1>{{ page.title }}</h1>
@@ -67,7 +67,7 @@
     </div>
   } @else {
     <div class="public-unavailable">
-      <main id="contenido" class="public-state-panel">
+      <main id="contenido" class="public-state-panel" tabindex="-1">
         @if (model.kind === 'loading') {
           <div role="status" aria-live="polite" aria-busy="true">
             <cs-interaction-state [view]="loadingView"/>

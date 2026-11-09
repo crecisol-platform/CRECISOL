@@ -1,0 +1,371 @@
+{
+  "artifact": "CRECISOL-C02-07-MOBILE-ACCESSIBILITY-BASELINE",
+  "schema_version": 1,
+  "delivery_state": "real-public-ui-mobile-and-synthetic-angular-patterns-only-no-private-products",
+  "source": {
+    "master": "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx",
+    "sha256": "e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e",
+    "chapter": "02",
+    "process_gates": "MAE-C02-01..08",
+    "operative_microphase": "C02-07",
+    "needs": "docs/c02/C02_02_MAPA_NECESIDADES.json",
+    "public_sitemap": "docs/c02/C02_03_SITEMAP.json",
+    "private_design": "docs/c02/C02_04_NAVEGACION_PRIVADA.json",
+    "states": "docs/c02/C02_05_ESTADOS_INTERACCION.json",
+    "patterns": "docs/c02/C02_06_PATRONES_FORM_TABLA.json",
+    "previous_acta": "docs/c02/C02_06_ACTA_MICROFASE.md",
+    "previous_dev_sha": "d54147596984275d98cf7a313a9fdeb8e8b06e22",
+    "prior_postmerge_runs": [
+      42651313924,
+      42651314055,
+      42651314490,
+      42651314195,
+      42651314457,
+      42651314175,
+      42651314408,
+      42651314339,
+      42651314496
+    ]
+  },
+  "contexts": [
+    {
+      "experience": "E01",
+      "needs": [
+        "N01",
+        "N02",
+        "N03"
+      ],
+      "usage": "shared-accessibility-principles-no-private-live-workflows"
+    },
+    {
+      "experience": "E02",
+      "needs": [
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "usage": "shared-accessibility-principles-no-private-live-workflows"
+    },
+    {
+      "experience": "E03",
+      "needs": [
+        "N07",
+        "N08",
+        "N09"
+      ],
+      "usage": "shared-accessibility-principles-no-private-live-workflows"
+    },
+    {
+      "experience": "E04",
+      "needs": [
+        "N10",
+        "N11",
+        "N12"
+      ],
+      "usage": "shared-accessibility-principles-no-private-live-workflows"
+    },
+    {
+      "experience": "E05",
+      "needs": [
+        "N13",
+        "N14",
+        "N15"
+      ],
+      "usage": "shared-accessibility-principles-no-private-live-workflows"
+    },
+    {
+      "experience": "E06",
+      "needs": [
+        "N16",
+        "N17",
+        "N18"
+      ],
+      "usage": "shared-accessibility-principles-no-private-live-workflows"
+    }
+  ],
+  "surfaces": [
+    {
+      "id": "UI01",
+      "kind": "platform-home",
+      "state": "public-read-only",
+      "path": "/",
+      "checks": [
+        "320-to-1280-reflow",
+        "focus-and-skip",
+        "44px-touch",
+        "scalable-brand-text",
+        "reduced-motion"
+      ]
+    },
+    {
+      "id": "UI02",
+      "kind": "public-information",
+      "state": "public-read-only",
+      "paths": [
+        "/experiencias",
+        "/demostraciones",
+        "/alta-empresas"
+      ],
+      "checks": [
+        "all-nav-visible",
+        "320-to-1280-reflow",
+        "200-percent-text",
+        "42px-plus-tap-prohibition-44-min",
+        "automated-wcag-22-aa"
+      ]
+    },
+    {
+      "id": "UI03",
+      "kind": "public-unavailable",
+      "state": "public-fail-closed",
+      "checks": [
+        "error-offline-no-private-data",
+        "keyboard-retry",
+        "reduced-motion",
+        "metadata-clear"
+      ]
+    },
+    {
+      "id": "UI04",
+      "kind": "unknown-private-route",
+      "state": "denied-by-default",
+      "checks": [
+        "404-no-private-shell",
+        "no-branding-api-call",
+        "mobile-reflow"
+      ]
+    },
+    {
+      "id": "UI05",
+      "kind": "form-synthetic-harness",
+      "state": "test-only",
+      "checks": [
+        "real-angular-controls",
+        "200-percent-text",
+        "native-dialog",
+        "scope-confirmation",
+        "44px-targets"
+      ]
+    },
+    {
+      "id": "UI06",
+      "kind": "table-synthetic-harness",
+      "state": "test-only",
+      "checks": [
+        "caption-sort-and-filter",
+        "local-horizontal-scroll",
+        "no-document-scroll",
+        "keyboard-operable-table",
+        "text-interpolation"
+      ]
+    }
+  ],
+  "baseline": {
+    "viewport_css_pixels": [
+      320,
+      360,
+      768,
+      1280
+    ],
+    "text_resize_percent": 200,
+    "min_touch_target_css_pixels": 44,
+    "wcag_automated_tags": [
+      "wcag2a",
+      "wcag2aa",
+      "wcag21aa",
+      "wcag22aa"
+    ],
+    "keyboard": [
+      "skip-link-into-main",
+      "visible-focus",
+      "native-modal-cancel-escape",
+      "table-sort"
+    ],
+    "reading": [
+      "semantic-one-h1-per-route",
+      "one-main-landmark",
+      "screen-reader-live-region-on-error",
+      "no-essential-mobile-hidden-control"
+    ],
+    "motion": [
+      "prefers-reduced-motion",
+      "no-continuous-required-animation"
+    ],
+    "contrast": [
+      "forced-colors-visible-focus",
+      "focus-outline",
+      "no-brand-color-auth"
+    ],
+    "overflow_policy": "no-document-horizontal-scroll-except-local-table-scroll-region",
+    "viewport_and_text_scope": "public-routes-and-synthetic-harness-only-not-future-private-modules",
+    "manual_screen_reader_testing_completed": false,
+    "physical_device_testing_completed": false,
+    "full_wcag_conformance_certified": false
+  },
+  "security": {
+    "verified_data": "public-platform-only-read-model-and-synthetic-harness",
+    "authorization": "backend-only-no-client-role-grants",
+    "scope": "tenant-identity-branch-resource-ownership-must-be-reverified-in-future-backend",
+    "routing": "public-four-allowlisted-routes-plus-wildcard-denial",
+    "no_private_api": true,
+    "no_login_selector": true,
+    "no_business_form": true,
+    "no_real_payment": true,
+    "no_database_changes": true,
+    "no_backend_changes": true,
+    "no_new_live_routes": true,
+    "no_sensitive_storage": true,
+    "stale_data": "clear-brand-and-meta-on-error-no-old-tenant-snapshot",
+    "inject": "interpolated-text-no-user-html-evaluation",
+    "harness": "separate-4201-build-not-in-production-bundle"
+  },
+  "parameterization": {
+    "status": "future-versioned-admin-panel-not-implemented-in-c02-07",
+    "editable_future": [
+      "platform-theme",
+      "tenant-theme",
+      "logo",
+      "navigation-copy",
+      "footer-copy",
+      "focus-and-contrast-theme-tokens",
+      "typography-tokens",
+      "form-copy",
+      "table-copy",
+      "locale",
+      "branch-variant"
+    ],
+    "scopes": [
+      "platform",
+      "tenant",
+      "branch",
+      "user"
+    ],
+    "approval": "preview-publish-version-rollback-audit",
+    "no_arbitrary_html_js_css": true,
+    "security_invariants_immutable": [
+      "backend-auth",
+      "tenant-routing",
+      "role-permission",
+      "resource-ownership",
+      "PII",
+      "database-DSN"
+    ],
+    "current_public_brand": "same-origin-versioned-published-platform-api",
+    "synthetic_labels": "test-only-never-commercial-runtime-defaults"
+  },
+  "architecture": {
+    "production_entrypoint": "frontend/src/main.ts",
+    "public_route_file": "frontend/src/app/app.routes.ts",
+    "production_routes": [
+      "",
+      "experiencias",
+      "demostraciones",
+      "alta-empresas",
+      "**"
+    ],
+    "frontend_only": [
+      "frontend/src/styles.css",
+      "frontend/src/app/pages/platform-home.component.ts",
+      "frontend/src/app/pages/platform-home.component.css",
+      "frontend/src/app/pages/platform-home.component.html",
+      "frontend/src/app/pages/public-information.component.ts",
+      "frontend/src/app/pages/public-information.component.css",
+      "frontend/src/app/pages/public-information.component.html",
+      "frontend/src/app/pages/not-found.component.ts",
+      "frontend/tests/pattern-harness/pattern-harness.component.ts"
+    ],
+    "public_tests": "frontend/tests/c02-07.mobile-accessibility.spec.ts",
+    "public_new_test_count": 10,
+    "harness_tests": "frontend/tests/c02-07.patterns-mobile.spec.ts",
+    "harness_new_test_count": 5,
+    "harness_runner": "frontend/playwright.patterns-a11y.config.ts",
+    "inherited_chromium_tests": 27,
+    "total_expected_chromium_tests": 42,
+    "no_app_route_changes": true,
+    "no_core_brand_service_changes": true,
+    "no_external_deps": true,
+    "no_deploy": true
+  },
+  "negative_cases": [
+    {
+      "id": "NEG01",
+      "attack": "narrow 320 pixel mobile header hides a visible public navigation link",
+      "expected": "all three home links and four public-information links remain visibly operable by touch and keyboard"
+    },
+    {
+      "id": "NEG02",
+      "attack": "inline anchor min-height falsely passes a 44 CSS pixel touch-target assertion",
+      "expected": "real rendered element geometry must be at least 44 CSS pixels in width and height"
+    },
+    {
+      "id": "NEG03",
+      "attack": "validated publication includes long unbroken company-brand text and forces page overflow",
+      "expected": "user-supplied published name and slogan wrap without horizontal document scrolling or code injection"
+    },
+    {
+      "id": "NEG04",
+      "attack": "200 percent user font resizing clips primary actions or hides an essential link",
+      "expected": "content reflows without document-level horizontal scrolling and all public links remain visible"
+    },
+    {
+      "id": "NEG05",
+      "attack": "skip to main changes URL fragment but leaves keyboard focus trapped in header",
+      "expected": "tabbable skip link focuses an actual main landmark that accepts programmatic focus"
+    },
+    {
+      "id": "NEG06",
+      "attack": "failed platform publication retains stale metadata, logo or prior tenant copy",
+      "expected": "error view clears old public identity and only shows an explicit keyboard-operable retry"
+    },
+    {
+      "id": "NEG07",
+      "attack": "prefers-reduced-motion is ignored and progress animation keeps moving",
+      "expected": "motion is nonessential and reduced-motion users receive still progress and stable navigation"
+    },
+    {
+      "id": "NEG08",
+      "attack": "forced-colors accessibility mode removes focus affordance in the public header",
+      "expected": "focus outline remains visible with system colors without trusting brand tokens"
+    },
+    {
+      "id": "NEG09",
+      "attack": "unknown private path becomes accessible through a mobile-only menu or URL",
+      "expected": "four public routes plus wildcard not-found remain the only allowable runtime navigation"
+    },
+    {
+      "id": "NEG10",
+      "attack": "frontend browser sets tenant id or scope in query to authorize private resources",
+      "expected": "only same-origin published platform read model is fetched without credentials or tenant headers"
+    },
+    {
+      "id": "NEG11",
+      "attack": "synthetic Angular form/table harness appears in production route or JavaScript bundle",
+      "expected": "independent 4201 test-only Angular entrypoint stays out of production routes and assets"
+    },
+    {
+      "id": "NEG12",
+      "attack": "table scrollable area forces all of the mobile document to horizontal-scroll",
+      "expected": "only named keyboard-focusable table region scrolls horizontally while document remains within viewport"
+    },
+    {
+      "id": "NEG13",
+      "attack": "dirty form changes example scope without a native confirm/cancel dialog",
+      "expected": "scope change remains gated by modal and old draft stays until explicit confirmed discard"
+    },
+    {
+      "id": "NEG14",
+      "attack": "synthetic field values are interpreted as HTML during zoom or font switching",
+      "expected": "render all values through safe Angular text interpolation and reject unsafe user configured inputs"
+    },
+    {
+      "id": "NEG15",
+      "attack": "automated WCAG smoke is presented as full manual screen-reader certification",
+      "expected": "report only automated axe tests and document manual device and assistive-technology limitations"
+    },
+    {
+      "id": "NEG16",
+      "attack": "mobile responsive work adds form submission, privileged API or backend mutation",
+      "expected": "no new private route, backend or database change and no claim of implemented RBAC or MFA"
+    }
+  ]
+}

@@ -43,6 +43,15 @@ const B_ROWS: readonly TableRow[] = Object.freeze([
       border-radius:10px;background:#fff;color:#153a60;border:1px solid #9db3cb;
       font:inherit;cursor:pointer}
     button:focus-visible{outline:3px solid #1473d0;outline-offset:3px}
+    /* C02-07: CI-only modal still observes real mobile focus/touch sizing. */
+    dialog{width:min(calc(100% - 24px),30rem);max-height:85dvh;overflow:auto;
+      background:#fff;color:#17314e;border:1px solid #9db3cb;border-radius:16px;
+      padding:clamp(16px,4vw,26px);box-sizing:border-box}
+    dialog h2,dialog p{overflow-wrap:anywhere;line-height:1.5}
+    dialog button{display:inline-flex;align-items:center;justify-content:center;
+      min-height:44px;min-width:44px;max-width:100%;padding:9px 14px;margin:4px 6px 4px 0;
+      white-space:normal;text-align:center;border:1px solid #9db3cb;border-radius:10px;
+      background:#fff;color:#17314e;font:inherit;font-weight:700;cursor:pointer}
     .patterns{display:grid;grid-template-columns:minmax(0,1fr);gap:24px}
   `],
   template: `

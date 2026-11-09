@@ -5,7 +5,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <main class="not-found" id="contenido">
+    <main class="not-found" id="contenido" tabindex="-1">
       <p class="eyebrow">Navegación</p>
       <h1>Página no disponible</h1>
       <p>Esta ruta no forma parte de la identidad pública.</p>
