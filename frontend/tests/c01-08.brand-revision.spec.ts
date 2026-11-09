@@ -131,3 +131,19 @@ test('a missing published header image keeps the current public name, not the fo
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
   expect(result.violations).toEqual([]);
 });
+
+
+test('a long but valid newly published name wraps safely on 320px mobile', async ({ page }) => {
+  const longName = 'CRECISOL UNA PLATAFORMA DE COMERCIO Y SERVICIOS PARA EMPRESAS INDEPENDIENTES';
+  await page.setViewportSize({ width: 320, height: 720 });
+  await serveSnapshot(page, () => ({ ...initial, name: longName }));
+  await page.goto('/');
+  await expect(page.locator('.wordmark-name')).toHaveText(longName);
+  await expect(page.locator('.header-brand-icon')).toHaveAttribute('src', initial.presentation.faviconUrl);
+  await expect(page.locator('.primary-nav')).toBeVisible();
+  expect(await page.evaluate(() =>
+    document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  const accessibility = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+  expect(accessibility.violations).toEqual([]);
+});

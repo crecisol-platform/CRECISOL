@@ -4,7 +4,9 @@ on:
     branches: [dev]
     paths:
       - 'qa/c01_08_*'
+      - 'qa/c01_06_final_audits.py'
       - 'frontend/src/app/pages/platform-home.component.ts'
+      - 'frontend/src/app/pages/platform-home.component.css'
       - 'frontend/src/app/pages/platform-home.component.html'
       - 'frontend/src/index.html'
       - 'frontend/tests/c01-06.official-integration.spec.ts'
@@ -17,7 +19,9 @@ on:
     branches: [dev]
     paths:
       - 'qa/c01_08_*'
+      - 'qa/c01_06_final_audits.py'
       - 'frontend/src/app/pages/platform-home.component.ts'
+      - 'frontend/src/app/pages/platform-home.component.css'
       - 'frontend/src/app/pages/platform-home.component.html'
       - 'frontend/src/index.html'
       - 'frontend/tests/c01-06.official-integration.spec.ts'
@@ -77,6 +81,8 @@ jobs:
           cd frontend
           npx playwright test tests/c01-05.public-brand.spec.ts tests/c01-06.official-integration.spec.ts tests/c01-08.brand-revision.spec.ts --reporter=line
           printf 'PASS: browser-revision\n' > ../.c01-08-ci-proof/browser-revision
+          mkdir -p ../.c01-07-ci-proof
+          printf 'PASS: browser-legacy\n' > ../.c01-07-ci-proof/browser-legacy
       - name: Compile ASP.NET Core10 real API
         run: |
           dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo
