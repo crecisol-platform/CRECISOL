@@ -100,6 +100,14 @@ def audit_c():
     for dependency in ("@angular/build", "@angular/cli", "@angular/compiler-cli"):
         require(package["devDependencies"].get(dependency) == "22.2.4",
                 "Angular CLI/build must match framework version: " + dependency)
+    lock = json.loads(read(FRONT/"package-lock.json"))
+    require(lock.get("lockfileVersion") == 3 and
+            lock["packages"][""].get("dependencies") == package["dependencies"] and
+            lock["packages"][""].get("devDependencies") == package["devDependencies"],
+            "Missing synchronized npm lock")
+    require("node_modules/@angular/router" in lock["packages"] and
+            "node_modules/@axe-core/playwright" in lock["packages"],
+            "Router/a11y dependencies are not locked")
     require(package["devDependencies"].get("typescript") == "6.0.3",
             "Angular 22 needs TypeScript 6.0.x")
     require(package["engines"]["node"] == ">=24.15.0 <25",
@@ -126,6 +134,7 @@ def audit_c():
             "Prelaunch page must not claim discoverable production SEO")
     require("<img" not in read(PAGE) and "official-logo-c01-06" in read(PAGE),
             "C01-06 must own approval and insertion of official logo binary")
+    require("npm ci" in read(WORKFLOW), "CI must use frozen npm dependency tree")
     require("0/37" in read(SPEC) and "C01-06" in read(SPEC),
             "Sequence/limits missing")
     require("Reversión" in read(SPEC), "Rollback not documented")
