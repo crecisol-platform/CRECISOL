@@ -1,6 +1,6 @@
 # CRECISOL — C02-09 · Acta de auditoría integral y cierre técnico de las nueve microfases
 
-**ESTADO VIGENTE: C02 CERTIFICADO POR ACEPTACIÓN EXPRESA DEL PROPIETARIO, con 9/9 microfases cerradas y auditorías A/B/C aprobadas. Registro sujeto a CI del PR de certificación y POSTMERGE en dev. C03 habilitable únicamente después de comprobar esas CI, pero NO INICIADO.** El capítulo 01 conserva su certificación independiente (**1/37 capítulos**). El propietario deberá pronunciarse **después** de conocer esta acta y los límites reales; autorizaciones anteriores de avanzar no son aceptación final del capítulo.
+**ESTADO VIGENTE: C02 CERTIFICADO POR ACEPTACIÓN EXPRESA DEL PROPIETARIO, con 9/9 microfases cerradas y auditorías A/B/C aprobadas. Registro sujeto a CI del PR de certificación y POSTMERGE en dev. C03 habilitable únicamente después de comprobar esas CI, pero NO INICIADO.** El capítulo 01 conserva su certificación independiente; tras la aceptación expresa de C02 la cuenta pasa a **2/37 capítulos certificados**, sujeta a la validación CI final indicada. La respuesta posterior «APROBADO» de esta conversación satisface la aceptación humana para C02 con sus límites; no autoriza certificación de C03 ni módulos posteriores.
 
 ## 1. Autoridad y secuencia
 
