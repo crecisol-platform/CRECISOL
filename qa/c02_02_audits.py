@@ -239,7 +239,21 @@ def audit_c():
                 fifth_acta_path = ROOT / "docs/c02/C02_05_ACTA_MICROFASE.md"
                 if fifth_acta_path.exists():
                     fifth = fifth_acta_path.read_text(encoding="utf-8")
-                    require("5/9" in plan and
+                    sixth_path = ROOT / "docs/c02/C02_06_ACTA_MICROFASE.md"
+                    if sixth_path.exists():
+                        sixth = sixth_path.read_text(encoding="utf-8")
+                        require("6/9" in plan and
+                                "C02-06 CERRADA TÉCNICAMENTE" in sixth and
+                                "d82cfc0a57561f21266a1f3e2e8c328dd3c4aeb4" in sixth and
+                                all(run in sixth for run in (
+                                    "42649577691", "42649577850", "42649577851",
+                                    "42649577513", "42649577478", "42649577726",
+                                    "42649577757", "42649577427")),
+                                "C02-06 advancement requires exact technical SHA and eight postmerge runs")
+                    else:
+                        require("5/9" in plan,
+                                "C02-05 must remain 5/9 until C02-06 acta")
+                    require("C02-05" in plan and
                             "C02-05 CERRADA TÉCNICAMENTE" in fifth and
                             "24e3b3c73133a35bdb336269517f123765734e86" in fifth and
                             "42639836939" in fifth,
