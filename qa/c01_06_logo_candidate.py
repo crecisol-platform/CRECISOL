@@ -25,27 +25,55 @@ def check(ok, msg):
         raise ValueError(msg)
 
 def check_png(data):
+    """Check PNG framing, chunk integrity/order and bounded IDAT decompression."""
     check(data.startswith(b"\x89PNG\r\n\x1a\n"), "Bad PNG signature")
-    offset, dims, idat, iend = 8, None, False, False
+    offset, dims, idat_parts, idat_bytes, idat_ended, iend = 8, None, [], 0, False, False
     while offset < len(data):
         check(offset + 12 <= len(data), "Truncated PNG chunk")
         n = struct.unpack(">I", data[offset:offset+4])[0]
         name = data[offset+4:offset+8]
         end = offset + n + 12
         check(n <= 12_000_000 and end <= len(data), "Invalid PNG chunk size")
+        check(re.fullmatch(rb"[A-Za-z]{4}", name) is not None and not (name[2] & 32),
+              "Invalid PNG chunk type or reserved bit")
         body = data[offset+8:offset+8+n]
         crc = struct.unpack(">I", data[offset+8+n:end])[0]
         check(zlib.crc32(name + body) & 0xffffffff == crc, "PNG CRC mismatch")
         if name == b"IHDR":
             check(offset == 8 and n == 13 and dims is None, "Bad PNG IHDR")
             dims = struct.unpack(">II", body[:8])
-        if name == b"IDAT":
-            idat = True
-        if name == b"IEND":
-            check(n == 0 and end == len(data), "PNG trailing data")
+            depth, color, compression, filtering, interlace = struct.unpack(">BBBBB", body[8:])
+            valid_depths = {0:(1,2,4,8,16), 2:(8,16), 3:(1,2,4,8), 4:(8,16), 6:(8,16)}
+            check(0 < dims[0] <= 12000 and 0 < dims[1] <= 12000
+                  and dims[0] * dims[1] <= 16_000_000, "Excessive PNG dimensions")
+            check(depth in valid_depths.get(color, ()), "Invalid PNG depth/color combination")
+            check(compression == filtering == 0 and interlace in (0,1),
+                  "Unsupported PNG compression/filter/interlace")
+        elif name == b"IDAT":
+            check(dims is not None and not idat_ended, "PNG IDAT is out of order")
+            idat_bytes += n
+            check(idat_bytes <= 12_000_000, "Excessive PNG compressed bytes")
+            idat_parts.append(body)
+        elif name == b"IEND":
+            check(dims is not None and bool(idat_parts) and n == 0 and end == len(data),
+                  "PNG missing IDAT or trailing data")
             iend = True
+        else:
+            check(dims is not None and not iend, "PNG ancillary chunk before IHDR")
+            check((name[0] & 32) != 0 or name == b"PLTE", "Unknown critical PNG chunk")
+            if name == b"PLTE":
+                check(not idat_parts, "PNG palette after IDAT")
+            if idat_parts:
+                idat_ended = True
         offset = end
-    check(dims is not None and idat and iend, "Missing PNG required chunks")
+    check(dims is not None and bool(idat_parts) and iend, "Missing PNG required chunks")
+    decoder = zlib.decompressobj()
+    try:
+        decoded = decoder.decompress(b"".join(idat_parts), 32_000_001)
+    except zlib.error as error:
+        raise ValueError("Corrupt PNG compressed pixel data") from error
+    check(decoder.eof and not decoder.unused_data and not decoder.unconsumed_tail
+          and 0 < len(decoded) <= 32_000_000, "PNG decompression invalid or excessive")
     return dims
 
 def check_jpg(data):
@@ -146,6 +174,24 @@ def tests():
         corrupted[20] ^= 1
         fake_word(p,bytes(corrupted))
         reject("invalid PNG CRC")
+        def chunk(tag, payload):
+            return (struct.pack(">I", len(payload)) + tag + payload
+                    + struct.pack(">I", zlib.crc32(tag + payload) & 0xffffffff))
+        ihdr = png[8:33]
+        fake_word(p, png[:33] + ihdr + png[33:])
+        reject("duplicate IHDR despite valid CRC")
+        fake_word(p, png[:33] + chunk(b"ABCD", b"invalid") + png[33:])
+        reject("unknown critical PNG chunk")
+        fake_word(p, png[:33] + chunk(b"IDAT", b"not-zlib") + chunk(b"IEND", b""))
+        reject("corrupt IDAT with valid CRC")
+        bad_header = chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 1, 0, 0))
+        fake_word(p, png[:8] + bad_header + png[33:])
+        reject("unsupported PNG compression method")
+        fake_word(p, png + b"hidden-payload")
+        reject("trailing payload after IEND")
+        fake_word(p, png[:33] + chunk(b"IDAT", zlib.compress(b"\x00\x00\x00\xff"))
+                  + chunk(b"tEXt", b"note") + chunk(b"IDAT", b"another") + chunk(b"IEND", b""))
+        reject("discontiguous PNG IDAT")
     print("PASS candidate synthetic positive/negative tests (NOT logo approval)")
 
 def audits(kind):
