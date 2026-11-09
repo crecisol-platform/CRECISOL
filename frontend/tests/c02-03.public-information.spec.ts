@@ -164,7 +164,8 @@ test('320px mobile and keyboard access pass WCAG 2.2 AA automated audit', async 
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: 'Saltar al contenido principal' })).toBeFocused();
   await page.keyboard.press('Enter');
-  expect(new URL(page.url()).hash).toBe('#contenido');
+  // Angular's router can commit fragment navigation after the key event returns.
+  await expect(page).toHaveURL(/#contenido$/);
   await expect(page.locator('main#contenido')).toHaveCount(1);
   const mobile = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
