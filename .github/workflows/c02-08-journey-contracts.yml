@@ -1,0 +1,131 @@
+name: CRECISOL C02-08 real journey contracts and negative routing
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c02/C02_08_*'
+      - 'docs/C02_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'qa/c02_08_*'
+      - 'frontend/tests/c02-08.*'
+      - 'frontend/playwright.journeys-patterns.config.ts'
+      - '.github/workflows/c02-08-journey-contracts.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c02/C02_08_*'
+      - 'docs/C02_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'qa/c02_08_*'
+      - 'frontend/tests/c02-08.*'
+      - 'frontend/playwright.journeys-patterns.config.ts'
+      - '.github/workflows/c02-08-journey-contracts.yml'
+permissions:
+  contents: read
+jobs:
+  journey-contract:
+    name: C02-08 Word + A/B/C + 58 Chromium + Angular22/.NET10
+    if: startsWith(github.head_ref, 'feature/c02-08-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - name: Checkout CRECISOL read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify exact canonical Word, source JSON and Python syntax
+        run: |
+          python3 -m py_compile qa/c02_01_source.py qa/c02_02_audits.py qa/c02_03_audits.py qa/c02_04_audits.py qa/c02_05_audits.py qa/c02_06_audits.py qa/c02_07_audits.py qa/c02_08_audits.py
+          python3 -m json.tool docs/c02/C02_08_RECORRIDOS_CONTRATOS.json > /dev/null
+          python3 qa/c02_01_source.py A
+      - name: Regress C02-01 through C02-07 functional security and UX A/B/C
+        run: |
+          python3 qa/c02_01_source.py B
+          python3 qa/c02_01_source.py C
+          python3 qa/c02_02_audits.py A
+          python3 qa/c02_02_audits.py B
+          python3 qa/c02_02_audits.py C
+          python3 qa/c02_03_audits.py A
+          python3 qa/c02_03_audits.py B
+          python3 qa/c02_03_audits.py C
+          python3 qa/c02_04_audits.py A
+          python3 qa/c02_04_audits.py B
+          python3 qa/c02_04_audits.py C
+          python3 qa/c02_05_audits.py A
+          python3 qa/c02_05_audits.py B
+          python3 qa/c02_05_audits.py C
+          python3 qa/c02_06_audits.py A
+          python3 qa/c02_06_audits.py B
+          python3 qa/c02_06_audits.py C
+          python3 qa/c02_07_audits.py A
+          python3 qa/c02_07_audits.py B
+          python3 qa/c02_07_audits.py C
+      - name: Audit A - 6 source traced journeys and 6 adversarial source mutations
+        run: python3 qa/c02_08_audits.py A
+      - name: Audit B - 12 denied private routes and 8 security mutations
+        run: python3 qa/c02_08_audits.py B
+      - name: Install Node 24.15.0 for Angular 22
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Restore exact Angular22 lockfile without lifecycle scripts
+        run: npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
+      - name: Audit actual production npm dependencies
+        run: cd frontend && npm audit --omit=dev --audit-level=high
+      - name: Install Chromium and Linux system browser dependencies
+        run: cd frontend && npx playwright install --with-deps chromium
+      - name: Angular22 types, production bundle and official platform assets
+        run: |
+          cd frontend
+          npm run check:types
+          npm run build
+          npm run test:assets
+      - name: Reject synthetic Angular harness inside production bundle
+        run: |
+          cd frontend
+          test -f dist/crecisol-web/browser/index.html
+          if grep -R -F 'Patrones de formularios y tablas' dist/crecisol-web/browser/ --include='*.js'; then
+            echo 'ERROR: synthetic harness reached production'
+            exit 1
+          fi
+          if grep -R -F 'cs-pattern-harness' dist/crecisol-web/browser/ --include='*.js'; then
+            echo 'ERROR: synthetic bootstrap reached production'
+            exit 1
+          fi
+      - name: Compile isolated Angular22 pattern-harness nonproduction configuration
+        run: cd frontend && npx ng build --configuration pattern-harness
+      - name: Regression C02-03/04/05 - 19 real public Angular/denied route Chromium
+        run: |
+          cd frontend
+          npx playwright test tests/c02-03.public-information.spec.ts tests/c02-04.private-paths.spec.ts tests/c02-05.interaction-states.spec.ts --reporter=line
+      - name: Regression C02-06 - 8 real synthetic Angular patterns Chromium
+        run: cd frontend && npm run test:c02-06
+      - name: Regression C02-07 - 10 mobile/accessibility public Chromium
+        run: cd frontend && npx playwright test tests/c02-07.mobile-accessibility.spec.ts --reporter=line
+      - name: Regression C02-07 - 5 isolated mobile Angular harness Chromium
+        run: cd frontend && npx playwright test --config=playwright.patterns-a11y.config.ts --reporter=line
+      - name: C02-08 - 11 real public journey Chromium positive and negatives
+        run: cd frontend && npx playwright test tests/c02-08.journeys-public.spec.ts --reporter=line
+      - name: C02-08 - 5 isolated Angular synthetic journey Chromium
+        run: cd frontend && npx playwright test --config=playwright.journeys-patterns.config.ts --reporter=line
+      - name: Install .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build existing ASP.NET Core 10 API Release without private API changes
+        run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo
+      - name: Audit C - isolated production build, 16 new browser journeys and 4 mutations
+        run: python3 qa/c02_08_audits.py C
+      - name: Save Playwright diagnostics only on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: C02-08-journey-contracts-failure-only
+          path: |
+            frontend/test-results/
+            frontend/test-results-patterns/
+            frontend/test-results-c02-07-harness/
+            frontend/test-results-c02-08-harness/
+          retention-days: 3
+          if-no-files-found: ignore
