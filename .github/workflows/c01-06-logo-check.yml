@@ -77,7 +77,9 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: C01-06-browser-review-NOT-APPROVED
-          path: frontend/test-results/c01-06-review-NOT-APPROVED-*.png
+          path: |
+            frontend/test-results/c01-06-review-NOT-APPROVED-*.png
+            frontend/test-results/c01-06-angular-NOT-APPROVED-*.png
           if-no-files-found: error
           retention-days: 3
           compression-level: 0

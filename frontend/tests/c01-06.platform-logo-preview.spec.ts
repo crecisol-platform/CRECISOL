@@ -3,7 +3,7 @@
  * only in Playwright; they are NOT committed into the Angular application.
  */
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
@@ -69,6 +69,11 @@ test.describe('C01-06 Angular preview (candidate NOT APPROVED)', () => {
       const axe = await new AxeBuilder({ page })
         .withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();
       expect(axe.violations).toEqual([]);
+      mkdirSync('test-results', { recursive: true });
+      await page.screenshot({
+        path: 'test-results/c01-06-angular-NOT-APPROVED-' + viewport.name + '.png',
+        fullPage: true
+      });
     });
   }
 
