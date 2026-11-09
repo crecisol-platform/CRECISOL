@@ -1,4 +1,4 @@
-name: CRECISOL C01-06 candidate graphic gate
+name: CRECISOL C01-06 approved brand integration gate
 on:
   pull_request:
     branches: [dev]
@@ -11,11 +11,18 @@ on:
       - 'frontend/src/app/pages/platform-home.component.ts'
       - 'frontend/src/app/pages/platform-home.component.html'
       - 'frontend/src/app/pages/platform-home.component.css'
+      - 'frontend/src/index.html'
+      - 'frontend/package.json'
+      - 'frontend/tests/c01-05.public-brand.spec.ts'
+      - 'frontend/tests/c01-06.official-integration.spec.ts'
+      - 'qa/c01_06_official_assets.py'
+      - 'qa/c01_06_final_audits.py'
+      - '.gitignore'
 permissions:
   contents: read
 jobs:
   candidate:
-    name: C01-06 canonical logo candidate and audits A B C
+    name: C01-06 canonical extraction and preliminary security checks
     if: startsWith(github.head_ref, 'feature/c01-06-')
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -44,7 +51,7 @@ jobs:
           compression-level: 0
 
   c01-06-browser-isolated:
-    name: C01-06 isolated candidate Chromium and automated WCAG (NOT APPROVED)
+    name: C01-06 integrated Angular logo header, regression and final A B C audits
     if: startsWith(github.head_ref, 'feature/c01-06-')
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -64,22 +71,49 @@ jobs:
         run: npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
       - name: Install Chromium on temporary runner
         run: cd frontend && npx playwright install --with-deps chromium
-      - name: Typecheck and compile unmodified Angular application
-        run: cd frontend && npm run check:types && npm run build
+      - name: Generate exact approved assets and typecheck+compile real Angular app
+        run: |
+          cd frontend
+          npm run check:types
+          npm run build
+          npm run test:assets
+      - name: Independently verify the logo in built production output
+        run: |
+          test -s frontend/dist/crecisol-web/browser/assets/crecisol-oficial.png
+          test -s frontend/dist/crecisol-web/browser/assets/crecisol-emblem.png
       - name: Verify extracted file exists
         run: test -s /tmp/c01-06-candidate/crecisol-candidate-NOT-APPROVED.png
       - name: Run isolated responsive, negative and accessibility browser tests
         env:
           C01_06_CANDIDATE: /tmp/c01-06-candidate/crecisol-candidate-NOT-APPROVED.png
-        run: cd frontend && npx playwright test tests/c01-06.logo-candidate.spec.ts tests/c01-06.platform-logo-preview.spec.ts --reporter=line
+        run: |
+          cd frontend
+          npx playwright test tests/c01-05.public-brand.spec.ts tests/c01-06.logo-candidate.spec.ts tests/c01-06.platform-logo-preview.spec.ts tests/c01-06.official-integration.spec.ts --reporter=line
+      - name: FINAL audit A - provenance, owner approval and requirement traceability
+        run: python3 qa/c01_06_final_audits.py --audit A
+      - name: FINAL audit B - canonical assets and twelve adversarial rejects
+        run: python3 qa/c01_06_final_audits.py --audit B
+      - name: FINAL audit C - production output, responsive and accessibility evidence
+        run: python3 qa/c01_06_final_audits.py --audit C
+      - name: Upload approved, independently generated graphic files
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: C01-06-official-APPROVED-SHA-VERIFIED
+          path: |
+            frontend/public/assets/crecisol-oficial.png
+            frontend/public/assets/crecisol-emblem.png
+          if-no-files-found: error
+          retention-days: 3
+          compression-level: 0
       - name: Upload PRIVATE unapproved review screenshots
         if: success()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: C01-06-browser-review-NOT-APPROVED
+          name: C01-06-browser-visual-evidence
           path: |
             frontend/test-results/c01-06-review-NOT-APPROVED-*.png
             frontend/test-results/c01-06-angular-NOT-APPROVED-*.png
+            frontend/test-results/C01-06-OFFICIAL-*.png
           if-no-files-found: error
           retention-days: 3
           compression-level: 0
