@@ -202,7 +202,7 @@ def valid_contract(data, parent_needs=None):
                     re.fullmatch(r"[a-z]+(?:\.[a-z-]+)+", key),
                     f"Unsafe route_key: {key}")
             require(isinstance(path, str) and
-                    re.fullmatch(r"/[a-z]+(?:/[a-z-]+)+", path) and
+                    re.fullmatch(r"/[a-z-]+(?:/[a-z-]+)+", path) and
                     path.startswith(root + "/") and
                     path[1:] not in PUBLIC_PATHS,
                     "A future private route escaped its fixed context or used dynamic input")
