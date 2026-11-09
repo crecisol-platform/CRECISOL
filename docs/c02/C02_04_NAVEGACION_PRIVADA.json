@@ -1,0 +1,633 @@
+{
+  "artifact": "CRECISOL-C02-04-PRIVATE-NAVIGATION-DESIGN",
+  "schema_version": 1,
+  "delivery_state": "design-only-no-private-routes-no-authorization-implemented",
+  "source": {
+    "master": "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx",
+    "sha256": "e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e",
+    "chapter": "02",
+    "inventory": "docs/c02/C02_01_ESPECIFICACION.md",
+    "needs": "docs/c02/C02_02_MAPA_NECESIDADES.json",
+    "public_sitemap": "docs/c02/C02_03_SITEMAP.json",
+    "previous_acta": "docs/c02/C02_03_ACTA_MICROFASE.md",
+    "previous_dev_sha": "e6329e874ae44721dda0bfa2eb9a30acfaf0b990",
+    "operative_microphase": "C02-04",
+    "normative_process_gates": "MAE-C02-01..08"
+  },
+  "security_invariants": {
+    "authorization": "backend-deny-by-default",
+    "login": "automatic-context-without-tenant-picker",
+    "identity": "server-validates-session-revocation-and-identity",
+    "tenant": "server-verifies-host-membership-tenant-branch-action-resource",
+    "database": "server-only-catalog-chooses-shared-or-dedicated-storage",
+    "mismatch": "deny-and-never-fallback-to-other-tenant",
+    "frontend_guard": "UX-hint-only-not-access-control",
+    "platform_admin": "global-configuration-no-private-PII-by-default",
+    "exceptional_access": "step-up-MFA-reason-short-expiry-audit-revocable",
+    "consumer": "only-own-tenant-and-own-private-resources",
+    "tenant_public": "verified-host-and-published-only",
+    "demo": "synthetic-only-never-real-tenant-data",
+    "no_real_charges": true,
+    "no_tenant_selector": true,
+    "no_active_private_routes": true,
+    "audit": "per-tenant-without-cross-tenant-read",
+    "cache": "tenant-branch-resource-user-identity-scoped-no-stale-permission-reuse"
+  },
+  "parameterization": {
+    "state": "future-admin-managed-server-validated-versioned",
+    "scopes": [
+      "platform",
+      "tenant",
+      "branch",
+      "user"
+    ],
+    "editable_presentation_fields": [
+      "label",
+      "description",
+      "icon_token",
+      "group",
+      "order",
+      "visibility",
+      "locale",
+      "help_text",
+      "preferred_home"
+    ],
+    "secure_editable_permissions": "authorized-role-permission-matrix-in-backend-with-minimum-privilege-and-audit",
+    "invariant_fields_never_user_supplied": [
+      "route_key",
+      "backend_policy_identifier",
+      "tenant_scope",
+      "resource_ownership",
+      "verified_host_mapping"
+    ],
+    "config_contract": "versioned-preview-approval-publish-audit-rollback",
+    "ui_input_validation": "structured-data-allowlisted-icon-token-no-arbitrary-JS-HTML-CSS-SQL",
+    "effective_visibility": "server-filtered-by-session-context-and-permission-then-user-preference",
+    "no_client_permission_grants": true,
+    "no_unversioned_hardcoded_business_content": true
+  },
+  "contexts": [
+    {
+      "id": "PV01",
+      "experience": "E03",
+      "actor": "SuperAdmin de plataforma",
+      "scope": "platform-private",
+      "proposed_root": "/consola",
+      "activation": "blocked-until-real-backend-auth",
+      "delivery_state": "design-only-not-routable",
+      "navigation": [
+        {
+          "id": "NAV01",
+          "need_ref": "N07",
+          "route_key": "platform.overview",
+          "proposed_path": "/consola/resumen",
+          "purpose_note_for_design_only": "Indicadores globales agregados",
+          "visibility": "server-filtered-navigation-is-not-authorization",
+          "delivery_state": "not-implemented",
+          "boundary": "backend-private",
+          "required_backend_checks": [
+            "identity",
+            "session",
+            "platform-permission",
+            "action",
+            "aggregate-only-no-tenant-pii"
+          ],
+          "source_refs": [
+            "P01",
+            "T01-R02"
+          ],
+          "dependency_chapters": [
+            "C06",
+            "C08",
+            "C22"
+          ],
+          "acceptance": {
+            "given": "Operador de plataforma autenticado y autorizado en diseño",
+            "when": "consulta panel global",
+            "then": "recibe métricas agregadas y catálogo empresarial sin expedientes privados"
+          },
+          "negative_case": "La consola no muestra PII privada por defecto ni indicadores desagregados que identifiquen clientes reales.",
+          "risk": "P0"
+        },
+        {
+          "id": "NAV02",
+          "need_ref": "N08",
+          "route_key": "platform.configuration",
+          "proposed_path": "/consola/configuracion",
+          "purpose_note_for_design_only": "Gobierno de configuraciones institucionales",
+          "visibility": "server-filtered-navigation-is-not-authorization",
+          "delivery_state": "not-implemented",
+          "boundary": "backend-private",
+          "required_backend_checks": [
+            "identity",
+            "session",
+            "platform-permission",
+            "action",
+            "versioned-published-policy",
+            "audit"
+          ],
+          "source_refs": [
+            "T01-R02",
+            "P11"
+          ],
+          "dependency_chapters": [
+            "C06",
+            "C08"
+          ],
+          "acceptance": {
+            "given": "SuperAdmin con permiso por acción",
+            "when": "propone editar configuración institucional",
+            "then": "se exige validación del backend y se registra cambio auditable"
+          },
+          "negative_case": "Un parámetro administrativo no concede permisos fuera de una política backend validada y auditada.",
+          "risk": "P0"
+        },
+        {
+          "id": "NAV03",
+          "need_ref": "N09",
+          "route_key": "platform.exceptional-support",
+          "proposed_path": "/consola/soporte-excepcional",
+          "purpose_note_for_design_only": "Acceso excepcional de soporte",
+          "visibility": "server-filtered-navigation-is-not-authorization",
+          "delivery_state": "not-implemented",
+          "boundary": "backend-private",
+          "required_backend_checks": [
+            "identity",
+            "session",
+            "platform-permission",
+            "action",
+            "step-up-mfa",
+            "reason",
+            "short-expiry",
+            "audit",
+            "revocable"
+          ],
+          "source_refs": [
+            "T01-R02",
+            "P06"
+          ],
+          "dependency_chapters": [
+            "C05",
+            "C06",
+            "C07"
+          ],
+          "acceptance": {
+            "given": "SuperAdmin sin permiso de PII en estado normal",
+            "when": "solicita consultar datos privados en soporte",
+            "then": "el contrato futuro exige MFA resistente, motivo, límite temporal y auditoría independiente"
+          },
+          "negative_case": "Sin MFA, motivo, expiración o auditoría activa se niega toda PII y el acceso privilegiado.",
+          "risk": "P0"
+        }
+      ]
+    },
+    {
+      "id": "PV02",
+      "experience": "E04",
+      "actor": "Propietario de empresa",
+      "scope": "tenant-owner-private",
+      "proposed_root": "/negocio",
+      "activation": "blocked-until-real-backend-auth",
+      "delivery_state": "design-only-not-routable",
+      "navigation": [
+        {
+          "id": "NAV04",
+          "need_ref": "N10",
+          "route_key": "tenant.brand",
+          "proposed_path": "/negocio/identidad",
+          "purpose_note_for_design_only": "Marca, cabecera y contenidos editables",
+          "visibility": "server-filtered-navigation-is-not-authorization",
+          "delivery_state": "not-implemented",
+          "boundary": "backend-private",
+          "required_backend_checks": [
+            "identity",
+            "session",
+            "verified-tenant",
+            "membership",
+            "action",
+            "resource-ownership",
+            "versioned-publication",
+            "audit"
+          ],
+          "source_refs": [
+            "T01-R03",
+            "P01",
+            "P11"
+          ],
+          "dependency_chapters": [
+            "C09",
+            "C20",
+            "C21"
+          ],
+          "acceptance": {
+            "given": "Propietario con pertenencia confirmada al tenant",
+            "when": "cambia imagen, texto o pie de página en borrador",
+            "then": "la propuesta muestra vista previa de su propio tenant antes de publicar una revisión"
+          },
+          "negative_case": "No publicar marcas ajenas ni aceptar HTML, JavaScript o URL de assets sin validación.",
+          "risk": "P0"
+        },
+        {
+          "id": "NAV05",
+          "need_ref": "N11",
+          "route_key": "tenant.people",
+          "proposed_path": "/negocio/equipo",
+          "purpose_note_for_design_only": "Sucursales, roles y asignaciones",
+          "visibility": "server-filtered-navigation-is-not-authorization",
+          "delivery_state": "not-implemented",
+          "boundary": "backend-private",
+          "required_backend_checks": [
+            "identity",
+            "session",
+            "verified-tenant",
+            "membership",
+            "branch-scope",
+            "action",
+            "resource-ownership",
+            "audit"
+          ],
+          "source_refs": [
+            "T01-R03",
+            "P06"
+          ],
+          "dependency_chapters": [
+            "C04",
+            "C05",
+            "C06"
+          ],
+          "acceptance": {
+            "given": "Propietario dentro de un tenant y con rol permitido",
+            "when": "consulta o cambia una asignación",
+            "then": "el caso futuro valida acción, sucursal, propiedad y revocación del acceso"
+          },
+          "negative_case": "No conceder pertenencia al otro tenant ni elevar permisos a partir del menú, URL o claims manipulados.",
+          "risk": "P0"
+        },
+        {
+          "id": "NAV06",
+          "need_ref": "N12",
+          "route_key": "tenant.operations",
+          "proposed_path": "/negocio/operaciones",
+          "purpose_note_for_design_only": "Operaciones, indicadores y expedientes propios",
+          "visibility": "server-filtered-navigation-is-not-authorization",
+          "delivery_state": "not-implemented",
+          "boundary": "backend-private",
+          "required_backend_checks": [
+            "identity",
+            "session",
+            "verified-tenant",
+            "membership",
+            "branch-scope",
+            "action",
+            "resource-ownership",
+            "audit"
+          ],
+          "source_refs": [
+            "P08",
+            "P09",
+            "T01-R03"
+          ],
+          "dependency_chapters": [
+            "C12",
+            "C17",
+            "C22"
+          ],
+          "acceptance": {
+            "given": "Propietario autenticado en contexto de negocio verificado",
+            "when": "abre detalle de operación o ejecuta acto sensible",
+            "then": "ve solo operaciones de su ámbito y confirma acción financiera/destructiva"
+          },
+          "negative_case": "No consultar finanzas, pedidos ni bitácoras de otra empresa o sucursal sin autorización.",
+          "risk": "P0"
+        }
+      ]
+    },
+    {
+      "id": "PV03",
+      "experience": "E05",
+      "actor": "Empleado asignado",
+      "scope": "tenant-employee-private",
+      "proposed_root": "/trabajo",
+      "activation": "blocked-until-real-backend-auth",
+      "delivery_state": "design-only-not-routable",
+      "navigation": [
+        {
+          "id": "NAV07",
+          "need_ref": "N13",
+          "route_key": "staff.queue",
+          "proposed_path": "/trabajo/pendientes",
+          "purpose_note_for_design_only": "Cola de tareas asignadas",
+          "visibility": "server-filtered-navigation-is-not-authorization",
+          "delivery_state": "not-implemented",
+          "boundary": "backend-private",
+          "required_backend_checks": [
+            "identity",
+            "session",
+            "verified-tenant",
+            "membership",
+            "branch-scope",
+            "assignment",
+            "action",
+            "resource-ownership"
+          ],
+          "source_refs": [
+            "T01-R04",
+            "P08"
+          ],
+          "dependency_chapters": [
+            "C05",
+            "C06",
+            "C13"
+          ],
+          "acceptance": {
+            "given": "Empleado con asignación vigente en sucursal determinada",
+            "when": "consulta tareas en el puesto de trabajo",
+            "then": "el caso proyectado muestra solo tareas autorizadas por el backend"
+          },
+          "negative_case": "No mostrar tareas ni datos de empleados de otra sucursal, negocio o asignación.",
+          "risk": "P0"
+        },
+        {
+          "id": "NAV08",
+          "need_ref": "N14",
+          "route_key": "staff.task-timeline",
+          "proposed_path": "/trabajo/seguimiento",
+          "purpose_note_for_design_only": "Seguimiento de expediente con historial",
+          "visibility": "server-filtered-navigation-is-not-authorization",
+          "delivery_state": "not-implemented",
+          "boundary": "backend-private",
+          "required_backend_checks": [
+            "identity",
+            "session",
+            "verified-tenant",
+            "membership",
+            "branch-scope",
+            "assignment",
+            "action",
+            "resource-ownership",
+            "immutable-history",
+            "audit"
+          ],
+          "source_refs": [
+            "P07",
+            "P08",
+            "T01-R04"
+          ],
+          "dependency_chapters": [
+            "C13",
+            "C17",
+            "C26"
+          ],
+          "acceptance": {
+            "given": "Empleado asignado al expediente con permiso vigente",
+            "when": "actualiza progreso de un pedido, cita o servicio",
+            "then": "cada evento futuro se agrega a la línea de tiempo sin sobrescribir historial"
+          },
+          "negative_case": "No modificar historia inmutable, ni adjuntos de otro expediente, ni ejecutar tareas rechazadas.",
+          "risk": "P0"
+        },
+        {
+          "id": "NAV09",
+          "need_ref": "N15",
+          "route_key": "staff.profile",
+          "proposed_path": "/trabajo/perfil",
+          "purpose_note_for_design_only": "Perfil, sesión y permisos efectivos",
+          "visibility": "server-filtered-navigation-is-not-authorization",
+          "delivery_state": "not-implemented",
+          "boundary": "backend-private",
+          "required_backend_checks": [
+            "identity",
+            "session",
+            "verified-tenant",
+            "membership",
+            "branch-scope",
+            "assignment",
+            "action",
+            "revocation-check"
+          ],
+          "source_refs": [
+            "P06",
+            "T01-R04",
+            "P11"
+          ],
+          "dependency_chapters": [
+            "C05",
+            "C06"
+          ],
+          "acceptance": {
+            "given": "Empleado con permiso revocable",
+            "when": "intenta acción no asignada o tras revocación",
+            "then": "el backend rechaza sin mostrar datos y la UX comunica acceso no disponible"
+          },
+          "negative_case": "Un permiso del menú no reemplaza la comprobación de sesión revocada o de asignación vigente.",
+          "risk": "P0"
+        }
+      ]
+    },
+    {
+      "id": "PV04",
+      "experience": "E06",
+      "actor": "Consumidor contextual",
+      "scope": "tenant-consumer-private",
+      "proposed_root": "/mi-cuenta",
+      "activation": "blocked-until-real-backend-auth",
+      "delivery_state": "design-only-not-routable",
+      "navigation": [
+        {
+          "id": "NAV10",
+          "need_ref": "N16",
+          "route_key": "consumer.public-catalog-link",
+          "proposed_path": "/mi-cuenta/explorar",
+          "purpose_note_for_design_only": "Enlace al catálogo público verificado",
+          "visibility": "server-filtered-navigation-is-not-authorization",
+          "delivery_state": "not-implemented",
+          "boundary": "verified-tenant-public-future",
+          "required_backend_checks": [
+            "verified-host",
+            "published-content",
+            "no-private-pii",
+            "no-cross-tenant-redirect"
+          ],
+          "source_refs": [
+            "P03",
+            "P04",
+            "P05",
+            "T01-R05"
+          ],
+          "dependency_chapters": [
+            "C04",
+            "C10",
+            "C20"
+          ],
+          "acceptance": {
+            "given": "Visitante en un sitio de empresa con dominio validado",
+            "when": "navega contenido del negocio",
+            "then": "consulta información pública aprobada y marca del tenant resuelta"
+          },
+          "negative_case": "La publicación del negocio no abre un expediente, ni permite ver contenido no publicado ni concede membresía.",
+          "risk": "P0"
+        },
+        {
+          "id": "NAV11",
+          "need_ref": "N17",
+          "route_key": "consumer.requests",
+          "proposed_path": "/mi-cuenta/solicitudes",
+          "purpose_note_for_design_only": "Mis solicitudes, compras y reservas",
+          "visibility": "server-filtered-navigation-is-not-authorization",
+          "delivery_state": "not-implemented",
+          "boundary": "backend-private",
+          "required_backend_checks": [
+            "identity",
+            "session",
+            "verified-tenant",
+            "consumer-membership",
+            "action",
+            "resource-ownership",
+            "consent-version",
+            "audit"
+          ],
+          "source_refs": [
+            "P06",
+            "P07",
+            "T01-R05"
+          ],
+          "dependency_chapters": [
+            "C05",
+            "C06",
+            "C12",
+            "C13"
+          ],
+          "acceptance": {
+            "given": "Consumidor frente a negocio identificado y contenido público",
+            "when": "solicita reservar o comprar",
+            "then": "el contrato futuro exige identidad/permisos en backend antes de persistir y notificar"
+          },
+          "negative_case": "La transacción de otro consumidor o empresa jamás es accesible mediante cambio de ID, QR, URL o cookie.",
+          "risk": "P0"
+        },
+        {
+          "id": "NAV12",
+          "need_ref": "N18",
+          "route_key": "consumer.history",
+          "proposed_path": "/mi-cuenta/historial",
+          "purpose_note_for_design_only": "Mis expedientes, comprobantes e historial",
+          "visibility": "server-filtered-navigation-is-not-authorization",
+          "delivery_state": "not-implemented",
+          "boundary": "backend-private",
+          "required_backend_checks": [
+            "identity",
+            "session",
+            "verified-tenant",
+            "consumer-membership",
+            "action",
+            "resource-ownership",
+            "audit"
+          ],
+          "source_refs": [
+            "P08",
+            "P09",
+            "T01-R05"
+          ],
+          "dependency_chapters": [
+            "C06",
+            "C17",
+            "C23"
+          ],
+          "acceptance": {
+            "given": "Consumidor autenticado para un tenant concreto",
+            "when": "consulta su expediente o comprobante",
+            "then": "solo ve recursos propios, eventos publicados y consentimiento con contexto correcto"
+          },
+          "negative_case": "No mostrar comprobantes, archivos, historial ni preferencias de otra persona o tenant.",
+          "risk": "P0"
+        }
+      ]
+    }
+  ],
+  "cross_cutting_denials": [
+    {
+      "id": "DEN01",
+      "attack": "URL/slug/query/header/claim/tenant_id tampering",
+      "expected": "backend denies private access regardless of visible menu"
+    },
+    {
+      "id": "DEN02",
+      "attack": "Cross-tenant/cross-branch IDOR/BOLA and resource-owner forgery",
+      "expected": "never return another tenant, branch or consumer resource"
+    },
+    {
+      "id": "DEN03",
+      "attack": "SuperAdmin attempts private PII without MFA reason expiry audit",
+      "expected": "deny exceptional access until justified, timed and audited"
+    },
+    {
+      "id": "DEN04",
+      "attack": "Employee denied finance or assignment revoked mid-session",
+      "expected": "no financial projection and deny removed permissions immediately"
+    },
+    {
+      "id": "DEN05",
+      "attack": "Consumer opens other customer's document, receipt or backup",
+      "expected": "deny private media, exports, logs, previews and backups"
+    },
+    {
+      "id": "DEN06",
+      "attack": "Malicious menu config injects route HTML JS permission icon or tenant",
+      "expected": "reject untrusted fields and never widen backend authorization"
+    },
+    {
+      "id": "DEN07",
+      "attack": "Old tab/cache/SSR request replays previous tenant after context change",
+      "expected": "discard previous context data and require fresh backend decision"
+    },
+    {
+      "id": "DEN08",
+      "attack": "Host switches MySQL DSN with query parameter or header",
+      "expected": "backend catalog selects storage; client cannot choose database"
+    },
+    {
+      "id": "DEN09",
+      "attack": "Unpublished public tenant catalog rendered via forged host",
+      "expected": "never disclose drafts or private consumer data"
+    },
+    {
+      "id": "DEN10",
+      "attack": "UI guard hides route but attacker uses API directly",
+      "expected": "server checks identity tenant membership action branch and ownership"
+    },
+    {
+      "id": "DEN11",
+      "attack": "Demo uses production accounts or payment method",
+      "expected": "synthetic-only future demo no real accounts charges or checkout"
+    },
+    {
+      "id": "DEN12",
+      "attack": "User manually browses proposed private route before its backend exists",
+      "expected": "current Angular wildcard remains NotFoundComponent with no private content"
+    }
+  ],
+  "implementation_limits": {
+    "front_end_routes_activated": [],
+    "backend_private_endpoints_created": [],
+    "database_migrations": [],
+    "payment_processing": false,
+    "planned_chapters": [
+      "C04",
+      "C05",
+      "C06",
+      "C07",
+      "C08",
+      "C09",
+      "C12",
+      "C13",
+      "C17",
+      "C20",
+      "C22",
+      "C23",
+      "C26",
+      "C31"
+    ],
+    "do_not_conflate": "proposed menu schema is not an API authorization or identity implementation",
+    "future_tests": "BOLA IDOR MFA role and branch permission, session revocation, real published tenant host mapping required only when such private modules exist"
+  }
+}
