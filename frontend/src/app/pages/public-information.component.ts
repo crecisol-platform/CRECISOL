@@ -57,6 +57,11 @@ export class PublicInformationComponent {
     void this.brandSource.load();
   }
 
+  /** C02-07: an actual focus transfer is required for skip navigation. */
+  focusMainContent(): void {
+    this.document.getElementById('contenido')?.focus({ preventScroll: true });
+  }
+
   retry(): void {
     void this.brandSource.load();
   }
