@@ -6,7 +6,19 @@ on:
       - 'backend/src/Crecisol.Domain/**'
       - 'backend/tests/Crecisol.Domain.ContractsTests/**'
       - 'docs/c03/C03_02_ESPECIFICACION.md'
+      - 'docs/c03/C03_02_ACTA_MICROFASE.md'
+      - 'docs/C03_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'docs/PLAN_MICROFASES_37_CAPITULOS_PROPUESTO.md'
+      - 'docs/planificacion-futura/C03_MICROFASES_PROPUESTAS.md'
+      - 'docs/MASTER_REFERENCE.md'
+      - 'docs/DECISIONES_ABIERTAS.md'
+      - 'AGENTS.md'
       - 'qa/c03_02_domain_audits.py'
+      - 'qa/c03_02_closure_gate.py'
+      - 'qa/c03_01_closure_gate.py'
+      - 'qa/c03_01_source.py'
+      - 'qa/c02_certification_gate.py'
       - '.github/workflows/c03-02-domain.yml'
   push:
     branches: [dev]
@@ -14,7 +26,19 @@ on:
       - 'backend/src/Crecisol.Domain/**'
       - 'backend/tests/Crecisol.Domain.ContractsTests/**'
       - 'docs/c03/C03_02_ESPECIFICACION.md'
+      - 'docs/c03/C03_02_ACTA_MICROFASE.md'
+      - 'docs/C03_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'docs/PLAN_MICROFASES_37_CAPITULOS_PROPUESTO.md'
+      - 'docs/planificacion-futura/C03_MICROFASES_PROPUESTAS.md'
+      - 'docs/MASTER_REFERENCE.md'
+      - 'docs/DECISIONES_ABIERTAS.md'
+      - 'AGENTS.md'
       - 'qa/c03_02_domain_audits.py'
+      - 'qa/c03_02_closure_gate.py'
+      - 'qa/c03_01_closure_gate.py'
+      - 'qa/c03_01_source.py'
+      - 'qa/c02_certification_gate.py'
       - '.github/workflows/c03-02-domain.yml'
 permissions:
   contents: read
@@ -30,7 +54,7 @@ jobs:
           persist-credentials: false
       - name: Audit A canonical Word and C03-02 source mapping
         run: |
-          python3 -m py_compile qa/c03_02_domain_audits.py
+          python3 -m py_compile qa/c03_02_domain_audits.py qa/c03_02_closure_gate.py qa/c03_01_closure_gate.py qa/c02_certification_gate.py qa/c03_01_source.py
           python3 qa/c03_02_domain_audits.py A
       - name: Audit B Domain boundaries and adversarial mutations
         run: python3 qa/c03_02_domain_audits.py B
@@ -58,3 +82,5 @@ jobs:
           printf 'PASS: application\n' > .c03-02-ci-proof/application
       - name: Audit C actual compilation evidence, regressions and graph
         run: python3 qa/c03_02_domain_audits.py C
+      - name: Gate C03-02 certification on real evidence, owner acceptance and 10 adversarial mutations
+        run: python3 qa/c03_02_closure_gate.py
