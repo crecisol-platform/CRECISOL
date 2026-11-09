@@ -76,6 +76,13 @@ export class PlatformHomeComponent {
     }
   }
 
+  /** C02-07: fragment scrolling alone does not reliably move keyboard focus.
+   * Only the local public main landmark is targeted; this grants no access.
+   */
+  focusMainContent(): void {
+    this.document.getElementById('contenido')?.focus({ preventScroll: true });
+  }
+
   retry(): void {
     void this.brandSource.load();
   }
