@@ -13,12 +13,14 @@
         <div class="header-inner">
           <a class="wordmark" href="#inicio" [attr.aria-label]="model.brand.name + ', ir al inicio'"
             data-asset-slot="official-logo-c01-06">
-            @if (headerAssetAvailable()) {
-              <img class="header-brand-icon" src="/assets/crecisol-emblem.png"
-                alt="" width="52" height="50" decoding="async" loading="eager"
-                (error)="onHeaderAssetError()">
-            } @else {
-              <span class="wordmark-line" aria-hidden="true"></span>
+            @if (headerAsset(); as asset) {
+              @if (headerAssetFailedKey() !== asset.key) {
+                <img class="header-brand-icon" [src]="asset.url"
+                  alt="" width="52" height="50" decoding="async" loading="eager"
+                  (error)="onHeaderAssetError(asset.url, asset.revision)">
+              } @else {
+                <span class="wordmark-line" aria-hidden="true"></span>
+              }
             }
             <span class="wordmark-name">{{ model.brand.name }}</span>
           </a>
