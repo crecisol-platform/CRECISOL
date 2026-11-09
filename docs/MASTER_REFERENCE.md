@@ -19,7 +19,7 @@
 
 - Usar esta edición para requisitos de producto, arquitectura, seguridad, parametrización, diseño e implementación secuencial de los **37 capítulos**.
 - El alcance incluye MySQL compartido por defecto con aislamiento obligatorio, modalidad dedicada opcional, login contextual sin selector, SuperAdmin con acceso excepcional auditado, componentes UI y multimedia seguros, y seguimiento universal de expedientes.
-- Trabajar un capítulo por vez. Ninguno se considera IMPLEMENTADO, PROBADO o CERTIFICADO por el solo hecho de figurar en este documento; el estado actual de software es **0/37 certificados**.
+- Trabajar un capítulo por vez. Ninguno se considera IMPLEMENTADO, PROBADO o CERTIFICADO por el solo hecho de figurar en este documento; el estado actual de software es **1/37 capítulos certificados (únicamente C01 desde el 9 de noviembre de 2026)**, con alcance, aprobación y evidencia CI en `docs/c01/C01_08_AUDITORIA_Y_ACTA.md`; C02–C37 continúan sin certificar.
 - Las versiones de Angular, Node.js, .NET y MySQL y los proveedores concretos requieren compatibilidad comprobada mediante ejecución de pruebas.
 - Está prohibida toda escritura sobre `solqaryn/Solqaryn`. No realizar VPS, DNS, cobros reales, producción ni despliegues durante la etapa actual.
 - Si cambia el Word, se deberá generar de ese mismo Word el PDF, recalcular tamaños, SHA-256 y blobs Git, revisar los 37 capítulos y aprobar un PR en CRECISOL. **No conservar dos maestros divergentes.**

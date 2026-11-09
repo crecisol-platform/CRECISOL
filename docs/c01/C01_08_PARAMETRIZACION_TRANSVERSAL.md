@@ -1,6 +1,6 @@
 # C01-08 — Parametrización integral y editabilidad administrativa: contrato transversal
 
-**Autoridad:** Instrucción expresa del propietario de CRECISOL, 9 de noviembre de 2026. Complemento subordinado al Documento Maestro Único y a la matriz C01-01. **Estado: requisitos de aceptación, NO funcionalidad administrativa implementada.** C01-08; 0/37 capítulos certificados; no iniciar C02 sin aceptación.
+**Autoridad:** Instrucción expresa del propietario de CRECISOL, 9 de noviembre de 2026. Complemento subordinado al Documento Maestro Único y a la matriz C01-01. **Estado: requisitos de aceptación, NO funcionalidad administrativa implementada.** C01-08 certificado dentro del alcance de lectura pública de marca (1/37 capítulos certificados) con aceptación expresa 2026-11-09. C02 puede iniciar su propio ciclo, sin considerarse implementado ni certificado.
 
 ## Objetivo obligatorio
 
@@ -46,4 +46,4 @@ Cada capítulo futuro deberá contrastarse con el texto vigente del Word, defini
 | PAR-09 | Autorizar actor/rol/acción/tenant/sucursal/propiedad y auditar cambio | No conceder permisos por el frontend |
 | PAR-10 | Fallback sin marca ajena si asset o publicación no está disponible | No reutilizar logo obsoleto, no mostrar borrador |
 
-**Gate del capítulo 01:** demostrar el read-model, rechazo de activos no seguros, logo dinámico en header/hero/favicon al recibir una revisión publicada y requisitos futuros explícitos. NO confundir con un panel editando la marca. La certificación C01 exige acta, A/B/C integrales, CI final/postmerge y aceptación expresa del propietario; sigue 0/37 hasta ese acto.
+**Gate del capítulo 01:** demostrar el read-model, rechazo de activos no seguros, logo dinámico en header/hero/favicon al recibir una revisión publicada y requisitos futuros explícitos. NO confundir con un panel editando la marca. La certificación C01 exige acta, A/B/C integrales, CI final/postmerge y aceptación expresa del propietario; acredita 1/37 desde la aceptación y CI postmerge verificadas el 9 de noviembre de 2026; la matriz futura PAR-01...PAR-10 continúa pendiente de sus capítulos respectivos.

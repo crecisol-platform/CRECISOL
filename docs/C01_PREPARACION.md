@@ -1,6 +1,6 @@
 # Fase 1 · Capítulo 01 — CRECISOL: identidad, visión, alcance y principios
 
-**Estado:** EN DESARROLLO; C01-01, C01-02, C01-03, C01-04, C01-05, C01-06 y C01-07 cerradas técnicamente (7/8); capítulo C01 NO CERTIFICADO, 0/37. Progreso: **0/37 capítulos certificados**. Fuente: edición canónica de `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` y `docs/MASTER_REFERENCE.md`.
+**Estado:** CAPÍTULO 01 CERTIFICADO, C01-01 a C01-08 cerradas técnicamente (8/8); avance **1/37 capítulos certificados**. Propietario aceptó expresamente el 9 de noviembre de 2026; PR #28 y CI integral postmerge [#42581697460](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42581697460) en SHA `b85ba613bfb8616697226a3252e89919aa38ced2`. No certifica funcionalidades futuras de administración ni C02–C37. Fuente: edición canónica de `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` y `docs/MASTER_REFERENCE.md`.
 
 ## Contrato de alcance
 
@@ -44,7 +44,7 @@ El usuario autorizó el 8 de noviembre de 2026 que cada microfase se **valide, r
 | C01-05 | UI Angular, responsive, accesibilidad y navegador; requiere C01-04 | **CERRADA TÉCNICAMENTE**: PR #20 fusionado, Angular22/Node24, 11 Chromium/WCAG, A/B/C PASS, CI post-merge |
 | C01-06 | Logo oficial y presencia visual aprobados; requiere C01-05 | **CERRADA TÉCNICAMENTE**: logo del Word SHA aprobado, cabecera + hero Angular, 28 Chromium, 12 negativos, A/B/C finales PASS, PR #24 y CI post-merge en dev |
 | C01-07 | Pruebas positivas, negativas, seguridad y regresión; requiere C01-06 | **CERRADA TÉCNICAMENTE**: PR #26, MySQL 8.4.13 + ASP.NET Core 10 + Angular 22, 37 HTTP, 27 Chromium, 51+19 .NET, A/B/C FINAL PASS y CI post-merge |
-| C01-08 | Auditorías integrales A/B/C, acta, conformidad del capítulo; requiere C01-07 | **EN AUDITORÍA**: CI integral C01-01...07, actualización de header/favicon desde snapshot publicado y matriz obligatoria de parametrización. Capítulo NO certificado sin aceptación expresa. |
+| C01-08 | Auditorías integrales A/B/C, acta, conformidad del capítulo; requiere C01-07 | **CERRADA TÉCNICAMENTE Y ACEPTADA**: 8/8; PR #28 fusionado a dev; CI integral postmerge #42581697460 SUCCESS, C01-07 postmerge #42581697450 SUCCESS, A/B/C integrales PASS, propietario aprobó 2026-11-09. **C01 CERTIFICADO; 1/37**. |
 
 **Repositorio:** PR #10 contiene código adelantado de fases 02–07 y permanece en borrador. Se integra solamente el alcance documental de C01-01 mediante un PR independiente, sin adelantar implementación privada ni certificar software.
 

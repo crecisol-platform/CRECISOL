@@ -1,9 +1,9 @@
 # Orden de implementación obligatorio de CRECISOL
 
-Fuente de nombres: Documento Maestro Único. Estado general: 0/37 certificados. Cada capítulo requiere implementación específica, pruebas ejecutadas, triple auditoría A/B/C, acta y aceptación antes de abrir desarrollo del siguiente. Los títulos no son evidencia de software.
+Fuente de nombres: Documento Maestro Único. Estado general: **1/37 capítulos certificados (C01, 9 noviembre 2026)**. Certificación con aceptación expresa del propietario, tres auditorías integrales y CI postmerge del SHA `b85ba613bfb8616697226a3252e89919aa38ced2`; acta en `docs/c01/C01_08_AUDITORIA_Y_ACTA.md`. C02–C37 NO implementados ni certificados. Cada capítulo requiere implementación específica, pruebas ejecutadas, triple auditoría A/B/C, acta y aceptación antes de abrir desarrollo del siguiente. Los títulos no son evidencia de software.
 
-C01 | CRECISOL: identidad, visión, alcance y principios | EN DESARROLLO (C01-01/02/03/04/05/06/07 cerradas técnicamente, 7/8; capítulo NO CERTIFICADO)
-C02 | Personas, experiencias y arquitectura de producto | PENDIENTE
+C01 | CRECISOL: identidad, visión, alcance y principios | **CERTIFICADO** (C01-01 a C01-08, 8/8; A/B/C integrales PASS; aprobación expresa 2026-11-09; alcance únicamente C01)
+C02 | Personas, experiencias y arquitectura de producto | **HABILITADO PARA PLANIFICAR/INICIAR SU CICLO SECUENCIAL**, todavía NO implementado ni certificado, requiere contraste del Word y sus propios gates
 C03 | Arquitectura técnica limpia y dependencias | PENDIENTE
 C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE
 C05 | Identidad, autenticación y recuperación segura | PENDIENTE
@@ -44,4 +44,4 @@ Reglas transversales: multitenancy shared/dedicated, login contextual sin select
 
 ## Planificación futura no ejecutable
 
-[Propuesta de 365 microfases para 37 capítulos](PLAN_MICROFASES_37_CAPITULOS_PROPUESTO.md), con 8 microfases operativas de C01 ya definidas y 357 microfases **provisionales** de C02–C37 en archivos separados. Estas propuestas NO habilitan trabajo fuera de C01, NO modifican el Documento Maestro Único y NO constituyen implementación o certificación. Cada capítulo posterior debe contrastarse íntegramente con el Word vigente y obtener su puerta de entrada cuando corresponda. [Protocolo de continuidad no activado](PROTOCOLO_CONTINUIDAD_CRECISOL.md).
+[Propuesta de 365 microfases para 37 capítulos](PLAN_MICROFASES_37_CAPITULOS_PROPUESTO.md), con 8 microfases operativas de C01 ya definidas y 357 microfases **provisionales** de C02–C37 en archivos separados. La certificación de C01 habilita iniciar C02 con nueva matriz y gates; las propuestas de C03–C37 NO habilitan desarrollo anticipado, NO modifican el Documento Maestro Único y NO constituyen implementación o certificación. Cada capítulo posterior debe contrastarse íntegramente con el Word vigente y obtener su puerta de entrada cuando corresponda. [Protocolo de continuidad no activado](PROTOCOLO_CONTINUIDAD_CRECISOL.md).
