@@ -1,5 +1,8 @@
 /* CRECISOL C01-05: local-only, accessible, no remote font or CSS import. */
+/* C02-07: retain usable text scaling and visible keyboard controls across viewports. */
 :root {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #17283f;
   background: #f6f8fc;
@@ -13,11 +16,19 @@ body { margin: 0; min-width: 320px; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { font: inherit; }
 a { color: inherit; }
-:where(a, button):focus-visible {
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
   outline: 3px solid #135a9a;
   outline-offset: 4px;
 }
 ::selection { background: #d4eaff; color: #0d2848; }
+/* Document may scroll vertically; never hide inaccessible content with overflow-x:hidden. */
+:where(h1, h2, h3, p, dd, dt, li) { overflow-wrap: anywhere; }
+@media (forced-colors: active) {
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 3px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
