@@ -1,0 +1,85 @@
+name: CRECISOL C01-05 Angular 22 identity gate
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'frontend/**'
+      - 'qa/c01_05_three_audits.py'
+      - 'docs/c01/C01_05_*.md'
+      - 'docs/C01_PREPARACION.md'
+      - '.github/workflows/c01-05-check.yml'
+permissions:
+  contents: read
+
+jobs:
+  c01-05-audits:
+    name: C01-05 audits A B C
+    if: startsWith(github.head_ref, 'feature/c01-05-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Audit A canonical requirements and UI tests
+        run: python3 qa/c01_05_three_audits.py A
+      - name: Audit B client boundary, XSS, tenant and privacy
+        run: python3 qa/c01_05_three_audits.py B
+      - name: Audit C Angular, performance, responsive and a11y
+        run: python3 qa/c01_05_three_audits.py C
+
+  c01-05-build:
+    name: C01-05 Angular 22 strict production build
+    if: startsWith(github.head_ref, 'feature/c01-05-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install compatible Node 24.15.0
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Restore pinned npm dependency tree with lock
+        run: npm ci --no-audit --no-fund --ignore-scripts
+      - name: Verify dependency tree
+        run: npm ls --depth=0
+      - name: Audit production dependency vulnerabilities at high severity
+        run: npm audit --omit=dev --audit-level=high
+      - name: Compile strict TypeScript
+        run: npm run check:types
+      - name: Build production UI with budgets
+        run: npm run build
+
+  c01-05-browser:
+    name: C01-05 Chromium real browser and WCAG 2.2 AA
+    if: startsWith(github.head_ref, 'feature/c01-05-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install compatible Node 24.15.0
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Restore pinned dependencies from lock
+        run: npm ci --no-audit --no-fund --ignore-scripts
+      - name: Install Chromium in disposable runner
+        run: npx playwright install --with-deps chromium
+      - name: Execute real browser responsive, security and accessibility tests
+        run: npm run test:e2e:ci
+

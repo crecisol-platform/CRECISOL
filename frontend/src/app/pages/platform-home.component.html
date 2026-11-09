@@ -1,0 +1,144 @@
+@if (state(); as model) {
+  @if (model.kind === 'ready') {
+    <div
+      class="identity-page"
+      [style.--brand-primary]="model.brand.primaryColor"
+      [style.--brand-accent]="model.brand.accentColor"
+      [class.font-humanist]="model.brand.presentation?.typographyToken === 'humanist'"
+      [class.font-editorial]="model.brand.presentation?.typographyToken === 'editorial'"
+    >
+      <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+
+      <header class="site-header">
+        <div class="header-inner">
+          <a class="wordmark" href="#inicio" [attr.aria-label]="model.brand.name + ', ir al inicio'"
+            data-asset-slot="official-logo-c01-06">
+            <span class="wordmark-line" aria-hidden="true"></span>
+            <span>{{ model.brand.name }}</span>
+          </a>
+          <nav class="primary-nav" aria-label="Navegación principal">
+            <a href="#inicio" aria-current="page">Inicio</a>
+            <a href="#propuesta">Propuesta</a>
+            <a href="#identidad">Identidad</a>
+          </nav>
+        </div>
+      </header>
+
+      <main id="contenido">
+        <section class="hero content-wrap" id="inicio" aria-labelledby="hero-title">
+          <div class="hero-copy">
+            <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span> Identidad de plataforma</p>
+            <h1 id="hero-title">{{ model.brand.slogan }}</h1>
+            <p class="hero-description">{{ model.brand.descriptor }}</p>
+
+            <div class="hero-actions">
+              <a class="primary-action" href="#propuesta">
+                Conocer la propuesta
+                <span aria-hidden="true">↗</span>
+              </a>
+              <span class="version-stamp">
+                <span class="version-dot" aria-hidden="true"></span>
+                Versión {{ model.brand.revision }} publicada
+              </span>
+            </div>
+
+            <div class="hero-rule" aria-hidden="true"></div>
+            <p class="hero-footnote">Una identidad pública; cada negocio mantiene su marca independiente.</p>
+          </div>
+
+          <div class="brand-art" aria-hidden="true">
+            <div class="art-rim art-rim-one"></div>
+            <div class="art-rim art-rim-two"></div>
+            <div class="art-glow"></div>
+            <div class="art-tile art-tile-back">
+              <span class="tile-caption">PRESENTACIÓN</span>
+              <span class="tile-lines"><i></i><i></i><i></i></span>
+            </div>
+            <div class="art-tile art-tile-front">
+              <span class="tile-caption">IDENTIDAD / 0{{ model.brand.revision }}</span>
+              <strong>{{ model.brand.name }}</strong>
+              <span class="tile-stripe"></span>
+              <small>{{ model.brand.descriptor }}</small>
+            </div>
+            <span class="art-corner-label">PUBLICACIÓN / PLATAFORMA</span>
+          </div>
+        </section>
+
+        <section class="areas-section" id="propuesta" aria-labelledby="areas-title">
+          <div class="content-wrap areas-inner">
+            <div class="areas-heading">
+              <p class="section-number">01 / PROPUESTA</p>
+              <h2 id="areas-title">Una plataforma, distintas formas de crecer.</h2>
+            </div>
+            <div class="areas-details">
+              <p class="areas-intro">Los ámbitos que definen esta identidad:</p>
+              <ul class="area-tags" aria-label="Ámbitos descritos por la marca publicada">
+                @for (category of categories(); track category) {
+                  <li><span class="tag-marker" aria-hidden="true"></span>{{ category }}</li>
+                }
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="identity-section content-wrap" id="identidad" aria-labelledby="identity-title">
+          <div class="identity-heading">
+            <p class="section-number">02 / IDENTIDAD</p>
+            <h2 id="identity-title">Información de marca publicada</h2>
+            <p>Contenido de la versión aprobada para lectura pública.</p>
+          </div>
+          <dl class="identity-details">
+            <div>
+              <dt>Nombre de la plataforma</dt>
+              <dd>{{ model.brand.name }}</dd>
+            </div>
+            <div>
+              <dt>Lema</dt>
+              <dd>{{ model.brand.slogan }}</dd>
+            </div>
+            <div>
+              <dt>Descripción</dt>
+              <dd>{{ model.brand.descriptor }}</dd>
+            </div>
+          </dl>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="content-wrap footer-inner">
+          <p class="footer-brand">{{ model.brand.name }}</p>
+          @if (model.brand.presentation?.copyrightNotice; as copyright) {
+            <p class="footer-notice">{{ copyright }}</p>
+          } @else {
+            <p class="footer-notice">Identidad pública de plataforma</p>
+          }
+          <a href="#inicio" class="back-to-top">Volver arriba <span aria-hidden="true">↑</span></a>
+        </div>
+      </footer>
+    </div>
+  } @else {
+    <div class="state-page">
+      <main class="state-main" id="contenido">
+        <div class="state-mark" aria-hidden="true"></div>
+        @if (model.kind === 'loading') {
+          <div class="state-content" role="status" aria-live="polite" aria-busy="true">
+            <p class="state-kicker">IDENTIDAD PÚBLICA</p>
+            <h1>Preparando la información publicada</h1>
+            <p>Consultando la versión disponible de la plataforma.</p>
+            <div class="progress-line" aria-hidden="true"></div>
+          </div>
+        } @else {
+          <div class="state-content" role="alert">
+            <p class="state-kicker">IDENTIDAD PÚBLICA</p>
+            <h1>La identidad pública no está disponible</h1>
+            <p>No se mostrarán datos de demostración ni información privada de negocios.</p>
+            <button type="button" class="retry-button" (click)="retry()">
+              Intentar nuevamente
+              <span aria-hidden="true">↻</span>
+            </button>
+          </div>
+        }
+      </main>
+    </div>
+  }
+}
