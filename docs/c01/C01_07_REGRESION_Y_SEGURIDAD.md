@@ -19,6 +19,10 @@ La API sigue con única ruta pública, sin login/admin ni autorizaciones de cons
 - Negativas datos/navegador: TENANT publicada jamás sustituye PLATFORM; borrador jamás se expone; eliminación de la publicación PLATFORM produce 404 y fail-closed; nombre XSS insertado en la BD es rechazado con 503, sin HTML ejecutado ni metadatos obsoletos.
 - Pruebas de regresión .NET: 51 aserciones de contratos y suite Application; Angular build real, assets oficiales byte-exactos y auditorías finales separadas A, B, C.
 
+## Regresión histórica adicional
+
+La CI debe **volver a ejecutar** 11 casos Chromium C01-05 y 9 de C01-06 (incluidos assets aprobados y negativas visuales) con el HEAD vigente, además de los casos de navegador contra MySQL/API reales. Son conjuntos separados: los mocks de las pruebas históricas no se cuentan como la nueva prueba de integración real. La auditoría C exige prueba de ejecución de ambos.
+
 ## Gates, riesgos y rollback
 
 **A:** relación matriz, fuentes canónicas y cobertura real. **B:** SQL solo lectura, tenant/draft aislados, pruebas HTTP negativas, XSS y fail-closed. **C:** Angular/.NET/MySQL, presupuesto real del build, Chromium móvil y WCAG automatizada; sin extrapolar a navegadores/lectores de pantalla no probados. Cero P0/P1 de esta entrega, sin desactivar ni reducir pruebas. Las pruebas de CI se ejecutan con cuenta GitHub read-only, sin credenciales productivas; contraseña MySQL efímera generada en runner y no impresa.

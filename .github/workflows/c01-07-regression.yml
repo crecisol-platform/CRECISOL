@@ -54,6 +54,12 @@ jobs:
         run: cd frontend && npm run check:types
       - name: Build Angular with production bundle budgets and real official assets
         run: cd frontend && npm run build && npm run test:assets
+      - name: Re-run C01-05 and C01-06 Chromium regression on unchanged public UI
+        run: |
+          cd frontend
+          npx playwright test tests/c01-05.public-brand.spec.ts tests/c01-06.official-integration.spec.ts --reporter=line
+          mkdir -p ../.c01-07-ci-proof
+          printf 'PASS: browser-legacy\n' > ../.c01-07-ci-proof/browser-legacy
       - name: Build actual .NET API in Release
         run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo
       - name: Regression 51 Domain contracts

@@ -76,6 +76,7 @@ def audit_c():
             'official image missing from built bundle')
     completed('browser-published')
     completed('browser-updated')
+    completed('browser-legacy')
     completed('api-restored')
 
 if __name__ == '__main__':
