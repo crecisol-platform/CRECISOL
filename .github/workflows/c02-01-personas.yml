@@ -1,0 +1,35 @@
+name: CRECISOL C02-01 personas canonical source and audits
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'qa/c02_01_*'
+      - 'docs/c02/C02_01_*'
+      - 'docs/C02_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - '.github/workflows/c02-01-personas.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'qa/c02_01_*'
+      - 'docs/c02/C02_01_*'
+      - 'docs/C02_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - '.github/workflows/c02-01-personas.yml'
+permissions:
+  contents: read
+jobs:
+  c02-source:
+    name: C02-01 canonical personas source, boundary and evidence
+    if: startsWith(github.head_ref, 'feature/c02-01-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Read-only CRECISOL checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Compile canonical extractor
+        run: python3 -m py_compile qa/c02_01_source.py
+      - name: Read canonical chapter 02, guarded SHA and boundaries
+        run: python3 qa/c02_01_source.py --preview
