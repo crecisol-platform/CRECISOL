@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "outDir": "./dist/out-tsc/patterns", "types": [] },
+  "files": ["tests/pattern-harness/main.ts"],
+  "include": ["src/**/*.d.ts"]
+}
