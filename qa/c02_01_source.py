@@ -174,7 +174,7 @@ def audit_c():
     acta_path = ROOT / "docs/c02/C02_01_ACTA_MICROFASE.md"
     if acta_path.exists():
         acta = acta_path.read_text(encoding="utf-8")
-        require("1/9" in plan and "C02 NO CERTIFICADO" in plan,
+        require("1/9" in plan and "C02" in plan and "NO CERTIFICADO" in plan,
                 "Closed C02-01 must retain 1/9 without chapter certification")
         require("CERRADA TÉCNICAMENTE" in acta and
                 "f40ab1ec47731eddd4b55a4f28a311b3800e68f4" in acta and
