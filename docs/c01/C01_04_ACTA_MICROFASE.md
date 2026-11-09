@@ -1,7 +1,7 @@
 # C01-04 · Acta técnica de implementación, pruebas y triple auditoría
 
 **Fecha de ejecución:** 8 de noviembre de 2026 (Honduras), 9 de noviembre UTC.  
-**Estado:** PRUEBAS Y AUDITORÍAS TÉCNICAS APROBADAS; **NO CERRAR** hasta CI del HEAD final, revisión del diff y merge confirmado a `dev`.  
+**Estado:** **CERRADA TÉCNICAMENTE C01-04 EN DEV (4/8 microfases)**, tras CI del HEAD final, revisión del diff, merge confirmado y fundación post-merge. **Capítulo C01 NO CERTIFICADO (0/37)**.  
 **Alcance:** microfase C01-04 exclusivamente (caso de uso + API pública de marca PLATFORM publicada). **Capítulo C01 NO CERTIFICADO, 0/37.**  
 **Fuente:** Documento Maestro Único, SHA-256 `e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e`, matriz C01-01, contratos net10 C01-02 y modelo MySQL C01-03. C01-01/02/03 cerradas antes de empezar.
 
@@ -41,8 +41,12 @@ Aunque la consulta plataforma lee MySQL 8.4 real, la integración se limita a pr
 
 ## Revisión final, autorización y reversión
 
-El propietario ha autorizado expresamente continuar con la siguiente microfase y tiene delegada la aprobación de microfases en `docs/C01_PREPARACION.md` únicamente tras pruebas y triple auditoría. **Cierre permitido** cuando el PR #18 final apruebe CI sobre último SHA, se revise el diff (sin frontend, secrets o producción) y se confirme el merge/post-merge. Debe registrarse el SHA final de integración en un PR documental separado.
+El propietario ha autorizado expresamente continuar con la siguiente microfase y tiene delegada la aprobación de microfases en `docs/C01_PREPARACION.md` únicamente tras pruebas y triple auditoría. **Cierre cumplido:** [CI final #42557022367](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42557022367) aprobada en HEAD `301a04d185062cfa4722c4902d0c9773864bc8c3`, fundación [#42557022442](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42557022442) PASS, [PR #18](https://github.com/solqaryn-platform/CRECISOL/pull/18) fusionado a `dev` SHA **`9addbedd3c33c77c9be15fe25a391f9167a05ef5`**, y [CI de fundación post-merge #42557167001](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42557167001) SUCCESS. El diff de PR #18 se revisó: solo código backend, pruebas, CI y documentación C01-04, sin frontend, schema DDL modificado, servicios externos ni secretos.
 
 **Rollback:** revertir PR #18 mediante PR trazable; el test elimina el contenedor y el socket efímeros. Sin bases reales, datos productivos, servicios, dominios ni infraestructura para revertir.
 
 **Siguiente en secuencia tras cierre:** C01-05 (Angular 22 de identidad, diseño responsive y accesibilidad). El capítulo C01 completo sigue **0/37 certificados** hasta C01-08.
+
+## Certificación limitada de microfase y continuidad
+
+**C01-04 CERTIFICADA TÉCNICAMENTE EN SU ALCANCE** (caso de uso, MySQL read-only y API pública de plataforma), según delegación de cierre de microfases y evidencia A/B/C. Progreso **4/8 microfases cerradas**; siguiente **C01-05**. La palabra «certificada» aquí no atribuye garantía de seguridad, funcionamiento productivo ni aprobación del capítulo 01. **0 de 37 capítulos certificados.** Las autorizaciones multitenant privadas siguen pendientes y no pueden habilitarse en este alcance.
