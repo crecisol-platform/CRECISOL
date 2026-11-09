@@ -6,7 +6,7 @@
 - `brand_scopes` materializa `BrandScope` (Platform=1 con Guid.Empty / Tenant=2 con Guid no vacío) sin inferir permiso de acceso.
 - `brand_revisions` representa `BrandSnapshot`, estados Draft=1 y Published=2 y presentación opcional; las revisiones son claves compuestas por ámbito.
 - `brand_publications` apunta mediante FK compuesta a una revisión **Published** del mismo ámbito. Nada del navegador selecciona una base dedicada o un tenant.
-- Requisitos C01-01: P04/P06, P07, P14/P25/P31, T01-R03/R04, T02-R01/R02/R03, T03-R01/R02. Contratos: `docs/c01/C01_02_CONTRATOS.md`.
+- Requisitos C01-01: P04, P06, P07, P14, P25, P31, T01-R03, T01-R04, T02-R01, T02-R02, T02-R03, T02-R07, T03-R01, T03-R02. Contratos: `docs/c01/C01_02_CONTRATOS.md`.
 
 ## Alcance
 Solo DDL de diseño, sin conexión a MySQL Hostinger, sin migración ejecutada, datos reales, seed institucional, APIs, autenticación, carga de logos, preview o publicación ejecutable. Separación `frontend/`, `backend/`, `database/` intacta. El contrato .NET usa `Guid` y `DateTimeOffset`; el futuro adaptador debe establecer explícitamente orden de bytes UUID, UTC y validación de longitudes antes de persistir. `DATETIME(6)` no transporta zona horaria: tratarlo únicamente como UTC en el adaptador. Los `CHECK` de SQL son defensa adicional, no reemplazan `BrandValidation`, ni la autorización en backend.
