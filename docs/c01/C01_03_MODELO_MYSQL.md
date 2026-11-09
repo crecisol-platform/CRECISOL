@@ -1,6 +1,6 @@
 # C01-03 — esquema relacional mínimo para identidad versionada
 
-**Estado:** AUDITORÍAS Y PRUEBAS PASS EN CI #42541568404; cierre técnico sujeto a CI del último HEAD y merge PR #16. Capítulo C01 NO CERTIFICADO. El PR #15 se fusionó a `dev` en `c476f937ee49661b4e971a9bab2c70b24bfa89d1` antes de la prueba MySQL y la auditoría triple; esto NO cerró la microfase. Corrección en rama `feature/c01-03-validacion-integridad` desde ese SHA. La fuente es el Documento Maestro Único verificado en `docs/MASTER_REFERENCE.md`, la matriz C01-01 y los contratos C01-02.
+**Estado:** **CERRADA TÉCNICAMENTE EN DEV**, con CI final #42541904259, merge PR #16 SHA 42c81b30347d43c718813a32df95b0ceb5566158, fundación post-merge #42542009481. Capítulo C01 NO CERTIFICADO (0/37). El PR #15 se fusionó a `dev` en `c476f937ee49661b4e971a9bab2c70b24bfa89d1` antes de la prueba MySQL y la auditoría triple; esto NO cerró la microfase. Corrección en rama `feature/c01-03-validacion-integridad` desde ese SHA. La fuente es el Documento Maestro Único verificado en `docs/MASTER_REFERENCE.md`, la matriz C01-01 y los contratos C01-02.
 
 ## Propósito y trazabilidad
 - `brand_scopes` materializa `BrandScope` (Platform=1 con Guid.Empty / Tenant=2 con Guid no vacío) sin inferir permiso de acceso.
@@ -32,7 +32,7 @@ Para un esquema **de prueba** vacío, eliminar en este orden: `brand_publication
 
 ## Evidencia de validación
 
-[CI MySQL 8.4 + Domain .NET 10 + A/B/C #42541568404](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42541568404): MySQL 8.4.13 con 9 positivos, 22 negativos y reversión sintética, 51 pruebas Domain .NET 10, tres auditorías A/B/C aprobadas. La [acta C01-03](C01_03_ACTA_MICROFASE.md) conserva límites y condiciones de cierre. Pin de imagen de MySQL y acta deben pasar CI del último HEAD antes de integrar, sin acceso a producción.
+[CI MySQL 8.4 + Domain .NET 10 + A/B/C #42541568404](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42541568404): MySQL 8.4.13 con 9 positivos, 22 negativos y reversión sintética, 51 pruebas Domain .NET 10, tres auditorías A/B/C aprobadas. La [acta C01-03](C01_03_ACTA_MICROFASE.md) conserva límites y condiciones de cierre. El pin de la imagen MySQL y el acta pasaron CI del último HEAD antes de integrar, sin acceso a producción.
 
 ## Evaluación de compatibilidad del proveedor .NET (sin incorporarlo)
 
