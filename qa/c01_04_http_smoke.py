@@ -15,7 +15,7 @@ def request(method="GET", path=PATH, headers=None):
     connection.request(method, path, headers=headers or {})
     response = connection.getresponse()
     body = response.read().decode("utf-8", "replace")
-    result = (response.status, dict(response.getheaders()), body)
+    result = (response.status, {name.lower(): value for name, value in response.getheaders()}, body)
     connection.close()
     return result
 
@@ -25,15 +25,15 @@ def expect(label, code, method="GET", path=PATH, headers=None, verify=None):
     actual, received, body = request(method, path, headers)
     if actual != code:
         raise AssertionError(f"{label}: expected HTTP {code}, got {actual}.")
-    if "no-store" not in received.get("Cache-Control", ""):
+    if "no-store" not in received.get("cache-control", ""):
         raise AssertionError(f"{label}: no-store cache policy absent")
-    if received.get("X-Content-Type-Options") != "nosniff":
+    if received.get("x-content-type-options") != "nosniff":
         raise AssertionError(f"{label}: browser MIME protection absent")
-    if received.get("Referrer-Policy") != "no-referrer":
+    if received.get("referrer-policy") != "no-referrer":
         raise AssertionError(f"{label}: referrer protection absent")
-    if received.get("Access-Control-Allow-Origin"):
+    if received.get("access-control-allow-origin"):
         raise AssertionError(f"{label}: unexpected CORS access")
-    if received.get("Set-Cookie"):
+    if received.get("set-cookie"):
         raise AssertionError(f"{label}: API must not set a session cookie")
     if "PRIVATE_TENANT_B" in body or "password" in body.lower():
         raise AssertionError(f"{label}: private details leaked")
@@ -44,7 +44,7 @@ def expect(label, code, method="GET", path=PATH, headers=None, verify=None):
 
 
 def verify_published(headers, body):
-    if not headers.get("Content-Type", "").startswith("application/json"):
+    if not headers.get("content-type", "").startswith("application/json"):
         raise AssertionError("Successful brand needs JSON content type")
     result = json.loads(body)
     if result.get("name") != "CRECISOL" or result.get("revision") != 2:
