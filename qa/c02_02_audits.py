@@ -233,9 +233,10 @@ def audit_c():
         require("2/9" in plan and "C02-02" in plan and "CERRADA TÉCNICAMENTE" in plan,
                 "Closed C02-02 needs consistent 2/9 status")
         require(all(m in acta for m in (
-            "C02-02 CERRADA TÉCNICAMENTE", "POSTMERGE",
-            "NO CERTIFICADO", "C02-03", "PR #")),
-                "Acta does not hold technical scope/next phase evidence")
+            "C02-02 CERRADA TÉCNICAMENTE", "POSTMERGE", "NO CERTIFICADO",
+            "C02-03", "PR #32", "455987893827cb5b25d4b127457efd81225267b7",
+            "42619923854", "42619923974", "42619923990")),
+                "Acta missing exact technical merge SHA or postmerge CI evidence")
     else:
         require("1/9" in plan, "C02-02 must not count as closed without an acta")
     for key in ("WCAG 2.2 AA", "prefers-reduced-motion", "teclado",
