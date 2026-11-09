@@ -1,0 +1,66 @@
+name: CRECISOL C02-02 observable needs and safe journey gates
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c02/C02_02_*'
+      - 'docs/C02_PREPARACION.md'
+      - 'qa/c02_02_*'
+      - '.github/workflows/c02-02-needs.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c02/C02_02_*'
+      - 'docs/C02_PREPARACION.md'
+      - 'qa/c02_02_*'
+      - '.github/workflows/c02-02-needs.yml'
+permissions:
+  contents: read
+jobs:
+  c02-needs:
+    name: C02-02 Word coverage + JSON needs A B C + Angular22 .NET10
+    if: startsWith(github.head_ref, 'feature/c02-02-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Read-only CRECISOL checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Check Python code syntax and JSON structure
+        run: |
+          python3 -m py_compile qa/c02_01_source.py qa/c02_02_audits.py
+          python3 -m json.tool docs/c02/C02_02_MAPA_NECESIDADES.json > /dev/null
+      - name: Recheck canonical Word and C02-01 source audit A
+        run: python3 qa/c02_01_source.py A
+      - name: Recheck C02-01 tenancy/security audit B
+        run: python3 qa/c02_01_source.py B
+      - name: Audit C02-02 A — traceability and four negative mutations
+        run: python3 qa/c02_02_audits.py A
+      - name: Audit C02-02 B — security boundaries and five negative mutations
+        run: python3 qa/c02_02_audits.py B
+      - name: Recheck C02-01 ordered architecture audit C
+        run: python3 qa/c02_01_source.py C
+      - name: Audit C02-02 C — six-experience UX and two negative mutations
+        run: python3 qa/c02_02_audits.py C
+      - name: Install Node 24.15.0
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Restore pinned Angular dependencies without lifecycle scripts
+        run: npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
+      - name: Production dependency security baseline
+        run: cd frontend && npm audit --omit=dev --audit-level=high
+      - name: Verify existing Angular22 types, build and official assets
+        run: |
+          cd frontend
+          npm run check:types
+          npm run build
+          npm run test:assets
+      - name: Install ASP.NET Core 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Verify existing .NET 10 API Release compiles
+        run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo
