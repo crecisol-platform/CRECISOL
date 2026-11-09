@@ -63,6 +63,6 @@
 
 ## Ejecución futura y concurrencia
 
-El [protocolo de continuidad](PROTOCOLO_CONTINUIDAD_CRECiSOL.md) define recuperación, bloqueo escritor, auditorías y reportes. **NO HAY automatizaciones creadas, activadas ni comprobadas** mediante este documento. Las tres tareas escalonadas propuestas cada 20 minutos no son compatibles con el límite de una hora por automatización y no constituyen una solución de exclusión mutua. Se requiere un único agente permitido con herramientas reales y un mecanismo de bloqueo probado antes de delegar escrituras.
+El [protocolo de continuidad](PROTOCOLO_CONTINUIDAD_CRECISOL.md) define recuperación, bloqueo escritor, auditorías y reportes. **NO HAY automatizaciones creadas, activadas ni comprobadas** mediante este documento. Las tres tareas escalonadas propuestas cada 20 minutos no son compatibles con el límite de una hora por automatización y no constituyen una solución de exclusión mutua. Se requiere un único agente permitido con herramientas reales y un mecanismo de bloqueo probado antes de delegar escrituras.
 
 **Estado actual acreditado:** C01 5/8 microfases técnicamente cerradas, C01 no certificado, **0/37 capítulos certificados**. Siguiente fase ejecutable en secuencia: C01-06 (logo oficial), que permanece sin iniciar.
