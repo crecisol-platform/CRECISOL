@@ -41,12 +41,12 @@ def chapter_items():
     for el in body:
         if el.tag == W + "p":
             txt, sty = text_of(el), style_of(el)
-            if sty == "Heading1" and re.match(r"^02\\.\\s", txt):
+            if sty == "Heading1" and re.match(r"^02\.\s", txt):
                 assert not started, "Duplicate chapter 02 heading"
                 first = txt
                 started = True
                 continue
-            if started and sty == "Heading1" and re.match(r"^03\\.\\s", txt):
+            if started and sty == "Heading1" and re.match(r"^03\.\s", txt):
                 last = txt
                 break
             if started and txt:
