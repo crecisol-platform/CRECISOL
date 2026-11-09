@@ -41,6 +41,12 @@ jobs:
           python3 -m json.tool docs/c02/C02_03_SITEMAP.json > /dev/null
           python3 qa/c02_01_source.py A
           python3 qa/c02_02_audits.py A
+      - name: Regress all prior C02-01 and C02-02 A/B/C gates after 3/9 advancement
+        run: |
+          python3 qa/c02_01_source.py B
+          python3 qa/c02_01_source.py C
+          python3 qa/c02_02_audits.py B
+          python3 qa/c02_02_audits.py C
       - name: Audit A — canonical source and allowlisted public route coverage
         run: python3 qa/c02_03_audits.py A
       - name: Audit B — private-path deny boundary and five negative mutations
