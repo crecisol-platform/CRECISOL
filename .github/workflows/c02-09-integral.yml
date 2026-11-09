@@ -5,23 +5,29 @@ on:
     paths:
       - 'docs/c02/C02_09_*'
       - 'docs/C02_PREPARACION.md'
+      - 'docs/MASTER_REFERENCE.md'
+      - 'docs/planificacion-futura/C02_MICROFASES_PROPUESTAS.md'
       - 'docs/PLAN_37_CAPITULOS.md'
       - 'qa/c02_09_*'
+      - 'qa/c02_certification_gate.py'
       - '.github/workflows/c02-09-integral.yml'
   push:
     branches: [dev]
     paths:
       - 'docs/c02/C02_09_*'
       - 'docs/C02_PREPARACION.md'
+      - 'docs/MASTER_REFERENCE.md'
+      - 'docs/planificacion-futura/C02_MICROFASES_PROPUESTAS.md'
       - 'docs/PLAN_37_CAPITULOS.md'
       - 'qa/c02_09_*'
+      - 'qa/c02_certification_gate.py'
       - '.github/workflows/c02-09-integral.yml'
 permissions:
   contents: read
 jobs:
   c02-integral:
     name: C02-09 real Word + A/B/C + 58 C02 Chromium + MySQL8.4/.NET10
-    if: startsWith(github.head_ref, 'feature/c02-09-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    if: startsWith(github.head_ref, 'feature/c02-09-') || startsWith(github.head_ref, 'feature/c02-certificacion-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -31,7 +37,7 @@ jobs:
           persist-credentials: false
       - name: Validate canonical Word chapter 02, original matrix, Python and shell
         run: |
-          python3 -m py_compile qa/c02_01_source.py qa/c02_02_audits.py qa/c02_03_audits.py qa/c02_04_audits.py qa/c02_05_audits.py qa/c02_06_audits.py qa/c02_07_audits.py qa/c02_08_audits.py qa/c02_09_integral_audits.py
+          python3 -m py_compile qa/c02_01_source.py qa/c02_02_audits.py qa/c02_03_audits.py qa/c02_04_audits.py qa/c02_05_audits.py qa/c02_06_audits.py qa/c02_07_audits.py qa/c02_08_audits.py qa/c02_09_integral_audits.py qa/c02_certification_gate.py
           bash -n qa/c01_07_real_stack.sh
           python3 -m json.tool docs/c02/C02_08_RECORRIDOS_CONTRATOS.json > /dev/null
           python3 qa/c02_01_source.py A
@@ -125,6 +131,8 @@ jobs:
         run: python3 qa/c02_09_integral_audits.py B
       - name: INTEGRAL AUDIT C - Angular, .NET, MySQL, mobile UX and build isolation
         run: python3 qa/c02_09_integral_audits.py C
+      - name: Gate certification on real execution proofs and explicit owner approval
+        run: python3 qa/c02_certification_gate.py
       - name: Upload diagnostics only after a real failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
