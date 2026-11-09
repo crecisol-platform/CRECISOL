@@ -101,7 +101,7 @@ def validate_content(files):
             and "3/3 workflows" in second and "35/35" in second and
             "51/51" in second and "19/19" in second and
             "5/5 mutaciones adversariales" in second and
-            "BOLA/IDOR/MFA" in second and "NO se certifican" in second and
+            "BOLA/IDOR/MFA" in second and "No se certifican" in second and
             "C03 NO CERTIFICADO" in second and
             "C03-03 NO INICIADA" in second and "C04 BLOQUEADO" in second,
             "C03-02 closure lacks explicit limited approval and verified CI evidence")
