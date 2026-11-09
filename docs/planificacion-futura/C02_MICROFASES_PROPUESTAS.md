@@ -1,6 +1,6 @@
 # C02 · Personas, experiencias y arquitectura de producto — microfases propuestas
 
-> **BORRADOR DE PLANIFICACIÓN; NO HABILITADO PARA DESARROLLO NI CERTIFICACIÓN.** Esta guía deriva del índice `docs/PLAN_37_CAPITULOS.md` y de las políticas transversales de CRECISOL. Antes de activar C02, contrastar cada punto con el texto íntegro del capítulo en el Word canónico, su SHA registrado en `docs/MASTER_REFERENCE.md` y sus anexos; ajustar el número o alcance por PR trazable. Este archivo **no modifica el Documento Maestro Único**.
+> **PLAN OPERATIVO ACTIVADO SOLO PARA C02; CAPÍTULO NO CERTIFICADO.** C01 está certificado. C02-01 se contrastó con el Word canónico y su SHA, y se cerró técnicamente con PR #30 y CI postmerge #42616163656; C02-02 es la siguiente fase, todavía no iniciada. Las demás filas mantienen carácter de **propuestas sujetas al maestro y sus gates**; 8 puertas de proceso `MAE-C02-01..08` del Word no deben confundirse con 9 microfases técnicas `C02-01..09`. Ver `docs/c02/C02_01_ESPECIFICACION.md`. Este archivo **no modifica el Documento Maestro Único**.
 
 **Puerta de entrada:** C01 certificado, acta aceptada y CI de `dev` verde. Ninguna microfase de C02 puede codificarse durante C01 u otro capítulo anterior.
 
