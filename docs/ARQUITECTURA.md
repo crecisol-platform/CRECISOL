@@ -1,6 +1,6 @@
 # Arquitectura de desarrollo inicial — CRECISOL
 
-Estado: DISEÑADA, NO IMPLEMENTADA. Fuente: Documento Maestro Único identificado en docs/MASTER_REFERENCE.md.
+Estado: **DISEÑADA; corte público C01/C02 implementado, probado y certificado en su alcance; arquitectura de módulos privados NO IMPLEMENTADA**. C03-01 inventaría dependencias físicas del stack existente, sin convertir planes de módulos o Workers en software activo. Fuente: Documento Maestro Único identificado en docs/MASTER_REFERENCE.md y [C03-01](c03/C03_01_ESPECIFICACION.md).
 
 ## Límites físicos
 frontend/ (Angular, design system, editor, experiencias públicas y privadas)
