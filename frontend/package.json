@@ -14,7 +14,8 @@
     "check:types": "tsc --noEmit -p tsconfig.app.json",
     "prestart": "python3 ../qa/c01_06_official_assets.py --write",
     "prebuild": "python3 ../qa/c01_06_official_assets.py --write",
-    "test:assets": "python3 ../qa/c01_06_official_assets.py --check"
+    "test:assets": "python3 ../qa/c01_06_official_assets.py --check",
+    "test:c02-06": "playwright test --config=playwright.patterns.config.ts --reporter=line"
   },
   "dependencies": {
     "@angular/common": "22.2.4",
