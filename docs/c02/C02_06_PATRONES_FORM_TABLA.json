@@ -1,0 +1,283 @@
+{
+  "artifact": "CRECISOL-C02-06-FORM-TABLE-UX-CONTRACT",
+  "schema_version": 1,
+  "delivery_state": "reusable-angular-patterns-isolated-test-harness-no-live-business-form",
+  "source": {
+    "master": "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx",
+    "sha256": "e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e",
+    "chapter": "02",
+    "process_gates": "MAE-C02-01..08",
+    "operative_microphase": "C02-06",
+    "needs": "docs/c02/C02_02_MAPA_NECESIDADES.json",
+    "sitemap": "docs/c02/C02_03_SITEMAP.json",
+    "private_design": "docs/c02/C02_04_NAVEGACION_PRIVADA.json",
+    "interaction_states": "docs/c02/C02_05_ESTADOS_INTERACCION.json",
+    "previous_acta": "docs/c02/C02_05_ACTA_MICROFASE.md",
+    "previous_dev_sha": "cf751709f4cd5dac5e579dccc50c060bf20ae396"
+  },
+  "contexts": [
+    {
+      "experience": "E01",
+      "needs": [
+        "N01",
+        "N02",
+        "N03"
+      ],
+      "usage": "future-authorized-binding-only"
+    },
+    {
+      "experience": "E02",
+      "needs": [
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "usage": "future-authorized-binding-only"
+    },
+    {
+      "experience": "E03",
+      "needs": [
+        "N07",
+        "N08",
+        "N09"
+      ],
+      "usage": "future-authorized-binding-only"
+    },
+    {
+      "experience": "E04",
+      "needs": [
+        "N10",
+        "N11",
+        "N12"
+      ],
+      "usage": "future-authorized-binding-only"
+    },
+    {
+      "experience": "E05",
+      "needs": [
+        "N13",
+        "N14",
+        "N15"
+      ],
+      "usage": "future-authorized-binding-only"
+    },
+    {
+      "experience": "E06",
+      "needs": [
+        "N16",
+        "N17",
+        "N18"
+      ],
+      "usage": "future-authorized-binding-only"
+    }
+  ],
+  "patterns": [
+    {
+      "id": "FP01",
+      "kind": "local-draft",
+      "component": "frontend/src/app/ui/patterns/draft-form-pattern.component.ts",
+      "features": [
+        "native-labelled-input",
+        "required-and-length-validation",
+        "allowlisted-rule",
+        "inline-error-alert",
+        "local-only-format-check",
+        "no-server-submit"
+      ],
+      "no_business_operation": true,
+      "live_public": false,
+      "standalone_test_only": true
+    },
+    {
+      "id": "FP02",
+      "kind": "unsaved-draft",
+      "component": "frontend/src/app/ui/patterns/draft-form-pattern.component.ts",
+      "features": [
+        "native-modal-discard-confirmation",
+        "cancel-and-escape",
+        "beforeunload-hint",
+        "clear-on-scope-change",
+        "explicit-unverified-copy"
+      ],
+      "no_business_operation": true,
+      "live_public": false,
+      "standalone_test_only": true
+    },
+    {
+      "id": "TP01",
+      "kind": "read-only-table",
+      "component": "frontend/src/app/ui/patterns/table-pattern.component.ts",
+      "features": [
+        "caption",
+        "semantic-th-td",
+        "accessible-sort",
+        "aria-sort",
+        "client-only-filter",
+        "keyboard",
+        "horizontal-scroll"
+      ],
+      "no_business_operation": true,
+      "live_public": false,
+      "standalone_test_only": true
+    },
+    {
+      "id": "TP02",
+      "kind": "scoped-table",
+      "component": "frontend/src/app/ui/patterns/table-pattern.component.ts",
+      "features": [
+        "clears-filter-and-sort-on-scope-change",
+        "fresh-host-supplied-rows",
+        "non-authoritative-local-empty",
+        "no-export-or-edit",
+        "row-value-interpolation"
+      ],
+      "no_business_operation": true,
+      "live_public": false,
+      "standalone_test_only": true
+    }
+  ],
+  "future_backend_gate": {
+    "authorization": "backend-deny-by-default",
+    "identity": "verified-session-and-revocation",
+    "tenancy": "host-verified-and-server-resolved-membership",
+    "object_security": "tenant-branch-action-assignment-and-resource-ownership",
+    "superadmin": "step-up-MFA-reason-time-window-audit-for-PII",
+    "storage": "catalog-server-only-shared-or-dedicated",
+    "output": "server-validated-DTO-no-private-browser-trust",
+    "mutation": "CSRF-or-equivalent-protection-plus-versioned-authorization-transaction",
+    "validation": "frontend-UX-only-backend-revalidates-before-write",
+    "concurrency": "optimistic-version-or-explicit-conflict-policy-server-side",
+    "changes": "unsaved-route-exit-confirmation-before-verified-scope-change",
+    "log": "tenant-scope-no-raw-field-values-or-PII",
+    "zero_tenant_selector": true,
+    "no_live_private_route": true,
+    "no_real_payment": true,
+    "no_registration": true
+  },
+  "configuration": {
+    "state": "future-published-admin-managed-versioned",
+    "scopes": [
+      "platform",
+      "tenant",
+      "branch",
+      "user"
+    ],
+    "editable": [
+      "field_label",
+      "field_hint",
+      "required",
+      "max_length",
+      "rule_token",
+      "table_caption",
+      "table_column_label",
+      "table_column_order",
+      "empty_copy",
+      "locale"
+    ],
+    "safe_fields": "bounded-allowlisted-text-and-tokens-no-arbitrary-HTML-JS-CSS-or-regex",
+    "security_immutable": [
+      "tenant-context",
+      "backend-policy",
+      "resource-ownership",
+      "database-routing",
+      "authorization",
+      "confirmation-proof"
+    ],
+    "approval": "preview-approval-publish-audit-rollback",
+    "runtime_admin_configuration_implemented": false,
+    "examples": "CI-test-only-synthetic-literals-not-production-business-settings"
+  },
+  "build_isolation": {
+    "production_entrypoint": "src/main.ts",
+    "production_build": "crecisol-web:build:production",
+    "production_routes": [
+      "",
+      "experiencias",
+      "demostraciones",
+      "alta-empresas",
+      "**"
+    ],
+    "harness_entrypoint": "tests/pattern-harness/main.ts",
+    "harness_build": "crecisol-web:build:pattern-harness",
+    "harness_served_port": 4201,
+    "harness_only_tests": [
+      "frontend/tests/c02-06.form-table.spec.ts"
+    ],
+    "no_new_production_routes": true,
+    "no_backend_changes": true,
+    "no_database_changes": true,
+    "no_harness_in_production_bundle": true
+  },
+  "negative_cases": [
+    {
+      "id": "NEG01",
+      "attack": "submit synthetic draft as business form",
+      "expected": "prevent native submit, emit no backend write and show local-only feedback"
+    },
+    {
+      "id": "NEG02",
+      "attack": "submit an empty required field while claiming the local preview is valid",
+      "expected": "inline accessible error, no save or successful transaction acknowledgement"
+    },
+    {
+      "id": "NEG03",
+      "attack": "inject HTML or script into field or column values",
+      "expected": "reject invalid config and field input, display table values as escaped text"
+    },
+    {
+      "id": "NEG04",
+      "attack": "discard dirty value with one click",
+      "expected": "require native modal confirmation; cancel or Escape preserves draft"
+    },
+    {
+      "id": "NEG05",
+      "attack": "close browser with unsaved draft",
+      "expected": "beforeunload confirmation hint while draft remains dirty"
+    },
+    {
+      "id": "NEG06",
+      "attack": "change tenant or schema after typing",
+      "expected": "discard previous scope draft and require host authorization before new context"
+    },
+    {
+      "id": "NEG07",
+      "attack": "reopen another tenant table with stale filter",
+      "expected": "clear filter and sort and demand authorized fresh host rows"
+    },
+    {
+      "id": "NEG08",
+      "attack": "empty view used to interpret HTTP 403",
+      "expected": "local fixture empty never stands for server authorization or results"
+    },
+    {
+      "id": "NEG09",
+      "attack": "client alters column schema with HTML key or label",
+      "expected": "reject unsafe schema using bounded text and key allowlist"
+    },
+    {
+      "id": "NEG10",
+      "attack": "sort or filter to enumerate private API records",
+      "expected": "table never fetches data; host must limit results to authorized scope"
+    },
+    {
+      "id": "NEG11",
+      "attack": "test harness leaks to production route or bundle",
+      "expected": "production index and main unchanged, no harness code in production output"
+    },
+    {
+      "id": "NEG12",
+      "attack": "malicious keyboard or 320px layout hides controls",
+      "expected": "native focus/semantic form/table, visible navigation and horizontally scrollable table"
+    },
+    {
+      "id": "NEG13",
+      "attack": "SuperAdmin bypasses exceptional PII constraints",
+      "expected": "patterns never grant permission and future backend requires MFA reason expiry audit"
+    },
+    {
+      "id": "NEG14",
+      "attack": "private cross-tenant path hit while testing demo patterns",
+      "expected": "existing four-route allowlist stays unchanged and unknown path uses NotFound"
+    }
+  ]
+}

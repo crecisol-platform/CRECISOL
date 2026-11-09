@@ -1,0 +1,38 @@
+@if (safeConfig()) {
+  <section class="draft-card" aria-label="Patrón de borrador local">
+    <p class="draft-kicker">Patrón de formulario · solo diseño</p>
+    <p class="draft-boundary" role="note">Prueba de validación local. No crea cuentas ni guarda información.</p>
+    <form novalidate autocomplete="off" (submit)="checkLocal($event)">
+      <label [for]="config().id">{{ config().label }} @if (config().required) { <span aria-hidden="true">*</span> }</label>
+      <p class="draft-hint" [id]="config().id + '-hint'">{{ config().hint }}</p>
+      <input [id]="config().id" name="borrador-sintetico" type="text"
+        autocomplete="off" spellcheck="false" [required]="config().required"
+        [attr.maxlength]="config().maxLength + 1" [value]="draft()"
+        [attr.aria-describedby]="config().id + '-hint ' + config().id + '-feedback'"
+        [attr.aria-invalid]="touched() && issue() ? 'true' : 'false'"
+        (input)="edit($event)" />
+      <div class="draft-feedback" [id]="config().id + '-feedback'" aria-live="polite">
+        @if (touched() && issue(); as message) {
+          <p class="draft-error" role="alert">{{ message }}</p>
+        } @else if (locallyChecked()) {
+          <p class="draft-good" role="status">Formato del ejemplo válido. Ningún dato fue enviado ni guardado.</p>
+        }
+      </div>
+      <div class="draft-actions">
+        <button class="draft-primary" type="submit">Revisar formato local</button>
+        <button class="draft-secondary" type="button" [disabled]="!dirty()"
+          (click)="askDiscard()">Descartar borrador</button>
+      </div>
+    </form>
+    <dialog #discardDialog aria-labelledby="discard-title" aria-describedby="discard-description">
+      <h2 id="discard-title">¿Descartar el borrador?</h2>
+      <p id="discard-description">La información escrita en este ejemplo se perderá. No se ha enviado al servidor.</p>
+      <div class="draft-actions">
+        <button class="draft-secondary" type="button" (click)="cancelDiscard()">Conservar cambios</button>
+        <button class="draft-primary" type="button" (click)="discard()">Sí, descartar</button>
+      </div>
+    </dialog>
+  </section>
+} @else {
+  <p role="alert">El patrón no está disponible: configuración inválida.</p>
+}
