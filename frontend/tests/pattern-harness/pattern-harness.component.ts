@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, signal, viewChild } from '@angular/core';
 import { DraftFormPatternComponent } from '../../src/app/ui/patterns/draft-form-pattern.component';
 import { TablePatternComponent } from '../../src/app/ui/patterns/table-pattern.component';
 import type { DraftFieldConfig, TableColumn, TableRow } from '../../src/app/ui/patterns/pattern-contract';
@@ -50,33 +50,67 @@ const B_ROWS: readonly TableRow[] = Object.freeze([
       <h1>Patrones de formularios y tablas</h1>
       <p class="intro">Entorno sintético de pruebas C02-06: no forma parte de la aplicación pública, no contiene datos reales y nunca guarda ni envía información.</p>
       <div class="testing-controls">
-        <button data-testid="switch-context" type="button" (click)="switchFixture()">
+        <button data-testid="switch-context" type="button" (click)="requestChange('scope')">
           Cambiar conjunto sintético
         </button>
-        <button data-testid="invalid-schema" type="button" (click)="toggleInvalidSchema()">
+        <button data-testid="invalid-schema" type="button" (click)="requestChange('schema')">
           Alternar configuración inválida
         </button>
       </div>
       <div class="patterns">
-        <cs-draft-form-pattern [config]="field()" [scopeKey]="scope()"/>
+        <cs-draft-form-pattern [config]="field()" [scopeKey]="scope()"
+          (dirtyChange)="dirty.set($event)"/>
         <cs-table-pattern [caption]="'Tabla sintética de lectura'"
           [columns]="columns" [rows]="rows()" [scopeKey]="scope()"/>
       </div>
+      <dialog #changeDialog aria-labelledby="change-title" aria-describedby="change-description">
+        <h2 id="change-title">¿Cambiar el ejemplo?</h2>
+        <p id="change-description">Hay un borrador sin guardar. Continuar lo descartará por seguridad.</p>
+        <button type="button" (click)="cancelChange()">Conservar borrador</button>
+        <button type="button" (click)="confirmChange()">Descartar y cambiar</button>
+      </dialog>
     </main>
   `
 })
 export class PatternHarnessComponent {
+  private readonly changeDialog = viewChild.required<ElementRef<HTMLDialogElement>>('changeDialog');
+  readonly dirty = signal(false);
+  private readonly pending = signal<'scope' | 'schema' | null>(null);
   readonly scope = signal<'fixture-a' | 'fixture-b'>('fixture-a');
   readonly invalid = signal(false);
   readonly field = computed(() => this.invalid() ? UNSAFE_FIELD : SAFE_FIELD);
   readonly columns = COLUMNS;
   readonly rows = computed(() => this.scope() === 'fixture-a' ? A_ROWS : B_ROWS);
 
-  switchFixture(): void {
-    this.scope.update(value => value === 'fixture-a' ? 'fixture-b' : 'fixture-a');
+  requestChange(action: 'scope' | 'schema'): void {
+    if (this.dirty()) {
+      this.pending.set(action);
+      this.changeDialog().nativeElement.showModal();
+      return;
+    }
+    this.applyChange(action);
   }
 
-  toggleInvalidSchema(): void {
-    this.invalid.update(value => !value);
+  cancelChange(): void {
+    this.pending.set(null);
+    this.changeDialog().nativeElement.close();
+  }
+
+  confirmChange(): void {
+    const action = this.pending();
+    this.pending.set(null);
+    this.changeDialog().nativeElement.close();
+    if (action) {
+      this.dirty.set(false);
+      this.applyChange(action);
+    }
+  }
+
+  private applyChange(action: 'scope' | 'schema'): void {
+    if (action === 'scope') {
+      this.scope.update(value => value === 'fixture-a' ? 'fixture-b' : 'fixture-a');
+    } else {
+      this.invalid.update(value => !value);
+    }
   }
 }
