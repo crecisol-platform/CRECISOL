@@ -41,3 +41,7 @@ C36 | Matriz adicional de pruebas transversales | PENDIENTE
 C37 | Referencias normativas y técnicas | PENDIENTE
 
 Reglas transversales: multitenancy shared/dedicated, login contextual sin selector, seguridad browser/API/DB, superadministración auditada, perfiles y multimedia, parametrización y seguimiento universal por expediente; ninguna de estas capacidades se considera ya programada.
+
+## Planificación futura no ejecutable
+
+[Propuesta de 365 microfases para 37 capítulos](PLAN_MICROFASES_37_CAPITULOS_PROPUESTO.md), con 8 microfases operativas de C01 ya definidas y 357 microfases **provisionales** de C02–C37 en archivos separados. Estas propuestas NO habilitan trabajo fuera de C01, NO modifican el Documento Maestro Único y NO constituyen implementación o certificación. Cada capítulo posterior debe contrastarse íntegramente con el Word vigente y obtener su puerta de entrada cuando corresponda. [Protocolo de continuidad no activado](PROTOCOLO_CONTINUIDAD_CRECISOL.md).
