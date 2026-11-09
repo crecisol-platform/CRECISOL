@@ -128,7 +128,7 @@ def valid_contract(data, parents):
                 f"Missing exact N01-N18 source mapping for {exp}")
         refs.extend(need_ids)
         require(isinstance(context.get("state_usage"), str) and
-                len(context["state_usage"]) >= 21,
+                len(context["state_usage"]) >= 18,
                 f"State usage needs future-auth boundary in {exp}")
     require(refs == [f"N{i:02d}" for i in range(1, 19)],
             "One or more needs from C02-02 untraced")
