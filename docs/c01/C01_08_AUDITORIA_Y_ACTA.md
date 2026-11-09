@@ -1,6 +1,6 @@
 # CRECISOL — C01-08 · Auditoría integral de capítulo 01 y acta de conformidad
 
-**ESTADO: AUDITORÍAS A/B/C INTEGRALES PASS CON EVIDENCIA PRE-ACTA, PENDIENTE DE CI DEL ÚLTIMO HEAD DOCUMENTAL, POSTMERGE Y ACEPTACIÓN EXPRESA DEL PROPIETARIO.** NO equivale a certificación. 0/37 capítulos certificados; C02 no habilitado. Las microfases C01-01 a C01-07 están cerradas técnicamente (7/8). No se presumen pruebas de este PR antes de consultar sus GitHub Actions.
+**ESTADO: CERTIFICADO C01 — 8/8 microfases cerradas, 1/37 capítulos certificados.** Aceptación expresa del propietario recibida el 9 de noviembre de 2026 en esta conversación, posterior a la auditoría integral y con autorización para certificar. Alcance certificado: identidad, visión, alcance y principios del capítulo 01, NO el SaaS completo ni la administración visual futura. La certificación se acredita mediante la sección G y el PR documental de cierre; C02 queda habilitable tras la integración y CI del cierre, no implementado por esta acta.
 
 ## A. Alcance, autoridad y fuentes
 
@@ -72,3 +72,24 @@ La CI C01-08 deberá combinar en el mismo runner de GitHub y para el último HEA
 - No hubo despliegue ni escrituras sobre main, SOLQARYN, VPS, producción o servicios externos. Rollback: revert del PR #28 y de su acta si correspondiera.
 
 **Gates aún NO GO a fecha de esta acta:** (1) CI de último HEAD incluyendo esta actualización, (2) merge PR #28 a dev con SHA esperado, (3) CI postmerge sobre el SHA integrado, (4) registro formal del cierre técnico y (5) conformidad EXPRESA del propietario para la certificación del capítulo. **C01 NO CERTIFICADO, 0/37, C02 BLOQUEADO.**
+
+## G. ACTA DEFINITIVA — C01-08 Y CERTIFICACIÓN DEL CAPÍTULO 01 (9 noviembre 2026)
+
+**ACEPTACIÓN EXPRESA DEL PROPIETARIO:** «OK, adelante, continúa con el punto exacto de continuación entonces y certifica todo. Tienes mi autorización para hacerlo» (9 de noviembre de 2026, conversación CRECISOL). Se registra como aprobación de la certificación del capítulo C01 tras cumplir los gates del capítulo; no es autorización para declarar certificados C02–C37 ni para producción, cobros o despliegues.
+
+**Base inmutable verificada:** `dev` incorporó PR [#28](https://github.com/solqaryn-platform/CRECISOL/pull/28) mediante commit `b85ba613bfb8616697226a3252e89919aa38ced2`. El documento maestro Word tiene SHA-256 `e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e`, según verificación de fuente ejecutada. La integración no escribió en `main`, SOLQARYN ni servicios productivos.
+
+**CI real POSTMERGE (consultada directamente por GitHub Actions con filtro exacto `head_sha=b85ba613bfb8616697226a3252e89919aa38ced2`, evento `push`, estado `completed`, conclusión `success`):**
+
+| Evidencia | Ejecución | Resultado |
+| --- | --- | --- |
+| C01-08 integral Word / Angular 22 / .NET 10 / MySQL 8.4 / Chromium / A-B-C | [#42581697460](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42581697460) | SUCCESS; todas las auditorías A/B/C y comprobaciones principales SUCCESS |
+| C01-07 regresión de seguridad de pila real y A/B/C | [#42581697450](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42581697450) | SUCCESS |
+| C01-06 identidad gráfica aprobada, pruebas adversariales y A/B/C | [#42581697465](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42581697465) | SUCCESS |
+| Foundation alcance/secretos/fuente | [#42581697618](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42581697618) | SUCCESS |
+
+**Resultados técnicos de C01-08 en la ejecución integral:** 55 identificadores de matriz; Word validado; build Angular, typecheck, `npm audit --omit=dev --audit-level=high`, 25/25 Chromium, .NET Release, 51/51 Domain, 19/19 Application, MySQL/API/Angular con 37 HTTP positivos/negativos y 7/7 E2E, reejecución de auditorías previas e integrales A/B/C. Estas cifras proceden del acta de pruebas y los jobs de la CI, no de simulaciones en esta conversación. Sin hallazgos P0/P1 abiertos conocidos **dentro del alcance acotado C01**.
+
+**Decisión y límites:** C01-01 a C01-08 **CERRADAS TÉCNICAMENTE**; **CAPÍTULO 01 CERTIFICADO** con aprobación expresa humana. El lector público de marca publicada y sus defensas están cubiertos; **NO** se certifican panel administrativo, editor visual, carga y publicación de medios, permisos privados, sesiones, propagación a pestañas abiertas, todos los textos editables ni las funciones de C02–C37. Siguen sujetos a sus propias implementaciones y gates PAR-01...PAR-10. La certificación no equivale a conformidad de seguridad de producción ni aprobación de despliegue.
+
+**Control documental:** este registro sustituye únicamente los estados históricos de «PENDIENTE»/«NO CERTIFICADO» de las secciones precedentes; se conservan para trazabilidad de los fallos y gates anteriores, no como estado vigente. El cierre documental requiere PR con CI sobre su último HEAD, merge verificable en `dev` y CI postmerge; si esa comprobación no supera SUCCESS, el registro se suspende y debe corregirse, sin ocultar evidencia. Rollback: revert del PR documental de certificación; el código C01-08 de PR #28 se conserva salvo regresión demostrada. Capítulo C02 habilitado solo para comenzar su propio ciclo después de integrar este cierre; **no se declara implementado ni certificado**.
