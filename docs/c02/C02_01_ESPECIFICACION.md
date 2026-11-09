@@ -1,6 +1,6 @@
 # CRECISOL — C02-01 · Inventario de personas, experiencias y contextos
 
-**Estado:** ESPECIFICACIÓN Y MATRIZ DE TRAZABILIDAD de la primera microfase C02. No equivale a pantallas privadas, autenticación, autorización implementada ni certificación del capítulo 02. La evidencia y el acta técnica de esta microfase se cierran solo tras CI A/B/C y postmerge.
+**Estado:** ESPECIFICACIÓN Y MATRIZ DE TRAZABILIDAD de la primera microfase C02; capítulo C02 **NO CERTIFICADO**. No equivale a pantallas privadas, autenticación, autorización implementada ni certificación del capítulo 02. La evidencia y el acta técnica de esta microfase se cierran solo tras CI A/B/C y postmerge.
 
 **Autoridad:** `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx`, SHA-256 `e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e`, capítulo «02. Personas, experiencias y arquitectura de producto», hasta inicio del capítulo 03. Fuente validada con `qa/c02_01_source.py`, sin modificar el Word ni crear otro maestro. C01 certificado: [PR #29](https://github.com/solqaryn-platform/CRECISOL/pull/29), commit `c4f688edeb63d8b032ea40a85559486cddd00809`, CI integral postmerge [#42613271746](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42613271746).
 
@@ -8,7 +8,7 @@
 
 La fuente original del capítulo aporta **11 párrafos (incluidos títulos de subsección) y una tabla de 7 filas contando encabezado**. El anexo de implementación, las reglas de precedencia de acceso contextual sin selector, las tablas suplementarias y la integración G.7 se conservan como requisitos transversales, sin contarlos indebidamente como filas de la tabla original. El texto anterior que permitía seleccionar empresa durante login está expresamente sustituido por la precedencia normativa del 7 de noviembre de 2026.
 
-**DIF-C02-01:** el Word integra ocho **puertas de proceso** `MAE-C02-01` (Extraer), `02` (Diseñar), `03` (Codificar), `04` (Probar), `05` (Auditar A), `06` (Auditar B), `07` (Auditar C), `08` (Acta), mientras `docs/planificacion-futura/C02_MICROFASES_PROPUESTAS.md` desglosa **nueve microfases técnicas provisionales** `C02-01..C02-09`. La presente microfase operativa C02-01 materializa MAE-C02-01 (extracción/inventario); **no** significa que las otras ocho microfases o las siete puertas restantes estén ejecutadas ni habilita C03. La nomenclatura se mantiene separada para no alterar el maestro.
+**DIF-C02-01:** el Word integra ocho **puertas de proceso** `MAE-C02-01` (Extraer), `MAE-C02-02` (Diseñar), `MAE-C02-03` (Codificar), `MAE-C02-04` (Probar), `MAE-C02-05` (Auditar A), `MAE-C02-06` (Auditar B), `MAE-C02-07` (Auditar C), `MAE-C02-08` (Acta), mientras `docs/planificacion-futura/C02_MICROFASES_PROPUESTAS.md` desglosa **nueve microfases técnicas provisionales** `C02-01..C02-09`. La presente microfase operativa C02-01 materializa MAE-C02-01 (extracción/inventario); **no** significa que las otras ocho microfases o las siete puertas restantes estén ejecutadas ni habilita C03. La nomenclatura se mantiene separada para no alterar el maestro.
 
 ## 2. Trazabilidad completa: once párrafos originales
 
@@ -52,7 +52,7 @@ No equivalen a seis grupos de autorización ni a seis aplicaciones independiente
 | E05 Puesto del empleado | Empleado asignado | Tenant, sucursal y acción | No hereda finanzas ni ve expedientes ajenos; revocación | C02-04/C05/C06 |
 | E06 Sitio/portal consumidor | Visitante/consumidor contextual | Sitio tenant público + historial privado propio | Publicación segura y propiedad verificada; nunca unir historias de empresas | C02-03/04/C05/06/C17/C20 |
 
-El centro de demostraciones de T01-R06 es un **modo ilustrativo transversal**, no E07 ni una identidad especial que atraviese datos reales. No existe selector de empresa en login normal; ante resolución ambigua, denegar y solicitar el sitio oficial del negocio (precedencia `AUTO-001..012`, `G.6`).
+El centro de demostraciones de T01-R06 es un **modo ilustrativo transversal**, no E07 ni una identidad especial que atraviese datos reales. **NO selector de empresa durante el login normal**; ante resolución ambigua, denegar y solicitar el sitio oficial del negocio (precedencia `AUTO-001..012`, `G.6`).
 
 ## 5. Contextos, límites y dependencias de seguridad
 
@@ -91,4 +91,4 @@ La entrega es **inventario documental trazado**, no API privada. Ejecutar prueba
 | `qa/` | Extractor SHA/Word y auditorías A/B/C documentales, con negativos de cobertura | Pruebas reales API y E2E cuando exista superficie |
 | `docs/` | Inventario, fronteras, trazabilidad completa y decisiones abiertas | Evolucionar solo al cerrar microfase por PR y CI |
 
-**Puerta C02-01:** comprobar 11 párrafos, 6 filas originales y anexos; seis experiencias, cinco tipos de actor más demo, prohibiciones y límites; pruebas reales A/B/C de inventario en CI; revisar diff, SHA, ausencia de P0/P1 atribuibles a este alcance y CI postmerge; acta posterior. **NO certificar el capítulo 02**, ni declarar pasos C02-02..09 construidos. Reversión: revert del PR de esta microfase en CRECISOL, sin migraciones ni efecto en producción.
+**Puerta C02-01:** comprobar 11 párrafos, 6 filas originales y anexos; seis experiencias, cinco tipos de actor más demo, prohibiciones y límites; pruebas reales A/B/C de inventario en CI; revisar diff, SHA, ausencia de P0/P1 atribuibles a este alcance y CI postmerge; acta posterior. **NO certificar el capítulo 02**, ni declarar pasos C02-02..09 construidos. Rollback/reversión: revert del PR de esta microfase en CRECISOL, sin migraciones ni efecto en producción.
