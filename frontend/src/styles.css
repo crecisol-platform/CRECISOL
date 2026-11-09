@@ -21,7 +21,7 @@ a { color: inherit; }
   outline-offset: 4px;
 }
 ::selection { background: #d4eaff; color: #0d2848; }
-/* Document may scroll vertically; never hide inaccessible content with overflow-x:hidden. */
+/* Document may scroll vertically; do not clip content outside the viewport. */
 :where(h1, h2, h3, p, dd, dt, li) { overflow-wrap: anywhere; }
 @media (forced-colors: active) {
   :where(a, button, input, select, textarea, [tabindex]):focus-visible {
