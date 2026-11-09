@@ -265,8 +265,10 @@
     ],
     "frontend_only": [
       "frontend/src/styles.css",
+      "frontend/src/app/pages/platform-home.component.ts",
       "frontend/src/app/pages/platform-home.component.css",
       "frontend/src/app/pages/platform-home.component.html",
+      "frontend/src/app/pages/public-information.component.ts",
       "frontend/src/app/pages/public-information.component.css",
       "frontend/src/app/pages/public-information.component.html",
       "frontend/src/app/pages/not-found.component.ts",
