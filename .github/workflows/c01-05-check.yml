@@ -51,6 +51,8 @@ jobs:
         run: npm ci --no-audit --no-fund --ignore-scripts
       - name: Verify dependency tree
         run: npm ls --depth=0
+      - name: Audit production dependency vulnerabilities at high severity
+        run: npm audit --omit=dev --audit-level=high
       - name: Compile strict TypeScript
         run: npm run check:types
       - name: Build production UI with budgets
