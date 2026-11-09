@@ -157,8 +157,6 @@ def canonical_graph(graph):
     require(names == set(CANONICAL_PROJECTS), "C03 graph actual project set changed")
     require(graph["current_backend"]["projects"] == CANONICAL_PROJECTS,
             "C03 graph physical project paths changed")
-    require(len(edges) == 4 and set(edges) == CURRENT_EDGES,
-            "C03 graph added, removed or inverted current physical references")
     adjacency = {name: [] for name in names}
     for src, target in edges:
         require(src in names and target in names and src != target,
@@ -178,6 +176,11 @@ def canonical_graph(graph):
 
     for name in names:
         visit(name)
+    require(len(edges) == 4 and set(edges) == CURRENT_EDGES,
+            "C03 graph added, removed or inverted current physical references")
+    require(graph["current_backend"]["project_status"] ==
+            "physical projects exist; module boundaries only partly present",
+            "Proposed modules wrongly presented as current physical projects")
     require(graph["current_backend"]["dependencies_acyclic"] is True and
             graph["current_backend"]["domain_external_framework_packages_forbidden"] is True
             and graph["current_backend"]["application_direct_infrastructure_forbidden"] is True
