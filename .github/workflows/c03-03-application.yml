@@ -1,0 +1,64 @@
+name: CRECISOL C03-03 Application ports and use cases A-B-C
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Application/**'
+      - 'backend/tests/Crecisol.Application.ContractsTests/**'
+      - 'docs/c03/C03_03_ESPECIFICACION.md'
+      - 'qa/c03_03_application_audits.py'
+      - '.github/workflows/c03-03-application.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Application/**'
+      - 'backend/tests/Crecisol.Application.ContractsTests/**'
+      - 'docs/c03/C03_03_ESPECIFICACION.md'
+      - 'qa/c03_03_application_audits.py'
+      - '.github/workflows/c03-03-application.yml'
+permissions:
+  contents: read
+jobs:
+  c03-03-application:
+    if: startsWith(github.head_ref, 'feature/c03-03-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout CRECISOL with read-only token
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Audit A canonical Word and T01-R03 contract scope
+        run: |
+          python3 -m py_compile qa/c03_03_application_audits.py
+          python3 qa/c03_03_application_audits.py A
+      - name: Audit B dependency direction and seven adversarial mutations
+        run: python3 qa/c03_03_application_audits.py B
+      - name: Install .NET10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile public API and new Application contracts in Release
+        run: |
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo
+          dotnet build backend/tests/Crecisol.Application.ContractsTests/Crecisol.Application.ContractsTests.csproj -c Release --nologo
+          mkdir -p .c03-03-ci-proof
+          printf 'PASS: build\n' > .c03-03-ci-proof/build
+      - name: Test new read-only Application port and case positive and negative
+        run: |
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.Application.ContractsTests/Crecisol.Application.ContractsTests.csproj
+          printf 'PASS: c03-app\n' > .c03-03-ci-proof/c03-app
+      - name: Regression C01 Application public brand contracts
+        run: |
+          dotnet run -c Release --project backend/tests/Crecisol.Branding.ApplicationTests/Crecisol.Branding.ApplicationTests.csproj
+          printf 'PASS: c01-app\n' > .c03-03-ci-proof/c01-app
+      - name: Regression C03-02 pure Domain positive and negative assertions
+        run: |
+          dotnet run -c Release --project backend/tests/Crecisol.Domain.ContractsTests/Crecisol.Domain.ContractsTests.csproj
+          printf 'PASS: c03-domain\n' > .c03-03-ci-proof/c03-domain
+      - name: Regression C01 Domain positive and negative assertions
+        run: |
+          dotnet run -c Release --project backend/tests/Crecisol.Branding.ContractsTests/Crecisol.Branding.ContractsTests.csproj
+          printf 'PASS: c01-domain\n' > .c03-03-ci-proof/c01-domain
+      - name: Audit C real compilation proof, contracts and project graph
+        run: python3 qa/c03_03_application_audits.py C
