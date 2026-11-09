@@ -188,7 +188,7 @@ def validate_contract(data, original):
 
     params = data.get("parameterization", {})
     require(params.get("future_scopes") == ["platform", "tenant", "branch", "user"] and
-            len(params.get("future_admin_editable", [])) == 9 and
+            len(params.get("future_admin_editable", [])) == 10 and
             params.get("future_controls") ==
             ["preview", "version", "approval", "audit", "rollback"] and
             params.get("current_platform_brand") ==
