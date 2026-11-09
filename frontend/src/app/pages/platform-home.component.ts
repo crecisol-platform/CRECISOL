@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import {
-  ChangeDetectionStrategy, Component, computed, effect, inject
+  ChangeDetectionStrategy, Component, computed, effect, inject, signal
 } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { PublicBrandService } from '../branding/public-brand.service';
@@ -20,6 +20,15 @@ export class PlatformHomeComponent {
   private readonly document = inject(DOCUMENT);
 
   readonly state = this.brandSource.state;
+  // C01-06: display only the published platform's same-origin asset path.
+  // Failed assets fall back to the existing illustration; no candidate bytes are embedded.
+  readonly logoReadyKey = signal<string | null>(null);
+  readonly logoFailedKey = signal<string | null>(null);
+  readonly logoKey = computed(() => {
+    const s = this.state();
+    return s.kind === 'ready' ? String(s.brand.revision) + ':' + s.brand.logoUrl : null;
+  });
+
   readonly categories = computed(() => {
     const state = this.state();
     if (state.kind !== 'ready') return [];
@@ -33,6 +42,22 @@ export class PlatformHomeComponent {
   constructor() {
     effect(() => this.applyPublicMetadata(this.state()));
     void this.brandSource.load();
+  }
+
+  onLogoLoad(url: string, revision: number): void {
+    const key = String(revision) + ':' + url;
+    if (this.logoKey() === key) {
+      this.logoReadyKey.set(key);
+      this.logoFailedKey.set(null);
+    }
+  }
+
+  onLogoError(url: string, revision: number): void {
+    const key = String(revision) + ':' + url;
+    if (this.logoKey() === key) {
+      this.logoFailedKey.set(key);
+      this.logoReadyKey.set(null);
+    }
   }
 
   retry(): void {

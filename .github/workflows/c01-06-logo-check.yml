@@ -7,6 +7,10 @@ on:
       - 'docs/c01/C01_06_LOGO_CANDIDATO.md'
       - '.github/workflows/c01-06-logo-check.yml'
       - 'frontend/tests/c01-06.logo-candidate.spec.ts'
+      - 'frontend/tests/c01-06.platform-logo-preview.spec.ts'
+      - 'frontend/src/app/pages/platform-home.component.ts'
+      - 'frontend/src/app/pages/platform-home.component.html'
+      - 'frontend/src/app/pages/platform-home.component.css'
 permissions:
   contents: read
 jobs:
@@ -67,7 +71,7 @@ jobs:
       - name: Run isolated responsive, negative and accessibility browser tests
         env:
           C01_06_CANDIDATE: /tmp/c01-06-candidate/crecisol-candidate-NOT-APPROVED.png
-        run: cd frontend && npx playwright test tests/c01-06.logo-candidate.spec.ts --reporter=line
+        run: cd frontend && npx playwright test tests/c01-06.logo-candidate.spec.ts tests/c01-06.platform-logo-preview.spec.ts --reporter=line
       - name: Upload PRIVATE unapproved review screenshots
         if: success()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

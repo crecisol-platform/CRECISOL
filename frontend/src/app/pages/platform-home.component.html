@@ -46,7 +46,18 @@
             <p class="hero-footnote">Una identidad pública; cada negocio mantiene su marca independiente.</p>
           </div>
 
-          <div class="brand-art" aria-hidden="true">
+          <div class="brand-art" [class.brand-art--logo-ready]="logoReadyKey() === logoKey()">
+            @if (logoFailedKey() !== logoKey()) {
+              <!-- The original unapproved PNG remains outside frontend. CI serves its bytes
+                   transiently through Playwright, and never publishes this candidate. -->
+              <img class="brand-art-logo"
+                [src]="model.brand.logoUrl"
+                [attr.alt]="'Logotipo ' + model.brand.name + ': ' + model.brand.slogan"
+                decoding="async" loading="eager"
+                (load)="onLogoLoad(model.brand.logoUrl, model.brand.revision)"
+                (error)="onLogoError(model.brand.logoUrl, model.brand.revision)">
+            }
+            <div class="brand-art-decor" aria-hidden="true">
             <div class="art-rim art-rim-one"></div>
             <div class="art-rim art-rim-two"></div>
             <div class="art-glow"></div>
@@ -61,6 +72,7 @@
               <small>{{ model.brand.descriptor }}</small>
             </div>
             <span class="art-corner-label">PUBLICACIÓN / PLATAFORMA</span>
+            </div>
           </div>
         </section>
 

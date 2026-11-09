@@ -250,3 +250,17 @@
   .art-tile-back { top: 31px; }
   .hero-description { font-size: 1.04rem; }
 }
+
+/* C01-06: published-platform logo slot, not an embedded or approved graphic. */
+.brand-art-decor { position: absolute; inset: 0; }
+.brand-art-logo {
+  position: absolute; z-index: 2; inset: 0; margin: auto;
+  width: min(92%, 600px); height: calc(100% - 48px);
+  background: #fff; object-fit: contain; border-radius: 18px;
+  opacity: 0; pointer-events: none;
+}
+.brand-art--logo-ready .brand-art-logo { opacity: 1; }
+.brand-art--logo-ready .brand-art-decor { visibility: hidden; }
+@media (max-width: 700px) {
+  .brand-art-logo { width: min(94%, 600px); height: calc(100% - 28px); border-radius: 12px; }
+}

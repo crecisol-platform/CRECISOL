@@ -72,3 +72,9 @@ Casos planeados: carga PNG de dimensiones originales y ratio sin deformación en
 **Advertencias visibles:** deprecaciones Node `DEP0040` y `DEP0169` y acciones con runtime originalmente Node 20 que GitHub fuerza a Node 24. No causaron fallos; requieren actualización futura de pins auditados.
 
 **NO GO de cierre:** PR #24 no contiene aceptación inequívoca del PNG independiente exacto y cotejo visual humano de la portada del Word; el origen en el Word no equivale a aprobación. Faltan integración oficial Angular, pruebas finales de esa integración, auditorías A/B/C definitivas y merge con CI post-merge. El presente commit documental requiere validar de nuevo su HEAD. Estado: **C01-06 EN DESARROLLO, C01 5/8, capítulos 0/37, C01-07 NO habilitada**.
+
+## C01-06: slot Angular de identidad visual (PREPARACIÓN, sin activo aprobado)
+
+Se prepara en la rama feature el uso de PublishedPlatformBrand.logoUrl, previamente restringido a ruta local /assets/*.png o webp. El gráfico reemplaza la ilustración provisional únicamente después del evento load; si el recurso falla (404/error), se retira y sigue visible la alternativa segura. El texto alternativo procede de los datos publicados y la API no permite inyectar URL externa ni tenant.
+
+El archivo de marca aprobado NO se añadió a frontend ni se publicó. Playwright prueba la portada Angular real sirviendo el candidato canónico exclusivamente en memoria mediante interceptación de /assets/c01-06-review.png desde el archivo temporal verificado en CI. Casos: escritorio 1440, móvil 360, axe automatizado, ratio por object-fit contain, recurso ausente, URLs maliciosas y fallo cerrado. Los resultados de este cambio quedan sujetos a la ejecución real de CI sobre el HEAD resultante y no equivalen a aceptación visual humana, auditorías finales ni autorización para fusionar. C01-06 sigue ABIERTA; C01 5/8, capítulos certificados 0/37.
