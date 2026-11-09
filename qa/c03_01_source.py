@@ -400,17 +400,40 @@ def audit_c():
     prep = PREP.read_text(encoding="utf-8")
     row_c03 = next((line for line in plan.splitlines() if line.startswith("C03 | ")), "")
     row_c04 = next((line for line in plan.splitlines() if line.startswith("C04 | ")), "")
+    closed = "**C03-01 CERRADA TÉCNICAMENTE (1/10)**" in row_c03
+    active = "**EN DESARROLLO C03-01 (0/10)**" in row_c03
     require("2/37 capítulos certificados (C01 y C02)" in plan
-            and "C03-01" in row_c03 and "EN DESARROLLO" in row_c03
-            and "NO CERTIFICADO" in row_c03
+            and "C03-01" in row_c03 and (closed or active)
+            and "C03 NO CERTIFICADO" in row_c03
+            and "C04 BLOQUEADO" in row_c03
             and "PENDIENTE" in row_c04,
             "C03/C04 chapter sequence gate violated")
-    require("0/10" in prep and "C03-01" in prep and
-            "C03 NO CERTIFICADO" in prep and
-            "C04 BLOQUEADO" in prep, "C03-01 is not just an open microphase")
+    require("C03-01" in prep and "C03 NO CERTIFICADO" in prep
+            and "C04 BLOQUEADO" in prep,
+            "C03 state must remain acotado and C04 blocked")
+    if closed:
+        acta_path = ROOT / "docs/c03/C03_01_ACTA_MICROFASE.md"
+        require(acta_path.is_file(), "C03-01 cannot close without owner acta")
+        acta = acta_path.read_text(encoding="utf-8")
+        for marker in ("C03-01 CERRADA TÉCNICAMENTE (1/10)",
+                       "CERTIFICA POR FAVOR LA MICROFASE 1 DEL BLOQUE 3",
+                       "7217fb1e720f16c71d5a654f605eca96d81deb58",
+                       "42691620500", "7/7", "C03 NO CERTIFICADO",
+                       "C04 BLOQUEADO", "C03-02", "NO INICIADA",
+                       "Auditoría A", "Auditoría B", "Auditoría C"):
+            require(marker in acta, "C03-01 closure missing evidence: " + marker)
+        require("1/10" in prep and
+                "C03-01 CERRADA TÉCNICAMENTE" in prep and
+                "C03-02" in prep and "NO INICIADA" in prep,
+                "C03 closed phase cannot open C03-02 automatically")
+    else:
+        require("0/10" in prep, "C03-01 active state must remain zero closed")
     for name in ("angular", "dotnet", "domain", "application", "live-stack"):
         proof(name)
-    for path in (SPEC, PREP, PLAN):
+    link_files = (SPEC, PREP, PLAN)
+    if closed:
+        link_files += (ROOT / "docs/c03/C03_01_ACTA_MICROFASE.md",)
+    for path in link_files:
         for link in re.findall(r"\[[^\]]+\]\(([^)]+)\)", path.read_text(encoding="utf-8")):
             if link.startswith(("http:", "https:", "mailto:", "#")):
                 continue

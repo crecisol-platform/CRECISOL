@@ -45,7 +45,7 @@ jobs:
           persist-credentials: false
       - name: Validate canonical Word chapter 02, original matrix, Python and shell
         run: |
-          python3 -m py_compile qa/c02_01_source.py qa/c02_02_audits.py qa/c02_03_audits.py qa/c02_04_audits.py qa/c02_05_audits.py qa/c02_06_audits.py qa/c02_07_audits.py qa/c02_08_audits.py qa/c02_09_integral_audits.py qa/c02_certification_gate.py qa/c03_01_source.py
+          python3 -m py_compile qa/c02_01_source.py qa/c02_02_audits.py qa/c02_03_audits.py qa/c02_04_audits.py qa/c02_05_audits.py qa/c02_06_audits.py qa/c02_07_audits.py qa/c02_08_audits.py qa/c02_09_integral_audits.py qa/c02_certification_gate.py qa/c03_01_source.py qa/c03_01_closure_gate.py
           bash -n qa/c01_07_real_stack.sh
           python3 -m json.tool docs/c02/C02_08_RECORRIDOS_CONTRATOS.json > /dev/null
           python3 qa/c02_01_source.py A
@@ -153,6 +153,8 @@ jobs:
         run: python3 qa/c02_certification_gate.py
       - name: C03-01 AUDIT C - physical acyclic .NET refs, Angular, public stack and gate
         run: python3 qa/c03_01_source.py C
+      - name: C03-01 final microphase certification gate after all real tests and A/B/C
+        run: python3 qa/c03_01_closure_gate.py
       - name: Upload diagnostics only after a real failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

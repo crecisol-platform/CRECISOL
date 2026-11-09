@@ -1,6 +1,6 @@
 # CRECISOL — Capítulo 03 · Arquitectura técnica limpia y dependencias
 
-**ESTADO: C03 EN DESARROLLO, C03-01 EN AUDITORÍA / 0/10 microfases cerradas. C03 NO CERTIFICADO; C04 BLOQUEADO.** El capítulo anterior C02 está certificado por aceptación humana expresa el 9 de noviembre de 2026; C01+C02 = **2/37 capítulos certificados**. No se inicia C03-02 ni se habilita C04.
+**ESTADO VIGENTE: C03-01 CERRADA TÉCNICAMENTE Y ACEPTADA EXPRESAMENTE PARA CERTIFICACIÓN (1/10 microfases); formalización documental condicionada a CI PREMERGE y POSTMERGE del acta. C03 NO CERTIFICADO; C04 BLOQUEADO.** El capítulo anterior C02 está certificado por aceptación humana expresa el 9 de noviembre de 2026; C01+C02 = **2/37 capítulos certificados**. No se inicia C03-02 ni se habilita C04.
 
 ## Puerta de entrada verificada
 
@@ -12,8 +12,8 @@
 
 | Microfase | Entrega técnica | Estado vigente |
 | --- | --- | --- |
-| C03-01 | Inventario y mapa de módulos, grafo acíclico .NET/Angular y negativos | **EN DESARROLLO / AUDITORÍA**. [Especificación](c03/C03_01_ESPECIFICACION.md), [grafo máquina](c03/C03_01_MODULOS_DEPENDENCIAS.json), CI y tres auditorías en ejecución según PR. **0/10 cerradas** hasta acta/postmerge |
-| C03-02 | Contratos Domain puros | **PENDIENTE**: requiere acta C03-01 |
+| C03-01 | Inventario y mapa de módulos, grafo acíclico .NET/Angular y negativos | **CERRADA TÉCNICAMENTE (1/10) CON ACEPTACIÓN HUMANA EXPRESA**, sujeta a CI PREMERGE y POSTMERGE del PR documental de cierre. [Acta y evidencia 7/7 CI](c03/C03_01_ACTA_MICROFASE.md), [especificación](c03/C03_01_ESPECIFICACION.md), [grafo máquina](c03/C03_01_MODULOS_DEPENDENCIAS.json); [PR técnico #49](https://github.com/solqaryn-platform/CRECISOL/pull/49) fusionado a `dev` SHA `7217fb1e720f16c71d5a654f605eca96d81deb58` |
+| C03-02 | Contratos Domain puros | **HABILITABLE TRAS CI FINAL C03-01, PERO NO INICIADA**; necesita rama, especificación y tres auditorías propias |
 | C03-03 | Puertos y casos de uso Application | **PENDIENTE** |
 | C03-04 | Adaptadores Infrastructure | **PENDIENTE** |
 | C03-05 | Contratos API/DTO, validación y errores | **PENDIENTE** |
@@ -35,6 +35,6 @@ Este calendario técnico deriva de la [propuesta C03](planificacion-futura/C03_M
 
 ## Puerta de salida C03-01
 
-Auditoría **A**: fuente Word real y matriz 16 IDs; **B**: diez mutaciones adversariales y denegación de avances/cambios ilegales; **C**: grafo .NET exacto, Angular público, .NET10/Angular22 y MySQL8.4/API solo de publicación pública mediante CI real. Revisión del diff, secretos, enlaces, impacto en permisos/PII, rollback por revert, CI PREMERGE y POSTMERGE del SHA exacto. Solo entonces registrar acta **C03-01 CERRADA TÉCNICAMENTE (1/10)**; **capítulo C03 NO CERTIFICADO, C04 BLOQUEADO**.
+Auditoría **A**: fuente Word real y matriz 16 IDs; **B**: diez mutaciones adversariales y denegación de avances/cambios ilegales; **C**: grafo .NET exacto, Angular público, .NET10/Angular22 y MySQL8.4/API solo de publicación pública mediante CI real. Revisión del diff, secretos, enlaces, impacto en permisos/PII, rollback por revert, CI PREMERGE y POSTMERGE del SHA exacto. El [acta C03-01](c03/C03_01_ACTA_MICROFASE.md) registra aceptación humana literal «CERTIFICA POR FAVOR LA MICROFASE 1 DEL BLOQUE 3», evidencia 7/7 CI POSTMERGE del PR técnico y decisión **C03-01 CERRADA TÉCNICAMENTE (1/10)**. Su formalización definitiva se subordina a **todas** las CI PREMERGE/POSTMERGE del PR documental de cierre, sin confundirlas con el PR técnico. **Capítulo C03 NO CERTIFICADO, C04 BLOQUEADO**.
 
 **Ambiente y costes:** exclusivamente documentación, QA, CI y código de prueba; sin modificar `frontend/src/`, `backend/src/`, `database/` ni `main`, SOLQARYN, VPS, DNS, hosting, pagos o producción. No activar automatizaciones ni servicios externos.
