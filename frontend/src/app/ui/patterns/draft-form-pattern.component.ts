@@ -5,7 +5,7 @@ import {
 } from '@angular/core';
 import { draftIssue, validDraftConfig, type DraftFieldConfig } from './pattern-contract';
 
-/** Local draft pattern: no storage, HTTP, session, payment or success-of-write.
+/** Local draft pattern: no persistence, network, session or write acknowledgement.
  * Real products must add backend validation + unsaved-route guard separately.
  */
 @Component({
