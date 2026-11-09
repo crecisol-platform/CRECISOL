@@ -41,7 +41,7 @@ El usuario autorizó el 8 de noviembre de 2026 que cada microfase se **valide, r
 | C01-02 | Contratos tipados y modelo de ámbito; requiere C01-01 cerrada | **CERRADA TÉCNICAMENTE**: 51/51 aserciones, A/B/C PASS, PR #13 fusionado a dev |
 | C01-03 | Diseño MySQL 8.4, migración/configuración futura; requiere C01-02 | **CERRADA TÉCNICAMENTE**: MySQL 8.4 9/9+22/22, 51 contratos net10, A/B/C PASS, PR #16 fusionado a dev |
 | C01-04 | Caso de uso y API .NET; requiere C01-03 | **CERRADA TÉCNICAMENTE**: PR #18 integrado; .NET10 51+19, MySQL 8.4.13, 37 HTTP, A/B/C PASS, CI post-merge |
-| C01-05 | UI Angular, responsive, accesibilidad y navegador; requiere C01-04 | EN DESARROLLO: Angular22 standalone/Signals/lazy, UI marca publicada, Chromium/WCAG y A/B/C pendientes de CI |
+| C01-05 | UI Angular, responsive, accesibilidad y navegador; requiere C01-04 | VALIDADA EN CI: Angular22.2.4/Node24, 11 Chromium/WCAG, 3 auditorías A/B/C, 0 vulnerabilidades prod; cierre sujeto a PR #20 |
 | C01-06 | Logo y su presencia visual verificados; requiere C01-05 | PENDIENTE |
 | C01-07 | Pruebas positivas, negativas, seguridad y regresión; requiere C01-06 | PENDIENTE |
 | C01-08 | Auditorías integrales A/B/C, acta, conformidad del capítulo; requiere C01-07 | PENDIENTE |
@@ -75,3 +75,5 @@ Rama `feature/c01-04-public-brand-api`, partiendo de `dev` SHA `abf0351ff4400eb1
 ### C01-05 — implementación y evaluación aisladas
 
 Rama `feature/c01-05-angular-public-identity`, partiendo de `dev` SHA `da52bb0d29694c81b522f8f0668da698808db963`. [Especificación Angular, trazabilidad y riesgos](c01/C01_05_INTERFAZ_ANGULAR.md). C01-04 ya estaba cerrada. Implementación limitada a sitio público desde snapshot publicado y estados seguros; no introducir logo binario hasta C01-06. Puerta pendiente: build real Angular 22/Node 24.15/TypeScript 6, Chromium responsive/WCAG 2.2 AA y XSS/tenant, tres auditorías A/B/C, acta y merge individual. **No iniciar C01-06 sin ese cierre ni certificar C01 completo: 0/37.**
+
+**Validación de C01-05:** [CI #42558658894](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42558658894) SUCCESS en build Angular, Chromium 11/11 y auditorías A/B/C; [foundation #42558658881](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42558658881) SUCCESS. [Acta](c01/C01_05_ACTA_MICROFASE.md). El HTML continúa noindex y el logo gráfico sigue exclusivo de C01-06. Cierre solo cuando el último HEAD y el merge PR #20 se verifiquen. **C01 sin certificar: 0/37**.
