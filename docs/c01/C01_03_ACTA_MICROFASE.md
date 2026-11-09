@@ -1,7 +1,7 @@
 # C01-03 · Acta técnica de revisión, pruebas y triple auditoría
 
 **Fecha:** 2026-11-08 (Honduras; 2026-11-09 UTC).  
-**Estado:** AUDITORÍAS Y PRUEBAS TÉCNICAS APROBADAS; integración final condicionada a CI PASS del último commit del PR #16. El capítulo C01 NO está certificado (**0/37**).  
+**Estado:** **CERRADA TÉCNICAMENTE C01-03 EN DEV** (3/8 microfases cerradas), tras auditorías A/B/C, pruebas MySQL/.NET y merge confirmado. El capítulo C01 NO está certificado (**0/37**).  
 **Origen:** Documento Maestro Único CRECISOL SHA-256 e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e, verificado por qa/c01_verify_source.py.  
 **Continuidad:** C01-01 y C01-02 cerradas. PR #15 integró DDL provisional antes de pruebas MySQL/A-B-C (merge c476f937ee49661b4e971a9bab2c70b24bfa89d1); PR correctivo #16 limita la remediación exclusivamente a C01-03.
 
@@ -41,3 +41,12 @@ No hay bloqueos P0/P1 introducidos dentro del **alcance aislado schema-only**, p
 La remediación se integra únicamente si **la CI definitiva del HEAD de PR #16 aprueba** MySQL real, Domain net10, Foundation y las auditorías A/B/C; luego comparar diff, comprobar ausencia de secretos, revisar commit y documentar el merge a dev. El propietario autorizó expresamente revisar y certificar esta microfase y había delegado cierres técnicos individuales sujetos a pruebas y tres auditorías. Esto **no equivale** a aprobación de C01-08, C02, un SaaS funcional o despliegue.
 
 **Rollback del código:** revertir el PR #16 (o el PR #15 para retirar DDL inicial) mediante PR trazable. **Rollback SQL de prueba:** DROP de publicaciones, revisiones y ámbitos, en ese orden, verificado en la base desechable. No hay cambios persistentes reales que revertir.
+
+## Cierre acreditado en GitHub
+
+- [PR #16 de remediación](https://github.com/solqaryn-platform/CRECISOL/pull/16): **fusionado a `dev`**, SHA de merge `42c81b30347d43c718813a32df95b0ceb5566158`.
+- [CI final del PR #42541904259](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42541904259): **SUCCESS** en auditoría A/B/C, MySQL 8.4.13 y Domain net10. [Fundación del mismo HEAD #42541904262](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42541904262): **SUCCESS**.
+- [CI de fundación post-merge `dev` #42542009481](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42542009481): **SUCCESS** para SHA de merge `42c81b30347d43c718813a32df95b0ceb5566158`.
+- Cierre documental posterior por PR exclusivo C01-03, sin introducir funcionalidades; la aprobación de microfase responde a la autorización explícita del propietario para revisarla y certificarla y a la delegación documentada en `docs/C01_PREPARACION.md`.
+
+**Resultado:** C01-03 CERRADA TÉCNICAMENTE (modelo MySQL y controles de compatibilidad), 3/8 microfases; C01-04 es la siguiente microfase permitida después de este cierre documental. El capítulo C01 permanece NO CERTIFICADO, 0/37. Ninguna función administrativa o privada ha sido habilitada.
