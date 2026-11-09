@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef,
-  inject, input, signal, viewChild, OnChanges, SimpleChanges
+  inject, input, output, signal, viewChild, OnChanges, SimpleChanges
 } from '@angular/core';
 import { draftIssue, validDraftConfig, type DraftFieldConfig } from './pattern-contract';
 
@@ -18,6 +18,8 @@ import { draftIssue, validDraftConfig, type DraftFieldConfig } from './pattern-c
 export class DraftFormPatternComponent implements OnChanges {
   readonly config = input.required<DraftFieldConfig>();
   readonly scopeKey = input.required<string>();
+  /** Host decides whether navigation can proceed before changing scope. */
+  readonly dirtyChange = output<boolean>();
   readonly safeConfig = computed(() => validDraftConfig(this.config()));
   readonly draft = signal('');
   readonly touched = signal(false);
@@ -56,6 +58,7 @@ export class DraftFormPatternComponent implements OnChanges {
     const control = event.target;
     if (!(control instanceof HTMLInputElement)) return;
     this.draft.set(control.value);
+    this.dirtyChange.emit(this.dirty());
     this.touched.set(false);
     this.locallyChecked.set(false);
   }
@@ -77,6 +80,7 @@ export class DraftFormPatternComponent implements OnChanges {
 
   discard(): void {
     this.draft.set('');
+    this.dirtyChange.emit(false);
     this.touched.set(false);
     this.locallyChecked.set(false);
     this.dialog().nativeElement.close();
