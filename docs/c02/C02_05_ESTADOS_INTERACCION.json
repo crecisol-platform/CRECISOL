@@ -261,12 +261,12 @@
     {
       "id": "NEG05",
       "attack": "HTTP 401/403 treated as empty list",
-      "expected": "deny-not-empty"
+      "expected": "deny-request-without-reinterpreting-403-as-empty"
     },
     {
       "id": "NEG06",
       "attack": "success banner before backend commit",
-      "expected": "no-confirmation"
+      "expected": "deny-premature-success-without-backend-acknowledgement"
     },
     {
       "id": "NEG07",
