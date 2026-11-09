@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef,
-  inject, input, signal, viewChild
+  inject, input, signal, viewChild, OnChanges, SimpleChanges
 } from '@angular/core';
 import { draftIssue, validDraftConfig, type DraftFieldConfig } from './pattern-contract';
 
@@ -15,8 +15,9 @@ import { draftIssue, validDraftConfig, type DraftFieldConfig } from './pattern-c
   templateUrl: './draft-form-pattern.component.html',
   styleUrl: './draft-form-pattern.component.css'
 })
-export class DraftFormPatternComponent {
+export class DraftFormPatternComponent implements OnChanges {
   readonly config = input.required<DraftFieldConfig>();
+  readonly scopeKey = input.required<string>();
   readonly safeConfig = computed(() => validDraftConfig(this.config()));
   readonly draft = signal('');
   readonly touched = signal(false);
@@ -37,6 +38,17 @@ export class DraftFormPatternComponent {
     };
     browser?.addEventListener('beforeunload', guard);
     this.destroy.onDestroy(() => browser?.removeEventListener('beforeunload', guard));
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if ((changes['scopeKey'] && !changes['scopeKey'].firstChange) ||
+        (changes['config'] && !changes['config'].firstChange)) {
+      // Isolation is stronger than retaining a previous tenant draft; future
+      // host must confirm navigation BEFORE changing an authorized context.
+      this.draft.set('');
+      this.touched.set(false);
+      this.locallyChecked.set(false);
+    }
   }
 
   edit(event: Event): void {
