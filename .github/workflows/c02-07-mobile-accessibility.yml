@@ -1,0 +1,141 @@
+name: CRECISOL C02-07 real public mobile and accessible UX baseline
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c02/C02_07_*'
+      - 'docs/C02_PREPARACION.md'
+      - 'qa/c02_07_*'
+      - 'frontend/src/styles.css'
+      - 'frontend/src/app/pages/platform-home.component.css'
+      - 'frontend/src/app/pages/platform-home.component.html'
+      - 'frontend/src/app/pages/public-information.component.css'
+      - 'frontend/src/app/pages/public-information.component.html'
+      - 'frontend/src/app/pages/not-found.component.ts'
+      - 'frontend/tests/pattern-harness/pattern-harness.component.ts'
+      - 'frontend/tests/c02-07.mobile-accessibility.spec.ts'
+      - 'frontend/tests/c02-07.patterns-mobile.spec.ts'
+      - 'frontend/playwright.patterns-a11y.config.ts'
+      - '.github/workflows/c02-07-mobile-accessibility.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c02/C02_07_*'
+      - 'docs/C02_PREPARACION.md'
+      - 'qa/c02_07_*'
+      - 'frontend/src/styles.css'
+      - 'frontend/src/app/pages/platform-home.component.css'
+      - 'frontend/src/app/pages/platform-home.component.html'
+      - 'frontend/src/app/pages/public-information.component.css'
+      - 'frontend/src/app/pages/public-information.component.html'
+      - 'frontend/src/app/pages/not-found.component.ts'
+      - 'frontend/tests/pattern-harness/pattern-harness.component.ts'
+      - 'frontend/tests/c02-07.mobile-accessibility.spec.ts'
+      - 'frontend/tests/c02-07.patterns-mobile.spec.ts'
+      - 'frontend/playwright.patterns-a11y.config.ts'
+      - '.github/workflows/c02-07-mobile-accessibility.yml'
+permissions:
+  contents: read
+jobs:
+  mobile-a11y:
+    name: C02-07 Word + A/B/C + 42 real Chromium + Angular22/.NET10
+    if: startsWith(github.head_ref, 'feature/c02-07-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout CRECISOL read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify pinned Word, mobile JSON, and QA Python syntax
+        run: |
+          python3 -m py_compile qa/c02_01_source.py qa/c02_02_audits.py qa/c02_03_audits.py qa/c02_04_audits.py qa/c02_05_audits.py qa/c02_06_audits.py qa/c02_07_audits.py
+          python3 -m json.tool docs/c02/C02_07_MOBILE_ACCESIBILIDAD.json > /dev/null
+          python3 qa/c02_01_source.py A
+      - name: Regress all previous C02-01 through C02-06 A/B/C audits
+        run: |
+          python3 qa/c02_01_source.py B
+          python3 qa/c02_01_source.py C
+          python3 qa/c02_02_audits.py A
+          python3 qa/c02_02_audits.py B
+          python3 qa/c02_02_audits.py C
+          python3 qa/c02_03_audits.py A
+          python3 qa/c02_03_audits.py B
+          python3 qa/c02_03_audits.py C
+          python3 qa/c02_04_audits.py A
+          python3 qa/c02_04_audits.py B
+          python3 qa/c02_04_audits.py C
+          python3 qa/c02_05_audits.py A
+          python3 qa/c02_05_audits.py B
+          python3 qa/c02_05_audits.py C
+          python3 qa/c02_06_audits.py A
+          python3 qa/c02_06_audits.py B
+          python3 qa/c02_06_audits.py C
+      - name: Audit A — canonical six surfaces and six negative source mutations
+        run: python3 qa/c02_07_audits.py A
+      - name: Audit B — fail-closed mobile, no hidden routes, eight security mutations
+        run: python3 qa/c02_07_audits.py B
+      - name: Install Node 24.15.0 for Angular22
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Restore pinned Angular dependencies without lifecycle scripts
+        run: npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
+      - name: Audit production dependency vulnerabilities
+        run: cd frontend && npm audit --omit=dev --audit-level=high
+      - name: Install real Chromium browser and system libraries
+        run: cd frontend && npx playwright install --with-deps chromium
+      - name: Angular22 typecheck, production build and canonical assets
+        run: |
+          cd frontend
+          npm run check:types
+          npm run build
+          npm run test:assets
+      - name: Reject synthetic harness in production bundle
+        run: |
+          cd frontend
+          test -f dist/crecisol-web/browser/index.html
+          if grep -R -F 'Patrones de formularios y tablas' dist/crecisol-web/browser/ --include='*.js'; then
+            echo 'ERROR: CI-only harness reached production'
+            exit 1
+          fi
+          if grep -R -F 'cs-pattern-harness' dist/crecisol-web/browser/ --include='*.js'; then
+            echo 'ERROR: synthetic bootstrap leaked to public bundle'
+            exit 1
+          fi
+      - name: Build isolated Angular22 pattern-harness (never public route)
+        run: cd frontend && npx ng build --configuration pattern-harness
+      - name: Chromium regression C02-03/04/05 19 real public and private-denial tests
+        run: |
+          cd frontend
+          npx playwright test tests/c02-03.public-information.spec.ts tests/c02-04.private-paths.spec.ts tests/c02-05.interaction-states.spec.ts --reporter=line
+      - name: Chromium regression C02-06 8 real synthetic form/table tests
+        run: cd frontend && npm run test:c02-06
+      - name: Chromium C02-07 10 public mobile/zoom/keyboard/WCAG tests
+        run: |
+          cd frontend
+          npx playwright test tests/c02-07.mobile-accessibility.spec.ts --reporter=line
+      - name: Chromium C02-07 5 real Angular harness mobile/accessibility tests
+        run: |
+          cd frontend
+          npx playwright test --config=playwright.patterns-a11y.config.ts --reporter=line
+      - name: Install .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile existing ASP.NET Core 10 API Release (no API change)
+        run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo
+      - name: Audit C — 320px reflow, 200% zoom, isolated build and four mutations
+        run: python3 qa/c02_07_audits.py C
+      - name: Save Chromium diagnostics only on failed checks
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: C02-07-mobile-a11y-failure-only
+          path: |
+            frontend/test-results/
+            frontend/test-results-patterns/
+            frontend/test-results-c02-07-harness/
+          retention-days: 3
+          if-no-files-found: ignore
