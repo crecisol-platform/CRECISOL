@@ -1,6 +1,6 @@
 # Fase 1 · Capítulo 01 — CRECISOL: identidad, visión, alcance y principios
 
-**Estado:** EN DESARROLLO; C01-01, C01-02, C01-03, C01-04, C01-05 y C01-06 cerradas técnicamente (6/8); capítulo C01 NO CERTIFICADO, 0/37. Progreso: **0/37 capítulos certificados**. Fuente: edición canónica de `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` y `docs/MASTER_REFERENCE.md`.
+**Estado:** EN DESARROLLO; C01-01, C01-02, C01-03, C01-04, C01-05, C01-06 y C01-07 cerradas técnicamente (7/8); capítulo C01 NO CERTIFICADO, 0/37. Progreso: **0/37 capítulos certificados**. Fuente: edición canónica de `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` y `docs/MASTER_REFERENCE.md`.
 
 ## Contrato de alcance
 
@@ -43,7 +43,7 @@ El usuario autorizó el 8 de noviembre de 2026 que cada microfase se **valide, r
 | C01-04 | Caso de uso y API .NET; requiere C01-03 | **CERRADA TÉCNICAMENTE**: PR #18 integrado; .NET10 51+19, MySQL 8.4.13, 37 HTTP, A/B/C PASS, CI post-merge |
 | C01-05 | UI Angular, responsive, accesibilidad y navegador; requiere C01-04 | **CERRADA TÉCNICAMENTE**: PR #20 fusionado, Angular22/Node24, 11 Chromium/WCAG, A/B/C PASS, CI post-merge |
 | C01-06 | Logo oficial y presencia visual aprobados; requiere C01-05 | **CERRADA TÉCNICAMENTE**: logo del Word SHA aprobado, cabecera + hero Angular, 28 Chromium, 12 negativos, A/B/C finales PASS, PR #24 y CI post-merge en dev |
-| C01-07 | Pruebas positivas, negativas, seguridad y regresión; requiere C01-06 | PENDIENTE |
+| C01-07 | Pruebas positivas, negativas, seguridad y regresión; requiere C01-06 | **CERRADA TÉCNICAMENTE**: PR #26, MySQL 8.4.13 + ASP.NET Core 10 + Angular 22, 37 HTTP, 27 Chromium, 51+19 .NET, A/B/C FINAL PASS y CI post-merge |
 | C01-08 | Auditorías integrales A/B/C, acta, conformidad del capítulo; requiere C01-07 | PENDIENTE |
 
 **Repositorio:** PR #10 contiene código adelantado de fases 02–07 y permanece en borrador. Se integra solamente el alcance documental de C01-01 mediante un PR independiente, sin adelantar implementación privada ni certificar software.
@@ -81,3 +81,8 @@ Rama `feature/c01-05-angular-public-identity`, partiendo de `dev` SHA `da52bb0d2
 ### C01-06 — cierre técnico del logotipo oficial y header
 
 El propietario ratificó el PNG original en las capturas de la portada y solicitó corregir el header textual. Se implementó el símbolo oficial azul recortado sin alterar los píxeles junto al nombre CRECISOL; el logo completo quedó en el hero con fallback seguro, favicon local y separación de marca de plataforma/tenant. Acta y auditorías A/B/C finales en [C01-06 · Acta de microfase](c01/C01_06_ACTA_MICROFASE.md). **PR #24 fusionado en dev** como `ac66a8aa39354d5126c3102be99e746452d455ce`, [CI final del último HEAD #42573961789](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42573961789) SUCCESS y [CI post-merge C01-06 #42574147302](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42574147302) SUCCESS, además de foundation pre/postmerge. **28/28 Chromium + 12 negativas del extractor + A/B/C FINAL PASS.** C01-06 **CERRADA TÉCNICAMENTE**, 6/8 microfases C01, 0/37 capítulos certificados. C01-07 queda habilitada para regresión/security/integración, no se autoriza C02 sin aceptación expresa de C01-08.
+
+
+### C01-07 — cierre técnico de regresión real plataforma/tenant
+
+Se integró [PR #26](https://github.com/solqaryn-platform/CRECISOL/pull/26) exclusivamente a `dev`, merge `745278d5ad3838ad5d63e0a15a88f6d9bafaeb9d`. CI del último HEAD `5477d07aa8911b0e2a776abf27f0c94248b022ba` [#42576150576](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42576150576) y foundation [#42576150786](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42576150786) SUCCESS. CI post-merge del código [#42576652049](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42576652049) y foundation [#42576652052](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42576652052) SUCCESS. MySQL 8.4.13 desechable + API .NET 10 real + Angular 22/Node24: 37 solicitudes HTTP, 7 casos Chromium de integración, 20 Chromium de regresión C01-05/06, 51 aserciones de contratos .NET, 19 de Application y auditorías finales A/B/C PASS. Negativas de host, tenant, borrador, XSS, CORS, rutas privadas inexistentes, SQL de solo lectura, caché y ausencia de DSN. Acta [C01_07_ACTA_MICROFASE.md](c01/C01_07_ACTA_MICROFASE.md). **C01-07 CERRADA TÉCNICAMENTE: 7/8; C01-08 siguiente exclusivamente para auditorías integrales y conformidad expresa. C01 0/37 capítulos certificados; C02 no habilitado.**

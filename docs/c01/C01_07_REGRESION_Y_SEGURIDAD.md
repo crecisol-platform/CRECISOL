@@ -1,6 +1,6 @@
 # C01-07 — Regresión integral de identidad pública, seguridad y separación de tenant
 
-**Estado inicial:** EN DESARROLLO; no cerrar hasta CI real del último HEAD, auditorías finales A/B/C, revisión, merge y CI post-merge. **C01 6/8, capítulos 0/37 certificados.**
+**Estado histórico al iniciar:** EN DESARROLLO; no cerrar hasta CI real del último HEAD, auditorías finales A/B/C, revisión, merge y CI post-merge. **C01 6/8, capítulos 0/37 certificados.**
 
 ## Autoridad y entrada
 
@@ -30,10 +30,14 @@ La CI debe **volver a ejecutar** 11 casos Chromium C01-05 y 9 de C01-06 (incluid
 
 Fuera de alcance: autenticación privada y permisos de tenant, dedicated DB real, DNS, VPS, R2, producción, pagos, tráfico real y carga/lectores asistivos manuales. Se mantienen como gates de capítulos posteriores. **Reversión:** revertir PR C01-07 (solo qa, frontend/tests, workflow y documentación); no existe estado productivo persistente.
 
-**Acta final de esta microfase:** pendiente de completar tras pruebas y CI post-merge; ningún PASS se atribuye antes de revisar los logs correspondientes.
+**Acta final de esta microfase:** [C01_07_ACTA_MICROFASE.md](C01_07_ACTA_MICROFASE.md); PR #26 y CI post-merge verificadas. Histórico de entrada conservado más arriba. C01 7/8, capítulos certificados 0/37.
 
 ## Incidencias históricas y correcciones
 
 - Primera CI: suite HTTP y siete Chromium reales PASS; auditoría B falló al interpretar un comentario como una llamada a `page.route`; se corrigió sin bajar cobertura.
 - Otra CI: auditor Python tuvo un salto de línea mal formado; corregido y ahora se exige `py_compile` previo.
 - Otra CI: Playwright/CDP perdió el cuerpo de una respuesta HTTP 200 al leer `response.json()`; se conserva la comprobación browser y se añade una segunda petición HTTP real con APIRequestContext, sin mocks, para verificar JSON y no-store. Revalidar con último HEAD.
+
+## Resolución final acreditada
+
+**C01-07 CERRADA TÉCNICAMENTE** tras CI sobre último HEAD #42576150576, merge PR #26 `745278d5ad3838ad5d63e0a15a88f6d9bafaeb9d` y CI post-merge #42576652049, todo SUCCESS; auditorías A/B/C FINALES PASS. Controles de contenido a partir de Word SHA verificado en runner. Se habilita solo C01-08; no capítulo C02 y no certificación de capítulo 01.
