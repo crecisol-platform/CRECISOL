@@ -2,7 +2,7 @@
 
 Fuente de nombres: Documento Maestro Único. Estado general: 0/37 certificados. Cada capítulo requiere implementación específica, pruebas ejecutadas, triple auditoría A/B/C, acta y aceptación antes de abrir desarrollo del siguiente. Los títulos no son evidencia de software.
 
-C01 | CRECISOL: identidad, visión, alcance y principios | EN DESARROLLO (C01-02 validada; capítulo NO CERTIFICADO)
+C01 | CRECISOL: identidad, visión, alcance y principios | EN DESARROLLO (C01-03 validada en CI, cierre técnico sujeto a PR #16; capítulo NO CERTIFICADO)
 C02 | Personas, experiencias y arquitectura de producto | PENDIENTE
 C03 | Arquitectura técnica limpia y dependencias | PENDIENTE
 C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE
