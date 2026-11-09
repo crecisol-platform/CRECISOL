@@ -52,3 +52,7 @@ No existen pertenencia de actor, auth/RBAC/ABAC, tenant verified host, shared/de
 - `qa/`, `.github/`, `docs/`: pruebas y auditorías específicas.
 
 **Reversión:** revertir PR C01-04. El test elimina el contenedor y socket temporales; no hay registros persistidos ni ambiente operativo que restaurar. La fase siguiente será **C01-05**, solo tras cierre individual C01-04 y sin certificar el capítulo: 0/37.
+
+## Primera evidencia de validación
+
+[CI #42556858527](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42556858527) — 3/3 trabajos SUCCESS: API .NET 10 Release sin errores/advertencias; Domain 51/51, Application 19/19, MySQL real 8.4.13 con SELECT-only, 37/37 solicitudes HTTP positivas/negativas y auditorías A/B/C PASS. [Acta C01-04](C01_04_ACTA_MICROFASE.md). La integración se condiciona a CI del último commit y revisión manual del PR #18; no es certificación del capítulo.
