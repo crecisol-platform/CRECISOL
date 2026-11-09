@@ -83,9 +83,12 @@ def validate_content(files):
             "2/10" in master and WORD_SHA in master and
             "C03 NO CERTIFICADO" in master and "C04 BLOQUEADO" in master,
             "Canonical master reference was silently changed")
-    for label, document in (("spec", spec), ("future", future),
-                            ("global", global_plan), ("decisions", decisions),
-                            ("agents", agents)):
+    # The C03-01 specification is historical, not the live C03-02 status.
+    require("C03-01" in spec and "1/10" in spec and
+            "C03 NO CERTIFICADO" in spec and "C04 BLOQUEADO" in spec,
+            "Historical first-phase specification was altered")
+    for label, document in (("future", future), ("global", global_plan),
+                            ("decisions", decisions), ("agents", agents)):
         require("C03-02" in document and "2/10" in document and
                 "C03 NO CERTIFICADO" in document and "C04 BLOQUEADO" in document,
                 "Missing strict 2/10 status in " + label)
