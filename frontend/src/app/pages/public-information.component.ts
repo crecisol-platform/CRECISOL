@@ -58,8 +58,17 @@ export class PublicInformationComponent {
   }
 
   /** C02-07: an actual focus transfer is required for skip navigation. */
-  focusMainContent(): void {
-    this.document.getElementById('contenido')?.focus({ preventScroll: true });
+  focusMainContent(event: Event): void {
+    // Preserve the public #contenido deep link without triggering a second
+    // Angular/browser navigation that could recreate the focused main node.
+    event.preventDefault();
+    const main = this.document.getElementById('contenido');
+    if (!main) return;
+    const browser = this.document.defaultView;
+    if (browser && browser.location.hash !== '#contenido') {
+      browser.history.replaceState(browser.history.state, '', '#contenido');
+    }
+    main.focus({ preventScroll: false });
   }
 
   retry(): void {
