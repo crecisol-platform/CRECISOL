@@ -1,10 +1,10 @@
-# CRECISOL · Protocolo de continuidad autónoma — DISEÑO NO ACTIVADO
+# CRECISOL · Protocolo de continuidad autónoma — ejecutor único con guardas SHA
 
-**Estado: DOCUMENTADO, NO DESPLEGADO, NO PROGRAMADO.** Este documento no instala ni enciende agentes o tareas. Queda subordinado al Documento Maestro Único, \`AGENTS.md\`, \`.agents/skills/crecisol-project-governance/SKILL.md\`, \`docs/MASTER_REFERENCE.md\` y las actas oficiales. Repositorio exclusivo: \`solqaryn-platform/CRECISOL\`. **SOLQARYN: escritura absolutamente prohibida.**
+**Estado: UNA tarea horaria ChatGPT/GitHub configurada; capacidades y desarrollo solo se acreditan por ejecución real.** Este documento no instala ni enciende agentes o tareas. Queda subordinado al Documento Maestro Único, \`AGENTS.md\`, \`.agents/skills/crecisol-project-governance/SKILL.md\`, \`docs/MASTER_REFERENCE.md\` y las actas oficiales. Repositorio exclusivo: \`solqaryn-platform/CRECISOL\`. **SOLQARYN: escritura absolutamente prohibida.**
 
 ## 1. Decisión de seguridad y frecuencia
 
-La propuesta del propietario solicitó tres tareas idénticas a los minutos 05, 25 y 45 para simular frecuencia de 20 minutos. **NO IMPLEMENTAR:** la herramienta de automatizaciones de ChatGPT disponible en este contexto declara **frecuencia máxima una vez por hora por tarea**; crear tres tareas desfasadas para eludirla no es una solución admitida. Además, tres procesos escritores compitiendo por \`dev\`, PR y documentación pueden producir duplicados o cierres no basados en el último SHA. **No se creó ninguna tarea.**
+La propuesta del propietario solicitó tres tareas idénticas a los minutos 05, 25 y 45 para simular frecuencia de 20 minutos. **NO IMPLEMENTAR:** la herramienta de automatizaciones de ChatGPT disponible en este contexto declara **frecuencia máxima una vez por hora por tarea**; crear tres tareas desfasadas para eludirla no es una solución admitida. Además, tres procesos escritores compitiendo por \`dev\`, PR y documentación pueden producir duplicados o cierres no basados en el último SHA. **Posteriormente se creó UNA tarea recurrente, sin autorizar varios escritores.**
 
 **Diseño candidato:** un solo agente habilitado con una tarea por hora, tras autorización del propietario para esa configuración y verificación efectiva de que puede acceder a GitHub privado, ejecutar toolchains y leer logs. Crear una tarea por sí solo no demuestra un runner de código, ni acceso persistente, ni una sesión de GitHub; no afirmar que trabaja sin comprobar los permisos y la ejecución. La única concurrencia segura es la que garantice un lock probado; una segunda ejecución solo puede observar y salir. No activar otros agentes/sistemas/servicios de pago sin autorización.
 
@@ -17,16 +17,23 @@ En cada activación:
 4. Revisar PR #10 \`feature/c01-identidad\` como trabajo históricamente adelantado: **NO fusionarlo ni usarlo como sustituto del orden operativo.**
 5. Comprobar si existe un hallazgo P0/P1, dependencia no resuelta, activo gráfico no aprobado o aceptación de capítulo pendiente. Marcar \`BLOQUEADO\` si corresponde.
 
-## 3. Un solo escritor y recuperación
+## 3. Ejecutor único: corrección del bloqueo y modo seguro
 
-**Estado de diseño pendiente de implementar y probar, sin lock activo hoy:**
+**Incidente verificado:** dos ejecuciones del 8 de noviembre de 2026 pudieron leer GitHub, pero no escribieron por exigirse un lock distribuido con fencing aún no implementado. La exigencia se mantiene para **múltiples agentes escritores**; para **UNA sola tarea programada**, se permite un modo de escritura controlada con verificaciones GitHub de SHA y sin otras ejecuciones activas comprobadas. No es un mutex global ni garantiza ausencia absoluta de otros escritores.
 
-- Fuente de ejecución: registro versionado por el orquestador con \`chapter\`, \`microphase\`, \`phase_status\`, \`owner_id\`, \`run_id\`, \`lease_epoch\`, \`lease_expires_at\`, \`heartbeat_at\`, \`branch\`, \`pr_number\`, \`expected_dev_sha\`, \`head_sha\`, \`ci_runs\`, \`audit_results\`, \`blocked_reason\`, \`next_action\`. Nunca secretos ni credenciales.
-- Adquisición exclusiva con compare-and-swap real y **token de fencing** incremental; antes de CUALQUIER escritura/merge comprobar titularidad, token vigente, SHA esperado y ausencia de otro escritor. Un archivo JSON sin operación atómica no constituye un mutex.
-- Heartbeat con lease y recuperación tras caída. **La expiración por sí sola no autoriza tomar control**: comprobar de forma independiente si hay job vivo y usar CAS para nuevo epoch; un antiguo agente debe quedar impedido de escribir aunque despierte más tarde.
-- Ningún agente puede forzar push, resetear \`dev\`, cerrar PR ajenos o sobrescribir commits cuando cambió el SHA. Una ejecución secundaria o sin lock únicamente lee/audita y termina.
-- Cuando no exista un mecanismo de lock y fencing **realmente probado**, NO lanzar dos procesos escritores, ni siquiera con tareas escalonadas. Preferir una sola ejecución programada y guardas locales de SHA; si el mismo agente se solapa, salida segura.
-- Registro de cada hito: entradas verificados, commit, PR, trabajos CI y fallos; recuperación idempotente. No crear una nueva rama/PR por cada activación.
+### Modo 1: exactamente UNA tarea ChatGPT/GitHub (autorizado)
+
+1. Antes de escribir: verificar solo repo `solqaryn-platform/CRECISOL`, `dev`, rama feature, PR existentes, CI y actividad reciente. No ejecutar una segunda tarea escritora; si la misma tarea se ejecuta manualmente mientras otra instancia trabaja, abstenerse de escribir. Ante evidencia de solapamiento o imposibilidad material de excluirlo, modo lectura, informar.
+2. Cambios de archivos: obtener `fetch_file.sha` actual y usar `update_file` con ese SHA en la rama feature. Para cambios múltiples, crear commit cuyo padre sea HEAD observado y publicar vía `update_ref(expected_sha=HEAD, force=false)`. Si hay conflicto o cambio de HEAD, no forzar ni reintentar ciegamente: reevaluar los cambios.
+3. Antes del PR/merge: revisar diff, secretos, alcance, auditorías A/B/C y CI del último SHA; releer `dev` y `PR.head_sha`; verificar que la base no cambió desde la revisión. Merge exclusivamente a dev usando `expected_head_sha`, sin force. Si hay cambio concurrente de SHA, suspender ese merge y revisar otra vez. Verificar CI posterior antes de declarar cierre.
+4. El control SHA es **optimista y limitado**: GitHub no transacciona el lock y el commit sobre dos ramas simultáneamente; no afirmar fencing que no existe. Detectar escritores humanos o de Actions y detener operaciones potencialmente conflictivas. No tocar `main`, PR #10 ni SOLQARYN.
+5. Conservar estado en PR/actas/commits: capítulo, microfase, SHA, rama, CI, auditorías, errores, rollback y próxima acción. Retomar exactamente donde haya evidencia.
+6. **No auto-desactivar por un bloqueo funcional, pendiente de aprobación o activo gráfico faltante.** Informar una vez el bloqueo concreto, mantener la tarea programada y revalidar en una ejecución posterior, sin informes idénticos repetitivos. Solo pausar por orden del propietario o incidente de seguridad grave confirmado.
+7. En C01-06 se permiten preparaciones verificables como especificación, extracción de candidato del Word o pruebas negativas; no incluir un logo no aprobado ni declarar C01-06 cerrada. Si se requiere aprobación humana del archivo oficial, detener solo esa entrega y explicarlo.
+
+### Modo 2: dos o más escritores (NO HABILITADO)
+
+Antes de activar más de un agente escritor se requiere **mecanismo real de exclusión mutua compartida**, adquisición compare-and-swap, propietario/run_id, epoch monotónico, lease, heartbeat y fencing que impida escrituras de agentes obsoletos. Expirar un lease no prueba que el escritor antiguo murió. El plan de lock distribuido permanece **diseñado, no implementado ni probado**. En presencia de una segunda tarea, prohibir su escritura hasta certificar este mecanismo.
 
 ## 4. Ejecución completa de UNA microfase
 
@@ -71,8 +78,12 @@ Backend aplica pertenencia, scope, rol, acción, sucursal y propiedad. Shared DB
 
 Estados permitidos por microfase: \`PENDIENTE\`, \`EN DESARROLLO\`, \`PROBADA\`, \`BLOQUEADA\`, \`CERRADA TÉCNICAMENTE\`. Estados de capítulo: \`PENDIENTE\`, \`EN DESARROLLO\`, \`BLOQUEADO\`, \`CERTIFICADO CON ACEPTACIÓN\`.
 
-Reporte de cierre: capítulo y microfase, cambios efectivos, PR/commits, CI del HEAD y post-merge con enlaces, pruebas positivas/negativas, A/B/C, fallos corregidos, riesgos, rollback, progreso microfases X/Y, capítulos certificados X/37 y siguiente etapa habilitada. No afirmar seguimiento de fondo ni automatización activa sin un identificador real de tarea y evidencia de ejecución.
+Reporte de cierre: capítulo y microfase, cambios efectivos, PR/commits, CI del HEAD y post-merge con enlaces, pruebas positivas/negativas, A/B/C, fallos corregidos, riesgos, rollback, progreso microfases X/Y, capítulos certificados X/37 y siguiente etapa habilitada. Distinguir tarea configurada, ejecución realizada y código realmente probado. No afirmar ejecución perfecta ni auto-desactivar la tarea por faltas de un activo; un bloqueo se informa sin inventar PASS.
 
 ## 8. Estado de referencia al redactar este diseño
 
 \`dev\`: \`33b1f74cb3d5b1fa3165226e0c0f46d2f1af5191\`, fundación SUCCESS. C01-01...C01-05 cerradas, **5/8**; C01-06 pendiente y no iniciada; C01-07/08 pendientes; **0/37** capítulos certificados. Los planes C02–C37 son PROVISIONALES, nunca habilitados. Antes de operar hay que releer \`dev\` porque este SHA envejece.
+
+## 9. Registro de reparación de auto-bloqueo
+
+Las dos ejecuciones reales pudieron leer GitHub y localizar C01-06, pero se auto-bloquearon exclusivamente ante un requisito de mutex global aún no implementado. La edición habilita **solo modalidad de tarea única con SHA optimista**; NO certifica herramienta de compilación, integridad binaria del logotipo ni ausencia absoluta de carreras. El horario y la activación se confirman exclusivamente en la plataforma de automatizaciones, no por este texto.
