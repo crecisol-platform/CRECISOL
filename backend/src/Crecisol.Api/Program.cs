@@ -50,31 +50,33 @@ app.Use(async (context, next) =>
 
 // This is the ONLY route in C01-04. No admin, draft, preview, tenant,
 // publication/writes, authentication or deployment endpoint is registered.
-app.MapGet("/api/v1/public/branding/platform",
-    async (ReadPublishedPlatformBrand useCase, HttpContext context, CancellationToken ct) =>
-    {
-        if (context.Request.QueryString.HasValue ||
-            context.Request.Headers.ContainsKey("X-Tenant-Id") ||
-            context.Request.Headers.ContainsKey("Authorization"))
-            return Results.BadRequest();
-
-        try
-        {
-            var brand = await useCase.ExecuteAsync(ct);
-            return brand is null ? Results.NotFound() : Results.Json(brand);
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception)
-        {
-            // Fail closed. Do NOT return SQL errors, connection strings,
-            // invalid private records, drafts or stack traces.
-            return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
-        }
-    })
+app.MapGet("/api/v1/public/branding/platform", HandlePublishedBrand)
     .AllowAnonymous()
     .WithName("ReadPublishedPlatformBrand");
 
 app.Run();
+
+static async Task<IResult> HandlePublishedBrand(
+    ReadPublishedPlatformBrand useCase, HttpContext context, CancellationToken ct)
+{
+    if (context.Request.QueryString.HasValue ||
+        context.Request.Headers.ContainsKey("X-Tenant-Id") ||
+        context.Request.Headers.ContainsKey("Authorization"))
+        return Results.BadRequest();
+
+    try
+    {
+        var brand = await useCase.ExecuteAsync(ct);
+        if (brand is null) return Results.NotFound();
+        return Results.Json(brand);
+    }
+    catch (OperationCanceledException) when (ct.IsCancellationRequested)
+    {
+        throw;
+    }
+    catch (Exception)
+    {
+        // Fail closed. Never return SQL errors, DSNs or invalid private data.
+        return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+    }
+}
