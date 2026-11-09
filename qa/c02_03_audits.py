@@ -188,7 +188,10 @@ def audit_b():
                   "Authorization:", "eval(", "new Function("):
         require(token not in script + template + model,
                 f"Private storage, unsafe HTML or fake auth introduced: {token}")
-    require("routerLink" in template and "no" not in "", "Safe static public navigation missing")
+    require('routerLink="/"' in template and
+            'href="#contenido"' in template and
+            '[routerLink]="link.path"' in template,
+            "Safe public navigation or keyboard skip link missing")
     for phrase in ("En preparación", "sin", "no", "No hay"):
         require(phrase.casefold() in model.casefold(), "Non-operational status text missing")
     must_reject(data, lambda d: d["routes"][2].update(backend_data="GET /api/v1/private/customers"),
@@ -218,8 +221,12 @@ def audit_c():
     if ACTA.exists():
         acta = ACTA.read_text(encoding="utf-8")
         require("3/9" in plan and "C02-03" in plan and
-                "C02-03 CERRADA TÉCNICAMENTE" in acta and "POSTMERGE" in acta,
-                "C02-03 closure requires acta plus 3/9 and postmerge evidence")
+                "C02-03 CERRADA TÉCNICAMENTE" in acta and "POSTMERGE" in acta and
+                "6ccd98960f36dce3407392fd26406366b4cd0650" in acta and
+                all(run in acta for run in (
+                    "42624454291", "42624454313", "42624454480",
+                    "42624454179", "42624454085", "42624454342")),
+                "C02-03 technical closure requires exact SHA and all six postmerge runs")
     else:
         require("2/9" in plan, "C02-03 cannot count as closed without an acta")
     require(len(re.findall(r"\{ path: '/[^']+', label:", model)) == 3,
