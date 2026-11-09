@@ -6,6 +6,7 @@ on:
       - 'qa/c01_06_logo_candidate.py'
       - 'docs/c01/C01_06_LOGO_CANDIDATO.md'
       - '.github/workflows/c01-06-logo-check.yml'
+      - 'frontend/tests/c01-06.logo-candidate.spec.ts'
 permissions:
   contents: read
 jobs:
@@ -34,6 +35,45 @@ jobs:
         with:
           name: C01-06-candidate-NOT-APPROVED
           path: /tmp/c01-06-candidate/*
+          if-no-files-found: error
+          retention-days: 3
+          compression-level: 0
+
+  c01-06-browser-isolated:
+    name: C01-06 isolated candidate Chromium and automated WCAG (NOT APPROVED)
+    if: startsWith(github.head_ref, 'feature/c01-06-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Extract verified candidate only to disposable runner
+        run: python3 qa/c01_06_logo_candidate.py --extract-dir /tmp/c01-06-candidate
+      - name: Install pinned Node 24
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Install locked frontend dependencies without lifecycle scripts
+        run: npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
+      - name: Install Chromium on temporary runner
+        run: cd frontend && npx playwright install --with-deps chromium
+      - name: Typecheck and compile unmodified Angular application
+        run: cd frontend && npm run check:types && npm run build
+      - name: Verify extracted file exists
+        run: test -s /tmp/c01-06-candidate/crecisol-candidate-NOT-APPROVED.png
+      - name: Run isolated responsive, negative and accessibility browser tests
+        env:
+          C01_06_CANDIDATE: /tmp/c01-06-candidate/crecisol-candidate-NOT-APPROVED.png
+        run: cd frontend && npx playwright test tests/c01-06.logo-candidate.spec.ts --reporter=line
+      - name: Upload PRIVATE unapproved review screenshots
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: C01-06-browser-review-NOT-APPROVED
+          path: frontend/test-results/c01-06-review-NOT-APPROVED-*.png
           if-no-files-found: error
           retention-days: 3
           compression-level: 0

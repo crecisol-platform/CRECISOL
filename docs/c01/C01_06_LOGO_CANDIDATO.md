@@ -43,3 +43,12 @@ Fecha de la comprobación: 2026-11-08 en Honduras / 2026-11-09 05:30 UTC. **CI r
 - Auditoría **A preliminar PASS** (autoridad/matriz); **B preliminar PASS** (rechazo de medios peligrosos); **C preliminar PASS** (metadatos/dimensiones). **NO** son auditorías finales de C01-06.
 - Incidencia no bloqueante del job de upload: advertencia de deprecación Node DEP0169 sobre url.parse en la acción, sin fallo observado. Debe revisarse al actualizar acciones; no se omitió ni silenció una prueba.
 - **PENDIENTE / NO EJECUTADO:** cotejo visual humano con portada, aprobación expresa del gráfico individual, instalación en frontend, build Angular/Node, Chromium/WCAG de logo real, auditorías completas, CI final y post-merge. La microfase NO se cierra; 5/8, 0/37.
+
+
+## Preparación de revisión Chromium aislada — sin aprobación ni integración
+
+Se añade una prueba Playwright para ejecutar **únicamente en el runner temporal**, a partir del PNG canónico exportado por el extractor. Su ruta privada de CI es \`/tmp/c01-06-candidate/crecisol-candidate-NOT-APPROVED.png\`, nunca \`frontend/src/assets\`. El SHA-256 esperado se comprueba antes de renderizar; el flujo Angular y el API permanecen sin cambios.
+
+Casos planeados: carga PNG de dimensiones originales y ratio sin deformación en Chromium 1440 y 360 px; \`alt\` significativo y aviso **NO APROBADO**; escaneo axe-core automatizado; CSP que impide scripts y conexiones externas; respuesta 404 del recurso, sin inferir aprobación; sin overflow horizontal. Las capturas de pantalla quedan **privadas**, con retención de 3 días, y muestran explícitamente el estado no aprobado. Además se compilan los módulos de Angular 22/Node24 con el lock existente. El cumplimiento automatizado no reemplaza revisión humana, pruebas con lectores de pantalla ni la integración final aprobada.
+
+**Control de resultados:** hasta verificar los runs del commit que introduce estas pruebas, todo caso nuevo figura **NO EJECUTADO**. La aprobación expresa del **archivo gráfico independiente exacto**, con SHA y cotejo de portada, es una dependencia humana P1 de esta microfase; no se infiere del origen en Word. Solo después se instala en frontend, se ejecutan pruebas finales y se considera merge a \`dev\`. No se inician C01-07 ni capítulos posteriores.
