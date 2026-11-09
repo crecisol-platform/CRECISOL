@@ -32,6 +32,13 @@ TESTS = ROOT / "frontend/tests/c02-05.interaction-states.spec.ts"
 KIND_ORDER = ["loading", "empty", "error", "offline", "confirmation"]
 RUNTIME_STATES = ["loading", "error", "offline"]
 FUTURE_STATES = ["empty", "confirmation"]
+EXPECTED_TRIGGERS = {
+    "loading": "new-validated-request-in-progress",
+    "empty": "authorized-scope-and-successful-empty-query",
+    "error": "failed-or-invalid-published-response",
+    "offline": "unavailable-publication-and-browser-offline-hint",
+    "confirmation": "authorized-backend-acknowledgement-persisted-version-and-transaction-reference",
+}
 EXPECTED_TRANSITIONS = {
     "request_start": "clear-previous-view-and-identity-metadata-then-loading",
     "authorized_success_nonempty": "render-scoped-ready-using-only-fresh-published-or-authorized-response",
@@ -101,11 +108,10 @@ def valid_contract(data, parents):
                 f"ARIA state announcement incorrect: {kind}")
         require(item.get("aria_busy") is (kind == "loading"),
                 f"ARIA busy state incorrect: {kind}")
-        require(isinstance(item.get("requires"), str) and
-                len(item["requires"]) > 22 and
+        require(item.get("requires") == EXPECTED_TRIGGERS[kind] and
                 isinstance(item.get("recovery"), str) and
                 len(item["recovery"]) > 16,
-                f"State trigger and recovery missing: {kind}")
+                f"State trigger or authorized-success precondition altered: {kind}")
         require(isinstance(item.get("allows"), list) and item["allows"] and
                 isinstance(item.get("forbids"), list) and len(item["forbids"]) >= 3,
                 f"Negative/positive state conditions absent: {kind}")
