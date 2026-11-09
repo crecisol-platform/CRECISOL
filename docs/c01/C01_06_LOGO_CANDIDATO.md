@@ -47,8 +47,28 @@ Fecha de la comprobación: 2026-11-08 en Honduras / 2026-11-09 05:30 UTC. **CI r
 
 ## Preparación de revisión Chromium aislada — sin aprobación ni integración
 
-Se añade una prueba Playwright para ejecutar **únicamente en el runner temporal**, a partir del PNG canónico exportado por el extractor. Su ruta privada de CI es \`/tmp/c01-06-candidate/crecisol-candidate-NOT-APPROVED.png\`, nunca \`frontend/src/assets\`. El SHA-256 esperado se comprueba antes de renderizar; el flujo Angular y el API permanecen sin cambios.
+Se añade una prueba Playwright para ejecutar **únicamente en el runner temporal**, a partir del PNG canónico exportado por el extractor. Su ruta privada de CI es `/tmp/c01-06-candidate/crecisol-candidate-NOT-APPROVED.png`, nunca `frontend/src/assets`. El SHA-256 esperado se comprueba antes de renderizar; el flujo Angular y el API permanecen sin cambios.
 
-Casos planeados: carga PNG de dimensiones originales y ratio sin deformación en Chromium 1440 y 360 px; \`alt\` significativo y aviso **NO APROBADO**; escaneo axe-core automatizado; CSP que impide scripts y conexiones externas; respuesta 404 del recurso, sin inferir aprobación; sin overflow horizontal. Las capturas de pantalla quedan **privadas**, con retención de 3 días, y muestran explícitamente el estado no aprobado. Además se compilan los módulos de Angular 22/Node24 con el lock existente. El cumplimiento automatizado no reemplaza revisión humana, pruebas con lectores de pantalla ni la integración final aprobada.
+Casos planeados: carga PNG de dimensiones originales y ratio sin deformación en Chromium 1440 y 360 px; `alt` significativo y aviso **NO APROBADO**; escaneo axe-core automatizado; CSP que impide scripts y conexiones externas; respuesta 404 del recurso, sin inferir aprobación; sin overflow horizontal. Las capturas de pantalla quedan **privadas**, con retención de 3 días, y muestran explícitamente el estado no aprobado. Además se compilan los módulos de Angular 22/Node24 con el lock existente. El cumplimiento automatizado no reemplaza revisión humana, pruebas con lectores de pantalla ni la integración final aprobada.
 
-**Control de resultados:** hasta verificar los runs del commit que introduce estas pruebas, todo caso nuevo figura **NO EJECUTADO**. La aprobación expresa del **archivo gráfico independiente exacto**, con SHA y cotejo de portada, es una dependencia humana P1 de esta microfase; no se infiere del origen en Word. Solo después se instala en frontend, se ejecutan pruebas finales y se considera merge a \`dev\`. No se inician C01-07 ni capítulos posteriores.
+**Control de resultados:** los resultados reales del preview aislado se detallan en el acta adicional posterior. No sustituye revisión de marca, integración ni auditorías finales. La aprobación expresa del **archivo gráfico independiente exacto**, con SHA y cotejo de portada, es una dependencia humana P1 de esta microfase; no se infiere del origen en Word. Solo después se instala en frontend, se ejecutan pruebas finales y se considera merge a `dev`. No se inician C01-07 ni capítulos posteriores.
+
+## Acta parcial adicional — Chromium aislado: ejecución real, NO APROBADO
+
+**Fecha de evidencia:** 8 de noviembre de 2026, 23:47 Honduras / 9 de noviembre 05:47 UTC.
+**HEAD técnico probado:** `cc82d3a95d727ca56c697f98df71538fe815d2ce`.
+**CI:** [C01-06 #42569230523](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42569230523) SUCCESS, 2/2 jobs; [foundation #42569230375](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42569230375) SUCCESS. CI C01-05 separada se omitió por su guarda de rama (no se contabiliza).
+
+**Positivas/negativas del candidato:** Word con SHA-256 canónico confirmado en runner y PNG `word/media/image1.png`, 1298 × 859, SHA-256 `9e83d1d0a891565cf80a21a7e90d7afcaa24c9bb63e7d2a589790127dadd549f`; extracción idéntica, positiva sintética y 12 negativas de seguridad PASS. Auditorías A/B/C del extractor solamente PRELIMINARES PASS.
+
+**Validación adicional nueva:** Node 24.15.0; `npm ci` con lock existente; `npm run check:types` y `npm run build` Angular22 PASS (initial 233.23 kB raw, 66.68 kB transferencia estimada). Chromium Playwright 1.56.1 / Chromium 141: **4/4 tests PASS en 9.4 s**, ejecutados en runner GitHub Actions, con los siguientes alcances:
+- Desktop 1440 y móvil 360: dimensión natural, proporción de imagen intacta, sin overflow horizontal, texto alternativo y aviso NO APROBADO. Axe automatizado sin violaciones reportadas **en la página aislada**, sin reclamar conformidad WCAG integral.
+- Política CSP (`script-src 'none'`), `Cache-Control: no-store`, no scripts inline ejecutables y recursos locales.
+- PNG no encontrado (HTTP 404): nunca se interpreta como aprobación ni se elimina el aviso al propietario.
+- Capturas privadas en `C01-06-browser-review-NOT-APPROVED`, artefacto de CI retenido 3 días. El PNG privado permanece en `C01-06-candidate-NOT-APPROVED`, mismo plazo. NO se instala el candidato en Angular ni se expone por rutas de la aplicación.
+
+**Auditorías de esta iteración:** A, trazabilidad de P14/P25/T02-R01/T03-R01 y origen canónico; B, SHA fijo, imágenes controladas, CSP, rechazo de recurso ausente y ausencia de marca candidata en la app; C, Angular compilado, Chromium en dos viewports, accesibilidad axe y aspect ratio. **TODAS PARCIALES/PRELIMINARES**: no prueban autenticación privada, BOLA/IDOR o tenant end-to-end, ni logo oficial integrado.
+
+**Advertencias visibles:** deprecaciones Node `DEP0040` y `DEP0169` y acciones con runtime originalmente Node 20 que GitHub fuerza a Node 24. No causaron fallos; requieren actualización futura de pins auditados.
+
+**NO GO de cierre:** PR #24 no contiene aceptación inequívoca del PNG independiente exacto y cotejo visual humano de la portada del Word; el origen en el Word no equivale a aprobación. Faltan integración oficial Angular, pruebas finales de esa integración, auditorías A/B/C definitivas y merge con CI post-merge. El presente commit documental requiere validar de nuevo su HEAD. Estado: **C01-06 EN DESARROLLO, C01 5/8, capítulos 0/37, C01-07 NO habilitada**.
