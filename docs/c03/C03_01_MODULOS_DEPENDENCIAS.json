@@ -1,0 +1,217 @@
+{
+  "schema": "crecisol.c03-01.architecture-inventory.v1",
+  "source": {
+    "repository": "solqaryn-platform/CRECISOL",
+    "word": "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx",
+    "sha256": "e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e",
+    "start": "03. Arquitectura técnica limpia y dependencias",
+    "end": "04. Multitenancy, dominios y aprovisionamiento",
+    "original_paragraph_ids": [
+      "P01",
+      "P02",
+      "P03",
+      "P04",
+      "P05",
+      "P06",
+      "P07"
+    ],
+    "original_table_ids": [
+      "T01-R01",
+      "T01-R02",
+      "T01-R03",
+      "T01-R04",
+      "T01-R05",
+      "T01-R06",
+      "T01-R07",
+      "T01-R08",
+      "T01-R09"
+    ],
+    "original_table_rows": 9,
+    "supplemental_table_rows": [
+      3,
+      3
+    ],
+    "normative_gates": [
+      "MAE-C03-01",
+      "MAE-C03-02",
+      "MAE-C03-03",
+      "MAE-C03-04",
+      "MAE-C03-05",
+      "MAE-C03-06",
+      "MAE-C03-07",
+      "MAE-C03-08"
+    ],
+    "technical_microphases": [
+      "C03-01",
+      "C03-02",
+      "C03-03",
+      "C03-04",
+      "C03-05",
+      "C03-06",
+      "C03-07",
+      "C03-08",
+      "C03-09",
+      "C03-10"
+    ]
+  },
+  "status": "C03-01 inventory only; C03 not certified",
+  "approved_previous_gate": {
+    "certified_chapters": 2,
+    "previous_chapter": "C02",
+    "accepted_at": "2026-11-09",
+    "postmerge_sha": "342085ad323c9f24da5b2a197c41574376ac30f0",
+    "postmerge_successful_workflows": 12
+  },
+  "current_backend": {
+    "projects": {
+      "Crecisol.Domain": "backend/src/Crecisol.Domain/Crecisol.Domain.csproj",
+      "Crecisol.Application": "backend/src/Crecisol.Application/Crecisol.Application.csproj",
+      "Crecisol.Infrastructure": "backend/src/Crecisol.Infrastructure/Crecisol.Infrastructure.csproj",
+      "Crecisol.Api": "backend/src/Crecisol.Api/Crecisol.Api.csproj"
+    },
+    "project_references": [
+      {
+        "from": "Crecisol.Application",
+        "to": "Crecisol.Domain"
+      },
+      {
+        "from": "Crecisol.Infrastructure",
+        "to": "Crecisol.Application"
+      },
+      {
+        "from": "Crecisol.Api",
+        "to": "Crecisol.Application"
+      },
+      {
+        "from": "Crecisol.Api",
+        "to": "Crecisol.Infrastructure"
+      }
+    ],
+    "project_status": "physical projects exist; module boundaries only partly present",
+    "dependencies_acyclic": true,
+    "domain_external_framework_packages_forbidden": true,
+    "application_direct_infrastructure_forbidden": true,
+    "application_direct_mysql_forbidden": true,
+    "api_direct_sql_forbidden": true,
+    "infrastructure_only_adapters": true
+  },
+  "current_frontend": {
+    "project": "frontend/angular.json",
+    "mode": "single Angular 22 public application; synthetic harness separately built",
+    "production_entry": "src/main.ts",
+    "pattern_harness_entry": "tests/pattern-harness/main.ts",
+    "public_routes": [
+      "",
+      "experiencias",
+      "demostraciones",
+      "alta-empresas",
+      "**"
+    ],
+    "private_routes_implemented": false,
+    "private_portal_shells_implemented": false,
+    "shared_design_system_restructuring_implemented": false,
+    "status": "public/info only; future public/private apps are proposals, not current code"
+  },
+  "current_database": {
+    "status": "C01 public brand published read model; no private multitenant business modules",
+    "schema": "database/c01_03_brand_schema.sql",
+    "client_selected_dsn_allowed": false,
+    "cross_module_table_writes_allowed": false,
+    "shared_and_dedicated_tenant_placement_implemented": false,
+    "migration_required_in_c03_01": false
+  },
+  "current_api": {
+    "entry": "backend/src/Crecisol.Api/Program.cs",
+    "public_endpoints": [
+      "GET /api/v1/public/branding/platform"
+    ],
+    "private_business_endpoints_implemented": false,
+    "read_only_public_model": true
+  },
+  "future_modules": [
+    {
+      "module": "Identity",
+      "purpose": "identidad verificada, autenticación y revocación",
+      "state": "planned"
+    },
+    {
+      "module": "Tenants",
+      "purpose": "membresías, permisos, dominios y tenant contextual autorizado",
+      "state": "planned"
+    },
+    {
+      "module": "Catalog",
+      "purpose": "propiedad de productos y servicios",
+      "state": "planned"
+    },
+    {
+      "module": "Orders",
+      "purpose": "pedidos y operaciones con contratos",
+      "state": "planned"
+    },
+    {
+      "module": "Payments",
+      "purpose": "intención y conciliación, sin PSP activo",
+      "state": "planned"
+    },
+    {
+      "module": "Scheduling",
+      "purpose": "agenda y recursos",
+      "state": "planned"
+    },
+    {
+      "module": "Memberships",
+      "purpose": "derechos de suscripción/membresías",
+      "state": "planned"
+    },
+    {
+      "module": "Media",
+      "purpose": "metadatos de medios, sin almacenamiento privado actual",
+      "state": "planned"
+    },
+    {
+      "module": "Analytics",
+      "purpose": "eventos y proyecciones autorizadas",
+      "state": "planned"
+    },
+    {
+      "module": "Cases",
+      "purpose": "seguimiento universal G.7 separado de Orders/Scheduling/Billing",
+      "state": "planned"
+    }
+  ],
+  "future_surfaces": [
+    "Workers",
+    "Frontend público",
+    "Frontend privado",
+    "Shared contracts/OpenAPI"
+  ],
+  "future_invariants": {
+    "modular_monolith_before_microservices": true,
+    "domain_no_http_orm_sdk": true,
+    "application_ports_no_direct_mysql": true,
+    "no_module_writes_foreign_tables": true,
+    "workers_outbox_idempotent_when_implemented": true,
+    "events_versioned_when_implemented": true,
+    "api_back_end_authorization_required": true,
+    "tenant_context_no_bypass": true,
+    "server_resolves_tenant_and_data_placement": true,
+    "login_without_company_selector": true,
+    "superadmin_exceptional_access_with_mfa_reason_expiry_audit": true,
+    "full_admin_parametrization_future_only": true,
+    "no_external_services_or_deploy": true,
+    "no_implemented_private_endpoints_in_this_microphase": true
+  },
+  "negative_contracts": [
+    "NEG-01 ciclos en referencias C#",
+    "NEG-02 Domain referencia API/Infrastructure/EF/MySQL",
+    "NEG-03 Application referencia MySQL o proveedores externos",
+    "NEG-04 acceso directo a tablas de otro módulo",
+    "NEG-05 DSN/tenant determinado desde URL/headers del navegador",
+    "NEG-06 rutas privadas o API de negocio activadas por inventario",
+    "NEG-07 Workers/outbox declarados ejecutables sin código y pruebas",
+    "NEG-08 Cases fusionado con Orders/Scheduling/Billing",
+    "NEG-09 C03/C04 certificados o iniciados prematuramente",
+    "NEG-10 confundir grafo futuro con la implementación real"
+  ]
+}

@@ -1,6 +1,6 @@
 # C03 · Arquitectura técnica limpia y dependencias — microfases propuestas
 
-> **BORRADOR DE PLANIFICACIÓN; NO HABILITADO PARA DESARROLLO NI CERTIFICACIÓN.** Esta guía deriva del índice `docs/PLAN_37_CAPITULOS.md` y de las políticas transversales de CRECISOL. Antes de activar C03, contrastar cada punto con el texto íntegro del capítulo en el Word canónico, su SHA registrado en `docs/MASTER_REFERENCE.md` y sus anexos; ajustar el número o alcance por PR trazable. Este archivo **no modifica el Documento Maestro Único**.
+> **PLAN OPERATIVO ACTIVO SOLO PARA C03-01, 0/10 microfases cerradas; C03 NO CERTIFICADO, C04 BLOQUEADO.** C02 fue certificado con aceptación humana «APROBADO» (9 noviembre 2026) y [12/12 CI finales](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42685252655). El [Word canónico](../MASTER_REFERENCE.md) fue leído de sus bytes originales con SHA-256 fijo y delimitación C03/C04, mediante [CI C03-01 #42687641345](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42687641345): **7 unidades originales y una tabla original de 9 filas**, más anexos. Las **8 puertas normativas MAE-C03-01..08** no equivalen a estas **10 microfases técnicas provisionales C03-01..10**; [especificación C03-01](../c03/C03_01_ESPECIFICACION.md). Este plan derivado **no modifica ni sustituye el Documento Maestro Único** y no autoriza adelantar C03-02 o C04.
 
 **Puerta de entrada:** C02 certificado, acta aceptada y CI de `dev` verde. Ninguna microfase de C03 puede codificarse durante C01 u otro capítulo anterior.
 
