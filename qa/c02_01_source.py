@@ -174,8 +174,19 @@ def audit_c():
     acta_path = ROOT / "docs/c02/C02_01_ACTA_MICROFASE.md"
     if acta_path.exists():
         acta = acta_path.read_text(encoding="utf-8")
-        require("1/9" in plan and "C02" in plan and "NO CERTIFICADO" in plan,
-                "Closed C02-01 must retain 1/9 without chapter certification")
+        require("C02" in plan and "NO CERTIFICADO" in plan,
+                "C02 must remain uncertified after any technically closed microphase")
+        next_acta_path = ROOT / "docs/c02/C02_02_ACTA_MICROFASE.md"
+        if next_acta_path.exists():
+            next_acta = next_acta_path.read_text(encoding="utf-8")
+            require("2/9" in plan and "C02-02" in plan and
+                    "C02-02 CERRADA TÉCNICAMENTE" in next_acta and
+                    "455987893827cb5b25d4b127457efd81225267b7" in next_acta and
+                    "42619923854" in next_acta,
+                    "C02-02 advancement requires original technical SHA and real CI")
+        else:
+            require("1/9" in plan,
+                    "Closed C02-01 must retain 1/9 until following acta")
         require("CERRADA TÉCNICAMENTE" in acta and
                 "f40ab1ec47731eddd4b55a4f28a311b3800e68f4" in acta and
                 "42616163656" in acta and "42616163666" in acta,
