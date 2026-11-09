@@ -1,0 +1,825 @@
+{
+  "artifact": "CRECISOL-C02-08-JOURNEY-CONTRACTS",
+  "schema_version": 1,
+  "delivery_state": "real-public-journeys-and-isolated-synthetic-ux-tests-only",
+  "source": {
+    "master": "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx",
+    "sha256": "e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e",
+    "chapter": "02",
+    "process_gates": "MAE-C02-01..08",
+    "previous_acta": "docs/c02/C02_07_ACTA_MICROFASE.md",
+    "previous_dev_sha": "10c14166a333cc0509c06eedaaad420b409d86c9",
+    "previous_postmerge_runs": [
+      42661826797,
+      42661826836,
+      42661826763,
+      42661826921,
+      42661826765,
+      42661826790,
+      42661826764,
+      42661826837,
+      42661826784,
+      42661826751
+    ],
+    "dependencies": [
+      "docs/c02/C02_02_MAPA_NECESIDADES.json",
+      "docs/c02/C02_03_SITEMAP.json",
+      "docs/c02/C02_04_NAVEGACION_PRIVADA.json",
+      "docs/c02/C02_05_ESTADOS_INTERACCION.json",
+      "docs/c02/C02_06_PATRONES_FORM_TABLA.json",
+      "docs/c02/C02_07_MOBILE_ACCESIBILIDAD.json"
+    ]
+  },
+  "navigation": {
+    "public_allowlist": [
+      "/",
+      "/experiencias",
+      "/demostraciones",
+      "/alta-empresas"
+    ],
+    "wildcard": "**",
+    "private_proposed_paths": [
+      "/consola/resumen",
+      "/consola/configuracion",
+      "/consola/soporte-excepcional",
+      "/negocio/identidad",
+      "/negocio/equipo",
+      "/negocio/operaciones",
+      "/trabajo/pendientes",
+      "/trabajo/seguimiento",
+      "/trabajo/perfil",
+      "/mi-cuenta/explorar",
+      "/mi-cuenta/solicitudes",
+      "/mi-cuenta/historial"
+    ],
+    "public_brand_api": "GET /api/v1/public/branding/platform",
+    "no_new_routes": true,
+    "no_private_backend": true,
+    "no_database_changes": true,
+    "no_deployment": true
+  },
+  "universal_states": {
+    "kinds": [
+      "loading",
+      "empty",
+      "error",
+      "offline",
+      "confirmation"
+    ],
+    "active_public": [
+      "loading",
+      "error",
+      "offline"
+    ],
+    "synthetic_only": [
+      "empty",
+      "confirmation"
+    ],
+    "stale_publication_reuse": false,
+    "automatic_retry_on_online": false
+  },
+  "journeys": [
+    {
+      "id": "J01",
+      "experience": "E01",
+      "actor": "visitante-plataforma",
+      "scope": "platform-public",
+      "delivery_state": "real-public-read-only",
+      "entry_path": "/",
+      "public_path_sequence": [
+        "/",
+        "/experiencias",
+        "/demostraciones"
+      ],
+      "denied_proposed_paths": [],
+      "needs": [
+        {
+          "id": "N01",
+          "risk": "P1",
+          "source_refs": [
+            "P01",
+            "T01-R01"
+          ],
+          "depends_on": [
+            "C20",
+            "C09"
+          ],
+          "acceptance": {
+            "given": "Visitante anónimo en landing institucional",
+            "when": "consulta el resumen del SaaS",
+            "then": "ve identidad publicada y alcance actual diferenciado de funciones futuras"
+          },
+          "negative_case": "No exponer datos de clientes ni presentar módulos futuros como funciones en producción",
+          "implementation_state": "information-only-no-business-action"
+        },
+        {
+          "id": "N02",
+          "risk": "P1",
+          "source_refs": [
+            "P11",
+            "T01-R01"
+          ],
+          "depends_on": [
+            "C08",
+            "C20"
+          ],
+          "acceptance": {
+            "given": "Visitante con teclado o lector de pantalla",
+            "when": "revisa ofertas y acciones principales",
+            "then": "identifica opciones y condición de contratación pendiente sin controles inaccesibles"
+          },
+          "negative_case": "No presentar precio/cobro real, testimonio no moderado ni CTA inaccesible",
+          "implementation_state": "information-only-no-business-action"
+        },
+        {
+          "id": "N03",
+          "risk": "P1",
+          "source_refs": [
+            "P01",
+            "T01-R06"
+          ],
+          "depends_on": [
+            "C02-08",
+            "C09"
+          ],
+          "acceptance": {
+            "given": "Visitante en entorno demo sintético identificado",
+            "when": "alterna escenarios demostrativos",
+            "then": "observa ejemplos reproducibles con datos ficticios claramente rotulados"
+          },
+          "negative_case": "No cargar tenant real, identidad privada, credenciales ni pagos reales",
+          "implementation_state": "information-only-no-business-action"
+        }
+      ],
+      "expected_boundary": "published-platform-read-only",
+      "future_backend_checks": [],
+      "future_only": false
+    },
+    {
+      "id": "J02",
+      "experience": "E02",
+      "actor": "prospecto-propietario",
+      "scope": "platform-onboarding",
+      "delivery_state": "real-public-read-only",
+      "entry_path": "/alta-empresas",
+      "public_path_sequence": [
+        "/alta-empresas"
+      ],
+      "denied_proposed_paths": [],
+      "needs": [
+        {
+          "id": "N04",
+          "risk": "P1",
+          "source_refs": [
+            "P01",
+            "T01-R01"
+          ],
+          "depends_on": [
+            "C08",
+            "C05"
+          ],
+          "acceptance": {
+            "given": "Prospecto sin cuenta verificada",
+            "when": "consulta el flujo de contratación propuesto",
+            "then": "recibe criterios claros y estados antes de enviar información"
+          },
+          "negative_case": "No asumir que una solicitud anónima concede propiedad de un tenant",
+          "implementation_state": "information-only-no-business-action"
+        },
+        {
+          "id": "N05",
+          "risk": "P1",
+          "source_refs": [
+            "P06",
+            "T01-R01",
+            "T01-R03"
+          ],
+          "depends_on": [
+            "C05",
+            "C08"
+          ],
+          "acceptance": {
+            "given": "Prospecto con datos sintéticos para prototipo",
+            "when": "presenta la solicitud de registro",
+            "then": "obtiene confirmación y estado no privilegiado de la petición"
+          },
+          "negative_case": "No confiar en tenant_id, rol o plan enviado como autorización; no activar empresa sin verificación",
+          "implementation_state": "information-only-no-business-action"
+        },
+        {
+          "id": "N06",
+          "risk": "P1",
+          "source_refs": [
+            "P11",
+            "T01-R01"
+          ],
+          "depends_on": [
+            "C08",
+            "C23",
+            "C31"
+          ],
+          "acceptance": {
+            "given": "Prospecto revisa información de consentimiento",
+            "when": "confirma términos o rechaza",
+            "then": "el recorrido proyectado conserva versión y permite retirar consentimiento cuando corresponda"
+          },
+          "negative_case": "No crear cobros reales, ocultar condiciones o marcar consentimiento por defecto",
+          "implementation_state": "information-only-no-business-action"
+        }
+      ],
+      "expected_boundary": "published-platform-read-only",
+      "future_backend_checks": [],
+      "future_only": false
+    },
+    {
+      "id": "J03",
+      "experience": "E03",
+      "actor": "superadmin-plataforma",
+      "scope": "platform-global",
+      "delivery_state": "design-only-private-denied",
+      "entry_path": "/consola",
+      "public_path_sequence": [],
+      "denied_proposed_paths": [
+        "/consola/resumen",
+        "/consola/configuracion",
+        "/consola/soporte-excepcional"
+      ],
+      "needs": [
+        {
+          "id": "N07",
+          "risk": "P0",
+          "source_refs": [
+            "P01",
+            "T01-R02"
+          ],
+          "depends_on": [
+            "C06",
+            "C08",
+            "C22"
+          ],
+          "acceptance": {
+            "given": "Operador de plataforma autenticado y autorizado en diseño",
+            "when": "consulta panel global",
+            "then": "recibe métricas agregadas y catálogo empresarial sin expedientes privados"
+          },
+          "negative_case": "No entregar automáticamente historial de consumidores ni consultas privadas por ser SuperAdmin",
+          "implementation_state": "future-backend-required"
+        },
+        {
+          "id": "N08",
+          "risk": "P0",
+          "source_refs": [
+            "T01-R02",
+            "P11"
+          ],
+          "depends_on": [
+            "C06",
+            "C08"
+          ],
+          "acceptance": {
+            "given": "SuperAdmin con permiso por acción",
+            "when": "propone editar configuración institucional",
+            "then": "se exige validación del backend y se registra cambio auditable"
+          },
+          "negative_case": "No permitir autoasignación de roles o acceso horizontal a datos privados",
+          "implementation_state": "future-backend-required"
+        },
+        {
+          "id": "N09",
+          "risk": "P0",
+          "source_refs": [
+            "T01-R02",
+            "P06"
+          ],
+          "depends_on": [
+            "C05",
+            "C06",
+            "C07"
+          ],
+          "acceptance": {
+            "given": "SuperAdmin sin permiso de PII en estado normal",
+            "when": "solicita consultar datos privados en soporte",
+            "then": "el contrato futuro exige MFA resistente, motivo, límite temporal y auditoría independiente"
+          },
+          "negative_case": "No acceder a PII sin MFA, motivo y vigencia; no renovar automáticamente la elevación",
+          "implementation_state": "future-backend-required"
+        }
+      ],
+      "expected_boundary": "404-no-brand-fetch-and-no-private-data",
+      "future_backend_checks": [
+        "verified-host-and-tenant",
+        "identity",
+        "membership",
+        "action",
+        "branch-when-applicable",
+        "resource-ownership",
+        "audit",
+        "revocation"
+      ],
+      "future_only": true
+    },
+    {
+      "id": "J04",
+      "experience": "E04",
+      "actor": "propietario-tenant",
+      "scope": "tenant-owner",
+      "delivery_state": "design-only-private-denied",
+      "entry_path": "/negocio",
+      "public_path_sequence": [],
+      "denied_proposed_paths": [
+        "/negocio/identidad",
+        "/negocio/equipo",
+        "/negocio/operaciones"
+      ],
+      "needs": [
+        {
+          "id": "N10",
+          "risk": "P0",
+          "source_refs": [
+            "T01-R03",
+            "P01",
+            "P11"
+          ],
+          "depends_on": [
+            "C09",
+            "C20",
+            "C21"
+          ],
+          "acceptance": {
+            "given": "Propietario con pertenencia confirmada al tenant",
+            "when": "cambia imagen, texto o pie de página en borrador",
+            "then": "la propuesta muestra vista previa de su propio tenant antes de publicar una revisión"
+          },
+          "negative_case": "No alterar marca ajena ni ejecutar código/HTML arbitrario desde personalización",
+          "implementation_state": "future-backend-required"
+        },
+        {
+          "id": "N11",
+          "risk": "P0",
+          "source_refs": [
+            "T01-R03",
+            "P06"
+          ],
+          "depends_on": [
+            "C04",
+            "C05",
+            "C06"
+          ],
+          "acceptance": {
+            "given": "Propietario dentro de un tenant y con rol permitido",
+            "when": "consulta o cambia una asignación",
+            "then": "el caso futuro valida acción, sucursal, propiedad y revocación del acceso"
+          },
+          "negative_case": "No escalar roles mediante UI ni modificar empleados o sucursales de otro tenant",
+          "implementation_state": "future-backend-required"
+        },
+        {
+          "id": "N12",
+          "risk": "P0",
+          "source_refs": [
+            "P08",
+            "P09",
+            "T01-R03"
+          ],
+          "depends_on": [
+            "C12",
+            "C17",
+            "C22"
+          ],
+          "acceptance": {
+            "given": "Propietario autenticado en contexto de negocio verificado",
+            "when": "abre detalle de operación o ejecuta acto sensible",
+            "then": "ve solo operaciones de su ámbito y confirma acción financiera/destructiva"
+          },
+          "negative_case": "No consultar operaciones ajenas, borrar historia o ejecutar acción sensible sin confirmación reforzada",
+          "implementation_state": "future-backend-required"
+        }
+      ],
+      "expected_boundary": "404-no-brand-fetch-and-no-private-data",
+      "future_backend_checks": [
+        "verified-host-and-tenant",
+        "identity",
+        "membership",
+        "action",
+        "branch-when-applicable",
+        "resource-ownership",
+        "audit",
+        "revocation"
+      ],
+      "future_only": true
+    },
+    {
+      "id": "J05",
+      "experience": "E05",
+      "actor": "empleado-tenant",
+      "scope": "tenant-branch-assignment",
+      "delivery_state": "design-only-private-denied",
+      "entry_path": "/trabajo",
+      "public_path_sequence": [],
+      "denied_proposed_paths": [
+        "/trabajo/pendientes",
+        "/trabajo/seguimiento",
+        "/trabajo/perfil"
+      ],
+      "needs": [
+        {
+          "id": "N13",
+          "risk": "P0",
+          "source_refs": [
+            "T01-R04",
+            "P08"
+          ],
+          "depends_on": [
+            "C05",
+            "C06",
+            "C13"
+          ],
+          "acceptance": {
+            "given": "Empleado con asignación vigente en sucursal determinada",
+            "when": "consulta tareas en el puesto de trabajo",
+            "then": "el caso proyectado muestra solo tareas autorizadas por el backend"
+          },
+          "negative_case": "No mostrar finanzas, datos de otras sucursales o tareas ajenas",
+          "implementation_state": "future-backend-required"
+        },
+        {
+          "id": "N14",
+          "risk": "P0",
+          "source_refs": [
+            "P07",
+            "P08",
+            "T01-R04"
+          ],
+          "depends_on": [
+            "C13",
+            "C17",
+            "C26"
+          ],
+          "acceptance": {
+            "given": "Empleado asignado al expediente con permiso vigente",
+            "when": "actualiza progreso de un pedido, cita o servicio",
+            "then": "cada evento futuro se agrega a la línea de tiempo sin sobrescribir historial"
+          },
+          "negative_case": "No actualizar expedientes ajenos, omitir auditoría ni ejecutar eventos por lote no autorizado",
+          "implementation_state": "future-backend-required"
+        },
+        {
+          "id": "N15",
+          "risk": "P0",
+          "source_refs": [
+            "P06",
+            "T01-R04",
+            "P11"
+          ],
+          "depends_on": [
+            "C05",
+            "C06"
+          ],
+          "acceptance": {
+            "given": "Empleado con permiso revocable",
+            "when": "intenta acción no asignada o tras revocación",
+            "then": "el backend rechaza sin mostrar datos y la UX comunica acceso no disponible"
+          },
+          "negative_case": "No reutilizar sesión antigua ni inferir permisos desde botones ocultos",
+          "implementation_state": "future-backend-required"
+        }
+      ],
+      "expected_boundary": "404-no-brand-fetch-and-no-private-data",
+      "future_backend_checks": [
+        "verified-host-and-tenant",
+        "identity",
+        "membership",
+        "action",
+        "branch-when-applicable",
+        "resource-ownership",
+        "audit",
+        "revocation"
+      ],
+      "future_only": true
+    },
+    {
+      "id": "J06",
+      "experience": "E06",
+      "actor": "consumidor-tenant",
+      "scope": "tenant-public-and-own-private",
+      "delivery_state": "design-only-private-denied",
+      "entry_path": "/mi-cuenta",
+      "public_path_sequence": [],
+      "denied_proposed_paths": [
+        "/mi-cuenta/explorar",
+        "/mi-cuenta/solicitudes",
+        "/mi-cuenta/historial"
+      ],
+      "needs": [
+        {
+          "id": "N16",
+          "risk": "P0",
+          "source_refs": [
+            "P03",
+            "P04",
+            "P05",
+            "T01-R05"
+          ],
+          "depends_on": [
+            "C04",
+            "C10",
+            "C20"
+          ],
+          "acceptance": {
+            "given": "Visitante en un sitio de empresa con dominio validado",
+            "when": "navega contenido del negocio",
+            "then": "consulta información pública aprobada y marca del tenant resuelta"
+          },
+          "negative_case": "No mostrar borradores, catálogos privados ni datos de otra empresa por host manipulado",
+          "implementation_state": "future-backend-required"
+        },
+        {
+          "id": "N17",
+          "risk": "P0",
+          "source_refs": [
+            "P06",
+            "P07",
+            "T01-R05"
+          ],
+          "depends_on": [
+            "C05",
+            "C06",
+            "C12",
+            "C13"
+          ],
+          "acceptance": {
+            "given": "Consumidor frente a negocio identificado y contenido público",
+            "when": "solicita reservar o comprar",
+            "then": "el contrato futuro exige identidad/permisos en backend antes de persistir y notificar"
+          },
+          "negative_case": "No cobrar o confirmar operación sin verificación transaccional, consentimiento y respuesta idempotente",
+          "implementation_state": "future-backend-required"
+        },
+        {
+          "id": "N18",
+          "risk": "P0",
+          "source_refs": [
+            "P08",
+            "P09",
+            "T01-R05"
+          ],
+          "depends_on": [
+            "C06",
+            "C17",
+            "C23"
+          ],
+          "acceptance": {
+            "given": "Consumidor autenticado para un tenant concreto",
+            "when": "consulta su expediente o comprobante",
+            "then": "solo ve recursos propios, eventos publicados y consentimiento con contexto correcto"
+          },
+          "negative_case": "No cruzar historiales, reutilizar caché ajena o mostrar eventos privados sin publicar",
+          "implementation_state": "future-backend-required"
+        }
+      ],
+      "expected_boundary": "404-no-brand-fetch-and-no-private-data",
+      "future_backend_checks": [
+        "verified-host-and-tenant",
+        "identity",
+        "membership",
+        "action",
+        "branch-when-applicable",
+        "resource-ownership",
+        "audit",
+        "revocation"
+      ],
+      "future_only": true
+    }
+  ],
+  "negative_cases": [
+    {
+      "id": "NEG-N01",
+      "experience": "E01",
+      "need": "N01",
+      "threat": "No exponer datos de clientes ni presentar módulos futuros como funciones en producción",
+      "expected": "No privilege or real commercial operation; only platform public information"
+    },
+    {
+      "id": "NEG-N02",
+      "experience": "E01",
+      "need": "N02",
+      "threat": "No presentar precio/cobro real, testimonio no moderado ni CTA inaccesible",
+      "expected": "No privilege or real commercial operation; only platform public information"
+    },
+    {
+      "id": "NEG-N03",
+      "experience": "E01",
+      "need": "N03",
+      "threat": "No cargar tenant real, identidad privada, credenciales ni pagos reales",
+      "expected": "No privilege or real commercial operation; only platform public information"
+    },
+    {
+      "id": "NEG-N04",
+      "experience": "E02",
+      "need": "N04",
+      "threat": "No asumir que una solicitud anónima concede propiedad de un tenant",
+      "expected": "No privilege or real commercial operation; only platform public information"
+    },
+    {
+      "id": "NEG-N05",
+      "experience": "E02",
+      "need": "N05",
+      "threat": "No confiar en tenant_id, rol o plan enviado como autorización; no activar empresa sin verificación",
+      "expected": "No privilege or real commercial operation; only platform public information"
+    },
+    {
+      "id": "NEG-N06",
+      "experience": "E02",
+      "need": "N06",
+      "threat": "No crear cobros reales, ocultar condiciones o marcar consentimiento por defecto",
+      "expected": "No privilege or real commercial operation; only platform public information"
+    },
+    {
+      "id": "NEG-N07",
+      "experience": "E03",
+      "need": "N07",
+      "threat": "No entregar automáticamente historial de consumidores ni consultas privadas por ser SuperAdmin",
+      "expected": "Deny 404 until backend identity, tenant/branch/permission and resource authorization exist"
+    },
+    {
+      "id": "NEG-N08",
+      "experience": "E03",
+      "need": "N08",
+      "threat": "No permitir autoasignación de roles o acceso horizontal a datos privados",
+      "expected": "Deny 404 until backend identity, tenant/branch/permission and resource authorization exist"
+    },
+    {
+      "id": "NEG-N09",
+      "experience": "E03",
+      "need": "N09",
+      "threat": "No acceder a PII sin MFA, motivo y vigencia; no renovar automáticamente la elevación",
+      "expected": "Deny 404 until backend identity, tenant/branch/permission and resource authorization exist"
+    },
+    {
+      "id": "NEG-N10",
+      "experience": "E04",
+      "need": "N10",
+      "threat": "No alterar marca ajena ni ejecutar código/HTML arbitrario desde personalización",
+      "expected": "Deny 404 until backend identity, tenant/branch/permission and resource authorization exist"
+    },
+    {
+      "id": "NEG-N11",
+      "experience": "E04",
+      "need": "N11",
+      "threat": "No escalar roles mediante UI ni modificar empleados o sucursales de otro tenant",
+      "expected": "Deny 404 until backend identity, tenant/branch/permission and resource authorization exist"
+    },
+    {
+      "id": "NEG-N12",
+      "experience": "E04",
+      "need": "N12",
+      "threat": "No consultar operaciones ajenas, borrar historia o ejecutar acción sensible sin confirmación reforzada",
+      "expected": "Deny 404 until backend identity, tenant/branch/permission and resource authorization exist"
+    },
+    {
+      "id": "NEG-N13",
+      "experience": "E05",
+      "need": "N13",
+      "threat": "No mostrar finanzas, datos de otras sucursales o tareas ajenas",
+      "expected": "Deny 404 until backend identity, tenant/branch/permission and resource authorization exist"
+    },
+    {
+      "id": "NEG-N14",
+      "experience": "E05",
+      "need": "N14",
+      "threat": "No actualizar expedientes ajenos, omitir auditoría ni ejecutar eventos por lote no autorizado",
+      "expected": "Deny 404 until backend identity, tenant/branch/permission and resource authorization exist"
+    },
+    {
+      "id": "NEG-N15",
+      "experience": "E05",
+      "need": "N15",
+      "threat": "No reutilizar sesión antigua ni inferir permisos desde botones ocultos",
+      "expected": "Deny 404 until backend identity, tenant/branch/permission and resource authorization exist"
+    },
+    {
+      "id": "NEG-N16",
+      "experience": "E06",
+      "need": "N16",
+      "threat": "No mostrar borradores, catálogos privados ni datos de otra empresa por host manipulado",
+      "expected": "Deny 404 until backend identity, tenant/branch/permission and resource authorization exist"
+    },
+    {
+      "id": "NEG-N17",
+      "experience": "E06",
+      "need": "N17",
+      "threat": "No cobrar o confirmar operación sin verificación transaccional, consentimiento y respuesta idempotente",
+      "expected": "Deny 404 until backend identity, tenant/branch/permission and resource authorization exist"
+    },
+    {
+      "id": "NEG-N18",
+      "experience": "E06",
+      "need": "N18",
+      "threat": "No cruzar historiales, reutilizar caché ajena o mostrar eventos privados sin publicar",
+      "expected": "Deny 404 until backend identity, tenant/branch/permission and resource authorization exist"
+    }
+  ],
+  "cross_cutting_negative_cases": [
+    {
+      "id": "NEG-X01",
+      "attack": "Alter query parameters and a client-supplied tenant/role/branch on public routes",
+      "expected": "Public branding GET remains platform-only with zero privileged headers and no tenant selection"
+    },
+    {
+      "id": "NEG-X02",
+      "attack": "Navigate to 12 projected private paths under E03..E06",
+      "expected": "Every path stays 404 without public brand request or real private API"
+    },
+    {
+      "id": "NEG-X03",
+      "attack": "Publish malicious tenant-scoped response while revisiting public journey",
+      "expected": "Clear prior metadata and refuse private brand and stale tenant information"
+    },
+    {
+      "id": "NEG-X04",
+      "attack": "Disconnect or return HTTP 503 during public journey",
+      "expected": "Loading/error/offline never claim success, show stale content, or retry without user choice"
+    },
+    {
+      "id": "NEG-X05",
+      "attack": "Enter synthetic draft then change context, cancel and confirm",
+      "expected": "Explicit native dialog gates discard; scope change clears old draft and rows"
+    },
+    {
+      "id": "NEG-X06",
+      "attack": "Try script/HTML in synthetic table and field",
+      "expected": "Escaped visible text, invalid configuration denied and no code execution"
+    },
+    {
+      "id": "NEG-X07",
+      "attack": "Serve synthetic Angular test harness in production routes or bundle",
+      "expected": "Fail CI and block publication; test runner remains isolated on port 4201"
+    },
+    {
+      "id": "NEG-X08",
+      "attack": "Claim manual WCAG or real private access from simulated journeys",
+      "expected": "Audit labels evidence as automated/public/synthetic only, never certifies C02 or C03"
+    }
+  ],
+  "tests": {
+    "inherited_chromium": 42,
+    "public_real_angular": 11,
+    "isolated_synthetic_angular": 5,
+    "expected_total_chromium": 58,
+    "public_spec": "frontend/tests/c02-08.journeys-public.spec.ts",
+    "isolated_spec": "frontend/tests/c02-08.journeys-patterns.spec.ts",
+    "isolated_config": "frontend/playwright.journeys-patterns.config.ts",
+    "fake_api_data_only": "validated-public-platform-brand-response",
+    "synthetic_fixture_only": true,
+    "manual_wcag_certified": false,
+    "private_backend_bola_idor_tested": false
+  },
+  "parameterization": {
+    "future_scopes": [
+      "platform",
+      "tenant",
+      "branch",
+      "user"
+    ],
+    "future_admin_editable": [
+      "header",
+      "footer",
+      "brand-logo",
+      "navigation-labels",
+      "content-copy",
+      "presentation-tokens",
+      "form-labels",
+      "table-configuration",
+      "locales",
+      "sector-variants"
+    ],
+    "future_controls": [
+      "preview",
+      "version",
+      "approval",
+      "audit",
+      "rollback"
+    ],
+    "current_platform_brand": "same-origin-versioned-published-platform-read-model",
+    "future_admin_panel_implemented": false,
+    "immutable_security": [
+      "tenant-resolution",
+      "membership",
+      "backend-auth",
+      "roles",
+      "resource-ownership",
+      "PII",
+      "DSN"
+    ],
+    "arbitrary_executable_config_allowed": false
+  },
+  "constraints": {
+    "chapter_02_certified": false,
+    "chapter_03_open": false,
+    "real_company_signup_enabled": false,
+    "real_demo_enabled": false,
+    "real_payment_enabled": false,
+    "login_company_picker_allowed": false,
+    "superadmin_private_access_implemented": false
+  }
+}
