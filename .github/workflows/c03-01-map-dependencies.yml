@@ -1,0 +1,37 @@
+name: CRECISOL C03-01 canonical architecture source and dependency map
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'qa/c03_01_*'
+      - 'docs/c03/**'
+      - 'docs/C03_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'docs/planificacion-futura/C03_MICROFASES_PROPUESTAS.md'
+      - '.github/workflows/c03-01-map-dependencies.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'qa/c03_01_*'
+      - 'docs/c03/**'
+      - 'docs/C03_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'docs/planificacion-futura/C03_MICROFASES_PROPUESTAS.md'
+      - '.github/workflows/c03-01-map-dependencies.yml'
+permissions:
+  contents: read
+jobs:
+  c03-source:
+    name: C03-01 canonical Word provenance and section preview
+    if: startsWith(github.head_ref, 'feature/c03-01-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout authorized CRECISOL repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Compile chapter 03 source reader
+        run: python3 -m py_compile qa/c03_01_source.py
+      - name: Preview real C03 Word and C04 section boundary
+        run: python3 qa/c03_01_source.py --preview
