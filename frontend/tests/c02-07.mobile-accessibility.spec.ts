@@ -95,16 +95,18 @@ test('all three public information pages preserve cards and visible mobile/table
 });
 
 test('skip links transfer keyboard focus to a real main region', async ({ page }) => {
-  await mockPublished(page);
+  const calls = await mockPublished(page);
   for (const path of ['/', '/experiencias']) {
     await page.setViewportSize({ width: 320, height: 720 });
     await page.goto(path);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    const before = calls.length;
     await page.keyboard.press('Tab');
     await expect(page.getByRole('link', { name: 'Saltar al contenido principal' })).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/#contenido$/);
     await expect(page.locator('main#contenido')).toBeFocused();
+    expect(calls.length, 'Skip navigation must not re-fetch brand or remount route').toBe(before);
   }
 });
 
