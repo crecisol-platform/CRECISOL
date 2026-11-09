@@ -1,6 +1,6 @@
 # C01-04 · Caso de uso y API pública de marca publicada
 
-**Estado inicial:** IMPLEMENTACIÓN EN VALIDACIÓN, no cerrada hasta pruebas reales A/B/C + acta + PR independiente a `dev`. Capítulo C01 sigue **NO CERTIFICADO (0/37)**. Fuente: `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` aprobado, huella en `docs/MASTER_REFERENCE.md`, matriz C01-01, contratos C01-02 y esquema probado C01-03.
+**Estado:** **C01-04 CERRADA TÉCNICAMENTE EN DEV**, con 3 auditorías A/B/C, MySQL 8.4.13 real y PR #18 fusionado SHA `9addbedd3c33c77c9be15fe25a391f9167a05ef5`. Capítulo C01 sigue **NO CERTIFICADO (0/37)**. Fuente: `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` aprobado, huella en `docs/MASTER_REFERENCE.md`, matriz C01-01, contratos C01-02 y esquema probado C01-03.
 
 ## Alcance aprobado y trazabilidad
 
@@ -56,3 +56,7 @@ No existen pertenencia de actor, auth/RBAC/ABAC, tenant verified host, shared/de
 ## Primera evidencia de validación
 
 [CI #42556858527](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42556858527) — 3/3 trabajos SUCCESS: API .NET 10 Release sin errores/advertencias; Domain 51/51, Application 19/19, MySQL real 8.4.13 con SELECT-only, 37/37 solicitudes HTTP positivas/negativas y auditorías A/B/C PASS. [Acta C01-04](C01_04_ACTA_MICROFASE.md). La integración se condiciona a CI del último commit y revisión manual del PR #18; no es certificación del capítulo.
+
+## Cierre validado en GitHub
+
+[CI final C01-04 #42557022367](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42557022367) SUCCESS: 3/3 trabajos (auditorías A/B/C, build net10, Domain 51, Application 19, 37 HTTP, MySQL real). [Fundación del mismo SHA #42557022442](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42557022442) SUCCESS; [PR #18](https://github.com/solqaryn-platform/CRECISOL/pull/18) merged, SHA `9addbedd3c33c77c9be15fe25a391f9167a05ef5`, [post-merge #42557167001](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42557167001) SUCCESS. [Acta de cierre](C01_04_ACTA_MICROFASE.md). **4/8 microfases cerradas, 0/37 capítulos certificados**; C01-05 es la siguiente fase.
