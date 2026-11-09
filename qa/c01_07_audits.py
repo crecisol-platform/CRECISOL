@@ -53,7 +53,8 @@ def audit_b():
     require('--network none' in harness and 'GRANT SELECT' in harness
             and 'UPDATE brand_revisions' in harness,
             'isolated SQL grant check missing')
-    require('page.route(' not in '\n'.join(line for line in tests.splitlines()\n            if not line.lstrip().startswith(('*', '//', '/*'))),
+    require('page.route(' not in '\n'.join(line for line in tests.splitlines()
+            if not line.lstrip().startswith(('*', '//', '/*'))),
             'real stack test must not mock API')
     for item in ('read-only', 'browser-invalid', 'browser-absent', 'api-invalid', 'api-absent'):
         completed(item)
