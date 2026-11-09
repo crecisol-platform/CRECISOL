@@ -44,11 +44,24 @@ def audit_a():
         require(f'C01-{n:02d}' in old and
                 any(x in old for x in ('PASS', 'CERRAD', 'Cerrad')),
                 f'prior microphase C01-{n:02d} has no closure evidence')
-    require('C01-08' in plan and '7/8' in plan and '0/37' in plan,
-            'C01 plan or next chapter gate inconsistent')
-    require('NO CERTIFICADO' in acta and 'PENDIENTE' in acta and
-            'Aceptación humana expresa' in acta,
-            'owner acceptance requirement missing')
+    require('C01-08' in plan, 'C01 plan or next chapter gate inconsistent')
+    certification = 'ESTADO: CERTIFICADO C01' in acta
+    if certification:
+        require('8/8' in plan and '1/37' in plan,
+                'certified plan must register 8/8 and 1/37')
+        require('ACEPTACIÓN EXPRESA DEL PROPIETARIO' in acta and
+                'b85ba613bfb8616697226a3252e89919aa38ced2' in acta and
+                '42581697460' in acta and '42581697450' in acta and
+                '42581697618' in acta,
+                'certification requires owner acceptance and postmerge SHA/CI evidence')
+        require('CERTIFICADO' in read('docs/PLAN_37_CAPITULOS.md') and
+                '1/37' in read('docs/PLAN_37_CAPITULOS.md'),
+                '37-chapter status must agree with certified acta')
+    else:
+        require('7/8' in plan and '0/37' in plan and
+                'NO CERTIFICADO' in acta and 'PENDIENTE' in acta and
+                'Aceptación humana expresa' in acta,
+                'pending owner acceptance requirement missing')
     require(WORD_HASH in read('docs/MASTER_REFERENCE.md'),
             'canonical Word SHA missing')
     for name in ('word', 'api', 'domain', 'application'):
