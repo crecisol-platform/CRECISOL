@@ -95,6 +95,12 @@ test('scope changes clear the old draft, filter, sort and rows instead of leakin
   await filter.fill('A10');
   await expect(page.locator('tbody tr')).toHaveCount(1);
   await page.getByTestId('switch-context').click();
+  const change = page.getByRole('dialog', { name: '¿Cambiar el ejemplo?' });
+  await expect(change).toBeVisible();
+  await change.getByRole('button', { name: 'Conservar borrador' }).click();
+  await expect(input).toHaveValue('STALE-A');
+  await page.getByTestId('switch-context').click();
+  await change.getByRole('button', { name: 'Descartar y cambiar' }).click();
   await expect(input).toHaveValue('');
   await expect(filter).toHaveValue('');
   await expect(page.locator('tbody tr')).toHaveCount(2);
