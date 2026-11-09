@@ -1,0 +1,74 @@
+name: CRECISOL C01-04 public branding API gate
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Application/**'
+      - 'backend/src/Crecisol.Infrastructure/**'
+      - 'backend/src/Crecisol.Api/**'
+      - 'backend/tests/Crecisol.Branding.ApplicationTests/**'
+      - 'database/tests/c01_04_api_mysql_smoke.sh'
+      - 'qa/c01_04_http_smoke.py'
+      - 'qa/c01_04_three_audits.py'
+      - 'docs/c01/C01_04_*'
+      - 'docs/C01_PREPARACION.md'
+      - '.github/workflows/c01-04-check.yml'
+permissions:
+  contents: read
+jobs:
+  c01-04-audits:
+    name: C01-04 three independent audits
+    if: startsWith(github.head_ref, 'feature/c01-04-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Audit A canonical traceability
+        run: python3 qa/c01_04_three_audits.py A
+      - name: Audit B security and fail-closed boundaries
+        run: python3 qa/c01_04_three_audits.py B
+      - name: Audit C architecture, compatibility, rollback
+        run: python3 qa/c01_04_three_audits.py C
+
+  c01-04-build:
+    name: C01-04 .NET10 build and domain/application regressions
+    if: startsWith(github.head_ref, 'feature/c01-04-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build API and dependencies with warnings as errors
+        run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo
+      - name: Existing 51 domain assertions
+        run: dotnet run -c Release --project backend/tests/Crecisol.Branding.ContractsTests/Crecisol.Branding.ContractsTests.csproj
+      - name: New Application positive and negative assertions
+        run: dotnet run -c Release --project backend/tests/Crecisol.Branding.ApplicationTests/Crecisol.Branding.ApplicationTests.csproj
+
+  c01-04-integration:
+    name: C01-04 real MySQL 8.4 and HTTP deny-by-default tests
+    if: startsWith(github.head_ref, 'feature/c01-04-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    steps:
+      - name: Checkout read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f7d6820020
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile C01-04 API
+        run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo
+      - name: Start isolated MySQL with Unix socket and test running API
+        run: bash database/tests/c01_04_api_mysql_smoke.sh
