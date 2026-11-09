@@ -70,16 +70,11 @@
       <main id="contenido" class="public-state-panel">
         @if (model.kind === 'loading') {
           <div role="status" aria-live="polite" aria-busy="true">
-            <p class="public-kicker">Identidad pública</p>
-            <h1>Preparando información de plataforma</h1>
-            <p>Consultando la publicación vigente.</p>
+            <cs-interaction-state [view]="loadingView"/>
           </div>
         } @else {
           <div role="alert">
-            <p class="public-kicker">Identidad pública</p>
-            <h1>La información pública no está disponible</h1>
-            <p>No se mostrarán datos de demostración ni de negocios privados.</p>
-            <button type="button" (click)="retry()">Intentar nuevamente</button>
+            <cs-interaction-state [view]="failedView()" (retry)="retry()"/>
           </div>
         }
       </main>
