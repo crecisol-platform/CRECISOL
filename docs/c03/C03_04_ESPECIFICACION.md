@@ -1,0 +1,31 @@
+# CRECISOL — C03-04 · Adaptador Infrastructure reemplazable (solo lectura)
+
+**ESTADO: EJECUCIÓN TÉCNICA EN RAMA `feature/c03-04-infrastructure-readonly-revision`; NO CERTIFICADA.** C03-01/C03-02/C03-03 **CERTIFICADAS (3/10)**; C03 **NO CERTIFICADO**, C04 **BLOQUEADO**. C03-05 no iniciada. La instrucción «Adelante con ello por favor» posterior al cierre C03-03 autoriza implementar **solo C03-04**, no certificar automáticamente todo C03 ni abrir C03-05.
+
+## 1. Evidencia previa, identidad y fuente
+- Repositorio `solqaryn-platform/CRECISOL` exclusivo, rama de trabajo `feature/c03-04-infrastructure-readonly-revision`, creada desde `dev` SHA exacto **`1481dfbf75b3b47c8d5bc9d7bea56406e470f215`**.
+- [PR documental C03-03 #54](https://github.com/solqaryn-platform/CRECISOL/pull/54) fusionado por squash en `dev` SHA anterior. **9/9 CI POSTMERGE `push/completed/success`**, incluido C03-03, C03-02, C03-01 y regresiones C01/C02; [comentario de cierre](https://github.com/solqaryn-platform/CRECISOL/pull/54#issuecomment-6754145398). C03-03 tiene [acta](C03_03_ACTA_MICROFASE.md) aceptada y formalizada.
+- Documento Maestro Único `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx`: Word SHA-256 **`e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e`**, blob `214bf9c3d9763be23a77b7e0c464359584edde46`; PDF de lectura blob `455847ae0cc3bf02b9b9c4c3435476d093918ea2`. No modificar ninguno de los binarios.
+- Matriz fuente C03-01: **T01-R04 Infrastructure** = adaptadores reemplazables; **T01-R03 Application** = casos de uso y puertos sin MySQL directo; P03/P04 árbol y límites. `DIF-C03-01`: ocho puertas `MAE-C03-01..08` del Maestro no equivalen a diez microfases `C03-01..10` del plan. C03-04 no introduce módulos futuros ni rutas.
+
+## 2. Entregable pequeño y sustituible
+- `backend/src/Crecisol.Infrastructure/Branding/MySqlPublishedPlatformBrandRevisionReader.cs` implementa `IPublishedPlatformBrandRevisionReader` de C03-03 con **un método read-only**. Consulta fija de la revisión publicada PLATFORM a partir del puntero `brand_publications` y `brand_revisions`, con scope `1`, id 16 bytes cero, status `2`, join de scope+revision+status y `LIMIT 1`. Los borradores y publicaciones tenant no son accesibles por ese puerto; `null` si la plataforma carece de publicación.
+- El constructor recibe solo la cadena proporcionada por un **origen de confianza interno** (no HTTP). DSN ausente, permisos insuficientes, lectura inválida o cancelación fallan de manera segura. MySqlConnector 2.6.2 ya existía en el proyecto. No hay inserciones, actualizaciones, transacciones, caché, fallback, reintento ni consultas a otro módulo.
+- `backend/tests/Crecisol.Infrastructure.ContractsTests` ensaya contratos tipados y lectura de MySQL 8.4 **real pero desechable**. `database/tests/c03_04_revision_reader_smoke.sh` levanta contenedor `--network none` sin exponer puertos y accede por UNIX socket; importa el esquema de marca C01 verificado y datos **sintéticos**. Cuenta `revision_reader` con SELECT solo sobre las dos tablas; comprueba rechazo UPDATE y revocación SELECT, aislamiento tenant/draft, cambio de puntero, ausencia de PLATFORM y cero publicación.
+- `qa/c03_04_infrastructure_audits.py` ejecuta **A/B/C**, grafo, límites, evidencia de compilación real y pruebas positivas/negativas, con mutaciones adversariales que deben rechazarse.
+- `.github/workflows/c03-04-infrastructure.yml` compila API y tests .NET 10 Release, regresiones existentes y MySQL 8.4 socket. No registra ningún adaptador en DI ni introduce endpoint, petición, autorización ni operación privada.
+
+## 3. Riesgos y exclusiones estrictas
+- **P0:** una lectura de versión **NO autoriza publicación**, ni bloquea concurrencia, ni resuelve tenant. No se permite registrar el nuevo lector en API pública hasta que existan backend auth, aislamiento y composición autorizados. `TenantContext` verificado, shared/dedicated routing, BOLA/IDOR/MFA, privilegios SuperAdmin, permisos de recurso, outbox y publicaciones privadas permanecen pendientes.
+- **P0:** credenciales desde request, Host, claims o `tenant_id` de navegador están prohibidas. El conector recibe string por constructor desde fuente del servidor; la CI crea una cadena efímera local `CRECISOL_C03_04_TEST_DSN` usada **solo por el ejecutable de pruebas**, no por la API. No exponer contraseñas ni SQL en HTTP/logs.
+- No se cambia `frontend/`, `database/c01_03_brand_schema.sql`, proyectos Domain/Application, `Crecisol.Api/Program.cs`, rutas, DTO, CI de producción, datos reales, migraciones ni schema. El único artefacto bajo `database/` es un **smoke test** autónomo sin puertos o instalaciones.
+- **Rollback:** revert de PR técnico en `dev` con nuevo PR, sin datos o migrations; ninguna operación de producción.
+
+## 4. Gates
+| Auditoría | Evidencia real | Negativo obligatorio |
+| --- | --- | --- |
+| A — fuente/función | SHA del Word, siete unidades y nueve filas, T01-R04 y cadena C03-03 9/9 | No avanzar C03-05, C04 ni certificar C03 |
+| B — seguridad | Grafo Domain→Application→Infrastructure; no DI/API privado, SQL SELECT fijo, DSN no HTTP, usuario SQL SELECT-only y Docker --network none | Mutaciones SQL de write/tenant/DSN HTTP, paquetes Application/MySQL indebidos |
+| C — arquitectura | .NET10 Release, pruebas de puertos, MySQL8.4 real local, regresiones Domain/Application | Fallback a borrador/tenant, falta de permisos, DSN ausente, puntero cambiado, cancelación |
+
+**Cierre técnico condicionado** a CI PREMERGE/POSTMERGE real sobre SHA exacto, A/B/C y sin fallos P0/P1. La CI de código NO constituye certificación documental; después debe emitirse acta de C03-04 con aprobación específica posterior. **C03 permanece NO CERTIFICADO; C04 BLOQUEADO.**
