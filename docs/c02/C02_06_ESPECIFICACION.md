@@ -38,6 +38,8 @@ El laboratorio contiene **solo** códigos ficticios A2/A10/B1, un ejemplo de iny
 - **Tabla:** solo se filtran y ordenan como máximo 200 filas que el host entregó, sin exportación, descarga, API, caché ni selector de empresa. `empty` es la ausencia de coincidencias de la muestra, **NO** sustituye el estado ST02 de una consulta autorizada ni transforma `401/403` en éxito.
 - **Seguridad multitenant futura:** el backend valida sesión, host verificado, membresía, rol/acción, sucursal, asignación, propiedad, revocación, medias/previews/cachés/exportaciones/logs y DB shared/dedicated desde catálogo servidor. SuperAdmin no accede a PII privada por defecto y requiere MFA, motivo, expiración y auditoría de excepción. **No existen endpoints privados aquí; no se afirman pruebas BOLA/IDOR/MFA reales**.
 
+Los casos **NEG01–NEG14** del contrato cubren envío ficticio, campo obligatorio, inyección, descartes, cambios de ámbito, lectura cruzada y exposición accidental del laboratorio. Cada negativo conserva su ID y expectativa en el JSON verificable.
+
 ## 5. Pruebas, auditorías y gates
 
 **A (trazabilidad/funcional):** comprobar Word original y SHA, seis experiencias con N01..18, FP01/FP02/TP01/TP02, 14 casos negativos, semántica futura, rutas públicas intactas. Mutaciones de fuente, patrón, necesidad/estado y schema deben fallar.
