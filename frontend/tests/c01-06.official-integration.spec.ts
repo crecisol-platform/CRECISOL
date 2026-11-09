@@ -119,8 +119,7 @@ test('publisher-owned favicon and SEO remain platform scoped', async ({ page }) 
   await expect(page).toHaveTitle(published.presentation.seoTitle);
   await expect(page.locator('link[rel="icon"][data-crecisol-managed="true"]'))
     .toHaveAttribute('href', emblem);
-  await expect(page.locator('link[rel="icon"][data-crecisol-default="true"]'))
-    .toHaveAttribute('href', emblem);
+  await expect(page.locator('link[rel="icon"][data-crecisol-default="true"]')).toHaveCount(0);
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
   expect(await page.evaluate(() => [localStorage.length,sessionStorage.length])).toEqual([0,0]);
 });
