@@ -1,6 +1,6 @@
 # C01-05 — Interfaz pública Angular 22, accesibilidad y lectura de identidad
 
-**Estado:** IMPLEMENTADA EN RAMA, PENDIENTE DE VALIDACIÓN Y CIERRE. **C01 NO CERTIFICADO (0/37)**; C01-01/02/03/04 cerradas antes de iniciar. Fuente de verdad: Documento Maestro Único en docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx, SHA-256 e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e, docs/MASTER_REFERENCE.md, matriz C01-01 y contrato de lectura C01-04.
+**Estado:** **C01-05 CERRADA TÉCNICAMENTE EN DEV (5/8)**, tras CI Angular22/Node24/Chromium, auditorías A/B/C y merge PR #20. C01 sigue NO CERTIFICADO (0/37). **C01 NO CERTIFICADO (0/37)**; C01-01/02/03/04 cerradas antes de iniciar. Fuente de verdad: Documento Maestro Único en docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx, SHA-256 e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e, docs/MASTER_REFERENCE.md, matriz C01-01 y contrato de lectura C01-04.
 
 ## Qué abarca y trazabilidad
 
@@ -53,4 +53,11 @@ El Word contiene la imagen azul aprobada, pero **no hay aún un archivo gráfico
 
 ## Evidencia de las pruebas reales
 
-[CI Angular 22 / Chromium #42558658894](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42558658894) PASS: Angular22.2.4/Node24.15/TS6.0.3, npm ci desde lock real, initial 233.23 kB raw, 11/11 browser Playwright incl. axe WCAG 2.2 AA 2 viewports, auditorías A/B/C SUCCESS y npm audit producción 0 vulnerabilidades reportadas. [Fundación #42558658881](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42558658881) PASS. [Acta detallada](C01_05_ACTA_MICROFASE.md). Queda pendiente verificación de CI del último HEAD y merge individual, sin adelantar C01-06.
+[CI Angular 22 / Chromium #42558658894](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42558658894) PASS: Angular22.2.4/Node24.15/TS6.0.3, npm ci desde lock real, initial 233.23 kB raw, 11/11 browser Playwright incl. axe WCAG 2.2 AA 2 viewports, auditorías A/B/C SUCCESS y npm audit producción 0 vulnerabilidades reportadas. [Fundación #42558658881](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42558658881) PASS. [Acta detallada](C01_05_ACTA_MICROFASE.md). Verificados CI final #42558828236, PR #20 merge SHA b902193b954d29f22dbdf8da9b22e48680f45dcd y fundación post-merge #42558999820. C01-06 inicia después de este cierre documental.
+
+## Entrega definitiva C01-05
+
+- [PR #20](https://github.com/solqaryn-platform/CRECISOL/pull/20) fusionado exclusivamente a dev.
+- [CI final código+acta #42558828236](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42558828236) PASS tres auditorías, build y 11 tests Chromium.
+- [Fundación de integración #42558999820](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42558999820) PASS.
+- [Acta formal](C01_05_ACTA_MICROFASE.md). **C01-05 cerrada técnicamente, 5/8; C01 sigue no certificado (0/37)**. La inclusión del logotipo gráfico oficial y QA visual completo siguen pendientes.
