@@ -1,3 +1,5 @@
+using Crecisol.Domain.Common;
+
 namespace Crecisol.Domain.Branding;
 
 /// <summary>
@@ -17,9 +19,7 @@ public sealed record BrandPublicationProposal(
         Draft.Validate();
         if (Draft.Status != BrandPublicationStatus.Draft)
             throw new InvalidOperationException("Only a draft may be proposed.");
-        if (ExpectedCurrentPublishedRevision < 0 ||
-            Draft.Revision <= ExpectedCurrentPublishedRevision)
-            throw new InvalidOperationException("Invalid expected publication revision.");
+        DomainRevision.RequireNewerThan(Draft.Revision, ExpectedCurrentPublishedRevision);
         if (OperationId == Guid.Empty)
             throw new InvalidOperationException("Publication requires an operation identifier.");
         BrandValidation.RequireText(Reason, 8, 280, nameof(Reason));

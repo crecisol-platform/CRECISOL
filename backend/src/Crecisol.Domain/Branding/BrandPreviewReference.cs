@@ -1,3 +1,5 @@
+using Crecisol.Domain.Common;
+
 namespace Crecisol.Domain.Branding;
 
 /// <summary>
@@ -22,11 +24,8 @@ public sealed record BrandPreviewReference(
 
     public BrandPreviewReference Validate()
     {
-        if (!Enum.IsDefined(Scope) ||
-            (Scope == BrandScope.Platform && ScopeId != Guid.Empty) ||
-            (Scope == BrandScope.Tenant && ScopeId == Guid.Empty) ||
-            DraftRevision < 1)
-            throw new InvalidOperationException("Invalid draft preview reference.");
+        BrandScopeKey.Create(Scope, ScopeId);
+        DomainRevision.From(DraftRevision);
         return this;
     }
 }
