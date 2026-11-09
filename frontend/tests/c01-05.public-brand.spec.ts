@@ -10,11 +10,11 @@ const brand = {
   descriptor: 'Comercio · Servicios · Membresías · Crecimiento',
   primaryColor: '#062E65',
   accentColor: '#078FE8',
-  logoUrl: '/assets/brand.png',
+  logoUrl: '/assets/crecisol-oficial.png',
   websiteUrl: null,
   publishedAt: '2026-11-08T12:00:00+00:00',
   presentation: {
-    faviconUrl: '/assets/favicon.webp',
+    faviconUrl: '/assets/crecisol-emblem.png',
     typographyToken: 'system',
     iconSetToken: 'outline',
     seoTitle: 'CRECISOL · Tu negocio, a tu manera.',
