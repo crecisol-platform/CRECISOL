@@ -49,7 +49,7 @@ Se auditan **seis recorridos J01..J06**, cinco estados universales, **18 necesid
 ## 5. Puerta de cierre, aprobación y rollback
 
 1. PR técnico `feature/c02-09-integral-audits` hacia `dev`: especificación, QA integral, workflow y estado **EN AUDITORÍA (8/9 previas)**; revisión de diff y secretos, CI `SUCCESS` último HEAD, merge con SHA esperado y CI POSTMERGE.
-2. Segundo PR exclusivamente documental con [acta integral C02-09](C02_09_AUDITORIA_Y_ACTA.md) y progreso: **9/9 AUDITADAS TÉCNICAMENTE, PENDIENTE ACEPTACIÓN HUMANA**. Registrar SHA de las dos fusiones, runs reales, A/B/C, riesgo y rollback; PR/CI POSTMERGE en verde.
+2. Segundo PR exclusivamente documental con `docs/c02/C02_09_AUDITORIA_Y_ACTA.md` (se creará exclusivamente después de la evidencia técnica real) y progreso: **9/9 AUDITADAS TÉCNICAMENTE, PENDIENTE ACEPTACIÓN HUMANA**. Registrar SHA de las dos fusiones, runs reales, A/B/C, riesgo y rollback; PR/CI POSTMERGE en verde.
 3. Presentar resultados al propietario y **solicitar aceptación expresa tras conocerlos**. No interpretar `adelante`, `continúa` o autorizaciones anteriores como la aceptación final. Hasta esa respuesta y acta de certificación con evidencia: **C02 NO CERTIFICADO, 1/37; C03 BLOQUEADO**.
 4. Rollback: revert por PR de los cambios C02-09 en `dev`; cero migraciones, producción, secretos, datos reales o activos externos. La rama `main` queda sin cambios.
 
