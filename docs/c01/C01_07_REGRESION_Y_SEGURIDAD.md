@@ -16,6 +16,7 @@ La API sigue con única ruta pública, sin login/admin ni autorizaciones de cons
 
 - Positivas: respuesta de publicación PLATFORM revision 2 y DTO exclusivo; presencia de logotipo exacto, descriptor y SEO en Angular; móvil 320 sin overflow, axe WCAG 2.2 AA automatizado; revisión 3 publicada sustituye datos antiguos; retorno a revisión 2 sin cache persistente.
 - Negativas servidor: host manipulado y headers forwarded, query con tenant, Authorization inventada, métodos POST/PUT/PATCH/DELETE, CORS preflight/origin, rutas admin/tenant/preview inexistentes, denegación de UPDATE al lector SQL.
+- Negativa adicional de configuración: servidor sin DSN devuelve 503 sin demo, secretos ni respaldo tenant; prueba real en puerto separado.
 - Negativas datos/navegador: TENANT publicada jamás sustituye PLATFORM; borrador jamás se expone; eliminación de la publicación PLATFORM produce 404 y fail-closed; nombre XSS insertado en la BD es rechazado con 503, sin HTML ejecutado ni metadatos obsoletos.
 - Pruebas de regresión .NET: 51 aserciones de contratos y suite Application; Angular build real, assets oficiales byte-exactos y auditorías finales separadas A, B, C.
 
@@ -30,3 +31,9 @@ La CI debe **volver a ejecutar** 11 casos Chromium C01-05 y 9 de C01-06 (incluid
 Fuera de alcance: autenticación privada y permisos de tenant, dedicated DB real, DNS, VPS, R2, producción, pagos, tráfico real y carga/lectores asistivos manuales. Se mantienen como gates de capítulos posteriores. **Reversión:** revertir PR C01-07 (solo qa, frontend/tests, workflow y documentación); no existe estado productivo persistente.
 
 **Acta final de esta microfase:** pendiente de completar tras pruebas y CI post-merge; ningún PASS se atribuye antes de revisar los logs correspondientes.
+
+## Incidencias históricas y correcciones
+
+- Primera CI: suite HTTP y siete Chromium reales PASS; auditoría B falló al interpretar un comentario como una llamada a `page.route`; se corrigió sin bajar cobertura.
+- Otra CI: auditor Python tuvo un salto de línea mal formado; corregido y ahora se exige `py_compile` previo.
+- Otra CI: Playwright/CDP perdió el cuerpo de una respuesta HTTP 200 al leer `response.json()`; se conserva la comprobación browser y se añade una segunda petición HTTP real con APIRequestContext, sin mocks, para verificar JSON y no-store. Revalidar con último HEAD.

@@ -118,4 +118,23 @@ root_sql "UPDATE brand_publications SET published_revision=2 WHERE scope_kind=1 
 python3 qa/c01_04_http_smoke.py baseline 5184
 proof api-restored
 browser published
+# No server DSN must deny with HTTP 503; never fall back to public demo.
+kill "$API_PID" 2>/dev/null || true
+wait "$API_PID" 2>/dev/null || true
+API_PID=""
+unset CRECISOL_C01_READONLY_DSN
+export ASPNETCORE_URLS="http://127.0.0.1:5185"
+dotnet run --no-build --no-launch-profile -c Release \
+  --project backend/src/Crecisol.Api/Crecisol.Api.csproj >/dev/null 2>&1 &
+API_PID=$!
+ready_http=0
+for i in $(seq 1 45); do
+  status="$(curl --silent --max-time 1 --output /dev/null --write-out '%{http_code}' \
+    http://127.0.0.1:5185/api/v1/public/branding/platform || true)"
+  if [ "$status" = 503 ]; then ready_http=1; break; fi
+  sleep 1
+done
+[ "$ready_http" -eq 1 ] || { echo 'FAIL unconfigured API startup' >&2; exit 1; }
+python3 qa/c01_04_http_smoke.py unconfigured 5185
+proof api-unconfigured
 echo 'PASS C01-07: real MySQL 8.4 + .NET 10 HTTP + Angular 22 Chromium with no mocks, tenant/draft/XSS/host/cache checks.'

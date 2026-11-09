@@ -44,6 +44,10 @@ jobs:
           package-manager-cache: false
       - name: Verify canonical Word and traceability source
         run: python3 qa/c01_verify_source.py
+      - name: Syntax-check real-stack shell and final Python auditor
+        run: |
+          bash -n qa/c01_07_real_stack.sh
+          python3 -m py_compile qa/c01_07_audits.py
       - name: Restore pinned Angular dependencies
         run: npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
       - name: Verify no high-severity production dependency vulnerabilities

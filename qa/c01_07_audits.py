@@ -78,6 +78,7 @@ def audit_c():
     completed('browser-updated')
     completed('browser-legacy')
     completed('api-restored')
+    completed('api-unconfigured')
 
 if __name__ == '__main__':
     name = sys.argv[1] if len(sys.argv) > 1 else None

@@ -3,7 +3,7 @@
  * Real MySQL 8.4 -> .NET 10 API -> Angular 22 dev proxy -> Chromium.
  * Shell harness controls ONLY disposable synthetic database publications.
  */
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type APIRequestContext } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 const path = '/api/v1/public/branding/platform';
@@ -19,10 +19,21 @@ async function loadActual(page: Page) {
   return response;
 }
 
-test('published: real platform publication appears without tenant or draft data', async ({ page }) => {
+async function verifiedJson(request: APIRequestContext): Promise<any> {
+  // A SECOND actual HTTP request through the loopback proxy, not a mock.
+  // The browser CDP response body can be evicted during navigation.
+  const response = await request.get('http://127.0.0.1:4200' + path, {
+    headers: { 'Cache-Control': 'no-cache' }
+  });
+  expect(response.status()).toBe(200);
+  expect(response.headers()['cache-control']).toContain('no-store');
+  return response.json();
+}
+
+test('published: real platform publication appears without tenant or draft data', async ({ page, request }) => {
   const result = await loadActual(page);
   expect(result.status()).toBe(200);
-  const body = await result.json();
+  const body = await verifiedJson(request);
   expect(body.revision).toBe(2);
   expect(body.name).toBe('CRECISOL');
   expect(body.primaryColor).toBe('#062E65');
@@ -68,10 +79,10 @@ test('invalid: XSS in stored brand is denied by server and no image executes', a
   expect(await page.locator('.identity-page')).toHaveCount(0);
 });
 
-test('updated: publication revision switch returns fresh metadata, not stale cached brand', async ({ page }) => {
+test('updated: publication revision switch returns fresh metadata, not stale cached brand', async ({ page, request }) => {
   const response = await loadActual(page);
   expect(response.status()).toBe(200);
-  const body = await response.json();
+  const body = await verifiedJson(request);
   expect(body.revision).toBe(3);
   await expect(page).toHaveTitle('CRECISOL revisión 3');
   await expect(page.locator('meta[name="description"]'))
