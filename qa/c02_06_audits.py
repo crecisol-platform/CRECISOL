@@ -291,8 +291,13 @@ def audit_c():
         acta = ACTA.read_text(encoding="utf-8")
         require("6/9" in plan and
                 "C02-06 CERRADA TÉCNICAMENTE" in acta and
-                "POSTMERGE" in acta and "C02-07" in acta,
-                "6/9 needs formal acta and postmerge provenance")
+                "POSTMERGE" in acta and "C02-07" in acta and
+                "d82cfc0a57561f21266a1f3e2e8c328dd3c4aeb4" in acta and
+                all(run in acta for run in (
+                    "42649577691", "42649577850", "42649577851",
+                    "42649577513", "42649577478", "42649577726",
+                    "42649577757", "42649577427")),
+                "6/9 needs exact C02-06 SHA, eight CI postmerge and a formal acta")
     else:
         require("5/9" in plan and "C02-06" in plan,
                 "Cannot advance without audited C02-06 acta")
