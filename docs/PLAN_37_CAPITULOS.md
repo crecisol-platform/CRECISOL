@@ -3,7 +3,7 @@
 Fuente de nombres: Documento Maestro Único. Estado general: **1/37 capítulos certificados (C01, 9 noviembre 2026)**. Certificación con aceptación expresa del propietario, tres auditorías integrales y CI postmerge del SHA `b85ba613bfb8616697226a3252e89919aa38ced2`; acta en `docs/c01/C01_08_AUDITORIA_Y_ACTA.md`. C02–C37 NO implementados ni certificados. Cada capítulo requiere implementación específica, pruebas ejecutadas, triple auditoría A/B/C, acta y aceptación antes de abrir desarrollo del siguiente. Los títulos no son evidencia de software.
 
 C01 | CRECISOL: identidad, visión, alcance y principios | **CERTIFICADO** (C01-01 a C01-08, 8/8; A/B/C integrales PASS; aprobación expresa 2026-11-09; alcance únicamente C01)
-C02 | Personas, experiencias y arquitectura de producto | **HABILITADO PARA PLANIFICAR/INICIAR SU CICLO SECUENCIAL**, todavía NO implementado ni certificado, requiere contraste del Word y sus propios gates
+C02 | Personas, experiencias y arquitectura de producto | **EN DESARROLLO** (C02-01 inventario cerrado técnicamente, 1/9; PR #30, CI postmerge SUCCESS; C02-02 siguiente; capítulo C02 NO CERTIFICADO, C03 bloqueado)
 C03 | Arquitectura técnica limpia y dependencias | PENDIENTE
 C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE
 C05 | Identidad, autenticación y recuperación segura | PENDIENTE

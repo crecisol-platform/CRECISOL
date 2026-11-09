@@ -169,8 +169,20 @@ def audit_c():
     original_parts()
     spec = SPEC.read_text(encoding="utf-8")
     plan = PLAN.read_text(encoding="utf-8")
-    require("1/37" in plan and "0/9" in plan and "C03 bloqueado" in plan,
+    require("1/37" in plan and "C03 bloqueado" in plan,
             "Chapter gate/sequence not correctly represented")
+    acta_path = ROOT / "docs/c02/C02_01_ACTA_MICROFASE.md"
+    if acta_path.exists():
+        acta = acta_path.read_text(encoding="utf-8")
+        require("1/9" in plan and "C02" in plan and "NO CERTIFICADO" in plan,
+                "Closed C02-01 must retain 1/9 without chapter certification")
+        require("CERRADA TÉCNICAMENTE" in acta and
+                "f40ab1ec47731eddd4b55a4f28a311b3800e68f4" in acta and
+                "42616163656" in acta and "42616163666" in acta,
+                "Acta requires true postmerge SHA and successful workflow references")
+    else:
+        require("0/9" in plan and "NO CERTIFICADO" in plan,
+                "Open C02-01 cannot claim microphase closure")
     for i in range(1, 10):
         require(re.search(r"^\| C02-" + f"{i:02d}" + r" \|", plan, re.M),
                 f"Missing sequential phase C02-{i:02d}")
