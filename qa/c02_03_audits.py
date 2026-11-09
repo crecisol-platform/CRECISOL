@@ -220,13 +220,26 @@ def audit_c():
             "Chapter gate prematurely certified or advanced")
     if ACTA.exists():
         acta = ACTA.read_text(encoding="utf-8")
-        require("3/9" in plan and "C02-03" in plan and
+        fourth_acta_path = ROOT / "docs/c02/C02_04_ACTA_MICROFASE.md"
+        if fourth_acta_path.exists():
+            fourth = fourth_acta_path.read_text(encoding="utf-8")
+            require("4/9" in plan and
+                    "C02-04 CERRADA TÉCNICAMENTE" in fourth and
+                    "ecb7807e79427d5059c8b5f4ee0c5dd2195b7cb5" in fourth and
+                    all(run in fourth for run in (
+                        "42630487933", "42630487964", "42630487996",
+                        "42630487889", "42630487985")),
+                    "C02-04 advancement needs SHA and five exact postmerge successes")
+        else:
+            require("3/9" in plan,
+                    "C02-03 closure must remain 3/9 until C02-04 acta")
+        require("C02-03" in plan and
                 "C02-03 CERRADA TÉCNICAMENTE" in acta and "POSTMERGE" in acta and
                 "6ccd98960f36dce3407392fd26406366b4cd0650" in acta and
                 all(run in acta for run in (
                     "42624454291", "42624454313", "42624454480",
                     "42624454179", "42624454085", "42624454342")),
-                "C02-03 technical closure requires exact SHA and all six postmerge runs")
+                "C02-03 provenance requires SHA and six previous postmerge runs")
     else:
         require("2/9" in plan, "C02-03 cannot count as closed without an acta")
     require(len(re.findall(r"\{ path: '/[^']+', label:", model)) == 3,

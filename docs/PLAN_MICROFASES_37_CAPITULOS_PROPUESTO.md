@@ -1,11 +1,11 @@
 # Mapa preliminar de microfases CRECISOL — 37 capítulos
 
-**Estado: PLANIFICACIÓN PROVISIONAL DE 37 CAPÍTULOS; C01 CERTIFICADO, C02 ACTIVO SOLO EN ORDEN SECUENCIAL (C02-01, C02-02 y C02-03 CERRADAS TÉCNICAMENTE, 3/9), C03–C37 SIN AUTORIZACIÓN PARA DESARROLLO.** No modifica ni sustituye el Documento Maestro Único. Fuente de títulos y orden: [plan de 37 capítulos](PLAN_37_CAPITULOS.md), a su vez derivado del Word institucional [referencia/huellas](MASTER_REFERENCE.md), y políticas de [arquitectura](ARQUITECTURA.md), [seguridad](SEGURIDAD_MULTITENANT.md) y Skill CRECISOL. Este plan fue redactado inicialmente sin extracción completa del Word. **Posteriormente C02-01 validó en CI el Word byte-exacto y extrajo C02 (11 párrafos originales, 1 tabla de 7 filas y anexos) en PR #30**. Los capítulos C03–C37 siguen siendo propuestas sin cotejo integral con su sección del maestro; no atribuir lectura ni certificación inexistentes. No se afirma haber cotejado las 229 páginas o cada tabla.
+**Estado: PLANIFICACIÓN PROVISIONAL DE 37 CAPÍTULOS; C01 CERTIFICADO, C02 ACTIVO SOLO EN ORDEN SECUENCIAL (C02-01, C02-02, C02-03 y C02-04 CERRADAS TÉCNICAMENTE, 4/9), C03–C37 SIN AUTORIZACIÓN PARA DESARROLLO.** No modifica ni sustituye el Documento Maestro Único. Fuente de títulos y orden: [plan de 37 capítulos](PLAN_37_CAPITULOS.md), a su vez derivado del Word institucional [referencia/huellas](MASTER_REFERENCE.md), y políticas de [arquitectura](ARQUITECTURA.md), [seguridad](SEGURIDAD_MULTITENANT.md) y Skill CRECISOL. Este plan fue redactado inicialmente sin extracción completa del Word. **Posteriormente C02-01 validó en CI el Word byte-exacto y extrajo C02 (11 párrafos originales, 1 tabla de 7 filas y anexos) en PR #30**. Los capítulos C03–C37 siguen siendo propuestas sin cotejo integral con su sección del maestro; no atribuir lectura ni certificación inexistentes. No se afirma haber cotejado las 229 páginas o cada tabla.
 
 ## Alcance del reparto
 
 - **37 capítulos** conservados en su orden canónico.
-- **365 microfases** indicadas en total: **8 de C01 técnicamente cerradas y capítulo C01 certificado** y **357 microfases propuestas inicialmente para C02–C37** (de ellas C02-01, C02-02 y C02-03 cerradas técnicamente, 3/9; las restantes no ejecutadas) para C02–C37.
+- **365 microfases** indicadas en total: **8 de C01 técnicamente cerradas y capítulo C01 certificado** y **357 microfases propuestas inicialmente para C02–C37** (de ellas C02-01, C02-02, C02-03 y C02-04 cerradas técnicamente, 4/9; las restantes no ejecutadas) para C02–C37.
 - De C02 a C37 se han creado **36 archivos de plan por capítulo**, cada uno con microentregables, pruebas positivas, negativas, dependencias y puerta de certificación.
 - **No se crean 357 actas ni especificaciones individuales vacías.** Cada archivo individual de microfase se abrirá al habilitar su trabajo real, para registrar trazabilidad, código, evidencia y acta sin aparentar ejecución anterior.
 - Un recuento futuro puede variar si el Word completo exige subdividir o consolidar, mediante PR trazable, sin cambiar el maestro.
@@ -15,7 +15,7 @@
 | Capítulo | Título del plan canónico | Microfases | Estado real / estatus de propuesta | Documento |
 |---|---|---:|---|---|
 | C01 | CRECISOL: identidad, visión, alcance y principios | 8 | **8/8 cerradas y capítulo certificado; PR #29** | [Plan operativo C01](C01_PREPARACION.md) |
-| C02 | Personas, experiencias y arquitectura de producto | 9 | **3/9 cerradas técnicamente; C02 activo, NO certificado; C02-04 siguiente** | [Propuesta C02](planificacion-futura/C02_MICROFASES_PROPUESTAS.md) |
+| C02 | Personas, experiencias y arquitectura de producto | 9 | **4/9 cerradas técnicamente; C02 activo, NO certificado; C02-05 siguiente** | [Propuesta C02](planificacion-futura/C02_MICROFASES_PROPUESTAS.md) |
 | C03 | Arquitectura técnica limpia y dependencias | 10 | PENDIENTE; propuesta sin aprobar | [Propuesta C03](planificacion-futura/C03_MICROFASES_PROPUESTAS.md) |
 | C04 | Multitenancy, dominios y aprovisionamiento | 12 | PENDIENTE; propuesta sin aprobar | [Propuesta C04](planificacion-futura/C04_MICROFASES_PROPUESTAS.md) |
 | C05 | Identidad, autenticación y recuperación segura | 11 | PENDIENTE; propuesta sin aprobar | [Propuesta C05](planificacion-futura/C05_MICROFASES_PROPUESTAS.md) |
