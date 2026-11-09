@@ -12,8 +12,12 @@ TENANT="22222222222222222222222222222222"
 
 cleanup() {
   if [ -n "$API_PID" ]; then kill "$API_PID" 2>/dev/null || true; wait "$API_PID" 2>/dev/null || true; fi
+  # MySQL entrypoint may chown its bind-mounted socket directory.
+  # Restore runner ownership while container is still available.
+  docker exec --user root "$CONTAINER" chown -R "$(id -u):$(id -g)" \
+    /var/run/mysqld >/dev/null 2>&1 || true
   docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
-  rm -rf "$SOCKET_DIR"
+  rm -rf -- "$SOCKET_DIR"
 }
 trap cleanup EXIT
 
