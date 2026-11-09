@@ -47,8 +47,8 @@ jobs:
         with:
           node-version: '24.15.0'
           package-manager-cache: false
-      - name: Install pinned Angular 22.2.4 and test dependencies
-        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Restore pinned npm dependency tree with lock
+        run: npm ci --no-audit --no-fund --ignore-scripts
       - name: Verify dependency tree
         run: npm ls --depth=0
       - name: Compile strict TypeScript
@@ -74,41 +74,10 @@ jobs:
         with:
           node-version: '24.15.0'
           package-manager-cache: false
-      - name: Install pinned dependencies
-        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Restore pinned dependencies from lock
+        run: npm ci --no-audit --no-fund --ignore-scripts
       - name: Install Chromium in disposable runner
         run: npx playwright install --with-deps chromium
       - name: Execute real browser responsive, security and accessibility tests
         run: npm run test:e2e:ci
 
-  c01-05-lock:
-    name: C01-05 deterministic dependency lock handoff
-    if: startsWith(github.head_ref, 'feature/c01-05-')
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - name: Checkout without persisted credentials
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          persist-credentials: false
-      - name: Install Node 24.15.0
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
-        with:
-          node-version: '24.15.0'
-          package-manager-cache: false
-      - name: Generate read-only lock for commit by reviewer
-        run: npm install --package-lock-only --no-audit --no-fund --ignore-scripts
-      - name: Publish integrity-only package lock as log-encoded handoff
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          from base64 import b64encode
-          data = b64encode(Path('package-lock.json').read_bytes()).decode('ascii')
-          print('LOCK_BEGIN')
-          for i in range(0, len(data), 3000):
-              print('LOCK64:' + data[i:i + 3000])
-          print('LOCK_END')
-          PY
