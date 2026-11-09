@@ -136,7 +136,7 @@ def main():
             continue
         raise AssertionError("Unsafe certification mutation was accepted: " + label)
     print("C02 CERTIFICATION GATE PASS: Word verified, 9/9, "
-          "explicit post-audit APROBADO, 2/37, C03 not started, "
+          "explicit post-audit APROBADO, 2/37, C03-01 active only, C04 blocked, "
           "all real A/B/C and integration proofs present, "
           "5 adversarial certification mutations rejected.")
     print("LIMIT: private authorization, admin panel, manual WCAG, "
