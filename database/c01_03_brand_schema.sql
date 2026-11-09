@@ -48,66 +48,9 @@ CREATE TABLE brand_revisions (
     REGEXP_LIKE(accent_color, '^#[0-9A-Fa-f]{6}$', 'c')
   ),
   CONSTRAINT chk_brand_asset_paths CHECK (
-    REGEXP_LIKE(logo_url, '^/assets/[a-zA-Z0-9-]{1,80}[.](png|webp)
-    CHAR_LENGTH(TRIM(name)) BETWEEN 2 AND 100 AND
-    CHAR_LENGTH(TRIM(slogan)) BETWEEN 2 AND 160 AND
-    CHAR_LENGTH(TRIM(descriptor)) BETWEEN 2 AND 180
-  ),
-  CONSTRAINT chk_brand_seo_text CHECK (
-    (seo_title IS NULL OR CHAR_LENGTH(TRIM(seo_title)) BETWEEN 2 AND 120)
-    AND (seo_description IS NULL OR CHAR_LENGTH(TRIM(seo_description)) BETWEEN 2 AND 260)
-    AND (copyright_notice IS NULL OR CHAR_LENGTH(TRIM(copyright_notice)) BETWEEN 2 AND 220)
-  )
-) ENGINE=InnoDB;
-
--- An explicit published pointer, restricted by FK to status=2 on the SAME scope.
--- Does NOT authorize writes or infer which tenant the caller may access.
-CREATE TABLE brand_publications (
-  scope_kind TINYINT UNSIGNED NOT NULL,
-  scope_id BINARY(16) NOT NULL,
-  published_revision BIGINT UNSIGNED NOT NULL,
-  publication_status TINYINT UNSIGNED NOT NULL DEFAULT 2,
-  updated_at_utc DATETIME(6) NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
-  PRIMARY KEY (scope_kind, scope_id),
-  CONSTRAINT chk_publication_status_fixed CHECK (publication_status = 2),
-  CONSTRAINT fk_brand_publication_revision FOREIGN KEY
-    (scope_kind, scope_id, published_revision, publication_status)
-    REFERENCES brand_revisions(scope_kind, scope_id, revision, publication_status)
-    ON DELETE RESTRICT
-) ENGINE=InnoDB;
-
--- No tenant-scoped public API, publication endpoint, secrets, or real seeds are introduced.
--- Database constraints protect structural relations; immutability, access control,
--- domain validation, publication concurrency and audit remain server-side obligations.
-, 'c')
+    REGEXP_LIKE(logo_url, '^/assets/[a-zA-Z0-9-]{1,80}[.](png|webp)$', 'c')
     AND (favicon_url IS NULL OR
-      REGEXP_LIKE(favicon_url, '^/assets/[a-zA-Z0-9-]{1,80}[.](png|webp)
-    CHAR_LENGTH(TRIM(name)) BETWEEN 2 AND 100 AND
-    CHAR_LENGTH(TRIM(slogan)) BETWEEN 2 AND 160 AND
-    CHAR_LENGTH(TRIM(descriptor)) BETWEEN 2 AND 180
-  )
-) ENGINE=InnoDB;
-
--- An explicit published pointer, restricted by FK to status=2 on the SAME scope.
--- Does NOT authorize writes or infer which tenant the caller may access.
-CREATE TABLE brand_publications (
-  scope_kind TINYINT UNSIGNED NOT NULL,
-  scope_id BINARY(16) NOT NULL,
-  published_revision BIGINT UNSIGNED NOT NULL,
-  publication_status TINYINT UNSIGNED NOT NULL DEFAULT 2,
-  updated_at_utc DATETIME(6) NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
-  PRIMARY KEY (scope_kind, scope_id),
-  CONSTRAINT chk_publication_status_fixed CHECK (publication_status = 2),
-  CONSTRAINT fk_brand_publication_revision FOREIGN KEY
-    (scope_kind, scope_id, published_revision, publication_status)
-    REFERENCES brand_revisions(scope_kind, scope_id, revision, publication_status)
-    ON DELETE RESTRICT
-) ENGINE=InnoDB;
-
--- No tenant-scoped public API, publication endpoint, secrets, or real seeds are introduced.
--- Database constraints protect structural relations; immutability, access control,
--- domain validation, publication concurrency and audit remain server-side obligations.
-, 'c'))
+      REGEXP_LIKE(favicon_url, '^/assets/[a-zA-Z0-9-]{1,80}[.](png|webp)$', 'c'))
   ),
   CONSTRAINT chk_brand_presentation_tokens CHECK (
     (typography_token IS NULL OR typography_token IN ('system', 'humanist', 'editorial'))
@@ -124,6 +67,11 @@ CREATE TABLE brand_publications (
     CHAR_LENGTH(TRIM(name)) BETWEEN 2 AND 100 AND
     CHAR_LENGTH(TRIM(slogan)) BETWEEN 2 AND 160 AND
     CHAR_LENGTH(TRIM(descriptor)) BETWEEN 2 AND 180
+  ),
+  CONSTRAINT chk_brand_seo_text CHECK (
+    (seo_title IS NULL OR CHAR_LENGTH(TRIM(seo_title)) BETWEEN 2 AND 120)
+    AND (seo_description IS NULL OR CHAR_LENGTH(TRIM(seo_description)) BETWEEN 2 AND 260)
+    AND (copyright_notice IS NULL OR CHAR_LENGTH(TRIM(copyright_notice)) BETWEEN 2 AND 220)
   )
 ) ENGINE=InnoDB;
 
