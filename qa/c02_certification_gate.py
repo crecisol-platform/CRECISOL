@@ -67,18 +67,19 @@ def validate_content(files):
                    HEAD_PRECERT, WORD_SHA,
                    "12/12 CI SUCCESS", "58/58", "25/25",
                    "**Auditoría A PASS**", "**B PASS**", "**C PASS**",
-                   "C02 CERTIFICADO EN EL ALCANCE ACOTADO",
+                   "CAPÍTULO 02 CERTIFICADO EN EL ALCANCE ACOTADO",
                    "NO INICIADO AQUÍ", "BOLA/IDOR/MFA", "NO** se certifican"):
         require(marker in acceptance, "Missing approval, evidence, or limit: " + marker)
     for run in ("42678910536", "42678910584",
                 "42678910677", "42678910703", "42678910594"):
         require(run in acceptance, "Missing postmerge evidence run " + run)
-    require("PR #47" in acceptance and "PR #46" in acceptance,
+    require("[#47]" in acceptance and "[#46]" in acceptance,
             "Technical and acta PR provenance missing")
     require("WCAG" in acceptance and "panel administrativo" in acceptance
             and "pagos" in acceptance and "producción" in acceptance,
             "Certification may not imply private/production feature readiness")
-    require("C03 habilitable" in plan.lower() or "C03 |" in plan,
+    require("HABILITABLE UNA VEZ CERTIFICADO C02" in c03_row and
+            "NO INICIADO" in c03_row,
             "C03 planning boundary missing")
     # Old audit statutes remain clearly labelled historical, not current.
     require("Antecedente histórico" in plan and
