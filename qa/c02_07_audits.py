@@ -363,7 +363,7 @@ def audit_c():
         require(text in harness, f"Real Angular harness missing: {text}")
     require("At least one relevant control must exist" in harness and
             "cs-draft-form-pattern form button:not([disabled])" in harness and
-            "cs-pattern-harness dialog button" in harness,
+            "cs-pattern-harness > main > dialog button" in harness,
             "Touch test must target real visible controls and reject empty selectors")
     require("test-results-c02-07-harness" in runner and
             "pattern-harness" in runner and "4201" in runner and
