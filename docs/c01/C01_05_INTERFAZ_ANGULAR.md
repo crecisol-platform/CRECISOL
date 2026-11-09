@@ -50,3 +50,7 @@ El Word contiene la imagen azul aprobada, pero **no hay aún un archivo gráfico
 - .github/workflows, qa/, docs/: nuevas comprobaciones y seguimiento C01-05.
 
 **Reversión:** revertir el PR individual C01-05. No existe despliegue, datos persistentes ni servicios productivos que revertir. **C01-06 será la siguiente microfase solo tras cierre documentado; C01 sigue 0/37 capítulos certificados.**
+
+## Evidencia de las pruebas reales
+
+[CI Angular 22 / Chromium #42558658894](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42558658894) PASS: Angular22.2.4/Node24.15/TS6.0.3, npm ci desde lock real, initial 233.23 kB raw, 11/11 browser Playwright incl. axe WCAG 2.2 AA 2 viewports, auditorías A/B/C SUCCESS y npm audit producción 0 vulnerabilidades reportadas. [Fundación #42558658881](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42558658881) PASS. [Acta detallada](C01_05_ACTA_MICROFASE.md). Queda pendiente verificación de CI del último HEAD y merge individual, sin adelantar C01-06.
