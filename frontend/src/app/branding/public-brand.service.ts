@@ -27,7 +27,7 @@ export class PublicBrandService {
         brand: parsePublishedPlatformBrand(payload)
       });
     } catch {
-      // Never reuse an old brand, localStorage, tenant selection or demo identity.
+      // Never reuse an old brand, persisted browser storage, tenant selection or demo identity.
       this.currentState.set({ kind: 'unavailable' });
     } finally {
       this.pending = false;
