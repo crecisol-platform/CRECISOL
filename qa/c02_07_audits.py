@@ -257,10 +257,14 @@ def audit_b():
     html = HOME_HTML.read_text(encoding="utf-8") + INFO_HTML.read_text(encoding="utf-8")
     source = NOTFOUND.read_text(encoding="utf-8")
     harness = HARNESS.read_text(encoding="utf-8")
-    require(all('focusMainContent()' in p.read_text(encoding="utf-8")
+    require(all('focusMainContent(event: Event)' in p.read_text(encoding="utf-8")
                 for p in (HOME_TS, INFO_TS)), "Skip handlers must focus main explicitly")
-    require(all('(click)="focusMainContent()"' in p.read_text(encoding="utf-8")
+    require(all('(click)="focusMainContent($event)"' in p.read_text(encoding="utf-8")
                 for p in (HOME_HTML, INFO_HTML)), "Both skip links need a real focus action")
+    require(all('event.preventDefault()' in p.read_text(encoding="utf-8") and
+                "history.replaceState(" in p.read_text(encoding="utf-8")
+                for p in (HOME_TS, INFO_TS)),
+            "Skip links must not route-reload and lose their focus target")
     for text in ('tabindex="-1"', 'main', 'Saltar al contenido principal'):
         require(text in html, f"Skip link cannot focus real main: {text}")
     require('id="contenido" tabindex="-1"' in html and
