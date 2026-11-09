@@ -30,8 +30,12 @@ def require(value, message):
 
 
 def sources():
+    # Only authored C# source belongs to the Domain dependency boundary.
+    # dotnet build creates obj/ generated GlobalUsings and assembly metadata,
+    # which must never be mistaken for repository-authored Domain files.
     return {str(path.relative_to(DOMAIN)): path.read_text(encoding="utf-8")
-            for path in DOMAIN.rglob("*.cs")}
+            for path in DOMAIN.rglob("*.cs")
+            if not ({"bin", "obj"} & set(path.relative_to(DOMAIN).parts))}
 
 
 def pure(project_text, code):
