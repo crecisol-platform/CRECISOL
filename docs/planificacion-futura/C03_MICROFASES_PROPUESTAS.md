@@ -14,7 +14,7 @@
 | C03-02 | Contratos Domain puros | Entidades y reglas sin dependencias de frameworks | No instalar paquetes de infraestructura en Domain |
 | C03-03 | Casos de uso y puertos Application | Un contrato probado por operación | No acceso directo de Application a MySQL |
 | C03-04 | Adaptadores Infrastructure | Implementación de puertos aislada y reemplazable | No resolver credenciales desde peticiones |
-| C03-05 | Convensiones API y DTO | HTTP y validación de entradas con esquemas tipados | No exponer entidades o secretos por serialización |
+| C03-05 | Convenciones API y DTO | HTTP y validación de entradas con esquemas tipados | No exponer entidades o secretos por serialización |
 | C03-06 | Módulos verticales y DI | Registro explícito y pruebas de dependencias | No Service Locator ni dependencias fantasma |
 | C03-07 | Workers y contratos de eventos | Idempotencia y outbox diseñados/probados en local | No ejecutar dos veces una acción por reintento |
 | C03-08 | Configuración y ambientes locales | Variables tipadas y fail-closed sin datos reales | No .env secreto versionado ni conexión productiva |
