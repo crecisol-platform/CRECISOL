@@ -6,7 +6,7 @@
 
 ## 1. Separar puertas del Maestro y microfases técnicas
 
-**DIF-C03-01:** `MAE-C03-01` Extraer, `MAE-C03-02` Diseñar, `MAE-C03-03` Codificar, `MAE-C03-04` Probar, `MAE-C03-05` Auditar A, `MAE-C03-06` Auditar B, `MAE-C03-07` Auditar C y `MAE-C03-08` Acta son **ocho puertas normativas de proceso** descritas en el Word; no equivalen a los **diez microentregables técnicos C03-01..10** del plan derivado. C03-01 inventaría la fuente y documenta el primer mapa con negativas; no declara que las otras nueve microfases o la certificación integral del capítulo estén completas.
+**DIF-C03-01:** `MAE-C03-01` Extraer, `MAE-C03-02` Diseñar, `MAE-C03-03` Codificar, `MAE-C03-04` Probar, `MAE-C03-05` Auditar A, `MAE-C03-06` Auditar B, `MAE-C03-07` Auditar C y `MAE-C03-08` Acta son **ocho puertas normativas de proceso** descritas en el Word; no equivalen a los **diez microentregables técnicos C03-01..10** del plan derivado. C03-01 inventaría la fuente y documenta el primer mapa con negativas. La secuencia técnica continúa estrictamente **C03-02..C03-09** y culmina en **C03-10** (auditoría integral y aprobación humana posterior); **no** se ejecutan ni certifican por redactar el mapa. Ninguna de las nueve microfases restantes está iniciada.
 
 ## 2. Matriz de trazabilidad: siete unidades textuales originales
 
