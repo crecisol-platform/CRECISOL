@@ -28,3 +28,18 @@ Esas pruebas de Chromium, WCAG y aceptación visual final permanecen **NO EJECUT
 ## Riesgos, reversión y restricciones
 
 Riesgo: un candidato técnicamente auténtico del Word no constituye automáticamente un activo apto/aprobado para web. No suponer derechos registrales, aprobación de emisor o DNS. Revertir PR elimina únicamente documentación, QA y workflow; el candidato efímero vence tras tres días. No toca main, SOLQARYN, producción, VPS, R2, servicios pagos ni secretos.
+
+
+## Acta parcial de evidencia CI — candidato exclusivamente (sin cierre)
+
+Fecha de la comprobación: 2026-11-08 en Honduras / 2026-11-09 05:30 UTC. **CI realmente ejecutada** sobre HEAD ec5a3b379483f915215dfc5c330e34a2dbdcce9f:
+
+- [C01-06 GitHub Actions #42567719986](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42567719986): SUCCESS; job de extracción + seis negativas únicas + revisiones preliminares A/B/C + upload de candidato: SUCCESS.
+- [Foundation #42567719759](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42567719759): SUCCESS, mismo SHA.
+- Fuente Word SHA-256 realmente recalculado en CI: e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e, equivalente al valor canónico documentado.
+- Relación OOXML hallada: word/media/image1.png. PNG **1298 × 859 píxeles, 1 054 246 bytes**. SHA-256 exacto de los bytes: **9e83d1d0a891565cf80a21a7e90d7afcaa24c9bb63e7d2a589790127dadd549f**. Extracción byte a byte sin modificar formato.
+- Artefacto privado GitHub Actions ID **13652032125**, denominado C01-06-candidate-NOT-APPROVED, retenido tres días. Ubicación de consulta: página de la ejecución de CI, sección Artifacts. No equivale a aprobación oficial.
+- Positiva sintética de documento/PNG y lectura del Word real PASS. Negativas únicas PASS: SHA alterado, relación externa, traversal, HTML disfrazado, múltiples imágenes y CRC PNG corrupto.
+- Auditoría **A preliminar PASS** (autoridad/matriz); **B preliminar PASS** (rechazo de medios peligrosos); **C preliminar PASS** (metadatos/dimensiones). **NO** son auditorías finales de C01-06.
+- Incidencia no bloqueante del job de upload: advertencia de deprecación Node DEP0169 sobre url.parse en la acción, sin fallo observado. Debe revisarse al actualizar acciones; no se omitió ni silenció una prueba.
+- **PENDIENTE / NO EJECUTADO:** cotejo visual humano con portada, aprobación expresa del gráfico individual, instalación en frontend, build Angular/Node, Chromium/WCAG de logo real, auditorías completas, CI final y post-merge. La microfase NO se cierra; 5/8, 0/37.
