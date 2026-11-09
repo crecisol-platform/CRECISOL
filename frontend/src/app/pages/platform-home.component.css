@@ -93,7 +93,7 @@
 }
 .version-dot { width: .4rem; height: .4rem; background: #3389c6; }
 .hero-rule { height: 1px; width: min(100%, 485px); background: #d9e5f1; margin-top: 49px; margin-bottom: 18px; }
-.hero-footnote { max-width: 31rem; font-size: .83rem; color: #74839a; line-height: 1.6; margin: 0; }
+.hero-footnote { max-width: 31rem; font-size: .83rem; color: #50657f; line-height: 1.6; margin: 0; }
 .brand-art {
   position: relative; isolation: isolate; min-width: 0; min-height: 470px;
   background:
