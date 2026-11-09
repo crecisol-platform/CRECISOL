@@ -1,6 +1,6 @@
 # C01-06 — Identidad gráfica oficial: integración Angular y verificación
 
-**Estado actual: logotipo exacto APROBADO por el propietario e integrado en el build de Angular; PR #24 PENDIENTE de merge y CI post-merge. C01-06 aún no cerrada técnicamente.** C01: **5/8 microfases cerradas** hasta completar esas puertas; **0/37 capítulos certificados**. C01-07 NO habilitada antes del cierre.
+**Estado actual: C01-06 CERRADA TÉCNICAMENTE.** Logotipo oficial exacto APROBADO por el propietario, cabecera Angular corregida, PR #24 FUSIONADO, CI final y POST-MERGE SUCCESS. C01: **6/8 microfases cerradas**; **0/37 capítulos certificados**. C01-07 habilitada únicamente dentro del capítulo C01.
 
 **Registro histórico:** las secciones siguientes describen las precauciones y pruebas del candidato ANTES de la aprobación; prevalecen la resolución del propietario y la evidencia FINAL incluidas al final de este mismo documento.
 
@@ -106,3 +106,7 @@ La aprobación del gráfico NO certifica aún C01-06: siguen pendientes las prue
 **Auditoría A FINAL: PASS** (trazabilidad Word, consentimiento, P14/P25/T02-R01/T03-R01). **Auditoría B FINAL: PASS** para C01-06 (bytes fijos, rutas locales validadas, 12 negativos y fallbacks 404, sin fuga tenant, sin código remoto). **Auditoría C FINAL: PASS** para C01-06 (build y viewport 320/360/768/1440, 28 Chromium, WCAG automatizado axe, capturas visuales escritorio/móvil revisadas, proporciones conservadas, encabezado real corregido). Las regresiones multitenant y accesibilidad humana integrales pertenecen a C01-07/C01-08, no se declaran certificadas aquí.
 
 **Hallazgos residuales no bloqueantes:** deprecaciones Node DEP0040/DEP0169 y checkout/upload-artifact Node20 forzado a Node24, sin fallo de CI; mantener seguimiento de pins. **Rollback:** revertir PR #24; no se tocaron SOLQARYN, main, VPS, servicios ni cobros. **Pendiente antes de CERRADA TÉCNICAMENTE:** repetir CI último HEAD tras esta acta, revisar diff, fusionar PR #24 a dev y verificar ejecución CI post-merge; cerrar la planificación mediante PR documental separado. Capítulo C01 sigue sin certificación ni habilitación C02.
+
+## Cierre acreditado en dev — 9 de noviembre de 2026
+
+Esta sección prevalece sobre los bloqueos históricos de candidato no aprobado anteriores. La aprobación humana figura textualmente más arriba. [PR #24](https://github.com/solqaryn-platform/CRECISOL/pull/24) fusionado: SHA en dev `ac66a8aa39354d5126c3102be99e746452d455ce`. Último HEAD evaluado `e1deed5ec24a7bfdfe5a415554d597c34326ed9a`: [CI #42573961789](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42573961789) 2/2 SUCCESS, foundation #42573961921 SUCCESS. [CI C01-06 post-merge #42574147302](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42574147302) 2/2 SUCCESS + foundation #42574147272 SUCCESS, mismo SHA de dev. Angular build PASS, 28/28 Chromium, 12/12 negativas, auditorías finales A/B/C PASS. Acta formal independiente: [C01_06_ACTA_MICROFASE.md](C01_06_ACTA_MICROFASE.md). **C01-06 CERRADA TÉCNICAMENTE, 6/8. C01 NO CERTIFICADO, 0/37.**
