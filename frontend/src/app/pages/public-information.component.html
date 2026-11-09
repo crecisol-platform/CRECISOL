@@ -5,7 +5,7 @@
       [style.--brand-accent]="model.brand.accentColor"
       [class.font-humanist]="model.brand.presentation?.typographyToken === 'humanist'"
       [class.font-editorial]="model.brand.presentation?.typographyToken === 'editorial'">
-      <a href="#contenido" class="skip-link" (click)="focusMainContent()">Saltar al contenido principal</a>
+      <a href="#contenido" class="skip-link" (click)="focusMainContent($event)">Saltar al contenido principal</a>
 
       <header class="public-header">
         <div class="public-container public-header-inner">
