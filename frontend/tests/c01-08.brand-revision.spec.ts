@@ -33,7 +33,7 @@ const changed = {
   logoUrl: '/assets/logo-actualizado.png',
   publishedAt: '2026-11-09T07:00:00+00:00',
   presentation: {
-    ...initial.presentation, faviconUrl: '/assets/icono-actualizado.webp',
+    ...initial.presentation, faviconUrl: '/assets/icono-actualizado.png',
     seoTitle: 'MARCA ACTUALIZADA · Publicación',
     seoDescription: 'Descripción publicada nueva.',
     copyrightNotice: 'Aviso publicado nuevo.'
@@ -65,8 +65,8 @@ test('a newly fetched published revision changes header, hero, favicon, SEO and 
   await page.route('**/assets/logo-actualizado.png', route => route.fulfill({
     status: 200, contentType: 'image/png', body: originalBytes
   }));
-  await page.route('**/assets/icono-actualizado.webp', route => route.fulfill({
-    status: 200, contentType: 'image/webp',
+  await page.route('**/assets/icono-actualizado.png', route => route.fulfill({
+    status: 200, contentType: 'image/png',
     body: readFileSync('public/assets/crecisol-emblem.png')
   }));
   await page.goto('/');
@@ -121,7 +121,7 @@ test('missing optional favicon uses the published logo in header but no stale br
 
 test('a missing published header image keeps the current public name, not the former brand', async ({ page }) => {
   await serveSnapshot(page, () => changed);
-  await page.route('**/assets/icono-actualizado.webp', route => route.fulfill({ status: 404, body: '' }));
+  await page.route('**/assets/icono-actualizado.png', route => route.fulfill({ status: 404, body: '' }));
   await page.goto('/');
   await expect(page.locator('.header-brand-icon')).toHaveCount(0);
   await expect(page.locator('.wordmark-line')).toBeVisible();
