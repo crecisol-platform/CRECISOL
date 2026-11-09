@@ -82,3 +82,14 @@ El archivo de marca aprobado NO se añadió a frontend ni se publicó. Playwrigh
 ## CI real: preparación de slot Angular, aún sin aprobación gráfica
 
 Commit ea74fcc155635d9a4ee4cc5efcd7faaae6926792: CI C01-06 #42570809651 SUCCESS, 2/2 jobs; foundation #42570809623 SUCCESS, mismo SHA. Node 24.15, typecheck y build Angular PASS; 8/8 Chromium (4 tests existentes de revisión aislada y 4 nuevos de la portada Angular real con recurso temporal). El extractor de fuente canónica y 12 casos negativos completó SUCCESS. Auditorías A/B/C siguen PRELIMINARES: esta evidencia no equivale a aprobación de activo ni a integración oficial publicable. El commit siguiente añade capturas privadas de la portada Angular con la imagen temporal, marcadas NOT-APPROVED; verificar su CI del último SHA antes de afirmar que pasan. No fusionar PR #24 hasta aprobación expresa del archivo independiente con SHA, pruebas finales y acta.
+
+
+## Resolución del propietario sobre identidad visual — 9 de noviembre de 2026
+
+El propietario, tras revisar directamente las capturas escritorio/móvil de la imagen de origen (word/media/image1.png), confirmó en el hilo de CRECISOL: «ESE ES EL LOGO CLARO QUE SI» y «EL LOGO QUE UTILIZAS SI ES MI LOGO». Esa conformidad **aprueba la identidad del archivo gráfico exacto** previamente presentado: 1298 × 859 PNG, SHA-256 9e83d1d0a891565cf80a21a7e90d7afcaa24c9bb63e7d2a589790127dadd549f. No autoriza rediseño, alteración de colores, sustitución ni otro archivo distinto.
+
+También detectó un defecto preciso: en el encabezado superior se veía solamente el nombre CRECISOL, sin el símbolo oficial. Se autoriza corregir el encabezado escritorio/móvil antes de cerrar C01-06.
+
+La fuente de verdad permanece el Word canónico SHA-256 e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e. La implementación incorpora generación reproducible de **dos archivos independientes para el build**: el logo completo byte-exacto (SHA aprobado) y el isotipo recortado sin redibujar (coordenadas fuente x390..948, y16..553, PNG 558x537; SHA de derivado ca789b73ee888cff86cf7849c27482546ce248f806676c5b9d34131e5302fd39). Se validó el recorte píxel a píxel contra la fuente; no distorsiona formas ni altera colores. El flujo fail-closed rechazará fuentes divergentes. Los activos generados se incluyen en la salida estática de Angular, no se copian desde servicios externos, y no se sube un binario duplicado de otro proyecto.
+
+La aprobación del gráfico NO certifica aún C01-06: siguen pendientes las pruebas de la cabecera final, tres auditorías A/B/C definitivas, acta y CI posterior al merge. La aprobación del capítulo 01 completo continúa reservada para C01-08.

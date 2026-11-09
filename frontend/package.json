@@ -11,7 +11,10 @@
     "build": "ng build --configuration production",
     "test:e2e": "playwright test",
     "test:e2e:ci": "playwright test --reporter=line",
-    "check:types": "tsc --noEmit -p tsconfig.app.json"
+    "check:types": "tsc --noEmit -p tsconfig.app.json",
+    "prestart": "python3 ../qa/c01_06_official_assets.py --write",
+    "prebuild": "python3 ../qa/c01_06_official_assets.py --write",
+    "test:assets": "python3 ../qa/c01_06_official_assets.py --check"
   },
   "dependencies": {
     "@angular/common": "22.2.4",
