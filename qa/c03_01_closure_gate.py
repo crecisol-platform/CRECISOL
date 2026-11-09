@@ -20,6 +20,7 @@ RUNS = ("42691620500", "42691620886", "42691620794",
         "42691620719", "42691621001", "42691620768", "42691620826")
 FILES = {
     "acta": ROOT / "docs/c03/C03_01_ACTA_MICROFASE.md",
+    "second": ROOT / "docs/c03/C03_02_ACTA_MICROFASE.md",
     "prep": ROOT / "docs/C03_PREPARACION.md",
     "plan": ROOT / "docs/PLAN_37_CAPITULOS.md",
     "master": ROOT / "docs/MASTER_REFERENCE.md",
@@ -37,68 +38,73 @@ def require(flag, reason):
 
 
 def validate_content(files):
-    acta, prep, plan = files["acta"], files["prep"], files["plan"]
-    master, spec = files["master"], files["spec"]
-    future, global_plan = files["future"], files["global"]
+    # C03-01's 1/10 acta is immutable historical evidence. The current state
+    # can reach 2/10 only with a separate, explicitly accepted C03-02 acta.
+    first = files["acta"]
+    second = files["second"]
+    prep, plan, master = files["prep"], files["plan"], files["master"]
+    spec, future, global_plan = files["spec"], files["future"], files["global"]
     decisions, agents = files["decisions"], files["agents"]
-    row = next((s for s in plan.splitlines() if s.startswith("C03 | ")), "")
-    row4 = next((s for s in plan.splitlines() if s.startswith("C04 | ")), "")
-    head = plan.splitlines()[2] if len(plan.splitlines()) > 2 else ""
+    c03 = next((line for line in plan.splitlines() if line.startswith("C03 | ")), "")
+    c04 = next((line for line in plan.splitlines() if line.startswith("C04 | ")), "")
     require("2/37 capítulos certificados (C01 y C02)" in plan[:2000] and
             "2/37 capítulos certificados (C01 y C02)" in master,
-            "Only C01+C02 may count as certified chapters")
-    require("C03-01 CERRADA TÉCNICAMENTE Y ACEPTADA (1/10)" in head and
-            "C03 NO CERTIFICADO" in head and "C04 BLOQUEADO" in head,
-            "Effective 37-chapter status is not limited to C03-01")
-    require("**C03-01 CERRADA TÉCNICAMENTE (1/10)**" in row and
-            "C03 NO CERTIFICADO" in row and "C04 BLOQUEADO" in row and
-            "C03-02" in row and "NO INICIADA" in row,
-            "C03 row wrongly advances chapter or next microphase")
-    require(row4 == "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
-            "C04 must remain blocked/unstarted")
-    require("ESTADO VIGENTE: C03-01 CERRADA TÉCNICAMENTE" in prep and
-            "1/10" in prep and
-            "C03 NO CERTIFICADO" in prep and "C04 BLOQUEADO" in prep and
-            "HABILITABLE TRAS CI FINAL C03-01, PERO NO INICIADA" in prep,
-            "C03 preparation must show limited acceptance only")
-    require("C03-01 CERRADA TÉCNICAMENTE" in master and
-            "1/10" in master and "C03 NO CERTIFICADO" in master and
-            "C04 BLOQUEADO" in master and WORD_SHA in master,
-            "Canonical reference status, risk or provenance changed")
-    for text, label in ((spec, "spec"), (future, "future"),
-                        (global_plan, "global"), (decisions, "decisions"),
-                        (agents, "agents")):
-        require("C03-01" in text and "1/10" in text and
-                "C03 NO CERTIFICADO" in text and "C04 BLOQUEADO" in text,
-                "Unreconciled effective C03-01 state in " + label)
-    require("## 5. Decisión de microfase y gate final" in acta and
-            "C03-01 CERRADA TÉCNICAMENTE (1/10)" in acta and
-            "formalización condicionada al SUCCESS" in acta and
-            "C03 NO CERTIFICADO" in acta and
-            "C04 BLOQUEADO" in acta and
-            "C03-02" in acta and "NO INICIADA" in acta,
-            "Microphase acta claims premature chapter certification")
-    require(OWNER_APPROVAL in acta and "9 de noviembre de 2026" in acta and
-            "no constituye aceptación anticipada" in acta,
-            "Owner did not explicitly approve only C03-01")
-    require(TECHNICAL_SHA in acta and WORD_SHA in acta and
-            "PR #49" in acta and "7/7" in acta and
-            "event=push" in acta and "status=completed" in acta and
-            "conclusion=success" in acta,
-            "Missing exact technical postmerge provenance")
-    require(all(run in acta for run in RUNS),
-            "Missing one of seven verified technical SHA workflow URLs")
-    for marker in ("Auditoría A", "Auditoría B", "Auditoría C",
-                   "16 identificadores", "10/10 mutaciones",
-                   "83", "MySQL8.4", "Domain", "Application",
-                   "BOLA/IDOR/MFA", "NO APLICA A ESTA MICROFASE",
-                   "sin patrones de credenciales", "No se conocen P0/P1",
-                   "revert", "NO**"):
-        # "NO**" is optional and does not mark actual runtime evidence.
-        if marker == "NO**":
-            continue
-        require(marker in acta, "Missing proof/risk/rollback in acta: " + marker)
+            "Only C01 and C02 may be certified chapters")
+    require(c04 == "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE"
+            and "C03 NO CERTIFICADO" in c03 and "C04 BLOQUEADO" in c03,
+            "C03 chapter or C04 illegally advanced")
 
+    # Prior C03-01 provenance is checked directly, not overwritten to 2/10.
+    require("## 5. Decisión de microfase y gate final" in first and
+            "C03-01 CERRADA TÉCNICAMENTE (1/10)" in first and
+            OWNER_APPROVAL in first and "9 de noviembre de 2026" in first and
+            "formalización condicionada al SUCCESS" in first and
+            TECHNICAL_SHA in first and WORD_SHA in first and
+            all(run in first for run in RUNS) and "7/7" in first and
+            "Auditoría A" in first and "Auditoría B" in first and
+            "Auditoría C" in first and "10/10 mutaciones" in first and
+            "83" in first and "MySQL8.4" in first and
+            "BOLA/IDOR/MFA" in first and
+            "NO APLICA A ESTA MICROFASE" in first and
+            "C03 NO CERTIFICADO" in first and "C04 BLOQUEADO" in first,
+            "Historic C03-01 authorization/proofs/limits altered")
+
+    second_status = ("**C03-01 CERTIFICADA (1/10) Y "
+                     "C03-02 CERRADA TÉCNICAMENTE/APROBADA PARA CERTIFICACIÓN (2/10)**")
+    require(second_status in c03 and
+            "C03-03 NO INICIADA" in c03,
+            "Second phase not limited to 2/10 or C03-03 started")
+    require("C03-02 CERRADA TÉCNICAMENTE" in prep and
+            "2/10" in prep and "C03-03" in prep and "NO INICIADA" in prep and
+            "C03 NO CERTIFICADO" in prep and "C04 BLOQUEADO" in prep,
+            "C03 preparation not synchronized at 2/10")
+    require("C03-01 **CERTIFICADA**" in master and
+            "C03-02 **CERRADA TÉCNICAMENTE" in master and
+            "2/10" in master and WORD_SHA in master and
+            "C03 NO CERTIFICADO" in master and "C04 BLOQUEADO" in master,
+            "Canonical master reference was silently changed")
+    for label, document in (("spec", spec), ("future", future),
+                            ("global", global_plan), ("decisions", decisions),
+                            ("agents", agents)):
+        require("C03-02" in document and "2/10" in document and
+                "C03 NO CERTIFICADO" in document and "C04 BLOQUEADO" in document,
+                "Missing strict 2/10 status in " + label)
+
+    require("C03-02 CERRADA TÉCNICAMENTE" in second and
+            "FORMALIZACIÓN EN CURSO" in second and
+            "9 de noviembre de 2026" in second and
+            "adelante con ello por favor." in second and
+            "no es una aprobación anterior" in second and
+            "adc975c7bcf4b6a772cc160a5b377d26af2b5fa6" in second and
+            WORD_SHA in second and
+            all(run in second for run in ("42701725556", "42701724980", "42701725339"))
+            and "3/3 workflows" in second and "35/35" in second and
+            "51/51" in second and "19/19" in second and
+            "5/5 mutaciones adversariales" in second and
+            "BOLA/IDOR/MFA" in second and "NO se certifican" in second and
+            "C03 NO CERTIFICADO" in second and
+            "C03-03 NO INICIADA" in second and "C04 BLOQUEADO" in second,
+            "C03-02 closure lacks explicit limited approval and verified CI evidence")
 
 def main():
     # The canonical document and physical source inventory are read, not
@@ -114,15 +120,16 @@ def main():
     validate_content(files)
 
     adversarial = [
-        ("owner approval erased", "acta", OWNER_APPROVAL, "SIN APROBACION"),
-        ("technical commit forged", "acta", TECHNICAL_SHA, "0" * 40),
-        ("C03 phase count forged", "plan",
-         "**C03-01 CERRADA TÉCNICAMENTE (1/10)**",
-         "**C03-02 CERRADA TÉCNICAMENTE (2/10)**"),
-        ("C04 activated without C03 certification", "plan",
+        ("C03-02 owner approval removed", "second",
+         "adelante con ello por favor.", "APROBACION AUSENTE"),
+        ("C03-02 merge SHA falsified", "second",
+         "adc975c7bcf4b6a772cc160a5b377d26af2b5fa6", "0" * 40),
+        ("C03 microphase count advanced", "plan",
+         "CERTIFICACIÓN (2/10)**", "CERTIFICACIÓN (3/10)**"),
+        ("C04 started before C03", "plan",
          "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
          "C04 | Multitenancy, dominios y aprovisionamiento | INICIADO"),
-        ("privacy limitation removed", "acta",
+        ("C03 certification claimed", "second",
          "C03 NO CERTIFICADO", "C03 CERTIFICADO"),
     ]
     for label, target, before, after in adversarial:
@@ -138,7 +145,7 @@ def main():
     print("C03-01 MICROPHASE CERTIFICATION GATE PASS: exact Word, "
           "physical project graph, real CI proof markers, owner's specific "
           "9 Nov 2026 approval, 7/7 technical postmerge references, "
-          "1/10 closed, C03 uncertified, C04 blocked, "
+          "C03-01 historical 1/10 + C03-02 2/10 accepted pending CI, C03 uncertified, C04 blocked, "
           "5 adversarial closure mutations rejected.")
     print("LIMIT: public/documentary C03-01 microphase only; "
           "not C03 chapter, tenancy/auth private, payments or production.")
