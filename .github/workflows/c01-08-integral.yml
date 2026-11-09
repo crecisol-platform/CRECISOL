@@ -1,0 +1,118 @@
+name: CRECISOL C01-08 integral chapter gate
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'qa/c01_08_*'
+      - 'frontend/src/app/pages/platform-home.component.ts'
+      - 'frontend/src/app/pages/platform-home.component.html'
+      - 'frontend/src/index.html'
+      - 'frontend/tests/c01-06.official-integration.spec.ts'
+      - 'frontend/tests/c01-08.brand-revision.spec.ts'
+      - 'docs/c01/C01_08_*'
+      - 'docs/C01_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - '.github/workflows/c01-08-integral.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'qa/c01_08_*'
+      - 'frontend/src/app/pages/platform-home.component.ts'
+      - 'frontend/src/app/pages/platform-home.component.html'
+      - 'frontend/src/index.html'
+      - 'frontend/tests/c01-06.official-integration.spec.ts'
+      - 'frontend/tests/c01-08.brand-revision.spec.ts'
+      - 'docs/c01/C01_08_*'
+      - 'docs/C01_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - '.github/workflows/c01-08-integral.yml'
+permissions:
+  contents: read
+jobs:
+  integral:
+    name: C01-08 Word + Angular22 + ASP.NET10 + MySQL8.4 + A/B/C
+    if: startsWith(github.head_ref, 'feature/c01-08-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Read-only checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install .NET10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install Node24.15.0
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Validate Word, original matrix, integrity and C01-01
+        run: |
+          python3 qa/c01_verify_source.py
+          python3 qa/c01_01_three_audits.py A
+          mkdir -p .c01-08-ci-proof
+          printf 'PASS: word\n' > .c01-08-ci-proof/word
+      - name: Check audit Python and real-stack shell syntax
+        run: |
+          python3 -m py_compile qa/c01_08_audits.py qa/c01_07_audits.py qa/c01_06_final_audits.py
+          bash -n qa/c01_07_real_stack.sh
+      - name: Restore pinned Angular dependencies without scripts
+        run: npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
+      - name: Audit production dependency vulnerabilities
+        run: cd frontend && npm audit --omit=dev --audit-level=high
+      - name: Install real Chromium
+        run: cd frontend && npx playwright install --with-deps chromium
+      - name: Typecheck and build Angular with exact approved assets
+        run: |
+          cd frontend
+          npm run check:types
+          npm run build
+          npm run test:assets
+          mkdir -p ../.c01-08-ci-proof
+          printf 'PASS: bundle\n' > ../.c01-08-ci-proof/bundle
+      - name: Chromium C01-05/C01-06 regression and C01-08 revision updates
+        run: |
+          cd frontend
+          npx playwright test tests/c01-05.public-brand.spec.ts tests/c01-06.official-integration.spec.ts tests/c01-08.brand-revision.spec.ts --reporter=line
+          printf 'PASS: browser-revision\n' > ../.c01-08-ci-proof/browser-revision
+      - name: Compile ASP.NET Core10 real API
+        run: |
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo
+          printf 'PASS: api\n' > .c01-08-ci-proof/api
+      - name: Re-run 51 positive/negative Domain contract assertions
+        run: |
+          dotnet run -c Release --project backend/tests/Crecisol.Branding.ContractsTests/Crecisol.Branding.ContractsTests.csproj
+          printf 'PASS: domain\n' > .c01-08-ci-proof/domain
+      - name: Re-run 19 Application positive/negative assertions
+        run: |
+          dotnet run -c Release --project backend/tests/Crecisol.Branding.ApplicationTests/Crecisol.Branding.ApplicationTests.csproj
+          printf 'PASS: application\n' > .c01-08-ci-proof/application
+      - name: Live MySQL/API/Angular/Chromium with 37 HTTP positive/negative checks
+        run: |
+          bash qa/c01_07_real_stack.sh
+          printf 'PASS: live-stack\n' > .c01-08-ci-proof/live-stack
+      - name: Recheck C01-06 and C01-07 final audits
+        run: |
+          python3 qa/c01_06_final_audits.py --audit A
+          python3 qa/c01_06_final_audits.py --audit B
+          python3 qa/c01_06_final_audits.py --audit C
+          python3 qa/c01_07_audits.py A
+          python3 qa/c01_07_audits.py B
+          python3 qa/c01_07_audits.py C
+          printf 'PASS: legacy-audits\n' > .c01-08-ci-proof/legacy-audits
+      - name: Integral Audit A — chapter source and evidence
+        run: python3 qa/c01_08_audits.py A
+      - name: Integral Audit B — tenant isolation, assets, security
+        run: python3 qa/c01_08_audits.py B
+      - name: Integral Audit C — architecture, performance, UX and responsive
+        run: python3 qa/c01_08_audits.py C
+      - name: Preserve diagnostics only if a check fails
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: C01-08-integral-failed-diagnostics
+          path: frontend/test-results/
+          if-no-files-found: ignore
+          retention-days: 3
