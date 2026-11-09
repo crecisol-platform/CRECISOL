@@ -1,0 +1,174 @@
+{
+  "artifact": "CRECISOL-C02-03-PUBLIC-SITEMAP",
+  "schema_version": 1,
+  "state": "public-information-only-no-tenant-auth",
+  "source": {
+    "master": "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx",
+    "sha256": "e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e",
+    "chapter": "02",
+    "parent": "docs/c02/C02_02_MAPA_NECESIDADES.json",
+    "phase": "C02-03"
+  },
+  "routes": [
+    {
+      "id": "S01",
+      "path": "/",
+      "page": "platform-home",
+      "experience": "E01",
+      "source_refs": [
+        "P01",
+        "T01-R01"
+      ],
+      "need_refs": [
+        "N01",
+        "N02"
+      ],
+      "visibility": "platform-public",
+      "mode": "published-identity",
+      "operational": true,
+      "auth": "none",
+      "backend_data": "GET /api/v1/public/branding/platform"
+    },
+    {
+      "id": "S02",
+      "path": "/experiencias",
+      "page": "experiencias",
+      "experience": "E01",
+      "source_refs": [
+        "P01",
+        "P11",
+        "T01-R01",
+        "T01-R06"
+      ],
+      "need_refs": [
+        "N01",
+        "N03"
+      ],
+      "visibility": "platform-public",
+      "mode": "information-only",
+      "operational": false,
+      "auth": "none",
+      "backend_data": "GET /api/v1/public/branding/platform"
+    },
+    {
+      "id": "S03",
+      "path": "/demostraciones",
+      "page": "demostraciones",
+      "experience": "E01",
+      "source_refs": [
+        "P01",
+        "T01-R06"
+      ],
+      "need_refs": [
+        "N03"
+      ],
+      "visibility": "platform-public",
+      "mode": "information-only",
+      "operational": false,
+      "auth": "none",
+      "backend_data": "GET /api/v1/public/branding/platform"
+    },
+    {
+      "id": "S04",
+      "path": "/alta-empresas",
+      "page": "alta-empresas",
+      "experience": "E02",
+      "source_refs": [
+        "P01",
+        "P06",
+        "T01-R01"
+      ],
+      "need_refs": [
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "visibility": "platform-public",
+      "mode": "information-only",
+      "operational": false,
+      "auth": "none",
+      "backend_data": "GET /api/v1/public/branding/platform"
+    }
+  ],
+  "deny_by_default": "Any other Angular route resolves only to NotFoundComponent. No tenant or private path is registered.",
+  "deferred": [
+    {
+      "id": "D01",
+      "scope": "tenant-public",
+      "experience": "E06",
+      "condition": "verified-domain-and-published-tenant-content",
+      "chapters": [
+        "C04",
+        "C20"
+      ]
+    },
+    {
+      "id": "D02",
+      "scope": "private-superadmin",
+      "experience": "E03",
+      "condition": "backend-identity-MFA-permission-and-audit",
+      "chapters": [
+        "C05",
+        "C06",
+        "C08"
+      ]
+    },
+    {
+      "id": "D03",
+      "scope": "private-business",
+      "experience": "E04",
+      "condition": "verified-tenant-membership-branch-action-resource",
+      "chapters": [
+        "C04",
+        "C05",
+        "C06"
+      ]
+    },
+    {
+      "id": "D04",
+      "scope": "private-employee",
+      "experience": "E05",
+      "condition": "verified-tenant-assignment-revocation",
+      "chapters": [
+        "C05",
+        "C06"
+      ]
+    },
+    {
+      "id": "D05",
+      "scope": "private-consumer",
+      "experience": "E06",
+      "condition": "verified-tenant-and-own-resource-publication",
+      "chapters": [
+        "C05",
+        "C06",
+        "C17"
+      ]
+    },
+    {
+      "id": "D06",
+      "scope": "real-onboarding-and-charges",
+      "experience": "E02",
+      "condition": "verified-onboarding-contract-consent-payment-when-authorized",
+      "chapters": [
+        "C05",
+        "C08",
+        "C23",
+        "C31"
+      ]
+    }
+  ],
+  "controls": {
+    "public_identity_endpoint": "/api/v1/public/branding/platform",
+    "no_tenant_selector": true,
+    "no_private_forms": true,
+    "no_real_payment": true,
+    "no_demo_customer_data": true,
+    "unknown_route": "not-found",
+    "noindex": true,
+    "tenant_host_is_not_auth": true,
+    "future_private_authorization": "backend-deny-by-default",
+    "scope": "platform-only-no-tenant-public-pages",
+    "accessibility": "WCAG 2.2 AA; keyboard, skip link, responsive 320px, reduced motion"
+  }
+}
