@@ -1,0 +1,43 @@
+@if (valid()) {
+  <section class="table-card" aria-label="Patrón de tabla de lectura">
+    <p class="table-boundary" role="note">Datos de ejemplo únicamente. Esta vista no concede permisos ni edita registros.</p>
+    <div class="table-tools">
+      <label for="pattern-filter">Filtrar filas de ejemplo</label>
+      <input id="pattern-filter" name="filtro-sintetico" type="search"
+        autocomplete="off" maxlength="80" [value]="filter()" (input)="setFilter($event)" />
+    </div>
+    <div class="table-scroll" role="region" tabindex="0" [attr.aria-label]="caption() + ', desplazamiento horizontal'">
+      <table>
+        <caption>{{ caption() }}</caption>
+        <thead><tr>
+          @for (column of columns(); track column.key) {
+            <th scope="col" [attr.aria-sort]="ariaSort(column.key)">
+              <button type="button" (click)="sort(column.key)"
+                [attr.aria-label]="'Ordenar por ' + column.label">
+                {{ column.label }} <span aria-hidden="true">↕</span>
+              </button>
+            </th>
+          }
+        </tr></thead>
+        <tbody>
+          @for (row of displayed(); track $index) {
+            <tr>
+              @for (column of columns(); track column.key) {
+                <td>{{ row[column.key] ?? '' }}</td>
+              }
+            </tr>
+          } @empty {
+            <tr><td [attr.colspan]="columns().length">
+              <p class="table-empty" role="status">Ninguna fila coincide en este ejemplo local. No es una respuesta de autorización del servidor.</p>
+            </td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="table-count" role="status" aria-live="polite">
+      Mostrando {{ displayed().length }} filas de ejemplo.
+    </p>
+  </section>
+} @else {
+  <p role="alert">Patrón de tabla no disponible: configuración inválida.</p>
+}
