@@ -1,6 +1,6 @@
 # CRECISOL — C03-03 · Puertos y casos de uso Application
 
-**ESTADO: IMPLEMENTACIÓN TÉCNICA EN RAMA `feature/c03-03-application-ports`; NO CERTIFICADA.** C03-01 y C03-02 permanecen **CERTIFICADAS (2/10)**. **C03 NO CERTIFICADO, C04 BLOQUEADO**. C03-04 no iniciada. La autorización «Continúa por favor» habilita iniciar solo C03-03, no su certificación, ni C03-04, ni despliegues.
+**ESTADO ACTUAL: C03-03 CERRADA TÉCNICAMENTE, ACEPTADA EXPRESAMENTE PARA CERTIFICACIÓN (3/10); FORMALIZACIÓN DOCUMENTAL CONDICIONADA A CI PREMERGE/POSTMERGE, todavía NO CERTIFICADA hasta cierre final.** C03-01 y C03-02 están **CERTIFICADAS (2/10)** como puerta anterior. **C03 NO CERTIFICADO, C04 BLOQUEADO, C03-04 NO INICIADA.** El propietario autorizó el cierre específico tras el PR técnico #53 (9 noviembre 2026); [acta](C03_03_ACTA_MICROFASE.md). La autorización inicial «Continúa por favor» del PR técnico no era autorización anticipada de certificación.
 
 ## 1. Puerta de entrada y fuente autoritativa
 
@@ -34,11 +34,11 @@ Se agrega **un único caso de uso interno read-only**, sin adaptador de persiste
 | B — seguridad/límites | .csproj Application solo Domain, fuentes sin HTTP/ORM/SQL/locator, grafo físico acíclico y API sin registro del nuevo caso de uso | Rechazar dependencias de MySQL/Infrastructure y exposición privada |
 | C — arquitectura/regresión | Compilación .NET10 Release API + tests nuevos; ejecución real C03-03, C01 Application, C03-02 Domain y C01 Domain | Entradas tenant, revisión inválida, cancelación, filtración de metadatos, fallos de puerto |
 
-La CI PREMERGE y POSTMERGE deberán inspeccionarse sobre el **SHA exacto** antes de declarar cierre técnico. Los workflows de capítulos anteriores que resulten `skipped` no cuentan como PASS. Las regresiones públicas Angular22/MySQL8.4 existentes no acreditan autenticación privada ni funcionamiento administrativo.
+El [PR técnico #53](https://github.com/solqaryn-platform/CRECISOL/pull/53), HEAD `4944348018bb3a1434e09eb7fdc802e269290b1b`, fue fusionado exclusivamente a `dev` SHA `c3bb9e4e314297c502b644ba1306a16364e7af2e` con **3/3 CI POSTMERGE SUCCESS**, A/B/C, 7 mutaciones negativas y **37/37 C03-03 + 19/19 C01 Application + 35/35 C03 Domain + 51/51 C01 Domain**. Los workflows históricos `skipped` en PREMERGE por filtro de rama no se contaron como PASS. La [autorización posterior y el acta](C03_03_ACTA_MICROFASE.md) permiten formalizar el cierre, sujeto a CI PREMERGE/POSTMERGE propia del acta. Las regresiones públicas Angular22/MySQL8.4 no acreditan auth privada ni funcionamiento administrativo.
 
 ## 5. Impacto, riesgos y Rollback
 
 - **Riesgo P0** si este preflight se interpreta como autorización o publicación: se prohíbe expresamente por código, tests, falta de adaptador/DI/API y documentación. La evaluación es solo un **contrato interno de lectura** y no protege writes reales.
 - **Riesgo de acoplamiento o regresión C01:** nuevas pruebas exigen que Application siga sin infraestructura y mantienen C01/C03-02; sin alterar la lectura pública.
 - **Sin datos ni migraciones**; revert del PR técnico mediante un PR a `dev` si fuese necesario. Sin cambios a `main`, SOLQARYN ni producción.
-- **Siguiente estado permitido:** tras pruebas y auditorías exitosas podrá solicitarse acta y aprobación específica de C03-03; no certificar automáticamente por una CI verde. C03-04 permanece pendiente y **C04 BLOQUEADO**.
+- **Siguiente estado permitido:** existe aceptación específica del propietario posterior al PR #53; tras la CI de acta PREMERGE/POSTMERGE sobre SHA exacto se podrá registrar C03-03 CERTIFICADA (3/10). No se certifica por CI técnica aislada. **C03 NO CERTIFICADO; C04 BLOQUEADO; C03-04 NO INICIADA.**

@@ -6,7 +6,20 @@ on:
       - 'backend/src/Crecisol.Application/**'
       - 'backend/tests/Crecisol.Application.ContractsTests/**'
       - 'docs/c03/C03_03_ESPECIFICACION.md'
+      - 'docs/c03/C03_03_ACTA_MICROFASE.md'
+      - 'docs/C03_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'docs/PLAN_MICROFASES_37_CAPITULOS_PROPUESTO.md'
+      - 'docs/planificacion-futura/C03_MICROFASES_PROPUESTAS.md'
+      - 'docs/MASTER_REFERENCE.md'
+      - 'docs/DECISIONES_ABIERTAS.md'
+      - 'AGENTS.md'
       - 'qa/c03_03_application_audits.py'
+      - 'qa/c03_03_closure_gate.py'
+      - 'qa/c03_02_closure_gate.py'
+      - 'qa/c03_01_closure_gate.py'
+      - 'qa/c03_01_source.py'
+      - 'qa/c02_certification_gate.py'
       - '.github/workflows/c03-03-application.yml'
   push:
     branches: [dev]
@@ -14,7 +27,20 @@ on:
       - 'backend/src/Crecisol.Application/**'
       - 'backend/tests/Crecisol.Application.ContractsTests/**'
       - 'docs/c03/C03_03_ESPECIFICACION.md'
+      - 'docs/c03/C03_03_ACTA_MICROFASE.md'
+      - 'docs/C03_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'docs/PLAN_MICROFASES_37_CAPITULOS_PROPUESTO.md'
+      - 'docs/planificacion-futura/C03_MICROFASES_PROPUESTAS.md'
+      - 'docs/MASTER_REFERENCE.md'
+      - 'docs/DECISIONES_ABIERTAS.md'
+      - 'AGENTS.md'
       - 'qa/c03_03_application_audits.py'
+      - 'qa/c03_03_closure_gate.py'
+      - 'qa/c03_02_closure_gate.py'
+      - 'qa/c03_01_closure_gate.py'
+      - 'qa/c03_01_source.py'
+      - 'qa/c02_certification_gate.py'
       - '.github/workflows/c03-03-application.yml'
 permissions:
   contents: read
@@ -30,7 +56,7 @@ jobs:
           persist-credentials: false
       - name: Audit A canonical Word and T01-R03 contract scope
         run: |
-          python3 -m py_compile qa/c03_03_application_audits.py
+          python3 -m py_compile qa/c03_03_application_audits.py qa/c03_03_closure_gate.py qa/c03_02_closure_gate.py qa/c03_01_closure_gate.py qa/c03_01_source.py qa/c02_certification_gate.py
           python3 qa/c03_03_application_audits.py A
       - name: Audit B dependency direction and seven adversarial mutations
         run: python3 qa/c03_03_application_audits.py B
@@ -62,3 +88,5 @@ jobs:
           printf 'PASS: c01-domain\n' > .c03-03-ci-proof/c01-domain
       - name: Audit C real compilation proof, contracts and project graph
         run: python3 qa/c03_03_application_audits.py C
+      - name: Gate C03-03 certificate with owner approval, historical gates and 12 mutations
+        run: python3 qa/c03_03_closure_gate.py
