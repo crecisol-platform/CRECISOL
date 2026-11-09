@@ -1,9 +1,11 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PublicBrandService } from '../branding/public-brand.service';
 import type { BrandLoadState } from '../branding/public-brand';
+import { InteractionStateComponent } from '../ui/interaction-state.component';
+import { publicBrandFallback } from '../ui/interaction-state.model';
 import {
   PUBLIC_INFO_NAV, PUBLIC_INFO_PAGES,
   type PublicInfoId, type PublicInfoPage
@@ -12,7 +14,7 @@ import {
 @Component({
   selector: 'cs-public-information',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, InteractionStateComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './public-information.component.html',
   styleUrl: './public-information.component.css'
@@ -23,9 +25,17 @@ export class PublicInformationComponent {
   private readonly meta = inject(Meta);
   private readonly title = inject(Title);
   private readonly document = inject(DOCUMENT);
+  private readonly destroy = inject(DestroyRef);
+  // Connectivity is a presentation hint only; it cannot authorize a response.
+  private readonly online = signal(this.document.defaultView?.navigator.onLine ?? true);
+  private readonly updateOnline = () => {
+    this.online.set(this.document.defaultView?.navigator.onLine ?? true);
+  };
 
   readonly state = this.brandSource.state;
   readonly nav = PUBLIC_INFO_NAV;
+  readonly loadingView = publicBrandFallback('loading', true);
+  readonly failedView = computed(() => publicBrandFallback('unavailable', this.online()));
   readonly page: PublicInfoPage;
 
   constructor() {
@@ -36,6 +46,13 @@ export class PublicInformationComponent {
       throw new Error('Invalid platform public information route.');
     }
     this.page = PUBLIC_INFO_PAGES[pageId as PublicInfoId];
+    const browser = this.document.defaultView;
+    browser?.addEventListener('online', this.updateOnline);
+    browser?.addEventListener('offline', this.updateOnline);
+    this.destroy.onDestroy(() => {
+      browser?.removeEventListener('online', this.updateOnline);
+      browser?.removeEventListener('offline', this.updateOnline);
+    });
     effect(() => this.applyPublicHead(this.state()));
     void this.brandSource.load();
   }
