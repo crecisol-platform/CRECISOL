@@ -27,7 +27,7 @@ Solo iniciar una fila tras cerrar la anterior; crear su especificación individu
 **Certificación C19:** 11/11 no basta. Requiere auditoría integral del capítulo con tres perspectivas, regresión transversal, cero P0/P1 sin resolver, acta y aceptación expresa antes de C20. Todo permanece **PENDIENTE** hasta habilitación secuencial.\n
 ## Ampliación comercial COM-001..COM-014 — planificación condicionada (10-11-2026)
 
-**Estado: propuesta documental / no implementada / no certificada.** La ampliación deriva del expediente `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de la edición comercial preparada del único Documento Maestro; **esa edición DOCX/PDF todavía debe incorporarse y verificarse con su SHA en GitHub antes de aprobar el plan como normativo**. Se conserva el número de microfases, la puerta de entrada secuencial y toda evidencia histórica. No se habilita código de C19.
+**Estado: propuesta documental / no implementada / no certificada.** La ampliación deriva del expediente `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de la edición comercial preparada del único Documento Maestro; **esa edición DOCX/PDF ya fue incorporada a la rama del PR #73 con SHA y blob verificados; su aprobación normativa sigue pendiente de CI y fusión a dev**. Se conserva el número de microfases, la puerta de entrada secuencial y toda evidencia histórica. No se habilita código de C19.
 
 - **Requisitos relacionados:** COM-011, COM-014.
 - **Microfases técnicas a revisar:** C19-02, C19-04, C19-05, C19-09, C19-10 y C19-11 (no equivalen a puertas normativas `MAE-C19-xx`).
