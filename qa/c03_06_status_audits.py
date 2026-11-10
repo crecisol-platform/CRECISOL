@@ -51,16 +51,21 @@ def validate(docs):
     plan, evidence = docs["plan"], docs["evidence"]
     row = next((line for line in plan.splitlines() if line.startswith("C03 | ")), "")
     require(phase.sixth_certified(row) and phase.fifth_plan_safe(plan),
-            "Only exactly documented 6/10 stage may be active")
+            "Only verified stage-six or its certified successor may be active")
+    seventh = phase.seventh_certified(row)
     require("C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE" in plan,
             "C04 was started before chapter C03 certification")
     for name in ("master", "prep", "future", "global", "decisions",
                  "agents", "readme", "c01", "c02", "protocol", "spec"):
         doc = docs[name]
+        next_marker = ("C03-07 NO INICIADA" if name == "spec" or not seventh
+                       else "C03-08 NO INICIADA")
         for term in ("C03-05 CERTIFICADA (5/10)", "C03-06 CERTIFICADA (6/10)",
-                     "C03-07 NO INICIADA", "C03 NO CERTIFICADO",
-                     "C04 BLOQUEADO"):
-            require(term in doc, "Stage-six current view diverged in " + name + ": " + term)
+                     next_marker, "C03 NO CERTIFICADO", "C04 BLOQUEADO"):
+            require(term in doc, "Stage-six historical provenance drift: " + name + ": " + term)
+        if seventh and name != "spec":
+            require("C03-07 CERTIFICADA (7/10)" in doc,
+                    "Certified seventh stage omitted from current view: " + name)
     require("2/37 capítulos certificados (C01 y C02)" in docs["master"] and
             WORD_HASH in docs["master"],
             "Master reference/source authority lost")
@@ -86,10 +91,15 @@ def validate(docs):
 
 
 def negative_mutations(docs):
+    row = next((line for line in docs["plan"].splitlines() if line.startswith("C03 | ")), "")
+    seventh = phase.seventh_certified(row)
+    from_marker = phase.SEVENTH_STATUS if seventh else phase.SIXTH_STATUS
+    to_marker = "**C03-01 A C03-08 CERTIFICADAS (8/10)**" if seventh else phase.SEVENTH_STATUS
+    next_marker = "C03-08 NO INICIADA" if seventh else "C03-07 NO INICIADA"
+    illicit_next = "C03-08 INICIADA" if seventh else "C03-07 INICIADA"
     cases = (
-        ("seventh certificate", "plan", phase.SIXTH_STATUS,
-         "**C03-01 A C03-07 CERTIFICADAS (7/10)**"),
-        ("premature seventh", "plan", "C03-07 NO INICIADA", "C03-07 INICIADA"),
+        ("unearned next certificate", "plan", from_marker, to_marker),
+        ("premature next", "plan", next_marker, illicit_next),
         ("unearned chapter", "plan", "C03 NO CERTIFICADO", "C03 CERTIFICADO"),
         ("unearned C04", "plan", "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
          "C04 | Multitenancy, dominios y aprovisionamiento | INICIADO"),
@@ -102,12 +112,13 @@ def negative_mutations(docs):
         ("unsafe private claim", "evidence", "No se certifican BOLA/IDOR/MFA",
          "Sí se certifican BOLA/IDOR/MFA"),
         ("unlocked C04 in proof", "evidence", "C04 BLOQUEADO", "C04 HABILITADO"),
-        ("changed current master next", "master", "C03-07 NO INICIADA", "C03-07 INICIADA"),
+        ("changed current master next", "master", next_marker, illicit_next),
         ("false preparation status", "prep", "C03-06 CERTIFICADA (6/10)",
          "C03-06 NO CERTIFICADA (6/10)"),
-        ("unlocked AGENTS next", "agents", "C03-07 NO INICIADA", "C03-07 INICIADA"),
-        ("README advanced illegally", "readme", "C03-06 CERTIFICADA (6/10)",
-         "C03-07 CERTIFICADA (7/10)"),
+        ("unlocked AGENTS next", "agents", next_marker, illicit_next),
+        ("README advanced illegally", "readme",
+         "C03-07 CERTIFICADA (7/10)" if seventh else "C03-06 CERTIFICADA (6/10)",
+         "C03-08 CERTIFICADA (8/10)" if seventh else "C03-07 CERTIFICADA (7/10)"),
     )
     for label, key, old, forged in cases:
         require(old in docs[key], "Invalid mutation fixture: " + label)
