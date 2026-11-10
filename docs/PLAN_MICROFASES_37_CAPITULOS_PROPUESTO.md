@@ -1,11 +1,11 @@
 # Mapa preliminar de microfases CRECISOL — 37 capítulos
 
-**ESTADO VIGENTE: 2/37 capítulos certificados (C01 y C02); C03-01 y C03-02 CERTIFICADAS (2/10), C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10, condicionada a CI PREMERGE/POSTMERGE del acta); C03 NO CERTIFICADO; C04 BLOQUEADO; C03-04 NO INICIADA.** [PR técnico C03-03 #53](https://github.com/solqaryn-platform/CRECISOL/pull/53) fusionado solo en `dev` SHA `c3bb9e4e314297c502b644ba1306a16364e7af2e`, 3/3 CI técnicas POSTMERGE SUCCESS, [acta de formalización C03-03](c03/C03_03_ACTA_MICROFASE.md) con aprobación expresa posterior. C03-04 y C04–C37 pendientes; el [Word canónico](MASTER_REFERENCE.md) sigue siendo fuente única.
+**ESTADO VIGENTE: 2/37 capítulos certificados (C01 y C02); C03-01, C03-02 y C03-03 CERTIFICADAS (3/10), C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10, condicionada a CI PREMERGE/POSTMERGE del acta); C03-05 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO.** [C03-03 certificación PR #54](https://github.com/solqaryn-platform/CRECISOL/pull/54) SHA `1481dfbf75b3b47c8d5bc9d7bea56406e470f215` **9/9 POSTMERGE SUCCESS**; [C03-04 técnico PR #55](https://github.com/solqaryn-platform/CRECISOL/pull/55) SHA `d529f85f0bc8710940d195fceaea06bf6c5e674d` **3/3 POSTMERGE SUCCESS**, [acta C03-04](c03/C03_04_ACTA_MICROFASE.md) aceptada para certificación posterior; C03-05..10 y C04–C37 pendientes, Word canónico intacto.
 
 ## Alcance del reparto
 
 - **37 capítulos** conservados en su orden canónico.
-- **365 microfases** fue la estimación original: 8 C01 y 357 propuestas C02–C37. **C01 8/8 y C02 9/9 CERTIFICADOS**; C03-01 y C03-02 CERTIFICADAS y C03-03 **CERRADA TÉCNICAMENTE/APROBADA PARA CERTIFICACIÓN (3/10), pendiente de CI del acta**; C03-04..10 y C04–C37 no iniciadas. Toda revisión se hará por PR y no altera el Word.
+- **365 microfases** fue la estimación original: 8 C01 y 357 propuestas C02–C37. **C01 8/8 y C02 9/9 CERTIFICADOS**; C03-01/C03-02/C03-03 **CERTIFICADAS (3/10)** y C03-04 **CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**, pendiente de CI documental del acta; C03-05..10 y C04–C37 no iniciadas. Ninguna aceptación parcial certifica C03 completo ni altera el Word.
 - De C02 a C37 se han creado **36 archivos de plan por capítulo**, cada uno con microentregables, pruebas positivas, negativas, dependencias y puerta de certificación.
 - **No se crean 357 actas ni especificaciones individuales vacías.** Cada archivo individual de microfase se abrirá al habilitar su trabajo real, para registrar trazabilidad, código, evidencia y acta sin aparentar ejecución anterior.
 - Un recuento futuro puede variar si el Word completo exige subdividir o consolidar, mediante PR trazable, sin cambiar el maestro.
@@ -16,7 +16,7 @@
 |---|---|---:|---|---|
 | C01 | CRECISOL: identidad, visión, alcance y principios | 8 | **8/8 cerradas y capítulo certificado; PR #29** | [Plan operativo C01](C01_PREPARACION.md) |
 | C02 | Personas, experiencias y arquitectura de producto | 9 | **9/9 cerradas, C02 CERTIFICADO en alcance público/sintético con aprobación expresa y 12/12 CI** | [Propuesta C02](planificacion-futura/C02_MICROFASES_PROPUESTAS.md) |
-| C03 | Arquitectura técnica limpia y dependencias | 10 | **C03-01 y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10), CI final del acta pendiente; C03 NO CERTIFICADO; C04 BLOQUEADO; C03-04 NO INICIADA** | [Plan C03](C03_PREPARACION.md) |
+| C03 | Arquitectura técnica limpia y dependencias | 10 | **C03-01, C03-02 y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10), CI final del acta pendiente; C03-05 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO** | [Plan C03](C03_PREPARACION.md) |
 | C04 | Multitenancy, dominios y aprovisionamiento | 12 | PENDIENTE; propuesta sin aprobar | [Propuesta C04](planificacion-futura/C04_MICROFASES_PROPUESTAS.md) |
 | C05 | Identidad, autenticación y recuperación segura | 11 | PENDIENTE; propuesta sin aprobar | [Propuesta C05](planificacion-futura/C05_MICROFASES_PROPUESTAS.md) |
 | C06 | Autorización fina, protección de datos y privacidad | 11 | PENDIENTE; propuesta sin aprobar | [Propuesta C06](planificacion-futura/C06_MICROFASES_PROPUESTAS.md) |

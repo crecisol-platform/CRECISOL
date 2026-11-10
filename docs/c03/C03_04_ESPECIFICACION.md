@@ -1,6 +1,6 @@
 # CRECISOL — C03-04 · Adaptador Infrastructure reemplazable (solo lectura)
 
-**ESTADO: EJECUCIÓN TÉCNICA EN RAMA `feature/c03-04-infrastructure-readonly-revision`; NO CERTIFICADA.** C03-01/C03-02/C03-03 **CERTIFICADAS (3/10)**; C03 **NO CERTIFICADO**, C04 **BLOQUEADO**. C03-05 no iniciada. La instrucción «Adelante con ello por favor» posterior al cierre C03-03 autoriza implementar **solo C03-04**, no certificar automáticamente todo C03 ni abrir C03-05.
+**ESTADO C03-04: CERRADA TÉCNICAMENTE Y ACEPTADA EXPRESAMENTE PARA CERTIFICACIÓN (4/10); FORMALIZACIÓN EN CURSO, TODAVÍA NO CERTIFICADA hasta CI PREMERGE/POSTMERGE del acta.** C03-01/C03-02/C03-03 **CERTIFICADAS (3/10)**; C03 **NO CERTIFICADO**, C04 **BLOQUEADO**, C03-05 NO INICIADA. Tras PR #55 técnicamente integrado y probado, el propietario autorizó **solo la certificación de C03-04** mediante «Adelante por favor con ello» del 9-11-2026; [acta específica](C03_04_ACTA_MICROFASE.md). La autorización anterior «Adelante con ello por favor» habilitaba iniciar el código, no su certificación.
 
 ## 1. Evidencia previa, identidad y fuente
 - Repositorio `solqaryn-platform/CRECISOL` exclusivo, rama de trabajo `feature/c03-04-infrastructure-readonly-revision`, creada desde `dev` SHA exacto **`1481dfbf75b3b47c8d5bc9d7bea56406e470f215`**.
@@ -29,3 +29,8 @@
 | C — arquitectura | .NET10 Release, pruebas de puertos, MySQL8.4 real local, regresiones Domain/Application | Fallback a borrador/tenant, falta de permisos, DSN ausente, puntero cambiado, cancelación |
 
 **Cierre técnico condicionado** a CI PREMERGE/POSTMERGE real sobre SHA exacto, A/B/C y sin fallos P0/P1. La CI de código NO constituye certificación documental; después debe emitirse acta de C03-04 con aprobación específica posterior. **C03 permanece NO CERTIFICADO; C04 BLOQUEADO.**
+
+
+## 5. Evidencia ejecutada y formalización condicionada
+
+[PR técnico #55](https://github.com/solqaryn-platform/CRECISOL/pull/55) HEAD PREMERGE `0bed4e82fee2459ef971140ff0d2de8a0eeb296a`, fusionado por squash únicamente en `dev` SHA `d529f85f0bc8710940d195fceaea06bf6c5e674d`. **2/2 CI PREMERGE obligatorias SUCCESS** ([A/B/C #42722310989](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42722310989), [Foundation #42722310053](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42722310053)); las dos ejecuciones `skipped` no se contaron. **3/3 CI técnicas POSTMERGE SUCCESS** sobre SHA idéntico ([C03-04 #42722550261](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42722550261), [C03-01 integral #42722550413](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42722550413), [Foundation #42722550228](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42722550228)). Auditorías A/B/C, 12 contratos Infrastructure, 37+19+35+51 regresiones, 10/10 mutaciones adversariales, MySQL8.4 real en UNIX socket con SELECT-only y denegación de UPDATE/SELECT revocado, 83 Chromium y 37 HTTP. **[Acta C03-04](C03_04_ACTA_MICROFASE.md)** con autorización posterior. Formalización de la certificación propia condicionada a CI PREMERGE y POSTMERGE del acta; `C03-05 NO INICIADA`, `C03 NO CERTIFICADO`, `C04 BLOQUEADO`. Rollback por revert en `dev`, sin migraciones ni entorno productivo.
