@@ -88,6 +88,14 @@ if docker exec -e MYSQL_PWD="$READER_PASSWORD" "$CONTAINER" \
 fi
 echo "PASS MySQL read-only SELECT grant and denied UPDATE"
 
+# C03-08 opt-in profile: real disposable Unix socket, never production DSN.
+if [ "${CRECISOL_C03_08_LOCAL_PROFILE_SMOKE:-0}" = "1" ]; then
+  export CRECISOL_C03_08_PROFILE="ci"
+  export CRECISOL_C03_08_MAX_WORKER_BATCH="8"
+  export CRECISOL_C03_08_ALLOW_EXTERNAL_NETWORK="false"
+  export CRECISOL_C03_08_TEST_SOCKET="$SOCKET_DIR/mysqld.sock"
+fi
+
 export CRECISOL_C01_ALLOWED_HOSTS="127.0.0.1"
 export CRECISOL_C01_READONLY_DSN="Server=$SOCKET_DIR/mysqld.sock;Connection Protocol=Unix;User ID=brand_reader;Password=$READER_PASSWORD;Database=$DB;Pooling=True;"
 export ASPNETCORE_ENVIRONMENT=Production
