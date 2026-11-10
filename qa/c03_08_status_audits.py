@@ -14,6 +14,8 @@ import c03_05_status as status
 import c03_08_closure_gate as acta_gate
 import c03_08_local_config_audits as technical
 
+from master_source_guard import canonical_active_word
+
 ROOT = Path(__file__).resolve().parents[1]
 WORD = ROOT / "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx"
 WORD_HASH = "e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e"
@@ -103,7 +105,7 @@ def negative_mutations(docs):
     print("PASS C03-08 CERT B: 14/14 documentary forgery and premature-promotion mutations rejected.")
 
 def run():
-    require(sha256(WORD.read_bytes()).hexdigest() == WORD_HASH,
+    require(canonical_active_word(WORD_HASH),
             "Canonical Word SHA was modified")
     technical.audit_a()
     technical.audit_b()
