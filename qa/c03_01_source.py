@@ -13,6 +13,7 @@ import json
 import re
 import sys
 import xml.etree.ElementTree as ET
+import c03_05_status as phase
 
 ROOT = Path(__file__).resolve().parents[1]
 WORD = ROOT / "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx"
@@ -400,7 +401,8 @@ def audit_c():
     prep = PREP.read_text(encoding="utf-8")
     row_c03 = next((line for line in plan.splitlines() if line.startswith("C03 | ")), "")
     row_c04 = next((line for line in plan.splitlines() if line.startswith("C04 | ")), "")
-    closed_fourth = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in row_c03
+    closed_fifth = phase.fifth_plan_safe(plan)
+    closed_fourth = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in row_c03 or closed_fifth
     closed_third = ("**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**" in row_c03
                     or closed_fourth)
     closed_second = "**C03-01 CERTIFICADA (1/10) Y C03-02 CERRADA TÉCNICAMENTE/APROBADA PARA CERTIFICACIÓN (2/10)**" in row_c03 or closed_third
@@ -442,6 +444,11 @@ def audit_c():
                         and "Listo entonces adelante con el siguiente paso" in third
                         and "C03 NO CERTIFICADO" in third and "C04 BLOQUEADO" in third,
                         "C03-03 historical authorization/provenance lost")
+                if closed_fifth:
+                    fifth_path = ROOT / "docs/c03/C03_05_ACTA_MICROFASE.md"
+                    require(fifth_path.is_file() and "C03-06 NO INICIADA" in prep
+                            and "C03 NO CERTIFICADO" in fifth_path.read_text(encoding="utf-8"),
+                            "Fifth status requires distinct acta and a locked sixth microphase")
                 if closed_fourth:
                     fourth_path = ROOT / "docs/c03/C03_04_ACTA_MICROFASE.md"
                     require(fourth_path.is_file(), "C03-04 requires own acta")

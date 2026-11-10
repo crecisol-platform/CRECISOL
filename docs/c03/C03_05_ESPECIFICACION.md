@@ -1,6 +1,6 @@
 # CRECISOL — C03-05 | Contratos API/DTO, validación y errores (especificación inicial)
 
-**Estado:** IMPLEMENTACIÓN CODIFICADA EN RAMA DE TRABAJO; CI PREMERGE, A/B/C y certificación pendientes; **NO CERTIFICADA**. Capítulo C03 NO CERTIFICADO; C04 BLOQUEADO. C01/C02 son los únicos capítulos certificados (2/37).
+**Estado:** CERRADA TÉCNICAMENTE tras PR #57 fusionado a dev, 3/3 CI PREMERGE SUCCESS, A/B/C y pruebas .NET10/MySQL8.4 reales; CI propia del acta pendiente; **NO CERTIFICADA**. Capítulo C03 NO CERTIFICADO; C04 BLOQUEADO. C01/C02 son los únicos capítulos certificados (2/37).
 
 ## Puerta de entrada, evidencia verificable y autoridad
 - Repositorio autorizado exclusivamente `solqaryn-platform/CRECISOL`; rama base `dev` SHA `6cb6cb79792efdddeab5fef0f0596a6532ed3afc`; rama de trabajo `feature/c03-05-api-dto-contracts`.
@@ -45,3 +45,7 @@
 - CI: `.github/workflows/c03-05-api-dto.yml` con .NET10 Release, regresiones C01-C03, MySQL8.4 efímero y SQL SELECT-only, HTTP real, auditorías independientes. El workflow integral C03-01 se habilita para regresión en la rama C03-05.
 - Impacto efectivo: se modifica exclusivamente API pública, pruebas, QA, script de prueba MySQL sin DDL y CI; sin nuevos endpoints, cambios Domain/Application/Infrastructure productivos, nuevas tablas, frontend, migraciones ni despliegue.
 - **NO GO** si falta un resultado `completed/success` en PREMERGE o POSTMERGE, o si hay algún P0/P1. El acta formal se redactará exclusivamente con resultados observados y aprobación humana, no con suposiciones.
+
+## Evidencia técnica previa a certificación documental
+
+PR #57 fusionado solo a `dev` SHA `9d52ed9539b72611cc15bd71433ce7d7707dd13f` tras 3/3 CI PREMERGE SUCCESS sobre `3e444169b7beeacc6c891318588a582c893aa516`: C03-05 #42742553465, integral #42742553132, Foundation #42742553083. Nuevos 57 tests, 154 regresiones, 12/12 mutaciones, 27 HTTP reales, 83 Chromium, 37 HTTP históricos, MySQL8.4 local `--network none` SQL SELECT-only; .NET10 Release 0 errores/advertencias. POSTMERGE técnico del SHA integrado: #42743329418, #42743329202, #42743329425; estos IDs se verifican por separado como `push/completed/success`. [Acta C03-05](C03_05_ACTA_MICROFASE.md) y CI documental son obligatorias para certificar **5/10**. C03-06 NO INICIADA, C03 NO CERTIFICADO, C04 BLOQUEADO, sin producción ni SOLQARYN.

@@ -11,6 +11,7 @@ import json
 import sys
 
 import c03_01_source as chapter
+import c03_05_status as phase
 
 ROOT = Path(__file__).resolve().parents[1]
 TECHNICAL_SHA = "7217fb1e720f16c71d5a654f605eca96d81deb58"
@@ -76,10 +77,12 @@ def validate_content(files):
     second_status = ("**C03-01 CERTIFICADA (1/10) Y "
                      "C03-02 CERRADA TÉCNICAMENTE/APROBADA PARA CERTIFICACIÓN (2/10)**")
     third_status = "**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**"
-    fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in c03
+    fifth_active = phase.fifth_plan_safe(plan)
+    fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in c03 or fifth_active
     third_active = third_status in c03 or fourth_active
     require((second_status in c03 or third_active) and
-            ("C03-05 NO INICIADA" in c03 if fourth_active else
+            ("C03-06 NO INICIADA" in c03 if fifth_active else
+             "C03-05 NO INICIADA" in c03 if fourth_active else
              "C03-04 NO INICIADA" in c03 if third_active else
              "C03-03 NO INICIADA" in c03),
             "Unauthorized progression beyond accepted microphase")
@@ -90,6 +93,10 @@ def validate_content(files):
                 "c3bb9e4e314297c502b644ba1306a16364e7af2e" in third and
                 "C03 NO CERTIFICADO" in third and "C04 BLOQUEADO" in third,
                 "C03-03 needs its own limited owner authorization")
+    if fifth_active:
+        require("5/10" in prep and "C03-06 NO INICIADA" in prep
+                and "C03_05_ACTA_MICROFASE.md" in files["master"],
+                "C03-05 lacks its new acta or next-phase lock")
     if fourth_active:
         prep_valid = ("4/10" in prep and "C03-04 CERRADA TÉCNICAMENTE" in prep
                       and "C03-05 NO INICIADA" in prep)
@@ -162,7 +169,8 @@ def main():
     files = {key: p.read_text(encoding="utf-8") for key, p in FILES.items()}
     validate_content(files)
 
-    fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in files["plan"]
+    fifth_active = phase.fifth_safe(next((x for x in files['plan'].splitlines() if x.startswith('C03 | ')), ''))
+    fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in files["plan"] or fifth_active
     third_active = ("**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**" in files["plan"] or fourth_active)
     adversarial = [
         ("C03-02 owner approval removed", "second",
@@ -170,8 +178,8 @@ def main():
         ("C03-02 merge SHA falsified", "second",
          "adc975c7bcf4b6a772cc160a5b377d26af2b5fa6", "0" * 40),
         ("C03 microphase count advanced", "plan",
-         "CERTIFICACIÓN (4/10)**" if fourth_active else "CERTIFICACIÓN (3/10)**" if third_active else "CERTIFICACIÓN (2/10)**",
-         "CERTIFICACIÓN (5/10)**" if fourth_active else "CERTIFICACIÓN (4/10)**" if third_active else "CERTIFICACIÓN (3/10)**"),
+         "CERTIFICACIÓN (5/10)**" if fifth_active else "CERTIFICACIÓN (4/10)**" if fourth_active else "CERTIFICACIÓN (3/10)**" if third_active else "CERTIFICACIÓN (2/10)**",
+         "CERTIFICACIÓN (6/10)**" if fifth_active else "CERTIFICACIÓN (5/10)**" if fourth_active else "CERTIFICACIÓN (4/10)**" if third_active else "CERTIFICACIÓN (3/10)**"),
         ("C04 started before C03", "plan",
          "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
          "C04 | Multitenancy, dominios y aprovisionamiento | INICIADO"),

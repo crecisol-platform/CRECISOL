@@ -15,6 +15,7 @@ import c03_03_closure_gate as third
 import c03_02_closure_gate as second
 import c03_01_closure_gate as first
 import c02_certification_gate as c02
+import c03_05_status as phase
 
 ROOT = Path(__file__).resolve().parents[1]
 TECHNICAL_HEAD = "0bed4e82fee2459ef971140ff0d2de8a0eeb296a"
@@ -51,9 +52,11 @@ def validate_content(files):
     prep, master = files["prep"], files["master"]
     c03 = next((row for row in plan.splitlines() if row.startswith("C03 | ")), "")
     c04 = next((row for row in plan.splitlines() if row.startswith("C04 | ")), "")
-    require(FOURTH_STATUS in c03 and "C03-05 NO INICIADA" in c03 and
+    fifth_active = phase.fifth_plan_safe(plan)
+    require((FOURTH_STATUS in c03 or fifth_active) and
+            ("C03-06 NO INICIADA" in c03 if fifth_active else "C03-05 NO INICIADA" in c03) and
             "C03 NO CERTIFICADO" in c03 and "C04 BLOQUEADO" in c03 and
-            "C03 CERTIFICADO" not in c03 and "5/10" not in c03,
+            "C03 CERTIFICADO" not in c03 and "6/10" not in c03,
             "Unauthorized C03-04/C03-05 progression or C03 chapter certification")
     require(c04 == "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
             "C04 was unlocked without C03 certification")
@@ -70,7 +73,8 @@ def validate_content(files):
     for name in ("prep", "future", "global", "decisions", "agents"):
         document = files[name]
         require("C03-04" in document and "4/10" in document and
-                "C03-05 NO INICIADA" in document and
+                ("C03-06 NO INICIADA" in document if fifth_active else
+                 "C03-05 NO INICIADA" in document) and
                 "C03 NO CERTIFICADO" in document and "C04 BLOQUEADO" in document,
                 "Current approved phase not synchronized: " + name)
     require("C03-03" in prep and "CERTIFICADA (3/10)" in prep and
@@ -149,8 +153,11 @@ def main():
         ("technical merge SHA forged", "acta", TECHNICAL_SHA, "0" * 40),
         ("technical CI POSTMERGE fabricated", "acta", "42722550413", "00000000000"),
         ("C03-04 unearned next microphase", "plan",
-         "CERTIFICACIÓN (4/10)**", "CERTIFICACIÓN (5/10)**"),
-        ("C03-05 started prematurely", "plan", "C03-05 NO INICIADA", "C03-05 INICIADA"),
+         "CERTIFICACIÓN (5/10)**" if phase.fifth_active(next((x for x in docs["plan"].splitlines() if x.startswith("C03 | ")), "")) else "CERTIFICACIÓN (4/10)**",
+         "CERTIFICACIÓN (6/10)**" if phase.fifth_active(next((x for x in docs["plan"].splitlines() if x.startswith("C03 | ")), "")) else "CERTIFICACIÓN (5/10)**"),
+        ("C03-05 started prematurely", "plan",
+         "C03-06 NO INICIADA" if phase.fifth_active(next((x for x in docs["plan"].splitlines() if x.startswith("C03 | ")), "")) else "C03-05 NO INICIADA",
+         "C03-06 INICIADA" if phase.fifth_active(next((x for x in docs["plan"].splitlines() if x.startswith("C03 | ")), "")) else "C03-05 INICIADA"),
         ("C04 prematurely unlocked", "plan",
          "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
          "C04 | Multitenancy, dominios y aprovisionamiento | INICIADO"),
