@@ -11,6 +11,7 @@ import sys
 
 import c02_01_source as source
 import c02_09_integral_audits as integral
+import c03_05_status as phase
 
 ROOT = Path(__file__).resolve().parents[1]
 HEAD_PRECERT = "d8ba77dd65f87325ca8dbf2f38455943af2f8d8e"
@@ -52,7 +53,8 @@ def validate_content(files):
     # After C02 certification, opening *only* C03-01 is legitimate. Historical
     # C02 acta remains a snapshot; C04 must stay locked until C03 acceptance.
     c03_active = "**EN DESARROLLO C03-01 (0/10)**" in c03_row
-    c03_closed_four = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in c03_row
+    fifth_active = phase.fifth_safe(c03_row)
+    c03_closed_four = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in c03_row or fifth_active
     c03_closed_three = ("**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**" in c03_row or c03_closed_four)
     c03_closed_two = "**C03-01 CERTIFICADA (1/10) Y C03-02 CERRADA TÉCNICAMENTE/APROBADA PARA CERTIFICACIÓN (2/10)**" in c03_row or c03_closed_three
     c03_closed = "**C03-01 CERRADA TÉCNICAMENTE (1/10)**" in c03_row or c03_closed_two
@@ -194,7 +196,8 @@ def main():
          "2/37 capítulos certificados (C01 y C02)",
          "3/37 capítulos certificados (C01 y C02)"),
         ("C03 progressed beyond certified microphase", "plan",
-         ("**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" if "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in docs["plan"] else
+         (phase.FIFTH_STATUS if phase.FIFTH_STATUS in docs["plan"] else
+          "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" if "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in docs["plan"] else
           ("**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**" if "**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**" in docs["plan"] else
           ("**C03-01 CERTIFICADA (1/10) Y C03-02 CERRADA TÉCNICAMENTE/APROBADA PARA CERTIFICACIÓN (2/10)**"
            if "**C03-01 CERTIFICADA (1/10) Y C03-02 CERRADA TÉCNICAMENTE/APROBADA PARA CERTIFICACIÓN (2/10)**" in docs["plan"]

@@ -14,6 +14,7 @@ import c03_03_application_audits as application
 import c03_02_closure_gate as previous
 import c03_01_closure_gate as historical
 import c02_certification_gate as c02
+import c03_05_status as phase
 
 ROOT = Path(__file__).resolve().parents[1]
 TECHNICAL_HEAD = "4944348018bb3a1434e09eb7fdc802e269290b1b"
@@ -50,12 +51,14 @@ def validate_content(files):
     plan, prep, master = files["plan"], files["prep"], files["master"]
     c03 = next((line for line in plan.splitlines() if line.startswith("C03 | ")), "")
     c04 = next((line for line in plan.splitlines() if line.startswith("C04 | ")), "")
-    fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in c03
+    fifth_active = phase.fifth_safe(c03)
+    fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in c03 or fifth_active
     require((THIRD_STATUS in c03 or fourth_active) and
-            ("C03-05 NO INICIADA" in c03 if fourth_active else
+            ("C03-06 NO INICIADA" in c03 if fifth_active else
+             "C03-05 NO INICIADA" in c03 if fourth_active else
              "C03-04 NO INICIADA" in c03) and
             "C03 NO CERTIFICADO" in c03 and "C04 BLOQUEADO" in c03 and
-            "C03 CERTIFICADO" not in c03 and "5/10" not in c03,
+            "C03 CERTIFICADO" not in c03 and "6/10" not in c03,
             "C03 chapter and technical microphase sequence incorrectly promoted")
     require(c04 == "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
             "C04 must remain blocked, not implemented")
@@ -78,7 +81,7 @@ def validate_content(files):
         require("C03-03" in doc and
                 ("4/10" if fourth_active else "3/10") in doc and
                 "C03 NO CERTIFICADO" in doc and "C04 BLOQUEADO" in doc and
-                ("C03-05" if fourth_active else "C03-04") in doc and
+                ("C03-06" if fifth_active else "C03-05" if fourth_active else "C03-04") in doc and
                 "NO INICIADA" in doc,
                 "Current limited C03-03 status not synchronized: " + name)
     require("C03-03" in prep and
@@ -158,18 +161,19 @@ def main():
                 for key, path in c02.FILES.items()}
     c02.validate_content(c02_docs)
 
-    fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in docs["plan"]
+    fifth_active = phase.fifth_safe(next((x for x in docs['plan'].splitlines() if x.startswith('C03 | ')), ''))
+    fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in docs["plan"] or fifth_active
     mutations = [
         ("owner authorization forged", "acta", OWNER_REPLY, "NO APROBADO"),
         ("technical merge SHA forged", "acta", TECHNICAL_SHA, "0" * 40),
         ("technical PREMERGE HEAD forged", "acta", TECHNICAL_HEAD, "0" * 40),
         ("technical POSTMERGE CI falsified", "acta", "42714098950", "00000000000"),
         ("C03 progression falsified", "plan",
-         "CERTIFICACIÓN (4/10)**" if fourth_active else "CERTIFICACIÓN (3/10)**",
-         "CERTIFICACIÓN (5/10)**" if fourth_active else "CERTIFICACIÓN (4/10)**"),
+         "CERTIFICACIÓN (5/10)**" if fifth_active else "CERTIFICACIÓN (4/10)**" if fourth_active else "CERTIFICACIÓN (3/10)**",
+         "CERTIFICACIÓN (6/10)**" if fifth_active else "CERTIFICACIÓN (5/10)**" if fourth_active else "CERTIFICACIÓN (4/10)**"),
         ("next microphase started prematurely", "plan",
-         "C03-05 NO INICIADA" if fourth_active else "C03-04 NO INICIADA",
-         "C03-05 INICIADA" if fourth_active else "C03-04 INICIADA"),
+         "C03-06 NO INICIADA" if fifth_active else "C03-05 NO INICIADA" if fourth_active else "C03-04 NO INICIADA",
+         "C03-06 INICIADA" if fifth_active else "C03-05 INICIADA" if fourth_active else "C03-04 INICIADA"),
         ("C04 unlocked", "plan",
          "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
          "C04 | Multitenancy, dominios y aprovisionamiento | INICIADO"),
