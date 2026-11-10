@@ -8,6 +8,8 @@ on:
       - 'docs/c03/C03_02_ESPECIFICACION.md'
       - 'docs/c03/C03_02_ACTA_MICROFASE.md'
       - 'docs/c03/C03_03_ACTA_MICROFASE.md'
+      - 'docs/c03/C03_04_ACTA_MICROFASE.md'
+      - 'docs/c03/C03_04_ESPECIFICACION.md'
       - 'docs/C03_PREPARACION.md'
       - 'docs/PLAN_37_CAPITULOS.md'
       - 'docs/PLAN_MICROFASES_37_CAPITULOS_PROPUESTO.md'
@@ -18,6 +20,7 @@ on:
       - 'qa/c03_02_domain_audits.py'
       - 'qa/c03_02_closure_gate.py'
       - 'qa/c03_03_closure_gate.py'
+      - 'qa/c03_04_closure_gate.py'
       - 'qa/c03_01_closure_gate.py'
       - 'qa/c03_01_source.py'
       - 'qa/c02_certification_gate.py'
@@ -30,6 +33,8 @@ on:
       - 'docs/c03/C03_02_ESPECIFICACION.md'
       - 'docs/c03/C03_02_ACTA_MICROFASE.md'
       - 'docs/c03/C03_03_ACTA_MICROFASE.md'
+      - 'docs/c03/C03_04_ACTA_MICROFASE.md'
+      - 'docs/c03/C03_04_ESPECIFICACION.md'
       - 'docs/C03_PREPARACION.md'
       - 'docs/PLAN_37_CAPITULOS.md'
       - 'docs/PLAN_MICROFASES_37_CAPITULOS_PROPUESTO.md'
@@ -40,6 +45,7 @@ on:
       - 'qa/c03_02_domain_audits.py'
       - 'qa/c03_02_closure_gate.py'
       - 'qa/c03_03_closure_gate.py'
+      - 'qa/c03_04_closure_gate.py'
       - 'qa/c03_01_closure_gate.py'
       - 'qa/c03_01_source.py'
       - 'qa/c02_certification_gate.py'
@@ -48,7 +54,7 @@ permissions:
   contents: read
 jobs:
   c03-02-domain:
-    if: startsWith(github.head_ref, 'feature/c03-02-') || startsWith(github.head_ref, 'feature/c03-03-certificacion-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    if: startsWith(github.head_ref, 'feature/c03-02-') || startsWith(github.head_ref, 'feature/c03-03-certificacion-') || startsWith(github.head_ref, 'feature/c03-04-certificacion-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -58,7 +64,7 @@ jobs:
           persist-credentials: false
       - name: Audit A canonical Word and C03-02 source mapping
         run: |
-          python3 -m py_compile qa/c03_02_domain_audits.py qa/c03_02_closure_gate.py qa/c03_01_closure_gate.py qa/c02_certification_gate.py qa/c03_01_source.py
+          python3 -m py_compile qa/c03_04_closure_gate.py qa/c03_03_closure_gate.py qa/c03_02_domain_audits.py qa/c03_02_closure_gate.py qa/c03_01_closure_gate.py qa/c02_certification_gate.py qa/c03_01_source.py
           python3 qa/c03_02_domain_audits.py A
       - name: Audit B Domain boundaries and adversarial mutations
         run: python3 qa/c03_02_domain_audits.py B

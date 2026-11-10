@@ -25,6 +25,7 @@ FILES = {
     "acta": ROOT / "docs/c03/C03_02_ACTA_MICROFASE.md",
     "first": ROOT / "docs/c03/C03_01_ACTA_MICROFASE.md",
     "third": ROOT / "docs/c03/C03_03_ACTA_MICROFASE.md",
+    "fourth": ROOT / "docs/c03/C03_04_ACTA_MICROFASE.md",
     "plan": ROOT / "docs/PLAN_37_CAPITULOS.md",
     "prep": ROOT / "docs/C03_PREPARACION.md",
     "master": ROOT / "docs/MASTER_REFERENCE.md",
@@ -51,9 +52,11 @@ def validate_content(files):
             and "2/37 capítulos certificados (C01 y C02)" in master,
             "Only C01 and C02 may count as certified chapters")
     third_status = "**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**"
-    third_active = third_status in c03
+    fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in c03
+    third_active = third_status in c03 or fourth_active
     require((EXPECTED_C03_ROW in c03 or third_active) and
-            ("C03-04 NO INICIADA" in c03 if third_active else "C03-03 NO INICIADA" in c03)
+            ("C03-05 NO INICIADA" in c03 if fourth_active else
+             "C03-04 NO INICIADA" in c03 if third_active else "C03-03 NO INICIADA" in c03)
             and "C03 NO CERTIFICADO" in c03 and "C04 BLOQUEADO" in c03,
             "C03 microphase count or downstream phase was changed")
     if third_active:
@@ -64,13 +67,24 @@ def validate_content(files):
                 "c3bb9e4e314297c502b644ba1306a16364e7af2e" in third and
                 "C03 NO CERTIFICADO" in third and "C04 BLOQUEADO" in third,
                 "C03-03 requires separate owner-approved acta")
+    if fourth_active:
+        fourth = files["fourth"]
+        require("C03-04 CERRADA TÉCNICAMENTE" in fourth and
+                "FORMALIZACIÓN EN CURSO" in fourth and
+                "Adelante por favor con ello" in fourth and
+                "d529f85f0bc8710940d195fceaea06bf6c5e674d" in fourth and
+                "C03 NO CERTIFICADO" in fourth and "C04 BLOQUEADO" in fourth,
+                "C03-04 requires distinct approved acta")
     require(c04 == "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
             "C04 must remain blocked")
     require("C03-01 CERRADA TÉCNICAMENTE (1/10)" in first and
             "CERTIFICA POR FAVOR LA MICROFASE 1 DEL BLOQUE 3" in first and
             "7/7" in first and "C03 NO CERTIFICADO" in first,
             "Historical C03-01 acta altered")
-    if third_active:
+    if fourth_active:
+        prep_valid = ("4/10" in prep and "C03-04 CERRADA TÉCNICAMENTE" in prep
+                      and "C03-05 NO INICIADA" in prep)
+    elif third_active:
         prep_valid = ("3/10" in prep and "C03-03 CERRADA TÉCNICAMENTE" in prep
                       and "C03-04" in prep and "NO INICIADA" in prep)
     else:
@@ -78,7 +92,11 @@ def validate_content(files):
     require("C03-02" in prep and prep_valid and
             "C03 NO CERTIFICADO" in prep and "C04 BLOQUEADO" in prep,
             "C03 preparation does not match limited acceptance")
-    if third_active:
+    if fourth_active:
+        master_valid = ("C03-02 **CERTIFICADA**" in master and
+                        "C03-03 **CERTIFICADA (3/10)**" in master and
+                        "C03-04 **CERRADA TÉCNICAMENTE" in master and "4/10" in master)
+    elif third_active:
         master_valid = ("C03-02 **CERTIFICADA**" in master and
                         "C03-03 **CERRADA TÉCNICAMENTE" in master and "3/10" in master)
     else:
@@ -94,7 +112,7 @@ def validate_content(files):
     for key in ("future", "global", "decisions", "agents"):
         value = files[key]
         require("C03-02" in value and
-                ("3/10" if third_active else "2/10") in value and
+                ("4/10" if fourth_active else "3/10" if third_active else "2/10") in value and
                 "C03 NO CERTIFICADO" in value and "C04 BLOQUEADO" in value,
                 "Future/global/governance status not synchronized: " + key)
 
@@ -132,21 +150,22 @@ def main():
                 for key, path in prior.FILES.items()}
     historic["second"] = docs["acta"]
     prior.validate_content(historic)
-    third_active = "**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**" in docs["plan"]
+    fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in docs["plan"]
+    third_active = ("**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**" in docs["plan"] or fourth_active)
     variants = [
         ("owner approval forged", "acta", OWNER_REPLY, "DENEGADO"),
         ("technical SHA forged", "acta", TECHNICAL_SHA, "0" * 40),
         ("wrong microphase count", "plan",
-         "CERTIFICACIÓN (3/10)**" if third_active else "CERTIFICACIÓN (2/10)**",
-         "CERTIFICACIÓN (4/10)**" if third_active else "CERTIFICACIÓN (3/10)**"),
+         "CERTIFICACIÓN (4/10)**" if fourth_active else "CERTIFICACIÓN (3/10)**" if third_active else "CERTIFICACIÓN (2/10)**",
+         "CERTIFICACIÓN (5/10)**" if fourth_active else "CERTIFICACIÓN (4/10)**" if third_active else "CERTIFICACIÓN (3/10)**"),
         ("unearned C04", "plan",
          "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
          "C04 | Multitenancy, dominios y aprovisionamiento | INICIADO"),
         ("unearned C03 chapter certificate", "plan",
          "C03 NO CERTIFICADO", "C03 CERTIFICADO"),
         ("premature next microphase", "plan",
-         "C03-04 NO INICIADA" if third_active else "C03-03 NO INICIADA",
-         "C03-04 INICIADA" if third_active else "C03-03 INICIADA"),
+         "C03-05 NO INICIADA" if fourth_active else "C03-04 NO INICIADA" if third_active else "C03-03 NO INICIADA",
+         "C03-05 INICIADA" if fourth_active else "C03-04 INICIADA" if third_active else "C03-03 INICIADA"),
         ("missing CI success count", "acta", "3/3 workflows", "0/3 workflows"),
         ("privacy disclaimer removed", "acta",
          "No se certifican", "Si se certifican"),
@@ -165,7 +184,7 @@ def main():
     print("C03-02 CERTIFICATION DOCUMENT GATE PASS: approved Word, real "
           "A/B/C + Domain/Application proof, accepted C03-02 only, PR #51 "
           "3/3 technical POSTMERGE references, 2/10, C03 uncertified, "
-          "C03-03 accepted 3/10 only after acta CI, C03-04 not started, C04 blocked, 10/10 mutations rejected.")
+          "C03-04 4/10 only after its own CI, C03-05 not started, C04 blocked, 10/10 mutations rejected.")
     print("IMPORTANT: Not final certification until PR acta PREMERGE and "
           "POSTMERGE workflows are verified completed/success on exact SHAs.")
 
