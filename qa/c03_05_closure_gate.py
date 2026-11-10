@@ -18,6 +18,8 @@ import c03_02_closure_gate as second
 import c03_01_closure_gate as first
 import c02_certification_gate as c02
 
+from master_source_guard import canonical_active_word
+
 ROOT = Path(__file__).resolve().parents[1]
 WORD = ROOT / "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx"
 WORD_SHA = "e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e"
@@ -149,7 +151,7 @@ def audit_document_mutations(docs):
 
 
 def main():
-    require(sha256(WORD.read_bytes()).hexdigest() == WORD_SHA,
+    require(canonical_active_word(WORD_SHA),
             "Canonical master binary changed")
     technical.audit_a()
     technical.audit_b()
