@@ -74,7 +74,9 @@ def validate(docs):
                        "C04 BLOQUEADO", "PR #63", "PR #64"):
             require(marker in proof, "Seventh-stage certification proof lacks: " + marker)
         require("C03-07 CERTIFICADA (7/10)" in c03 and
-                "C03-08 NO INICIADA" in c03 and
+                (("C03-08 CERTIFICADA (8/10)" in c03 and
+                  "C03-09 NO INICIADA" in c03) if phase.eighth_certified(c03)
+                 else "C03-08 NO INICIADA" in c03) and
                 "C03-07 CERTIFICADA (7/10)" in docs["master"],
                 "Canonical seventh-stage promotion incomplete")
     else:
