@@ -13,6 +13,8 @@ import platform
 from pathlib import Path
 import re
 import shutil
+import signal
+import tempfile
 import statistics
 import subprocess
 import xml.etree.ElementTree as ET
@@ -111,17 +113,40 @@ def probe(root=ROOT):
 
 
 def run_fixed(label, args, timeout):
+    """Capture exit status without keeping build logs or child processes alive.
+
+    The only supported runtime is local Linux/WSL2. Child process groups are
+    explicitly killed on timeout; stderr is hashed, not printed or persisted.
+    """
+    if not args or args[0] not in ("dotnet", "npm", "bash"):
+        raise RuntimeError(f"{label} uses an unapproved command")
     start = time.perf_counter()
-    try:
-        p = subprocess.run(args, cwd=ROOT, env=safe_env(), stdin=subprocess.DEVNULL,
-                           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                           timeout=timeout, check=False)
-    except subprocess.TimeoutExpired as exc:
-        raise RuntimeError(f"{label} timeout after {timeout}s") from exc
-    elapsed = round(time.perf_counter() - start, 4)
-    if p.returncode != 0:
-        # Never include captured streams: they could contain secrets from a caller's machine.
-        raise RuntimeError(f"{label} failed (exit={p.returncode}, stderr_sha256={sha256(p.stderr).hexdigest()})")
+    with tempfile.TemporaryFile() as errors:
+        try:
+            child = subprocess.Popen(
+                args, cwd=ROOT, env=safe_env(), stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL, stderr=errors, start_new_session=True)
+        except OSError as exc:
+            raise RuntimeError(f"{label} could not start ({type(exc).__name__})") from exc
+        try:
+            exit_code = child.wait(timeout=timeout)
+        except subprocess.TimeoutExpired as exc:
+            try:
+                os.killpg(child.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            finally:
+                child.kill() if child.poll() is None else None
+                child.wait()
+            raise RuntimeError(f"{label} timeout after {timeout}s") from exc
+        elapsed = round(time.perf_counter() - start, 4)
+        if exit_code != 0:
+            errors.seek(0)
+            digest = sha256()
+            for block in iter(lambda: errors.read(65536), b""):
+                digest.update(block)
+            raise RuntimeError(
+                f"{label} failed (exit={exit_code}, stderr_sha256={digest.hexdigest()})")
     return elapsed
 
 
