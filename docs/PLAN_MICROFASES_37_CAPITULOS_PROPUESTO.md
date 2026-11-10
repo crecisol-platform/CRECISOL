@@ -1,6 +1,6 @@
 # Mapa preliminar de microfases CRECISOL — 37 capítulos
 
-**ESTADO VIGENTE: 2/37 capítulos certificados (C01 y C02); C03-01..04 CERTIFICADAS (4/10); C03-05 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (5/10, CI documental condicionada); C03-06 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO.** [C03-03 certificación PR #54](https://github.com/solqaryn-platform/CRECISOL/pull/54) SHA `1481dfbf75b3b47c8d5bc9d7bea56406e470f215` **9/9 POSTMERGE SUCCESS**; [C03-04 técnico PR #55](https://github.com/solqaryn-platform/CRECISOL/pull/55) SHA `d529f85f0bc8710940d195fceaea06bf6c5e674d` **3/3 POSTMERGE SUCCESS**, [acta C03-04](c03/C03_04_ACTA_MICROFASE.md) aceptada para certificación posterior; C03-06..10 y C04–C37 pendientes; C03-05 en cierre documental, Word canónico intacto.
+**ESTADO VIGENTE: 2/37 capítulos certificados (C01 y C02); C03-01 a C03-05 CERTIFICADAS (5/10), C03-05 CERTIFICADA (5/10) por PR #58, 11/11 CI POSTMERGE SUCCESS sobre 12fb19b0c35038c297939e17b27770c4fd63f77e; C03-06 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO.** [C03-03 certificación PR #54](https://github.com/solqaryn-platform/CRECISOL/pull/54) SHA `1481dfbf75b3b47c8d5bc9d7bea56406e470f215` **9/9 POSTMERGE SUCCESS**; [C03-04 técnico PR #55](https://github.com/solqaryn-platform/CRECISOL/pull/55) SHA `d529f85f0bc8710940d195fceaea06bf6c5e674d` **3/3 POSTMERGE SUCCESS**, [acta histórica C03-04](c03/C03_04_ACTA_MICROFASE.md), formalizada después por PR #56; C03-06..10 y C04–C37 pendientes; C03-05 certificada (5/10), Word canónico intacto.
 
 ## Alcance del reparto
 
@@ -16,7 +16,7 @@
 |---|---|---:|---|---|
 | C01 | CRECISOL: identidad, visión, alcance y principios | 8 | **8/8 cerradas y capítulo certificado; PR #29** | [Plan operativo C01](C01_PREPARACION.md) |
 | C02 | Personas, experiencias y arquitectura de producto | 9 | **9/9 cerradas, C02 CERTIFICADO en alcance público/sintético con aprobación expresa y 12/12 CI** | [Propuesta C02](planificacion-futura/C02_MICROFASES_PROPUESTAS.md) |
-| C03 | Arquitectura técnica limpia y dependencias | 10 | **C03-01..04 CERTIFICADAS (4/10); C03-05 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (5/10), sujeta a CI del acta; C03-06 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO**. [PR #57](https://github.com/solqaryn-platform/CRECISOL/pull/57), [acta C03-05](c03/C03_05_ACTA_MICROFASE.md). | [Plan C03](C03_PREPARACION.md) |
+| C03 | Arquitectura técnica limpia y dependencias | 10 | **C03-01..05 CERTIFICADAS (5/10)**, PR documental #58, 11/11 CI POSTMERGE SUCCESS; **C03-06 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO**. [Evidencia](c03/C03_05_CERTIFICACION_POSTMERGE.md). | [Plan C03](C03_PREPARACION.md) |
 | C04 | Multitenancy, dominios y aprovisionamiento | 12 | PENDIENTE; propuesta sin aprobar | [Propuesta C04](planificacion-futura/C04_MICROFASES_PROPUESTAS.md) |
 | C05 | Identidad, autenticación y recuperación segura | 11 | PENDIENTE; propuesta sin aprobar | [Propuesta C05](planificacion-futura/C05_MICROFASES_PROPUESTAS.md) |
 | C06 | Autorización fina, protección de datos y privacidad | 11 | PENDIENTE; propuesta sin aprobar | [Propuesta C06](planificacion-futura/C06_MICROFASES_PROPUESTAS.md) |

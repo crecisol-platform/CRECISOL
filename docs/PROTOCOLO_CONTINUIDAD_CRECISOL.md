@@ -1,6 +1,8 @@
 # CRECISOL · Protocolo de continuidad autónoma — ejecutor único con guardas SHA
 
-**Estado: UNA tarea horaria ChatGPT/GitHub configurada; capacidades y desarrollo solo se acreditan por ejecución real.** Este documento no instala ni enciende agentes o tareas. Queda subordinado al Documento Maestro Único, \`AGENTS.md\`, \`.agents/skills/crecisol-project-governance/SKILL.md\`, \`docs/MASTER_REFERENCE.md\` y las actas oficiales. Repositorio exclusivo: \`solqaryn-platform/CRECISOL\`. **SOLQARYN: escritura absolutamente prohibida.**
+**Estado histórico al redactar este protocolo: se había registrado UNA tarea horaria ChatGPT/GitHub; capacidades y desarrollo solo se acreditan por ejecución real.** Este documento no instala ni enciende agentes o tareas. Queda subordinado al Documento Maestro Único, \`AGENTS.md\`, \`.agents/skills/crecisol-project-governance/SKILL.md\`, \`docs/MASTER_REFERENCE.md\` y las actas oficiales. Repositorio exclusivo: \`solqaryn-platform/CRECISOL\`. **SOLQARYN: escritura absolutamente prohibida.**
+
+**ESTADO GLOBAL VIGENTE VERIFICADO EN GITHUB:** C01/C02 certificados (2/37), C03-01..05 CERTIFICADAS (5/10), C03-06 NO INICIADA, C03 NO CERTIFICADO y C04 BLOQUEADO. [Constancia C03-05](c03/C03_05_CERTIFICACION_POSTMERGE.md), SHA 12fb19b0c35038c297939e17b27770c4fd63f77e. **Este archivo no acredita la vigencia ni ejecución de ninguna automatización programada**; las secciones históricas de calendario y locks requieren verificación independiente.
 
 ## 1. Decisión de seguridad y frecuencia
 
@@ -76,11 +78,11 @@ Backend aplica pertenencia, scope, rol, acción, sucursal y propiedad. Shared DB
 
 ## 7. Estados y reporte al propietario
 
-Estados permitidos por microfase: \`PENDIENTE\`, \`EN DESARROLLO\`, \`PROBADA\`, \`BLOQUEADA\`, \`CERRADA TÉCNICAMENTE\`. Estados de capítulo: \`PENDIENTE\`, \`EN DESARROLLO\`, \`BLOQUEADO\`, \`CERTIFICADO CON ACEPTACIÓN\`.
+Estados permitidos por microfase (incluye CERTIFICADA solo después de acta y CI verificadas): \`PENDIENTE\`, \`EN DESARROLLO\`, \`PROBADA\`, \`BLOQUEADA\`, \`CERRADA TÉCNICAMENTE\`. Estados de capítulo: \`PENDIENTE\`, \`EN DESARROLLO\`, \`BLOQUEADO\`, \`CERTIFICADO CON ACEPTACIÓN\`.
 
 Reporte de cierre: capítulo y microfase, cambios efectivos, PR/commits, CI del HEAD y post-merge con enlaces, pruebas positivas/negativas, A/B/C, fallos corregidos, riesgos, rollback, progreso microfases X/Y, capítulos certificados X/37 y siguiente etapa habilitada. Distinguir tarea configurada, ejecución realizada y código realmente probado. No afirmar ejecución perfecta ni auto-desactivar la tarea por faltas de un activo; un bloqueo se informa sin inventar PASS.
 
-## 8. Estado de referencia al redactar este diseño
+## 8. Instantánea HISTÓRICA al redactar este diseño (no vigente)
 
 \`dev\`: \`33b1f74cb3d5b1fa3165226e0c0f46d2f1af5191\`, fundación SUCCESS. C01-01...C01-05 cerradas, **5/8**; C01-06 pendiente y no iniciada; C01-07/08 pendientes; **0/37** capítulos certificados. Los planes C02–C37 son PROVISIONALES, nunca habilitados. Antes de operar hay que releer \`dev\` porque este SHA envejece.
 

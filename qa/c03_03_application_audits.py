@@ -37,7 +37,7 @@ def require(value, message):
 
 
 def authored_sources():
-    return {str(p.relative_to(APP)): p.read_text(encoding="utf-8")
+    return {p.relative_to(APP).as_posix(): p.read_text(encoding="utf-8")
             for p in APP.rglob("*.cs")
             if not ({"obj", "bin"} & set(p.relative_to(APP).parts))}
 

@@ -1,6 +1,6 @@
 # CRECISOL — C03-05 | Contratos API/DTO, validación y errores (especificación inicial)
 
-**Estado:** CERRADA TÉCNICAMENTE tras PR #57 fusionado a dev, 3/3 CI PREMERGE SUCCESS, A/B/C y pruebas .NET10/MySQL8.4 reales; CI propia del acta pendiente; **NO CERTIFICADA**. Capítulo C03 NO CERTIFICADO; C04 BLOQUEADO. C01/C02 son los únicos capítulos certificados (2/37).
+**Estado vigente:** **C03-05 CERTIFICADA (5/10)**, PR #58 11/11 POSTMERGE SUCCESS. [Evidencia posterior](C03_05_CERTIFICACION_POSTMERGE.md). **Estado técnico previo (histórico):** CERRADA TÉCNICAMENTE tras PR #57, 3/3 CI PREMERGE SUCCESS, A/B/C y pruebas reales, **NO CERTIFICADA** entonces. Capítulo C03 NO CERTIFICADO; C04 BLOQUEADO. C01/C02 son los únicos capítulos certificados (2/37).
 
 ## Puerta de entrada, evidencia verificable y autoridad
 - Repositorio autorizado exclusivamente `solqaryn-platform/CRECISOL`; rama base `dev` SHA `6cb6cb79792efdddeab5fef0f0596a6532ed3afc`; rama de trabajo `feature/c03-05-api-dto-contracts`.
