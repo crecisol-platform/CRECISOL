@@ -45,3 +45,15 @@ Esta evidencia prueba únicamente que el runner rechaza estados no válidos. **A
 - Reversión: cerrar PR de C03-09 sin merge o revertir su commit exclusivamente en `dev`; sin migraciones ni datos persistentes.
 
 **Condición de salida:** COMPATIBILIDAD REAL + METRICAS REALMENTE MEDIDAS + A/B/C de C03-09 + ausencia de P0/P1 + revisión del diff. Un preflight sintético por sí solo no autoriza certificado ni avanzar C03-10.
+
+## Paquete operativo de ejecución local — sin Actions
+
+- `qa/c03_09_local_baseline.py`: versión de herramientas, compatibilidad, tiempos repetidos de .NET/Angular, smoke MySQL 8.4 aislado, estado fail-closed.
+- `qa/test_c03_09_local_baseline.py`: nueve tests reales de parser, versiones erróneas, falta de toolchain, protección de variables, fallos y prohibición de falsos PASS.
+- `qa/c03_09_local_suite.sh`: un solo comando desde WSL2 para preauditoría A (integridad y antecedentes), B (negativos) y C (compilación y MySQL reales). Guarda SHA de commit y SHA-256 de evidencias en `manifest.json` fuera del repositorio; `phase_certified=false`.
+- `qa/c03_09_windows.ps1`: lanzador opcional Windows→WSL2, no instala dependencias ni modifica la configuración local del sistema.
+- `docs/c03/C03_09_GUIA_PRUEBAS_LOCALES.md`: instrucciones de preparación manual, diagnóstico, ejecución, conservación y revisión de evidencias.
+
+**Evidencia verificada en el entorno del asistente:** se ejecutaron las 9 pruebas unitarias de controles del runner, todas PASS; `python3 -m compileall` y `bash -n` también PASS sobre los ficheros preparados localmente. La sonda detectó Node 22.16.0, ausencia de .NET y Docker, por lo que devolvió correctamente `BLOCKED_MISSING_LOCAL_TOOLCHAIN`, sin métricas ni evidencia de compatibilidad real. La comprobación sintética del ejecutor detectó A fallida en un fixture incompleto, B satisfactoria y C bloqueada; no se confunde con un test del checkout completo. **PowerShell/WSL2 y builds reales en la PC del propietario: NO EJECUTADOS todavía.**
+
+El estado de `dev` permanece C03-09 pendiente hasta integrar y aprobar la evidencia de la microfase conforme a gobernanza. Ninguna prueba de esta sección reemplaza registros POSTMERGE ni certificaciones anteriores.
