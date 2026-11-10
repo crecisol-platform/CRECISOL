@@ -130,14 +130,17 @@ def run_fixed(label, args, timeout):
             raise RuntimeError(f"{label} could not start ({type(exc).__name__})") from exc
         try:
             exit_code = child.wait(timeout=timeout)
-        except subprocess.TimeoutExpired as exc:
+        except (subprocess.TimeoutExpired, KeyboardInterrupt) as exc:
             try:
                 os.killpg(child.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
             finally:
-                child.kill() if child.poll() is None else None
+                if child.poll() is None:
+                    child.kill()
                 child.wait()
+            if isinstance(exc, KeyboardInterrupt):
+                raise
             raise RuntimeError(f"{label} timeout after {timeout}s") from exc
         elapsed = round(time.perf_counter() - start, 4)
         if exit_code != 0:
