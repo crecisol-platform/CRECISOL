@@ -62,10 +62,23 @@ jobs:
           bash -n database/tests/c01_04_api_mysql_smoke.sh
           CRECISOL_C03_08_LOCAL_PROFILE_SMOKE=1 CRECISOL_C03_05_CONTRACT_SMOKE=1 bash database/tests/c01_04_api_mysql_smoke.sh
           printf 'PASS: mysql\n' > .c03-08-ci-proof/mysql
-      - name: Regression prior stage C03-07 and historical documentary gates
+      - name: Regression C03-07 full executable proof and historical documentary gates
         run: |
+          dotnet build backend/tests/Crecisol.Outbox.ContractsTests/Crecisol.Outbox.ContractsTests.csproj -c Release --nologo
+          mkdir -p .c03-07-ci-proof
+          printf 'PASS: build\n' > .c03-07-ci-proof/build
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.Outbox.ContractsTests/Crecisol.Outbox.ContractsTests.csproj -- contracts
+          printf 'PASS: contracts\n' > .c03-07-ci-proof/contracts
+          bash database/tests/c03_07_outbox_mysql_smoke.sh
+          printf 'PASS: mysql\n' > .c03-07-ci-proof/mysql
           dotnet run -c Release --project backend/tests/Crecisol.Api.ModuleTests/Crecisol.Api.ModuleTests.csproj
-          dotnet run -c Release --project backend/tests/Crecisol.Outbox.ContractsTests/Crecisol.Outbox.ContractsTests.csproj -- contracts
+          dotnet run -c Release --project backend/tests/Crecisol.Branding.ContractsTests/Crecisol.Branding.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Branding.ApplicationTests/Crecisol.Branding.ApplicationTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Domain.ContractsTests/Crecisol.Domain.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Application.ContractsTests/Crecisol.Application.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Infrastructure.ContractsTests/Crecisol.Infrastructure.ContractsTests.csproj -- contracts
+          dotnet run -c Release --project backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj
+          printf 'PASS: regressions\n' > .c03-07-ci-proof/regressions
           python3 qa/c03_07_closure_gate.py
           python3 qa/c03_local_preflight.py
           python3 qa/test_c03_portability.py
