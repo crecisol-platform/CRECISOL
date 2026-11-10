@@ -12,6 +12,8 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 
+from master_source_guard import canonical_active_word
+
 ROOT = Path(__file__).resolve().parents[1]
 WORD = ROOT / "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx"
 REFERENCE = ROOT / "docs/MASTER_REFERENCE.md"
@@ -38,7 +40,7 @@ def style_of(node):
 
 def chapter_items():
     raw = WORD.read_bytes()
-    require(sha256(raw).hexdigest() == EXPECTED_SHA, "Canonical Word SHA mismatch")
+    require(canonical_active_word(EXPECTED_SHA), "Canonical Word SHA mismatch")
     require(EXPECTED_SHA in REFERENCE.read_text(encoding="utf-8"),
             "Master reference SHA mismatch")
     with ZipFile(WORD) as archive:
