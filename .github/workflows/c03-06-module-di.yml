@@ -63,3 +63,5 @@ jobs:
           printf 'PASS: mysql-http\n' > .c03-06-ci-proof/mysql-http
       - name: Audit C architecture and real same-job execution evidence
         run: python3 qa/c03_06_module_audits.py C
+      - name: Independent documentary acta and twelve negative mutations
+        run: python3 qa/c03_06_closure_gate.py

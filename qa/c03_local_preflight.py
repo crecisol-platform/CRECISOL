@@ -13,6 +13,7 @@ import c03_02_domain_audits as c02
 import c03_03_application_audits as c03
 import c03_04_infrastructure_audits as c04
 import c03_05_api_audits as c05
+import c03_06_module_audits as c06
 import c03_05_status as state
 import c03_05_closure_gate as closure
 import c03_04_closure_gate as historical_fourth
@@ -28,6 +29,7 @@ STAGES = (
     ("C03-03", c03),
     ("C03-04", c04),
     ("C03-05", c05),
+    ("C03-06", c06),
 )
 
 
