@@ -56,6 +56,9 @@ if (args[0] == "contracts")
 {
     var msg = NewProbe();
     Check(msg.EventType == "platform.foundation-check.v1", "Only fixed known type exists");
+    Check(msg.ScopeKind == 1 && msg.ScopeId == Guid.Empty &&
+          msg.BranchId is null && msg.CausationId is null,
+          "Scope and causation remain explicit PLATFORM-only");
     Check(msg.SchemaVersion == 1, "Schema is versioned");
     Check(msg.PayloadJson == "{\"kind\":\"foundation-check\"}", "Only fixed safe payload");
     Check(msg.OccurredAtUtc.Kind == DateTimeKind.Utc, "UTC enforced");
