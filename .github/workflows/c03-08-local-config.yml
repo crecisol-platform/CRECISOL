@@ -85,3 +85,5 @@ jobs:
           printf 'PASS: regressions\n' > .c03-08-ci-proof/regressions
       - name: Audit C physical graph and same-job executed proof
         run: python3 qa/c03_08_local_config_audits.py C
+      - name: Independent C03-08 acta and 15 documentary mutations
+        run: python3 qa/c03_08_closure_gate.py
