@@ -9,11 +9,13 @@ from datetime import datetime, timezone
 from hashlib import sha256
 import json
 import os
+import platform
 from pathlib import Path
 import re
 import shutil
 import statistics
 import subprocess
+import xml.etree.ElementTree as ET
 import sys
 import time
 
@@ -60,6 +62,22 @@ def nearest_rank(samples, percentile):
     return ordered[max(0, math.ceil(len(ordered) * percentile / 100) - 1)]
 
 
+def project_versions(root):
+    try:
+        pkg = json.loads((root / "frontend/package.json").read_text(encoding="utf-8"))
+        api = ET.parse(root / "backend/src/Crecisol.Api/Crecisol.Api.csproj")
+        test = ET.parse(root / "backend/tests/Crecisol.Outbox.ContractsTests/Crecisol.Outbox.ContractsTests.csproj")
+        angular = pkg.get("dependencies", {}).get("@angular/core", "")
+        scripts = pkg.get("scripts", {})
+        return (re.fullmatch(r"22\.\d+\.\d+", angular) is not None
+                and scripts.get("build") == "ng build --configuration production"
+                and scripts.get("prebuild") == "python3 ../qa/c01_06_official_assets.py --write"
+                and api.getroot().findtext(".//TargetFramework") == "net10.0"
+                and test.getroot().findtext(".//TargetFramework") == "net10.0")
+    except (OSError, ValueError, ET.ParseError):
+        return False
+
+
 def probe(root=ROOT):
     node = version(["node", "--version"])
     dotnet = version(["dotnet", "--list-sdks"])
@@ -72,6 +90,8 @@ def probe(root=ROOT):
         "frontend_dependencies_cached": (root / "frontend/node_modules/.bin/ng").is_file(),
         "dotnet_api_assets_cached": (root / "backend/src/Crecisol.Api/obj/project.assets.json").is_file(),
         "dotnet_outbox_assets_cached": (root / "backend/tests/Crecisol.Outbox.ContractsTests/obj/project.assets.json").is_file(),
+        "package_and_framework_versions_pinned": project_versions(root),
+        "bash_available": bool(shutil.which("bash")),
         "project_sources_present": all((root / p).is_file() for p in (
             "frontend/package.json", "frontend/angular.json",
             "backend/src/Crecisol.Api/Crecisol.Api.csproj",
@@ -158,7 +178,7 @@ def main(argv=None):
         assert not is_dotnet10("9.0.100 [/sdk]")
         assert nearest_rank([2, 1, 3], 95) == 3
         assert summarize([2, 1, 3])["median_seconds"] == 2
-        assert not probe()["ready"] or isinstance(probe()["ready"], bool)
+        assert isinstance(probe()["ready"], bool)
         print("PASS C03-09 self-test: version guards, percentile and fail-closed probe; no benchmark fabricated")
         return 0
     if args.run and not args.confirm_local:
@@ -168,6 +188,10 @@ def main(argv=None):
         "environment": p, "metrics": {}, "real_compatibility_verified": False,
     }
     result["generated_utc"] = datetime.now(timezone.utc).isoformat()
+    result["machine_class"] = {"os": platform.system(), "arch": platform.machine(),
+                                "cpu_count": os.cpu_count(), "python": platform.python_version()}
+    head = version(["git", "rev-parse", "HEAD"])
+    result["git_commit"] = head if re.fullmatch(r"[a-f0-9]{40}", head) else None
     result["scope"] = "C03-09/LOCAL_ONLY/NO_CI_NO_CERTIFICATION"
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0 if result["status"] in ("READY", "MEASURED_LOCAL_ONLY_NOT_CERTIFIED") else 2
