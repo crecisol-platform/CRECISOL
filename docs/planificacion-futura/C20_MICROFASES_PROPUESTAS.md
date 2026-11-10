@@ -22,4 +22,14 @@
 
 Una sola microfase activa. Antes de cada una: releer el Word canónico (`docs/MASTER_REFERENCE.md`), el acta anterior y el diff/CI actuales. Crear al activarla `docs/c20/C20_XX_ESPECIFICACION.md` con requisitos, impacto arquitectónico, tests positivos/negativos, A/B/C, autorización backend/tenant, reversión y bloqueo P0/P1. Ejecutar build real y tests, registrar SHA y fallos, PR a dev, CI del HEAD final, merge y CI posterior. **Ninguna prueba simulada sustituye una integración externa obligatoria si sigue prohibida**. No escribir en SOLQARYN ni tocar VPS/DNS/pagos reales.
 
-**Puerta de capítulo:** 9 microfases cerradas no equivalen a certificado. Requiere pruebas integrales, auditorías A/B/C independientes, acta de riesgos, cero P0/P1 sin resolver y aceptación expresa antes de C21. Mantener BLOQUEADO si el capítulo exige validación externa/productiva que no está autorizada. Estado de todo el capítulo: **PENDIENTE**.
+**Puerta de capítulo:** 9 microfases cerradas no equivalen a certificado. Requiere pruebas integrales, auditorías A/B/C independientes, acta de riesgos, cero P0/P1 sin resolver y aceptación expresa antes de C21. Mantener BLOQUEADO si el capítulo exige validación externa/productiva que no está autorizada. Estado de todo el capítulo: **PENDIENTE**.\n
+## Ampliación comercial COM-001..COM-014 — planificación condicionada (10-11-2026)
+
+**Estado: propuesta documental / no implementada / no certificada.** La ampliación deriva del expediente `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de la edición comercial preparada del único Documento Maestro; **esa edición DOCX/PDF todavía debe incorporarse y verificarse con su SHA en GitHub antes de aprobar el plan como normativo**. Se conserva el número de microfases, la puerta de entrada secuencial y toda evidencia histórica. No se habilita código de C20.
+
+- **Requisitos relacionados:** COM-001, COM-004, COM-011.
+- **Microfases técnicas a revisar:** C20-01, C20-02, C20-03, C20-05, C20-08 y C20-09 (no equivalen a puertas normativas `MAE-C20-xx`).
+- **Evidencia positiva futura exigida:** Resolver ruta/subdominio/dominio verificado y exponer solamente ofertas publicadas; reservar bloques de promoción/autopublicidad propios y, por acuerdo, espacios autorizados en sitios de empresas.
+- **Negativos obligatorios:** No secuestro de slug ni trust de Host; sitio tenant no publica publicidad no autorizada; campañas y caché no cruzan tenants; payload editorial inseguro bloqueado.
+- **Pruebas propuestas:** COM-T02, COM-T09, COM-T13 y COM-T14; `DEFINIDAS / NO EJECUTADAS`.
+- **Gate:** revisar contradicciones y versión exacta del Word, políticas comerciales y jurídicas pendientes; pruebas reales + auditorías A/B/C + acta humana de C20 cuando el capítulo esté habilitado, sin cobros ni despliegues productivos en esta etapa.
