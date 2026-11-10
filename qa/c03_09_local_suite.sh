@@ -18,6 +18,11 @@ remote="$(git remote get-url origin 2>/dev/null || true)"
 if [[ "$git_root" != "$root" || ! "$remote" =~ ^(git@github\.com:|https://github\.com/|ssh://git@github\.com/)solqaryn-platform/CRECISOL(\.git)?$ ]]; then
   echo 'BLOCKED: must run from a valid CRECISOL checkout' >&2; exit 2
 fi
+active_branch="$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+case "$active_branch" in
+  "feature/c03-09-compat-benchmark-local"|"dev") : ;;
+  *) echo 'BLOCKED: C03-09 tests may run only on its feature branch or authorized dev' >&2; exit 2 ;;
+esac
 if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
   echo 'BLOCKED: working tree not clean; preserve your local changes' >&2; exit 2
 fi
@@ -44,7 +49,11 @@ run_check() {
 a="PASS"; b="PASS"; c="NOT_EXECUTED"
 run_check 'A_master_integrity' python3 qa/master_source_guard.py --self-test || a="FAIL"
 run_check 'A_historical_static' python3 qa/c03_local_preflight.py || a="FAIL"
+run_check 'A_c03_07_source' python3 qa/c03_07_outbox_audits.py A || a="FAIL"
+run_check 'A_c03_08_source' python3 qa/c03_08_local_config_audits.py A || a="FAIL"
 run_check 'B_negative_unittests' python3 -m unittest discover -s qa -p test_c03_09_local_baseline.py -v || b="FAIL"
+run_check 'B_c03_07_negative' python3 qa/c03_07_outbox_audits.py B || b="FAIL"
+run_check 'B_c03_08_negative' python3 qa/c03_08_local_config_audits.py B || b="FAIL"
 run_check 'B_guard_selftest' python3 qa/c03_09_local_baseline.py --self-test || b="FAIL"
 probe_ok=0
 if python3 qa/c03_09_local_baseline.py --probe > "$folder/probe.json" 2> "$folder/probe_error.txt"; then
