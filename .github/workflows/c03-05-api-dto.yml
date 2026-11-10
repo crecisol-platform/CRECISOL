@@ -65,3 +65,5 @@ jobs:
           printf 'PASS: mysql-http\n' > .c03-05-ci-proof/mysql-http
       - name: Independent architecture performance and rollback audit C
         run: python3 qa/c03_05_api_audits.py C
+      - name: C03-05 distinct documentary certification and 12 adversarial mutations
+        run: python3 qa/c03_05_closure_gate.py
