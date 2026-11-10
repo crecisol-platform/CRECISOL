@@ -15,6 +15,11 @@ import c03_04_infrastructure_audits as c04
 import c03_05_api_audits as c05
 import c03_05_status as state
 import c03_05_closure_gate as closure
+import c03_04_closure_gate as historical_fourth
+import c03_03_closure_gate as historical_third
+import c03_02_closure_gate as historical_second
+import c03_01_closure_gate as historical_first
+import c02_certification_gate as historical_c02
 
 ROOT = Path(__file__).resolve().parents[1]
 STAGES = (
@@ -49,7 +54,12 @@ def main():
     documentary = {name: location.read_text(encoding="utf-8")
                    for name, location in closure.FILES.items()}
     closure.validate_content(documentary)  # STATIC archive check, no C/CI markers
-    print("PASS LOCAL DOCUMENTARY: fifth-stage archive and historical links, not remote CI")
+    for old in (historical_fourth, historical_third, historical_second,
+                historical_first, historical_c02):
+        old_contents = {name: location.read_text(encoding="utf-8")
+                        for name, location in old.FILES.items()}
+        old.validate_content(old_contents)
+    print("PASS LOCAL DOCUMENTARY: C02 + C03-01..05 static historical gates; not remote CI")
     for name, module in STAGES:
         module.audit_a()
         module.audit_b()
