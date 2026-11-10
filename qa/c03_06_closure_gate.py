@@ -41,9 +41,11 @@ def require(ok, why):
 
 def validate_content(files):
     acta = files["acta"]
+    current_row = next((line for line in files["plan"].splitlines() if line.startswith("C03 | ")), "")
+    sixth = state.sixth_certified(current_row)
     require(state.fifth_plan_safe(files["plan"]),
             "C03-06 acta may not pre-certify the sixth microphase")
-    require("C03-06 NO INICIADA" in files["prep"] and
+    require(state.next_locked(current_row) in files["prep"] and
             "C04 BLOQUEADO" in files["prep"],
             "Previous approved 5/10 plan must remain current until documentary gates")
     require("2/37 capítulos certificados (C01 y C02)" in files["master"]
@@ -72,6 +74,16 @@ def validate_content(files):
         require(rid in acta, "Acta run id missing: " + rid)
     require("C03 CERTIFICADO" not in acta and "C04 HABILITADO" not in acta,
             "Cannot certify C03 or enable C04")
+    if sixth:
+        final_doc = ROOT / "docs/c03/C03_06_CERTIFICACION_POSTMERGE.md"
+        require(final_doc.is_file(), "Final sixth-stage proof absent")
+        proof = final_doc.read_text(encoding="utf-8")
+        for marker in (state.SIXTH_MERGE, "5/5 CI POSTMERGE",
+                       "C03-06 CERTIFICADA (6/10)", "C03-07 NO INICIADA",
+                       "C03 NO CERTIFICADO", "C04 BLOQUEADO", HASH, "PR #61"):
+            require(marker in proof, "Sixth-stage proof missing: " + marker)
+        require(state.SIXTH_MERGE in files["plan"],
+                "Final acta SHA missing from canonical current plan")
     require("NO son afirmaciones anticipadas de SUCCESS" in acta,
             "POSTMERGE technical run IDs must not be pre-claimed as SUCCESS")
 

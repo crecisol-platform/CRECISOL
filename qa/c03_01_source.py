@@ -446,7 +446,7 @@ def audit_c():
                         "C03-03 historical authorization/provenance lost")
                 if closed_fifth:
                     fifth_path = ROOT / "docs/c03/C03_05_ACTA_MICROFASE.md"
-                    require(fifth_path.is_file() and "C03-06 NO INICIADA" in prep
+                    require(fifth_path.is_file() and phase.next_locked(row_c03) in prep
                             and "C03 NO CERTIFICADO" in fifth_path.read_text(encoding="utf-8"),
                             "Fifth status requires distinct acta and a locked sixth microphase")
                 if closed_fourth:
