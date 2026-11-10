@@ -46,7 +46,9 @@ run_check 'A_master_integrity' python3 qa/master_source_guard.py --self-test || 
 run_check 'A_historical_static' python3 qa/c03_local_preflight.py || a="FAIL"
 run_check 'B_negative_unittests' python3 -m unittest discover -s qa -p test_c03_09_local_baseline.py -v || b="FAIL"
 run_check 'B_guard_selftest' python3 qa/c03_09_local_baseline.py --self-test || b="FAIL"
+probe_ok=0
 if python3 qa/c03_09_local_baseline.py --probe > "$folder/probe.json" 2> "$folder/probe_error.txt"; then
+  probe_ok=1
   echo 'READY: runtime toolchain probe'
 else
   echo 'BLOCKED: inspect probe.json for missing toolchains'
@@ -110,4 +112,5 @@ print('RESULT:', json.dumps({k: result[k] for k in (
 REPORT
 if [[ "$a" != "PASS" || "$b" != "PASS" ]]; then exit 1; fi
 if [[ "$mode" == "--run" && "$c" != "EXECUTED" ]]; then exit 2; fi
+if [[ "$mode" == "--probe" && "$probe_ok" != "1" ]]; then exit 2; fi
 exit 0
