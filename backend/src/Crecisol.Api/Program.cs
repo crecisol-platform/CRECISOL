@@ -1,6 +1,7 @@
 using Crecisol.Api.Contracts;
 using Crecisol.Application.Branding;
 using Crecisol.Api.Modules.Branding;
+using Crecisol.Api.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,15 @@ if (allowed.Length == 0 || allowed.Any(host =>
         host.Contains(':') || host.Contains('*') || host.Any(char.IsWhiteSpace)))
     throw new InvalidOperationException("Explicit safe host allowlist is required.");
 
+// C03-08: additional typed host and local-only configuration checks at the
+// server composition root; no browser input, secret material or fallback.
+LocalRuntimeSettings.ValidateHostAllowlist(allowed);
+_ = LocalRuntimeSettings.Parse(
+    Environment.GetEnvironmentVariable("CRECISOL_C03_08_PROFILE"),
+    Environment.GetEnvironmentVariable("CRECISOL_C03_08_MAX_WORKER_BATCH"),
+    Environment.GetEnvironmentVariable("CRECISOL_C03_08_ALLOW_EXTERNAL_NETWORK"),
+    Environment.GetEnvironmentVariable("CRECISOL_C03_08_TEST_SOCKET"),
+    allowed);
 var trustedHosts = new HashSet<string>(allowed, StringComparer.OrdinalIgnoreCase);
 
 // A connection string may originate ONLY from the server's environment,
