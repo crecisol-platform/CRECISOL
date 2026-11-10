@@ -1,3 +1,4 @@
+using Crecisol.Api.Contracts;
 using Crecisol.Application.Branding;
 using Crecisol.Infrastructure.Branding;
 
@@ -61,14 +62,15 @@ static async Task<IResult> HandlePublishedBrand(
 {
     if (context.Request.QueryString.HasValue ||
         context.Request.Headers.ContainsKey("X-Tenant-Id") ||
-        context.Request.Headers.ContainsKey("Authorization"))
+        context.Request.Headers.ContainsKey("Authorization") ||
+        !PublicBrandRequestValidator.IsValid(context.Request))
         return Results.BadRequest();
 
     try
     {
         var brand = await useCase.ExecuteAsync(ct);
         if (brand is null) return Results.NotFound();
-        return Results.Json(brand);
+        return Results.Json(PublishedPlatformBrandDto.FromApplication(brand));
     }
     catch (OperationCanceledException) when (ct.IsCancellationRequested)
     {
