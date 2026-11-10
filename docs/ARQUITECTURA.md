@@ -18,7 +18,7 @@ Identidad/SEO, dominio autorizado, íconos, textos, footer/copyright separado, t
 ## Calidad y lanzamiento
 CI/QA solo valida aspectos respaldados por herramientas reales, sin despliegues ni cobros productivos. Seguridad P0 es una puerta transversal. Detalles en docs/SEGURIDAD_MULTITENANT.md y .agents/skills/crecisol-project-governance/references/.\n\n## Contratos comerciales SaaS — diseño futuro condicionado a edición canónica
 
-**Fuente de análisis no normativo:** `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` (`COM-001..COM-014`). Aprobado conceptualmente por el propietario, pero el DOCX/PDF revisado aún no está integrado en GitHub; no equivale a código.
+**Fuente de análisis no normativo:** `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` (`COM-001..COM-014`). Aprobado conceptualmente por el propietario, pero el DOCX/PDF revisado está integrado en la rama del PR #73, pero no fusionado a dev ni certificado; no equivale a código.
 
 - **Dirección:** ruta contextual, subdominio y dominio verificado son vías de publicación/contexto; no deciden permisos, base de datos ni capacidades.
 - **Oferta SaaS:** una combinación versionada de modalidad de dirección, plan/entitlements, plazo contractual de 3/6/12/24/36 meses y periodicidad de cobro. Los cambios de catálogo no alteran versiones de contrato ya aceptadas.
