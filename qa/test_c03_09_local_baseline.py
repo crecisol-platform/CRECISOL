@@ -79,16 +79,51 @@ class RunnerTests(TestCase):
         self.assertFalse(res["real_compatibility_verified"])
 
     def test_failure_does_not_become_pass_and_logs_are_redacted(self):
-        failure = mock.Mock(returncode=9, stdout=b"PRIVATE-STDOUT", stderr=b"PRIVATE-STDERR")
-        with mock.patch.object(baseline.subprocess, "run", return_value=failure), \
-             self.assertRaisesRegex(RuntimeError, r"exit=9") as cm:
-            baseline.run_fixed("synthetic", ["true"], 5)
+        with self.assertRaisesRegex(RuntimeError, r"exit=9") as cm:
+            baseline.run_fixed("synthetic", ["bash", "-c", "printf PRIVATE-STDERR >&2; exit 9"], 5)
         self.assertNotIn("PRIVATE", str(cm.exception))
+        self.assertIn("stderr_sha256=", str(cm.exception))
         with mock.patch.object(baseline, "probe", return_value={"ready": True}), \
              mock.patch.object(baseline, "run_fixed", side_effect=RuntimeError("synthetic failure")):
             res = baseline.run_baseline(3)
         self.assertEqual(res["status"], "FAILED_RUNTIME")
         self.assertFalse(res["real_compatibility_verified"])
+
+    def test_unapproved_command_denied_before_spawning(self):
+        with mock.patch.object(baseline.subprocess, "Popen") as popen:
+            with self.assertRaisesRegex(RuntimeError, "unapproved command"):
+                baseline.run_fixed("unapproved", ["curl", "https://example.test"], 2)
+        popen.assert_not_called()
+
+    def test_real_success_command_records_monotonic_time(self):
+        elapsed = baseline.run_fixed("local-bash", ["bash", "-c", "printf ok"], 3)
+        self.assertGreaterEqual(elapsed, 0)
+        self.assertLess(elapsed, 3)
+
+    def test_timeout_terminates_process_group(self):
+        with self.assertRaisesRegex(RuntimeError, "timeout after"):
+            baseline.run_fixed("blocked", ["bash", "-c", "sleep 6 & wait"], 0.15)
+
+    def test_simulated_ready_path_is_explicitly_not_certified(self):
+        with mock.patch.object(baseline, "probe", return_value={"ready": True}), \
+             mock.patch.object(baseline, "run_fixed", side_effect=[1.0] * 10) as ran:
+            res = baseline.run_baseline(3)
+        self.assertEqual(ran.call_count, 10)
+        self.assertEqual(res["status"], "MEASURED_LOCAL_ONLY_NOT_CERTIFIED")
+        self.assertEqual(res["metrics"]["dotnet_api_release_incremental_build"]["p95_nearest_rank_seconds"], 1.0)
+        self.assertEqual(res["metrics"]["mysql84_disposable_outbox_smoke"]["kind"],
+                         "integration_duration_not_query_latency")
+
+    def test_cli_probe_cannot_claim_real_compatibility(self):
+        with mock.patch.object(baseline, "probe", return_value={"ready": False, "checks": {}, "versions": {}}), \
+             mock.patch.object(baseline, "version", return_value=""), \
+             contextlib.redirect_stdout(io.StringIO()) as output:
+            exit_code = baseline.main(["--probe"])
+        result = json.loads(output.getvalue())
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(result["status"], "BLOCKED_MISSING_LOCAL_TOOLCHAIN")
+        self.assertFalse(result["real_compatibility_verified"])
+        self.assertEqual(result["metrics"], {})
 
     def test_selftest_does_not_create_ci_proof(self):
         with TemporaryDirectory() as td:
