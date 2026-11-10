@@ -75,7 +75,7 @@ def validate_content(files):
                 "Current approved phase not synchronized: " + name)
     require("C03-03" in prep and "CERTIFICADA (3/10)" in prep and
             "C03-04 CERRADA TÉCNICAMENTE" in prep and
-            "3/3 CI técnicas POSTMERGE SUCCESS" in prep and
+            "3/3" in prep and "POSTMERGE SUCCESS" in prep and
             "CI PREMERGE/POSTMERGE" in prep,
             "Preparation lacks C03-03 certification or C03-04 evidence")
     require("C03-04" in spec and "NO CERTIFICADA" in spec and

@@ -7,7 +7,21 @@ on:
       - 'backend/tests/Crecisol.Infrastructure.ContractsTests/**'
       - 'database/tests/c03_04_revision_reader_smoke.sh'
       - 'docs/c03/C03_04_ESPECIFICACION.md'
+      - 'docs/c03/C03_04_ACTA_MICROFASE.md'
+      - 'docs/C03_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'docs/PLAN_MICROFASES_37_CAPITULOS_PROPUESTO.md'
+      - 'docs/planificacion-futura/C03_MICROFASES_PROPUESTAS.md'
+      - 'docs/MASTER_REFERENCE.md'
+      - 'docs/DECISIONES_ABIERTAS.md'
+      - 'AGENTS.md'
       - 'qa/c03_04_infrastructure_audits.py'
+      - 'qa/c03_04_closure_gate.py'
+      - 'qa/c03_03_closure_gate.py'
+      - 'qa/c03_02_closure_gate.py'
+      - 'qa/c03_01_closure_gate.py'
+      - 'qa/c03_01_source.py'
+      - 'qa/c02_certification_gate.py'
       - '.github/workflows/c03-04-infrastructure.yml'
   push:
     branches: [dev]
@@ -16,7 +30,21 @@ on:
       - 'backend/tests/Crecisol.Infrastructure.ContractsTests/**'
       - 'database/tests/c03_04_revision_reader_smoke.sh'
       - 'docs/c03/C03_04_ESPECIFICACION.md'
+      - 'docs/c03/C03_04_ACTA_MICROFASE.md'
+      - 'docs/C03_PREPARACION.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'docs/PLAN_MICROFASES_37_CAPITULOS_PROPUESTO.md'
+      - 'docs/planificacion-futura/C03_MICROFASES_PROPUESTAS.md'
+      - 'docs/MASTER_REFERENCE.md'
+      - 'docs/DECISIONES_ABIERTAS.md'
+      - 'AGENTS.md'
       - 'qa/c03_04_infrastructure_audits.py'
+      - 'qa/c03_04_closure_gate.py'
+      - 'qa/c03_03_closure_gate.py'
+      - 'qa/c03_02_closure_gate.py'
+      - 'qa/c03_01_closure_gate.py'
+      - 'qa/c03_01_source.py'
+      - 'qa/c02_certification_gate.py'
       - '.github/workflows/c03-04-infrastructure.yml'
 permissions:
   contents: read
@@ -32,7 +60,7 @@ jobs:
           persist-credentials: false
       - name: Audit A canonical Word T01-R04 and original sequence
         run: |
-          python3 -m py_compile qa/c03_04_infrastructure_audits.py
+          python3 -m py_compile qa/c03_04_infrastructure_audits.py qa/c03_04_closure_gate.py qa/c03_03_closure_gate.py qa/c03_02_closure_gate.py qa/c03_01_closure_gate.py qa/c03_01_source.py qa/c02_certification_gate.py
           python3 qa/c03_04_infrastructure_audits.py A
       - name: Audit B read-only dependency boundaries and ten negative mutations
         run: python3 qa/c03_04_infrastructure_audits.py B
@@ -73,3 +101,5 @@ jobs:
           printf 'PASS: c01-domain\n' > .c03-04-ci-proof/c01-domain
       - name: Audit C real .NET10 + MySQL + typed regressions and architecture
         run: python3 qa/c03_04_infrastructure_audits.py C
+      - name: Gate C03-04 acta, limited later approval and twelve negative mutations
+        run: python3 qa/c03_04_closure_gate.py
