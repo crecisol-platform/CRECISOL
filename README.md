@@ -4,10 +4,10 @@
 
 ## Estado vigente (GitHub, noviembre de 2026)
 
-**C01 CERTIFICADO (8/8), C02 CERTIFICADO (9/9; solo público/sintético); C03-01 a C03-05 CERTIFICADAS (5/10).**
-**2/37 capítulos certificados (C01 y C02). C03-06 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO.**
+**C01 CERTIFICADO (8/8), C02 CERTIFICADO (9/9; solo público/sintético); C03-05 CERTIFICADA (5/10) y C03-06 CERTIFICADA (6/10).**
+**2/37 capítulos certificados (C01 y C02). C03-07 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO.**
 
-Se verificó el [PR documental #58](https://github.com/solqaryn-platform/CRECISOL/pull/58) y sus **11/11 CI POSTMERGE SUCCESS**, sobre el commit 12fb19b0c35038c297939e17b27770c4fd63f77e. [Acta y evidencia definitiva C03-05](docs/c03/C03_05_CERTIFICACION_POSTMERGE.md).
+C03-06 quedó certificada exclusivamente para el módulo público Branding/DI después del [PR #61](https://github.com/solqaryn-platform/CRECISOL/pull/61), **5/5 CI PREMERGE y 5/5 CI POSTMERGE SUCCESS** sobre `a1923d117febc5fd4e5a544b558c0f85ad517b44`. [Constancia definitiva C03-06](docs/c03/C03_06_CERTIFICACION_POSTMERGE.md). El cierre anterior de C03-05 se verificó en el [PR documental #58](https://github.com/solqaryn-platform/CRECISOL/pull/58) y sus **11/11 CI POSTMERGE SUCCESS**, sobre el commit 12fb19b0c35038c297939e17b27770c4fd63f77e. [Acta y evidencia definitiva C03-05](docs/c03/C03_05_CERTIFICACION_POSTMERGE.md).
 
 **Autoridad funcional:** Documento Maestro Único Word y PDF de lectura, huellas en [MASTER_REFERENCE.md](docs/MASTER_REFERENCE.md). **Autoridad del estado vigente:** [PLAN_37_CAPITULOS.md](docs/PLAN_37_CAPITULOS.md). Las actas y notas antiguas conservan sus estados históricos, pero no sustituyen el encabezado de estado actual.
 

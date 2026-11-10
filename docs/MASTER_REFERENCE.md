@@ -17,7 +17,7 @@
 
 ## Reglas de gobierno
 
-**ESTADO OPERATIVO VIGENTE DE C03:** 2/37 capítulos certificados (C01 y C02); C03-01 a C03-05 CERTIFICADAS (5/10), C03-05 CERTIFICADA (5/10) por PR #58, 11/11 CI POSTMERGE SUCCESS sobre 12fb19b0c35038c297939e17b27770c4fd63f77e; C03-06 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO. El texto extenso siguiente sobre C03-04 pendiente y C03-05 no iniciada es **histórico**, anterior a PR #56/58. [Constancia definitiva de C03-05](c03/C03_05_CERTIFICACION_POSTMERGE.md) y [acta previa](c03/C03_05_ACTA_MICROFASE.md). Word/PDF y sus huellas originales intactos.
+**ESTADO OPERATIVO VIGENTE DE C03:** 2/37 capítulos certificados (C01 y C02); C03-01 a C03-06 CERTIFICADAS (6/10), C03-05 CERTIFICADA (5/10) y C03-06 CERTIFICADA (6/10) mediante PR #61, 5/5 CI POSTMERGE SUCCESS sobre SHA a1923d117febc5fd4e5a544b558c0f85ad517b44; C03-07 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO. [Constancia final C03-06](c03/C03_06_CERTIFICACION_POSTMERGE.md), [acta histórica C03-06](c03/C03_06_ACTA_MICROFASE.md) y [C03-05 previa](c03/C03_05_CERTIFICACION_POSTMERGE.md). **La narración de C03-04/C03-05 no iniciadas más abajo es histórica**, no es el estado actual. Word/PDF y sus huellas originales sin modificación.
 
 - Usar esta edición para requisitos de producto, arquitectura, seguridad, parametrización, diseño e implementación secuencial de los **37 capítulos**.
 - El alcance incluye MySQL compartido por defecto con aislamiento obligatorio, modalidad dedicada opcional, login contextual sin selector, SuperAdmin con acceso excepcional auditado, componentes UI y multimedia seguros, y seguimiento universal de expedientes.
