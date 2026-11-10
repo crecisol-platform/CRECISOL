@@ -24,4 +24,14 @@
 
 Solo iniciar una fila tras cerrar la anterior; crear su especificación individual `docs/c15/C15_XX_ESPECIFICACION.md` **en el momento de activarla**, con requisito trazable, directorios, autorizaciones, tests positivos y negativos ejecutados, 3 auditorías A/B/C, evidencia con SHA, PR de alcance mínimo, CI del último HEAD y post-merge en dev, acta, incidentes y rollback. Bloquear con hallazgos P0/P1, pruebas sin ejecutar, secreto o incompatibilidad; no relajar criterios ni hacer despliegues. Arquitectura separada frontend/backend/database; nunca editar SOLQARYN.
 
-**Certificación C15:** 11/11 no basta. Requiere auditoría integral del capítulo con tres perspectivas, regresión transversal, cero P0/P1 sin resolver, acta y aceptación expresa antes de C16. Todo permanece **PENDIENTE** hasta habilitación secuencial.
+**Certificación C15:** 11/11 no basta. Requiere auditoría integral del capítulo con tres perspectivas, regresión transversal, cero P0/P1 sin resolver, acta y aceptación expresa antes de C16. Todo permanece **PENDIENTE** hasta habilitación secuencial.\n
+## Ampliación comercial COM-001..COM-014 — dependencia transversal (10-11-2026)
+
+**Solo planificación; NO IMPLEMENTADO / NO CERTIFICADO.** Requisitos derivados de `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de una actualización del Word maestro **todavía pendiente de incorporación y comprobación de huellas en GitHub**; esta nota no sustituye el Word ni habilita C15.
+
+- **COM:** COM-002, COM-003, COM-007.
+- **Microfases a revisar sin renumerar:** C15-01, C15-02, C15-08 y C15-11.
+- **Aceptación futura:** Diferenciar membresías que el negocio vende a consumidores de las suscripciones SaaS de las empresas; usar modelos/cuentas y autorizaciones independientes.
+- **Negativos:** Un consumidor no accede a plan comercial de CRECISOL ni puede cancelar suscripción SaaS de la empresa.
+- **Pruebas definidas y NO ejecutadas:** COM-T07 y COM-T08.
+- **Gate:** Word aprobado y verificable, capítulo precedente certificado, A/B/C, CI y acta propia. Sin datos productivos, despliegues ni pagos reales.
