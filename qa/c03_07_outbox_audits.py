@@ -39,7 +39,9 @@ def contract(p):
     domain, app, infra, schema = (p[k] for k in ("domain","app","infra","schema"))
     for term in ("class PlatformOutboxEvent", "SupportedType = \"platform.foundation-check.v1\"",
                  "SupportedVersion = 1", "FixedPayload", "DateTimeKind.Utc",
-                 "Guid.Empty", "SupportsConsumer(string eventType, int version)"):
+                 "Guid.Empty", "ScopeKind => 1", "ScopeId => Guid.Empty",
+                 "BranchId => null", "CausationId => null",
+                 "SupportsConsumer(string eventType, int version)"):
         require(term in domain, "Domain allowlist/version/UTC invariant weakened: " + term)
     for term in ("interface IPlatformOutboxRelayPort", "record PlatformEventLease",
                  "int maxItems", "maxItems is < 1 or > 32",
