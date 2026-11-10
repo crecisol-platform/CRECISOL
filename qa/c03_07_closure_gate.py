@@ -12,6 +12,13 @@ import sys
 
 import c03_07_outbox_audits as technical
 import c03_06_status_audits as previous
+import c03_06_closure_gate as stage6
+import c03_05_closure_gate as stage5
+import c03_04_closure_gate as stage4
+import c03_03_closure_gate as stage3
+import c03_02_closure_gate as stage2
+import c03_01_closure_gate as stage1
+import c02_certification_gate as chapter2
 import c03_05_status as phase
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -120,6 +127,12 @@ def run():
     technical.audit_b()
     technical.audit_c()
     previous.run()  # Preserve the historical sixth-stage 16/16 negatives.
+    # Independently run each archived chapter/microphase validator against the
+    # current status, not just the convenience seventh-stage status gate.
+    for older in (stage6, stage5, stage4, stage3, stage2, stage1, chapter2):
+        snapshot = {name: path.read_text(encoding="utf-8")
+                    for name, path in older.FILES.items()}
+        older.validate_content(snapshot)
     docs = {name: p.read_text(encoding="utf-8") for name, p in FILES.items()}
     validate(docs)
     mutate(docs)
