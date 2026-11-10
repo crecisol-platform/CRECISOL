@@ -28,7 +28,7 @@ C31-XX se habilita únicamente tras el cierre probado de su microfase inmediatam
 El **capítulo C31** necesita además pruebas de regresión integral, auditorías A/B/C de capítulo, acta con aceptación expresa del propietario y certificación antes de habilitar C32. Cuando depende de aprobaciones externas o proveedor real y estos están prohibidos, el estado debe seguir **BLOQUEADO**, nunca certificado artificialmente.\n
 ## Ampliación comercial COM-001..COM-014 — planificación condicionada (10-11-2026)
 
-**Estado: propuesta documental / no implementada / no certificada.** La ampliación deriva del expediente `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de la edición comercial preparada del único Documento Maestro; **esa edición DOCX/PDF todavía debe incorporarse y verificarse con su SHA en GitHub antes de aprobar el plan como normativo**. Se conserva el número de microfases, la puerta de entrada secuencial y toda evidencia histórica. No se habilita código de C31.
+**Estado: propuesta documental / no implementada / no certificada.** La ampliación deriva del expediente `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de la edición comercial preparada del único Documento Maestro; **esa edición DOCX/PDF ya fue incorporada a la rama del PR #73 con SHA y blob verificados; su aprobación normativa sigue pendiente de CI y fusión a dev**. Se conserva el número de microfases, la puerta de entrada secuencial y toda evidencia histórica. No se habilita código de C31.
 
 - **Requisitos relacionados:** COM-005, COM-007, COM-009, COM-013.
 - **Microfases técnicas a revisar:** C31-01, C31-04, C31-05, C31-06, C31-07, C31-08, C31-09, C31-11 y C31-12 (no equivalen a puertas normativas `MAE-C31-xx`).
