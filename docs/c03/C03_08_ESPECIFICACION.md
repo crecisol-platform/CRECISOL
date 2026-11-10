@@ -1,6 +1,6 @@
 # CRECISOL — C03-08 | Configuración segura y entornos locales
 
-**Estado de inicio:** EN DESARROLLO TÉCNICO, **NO CERTIFICADA**. En `dev`, C03-01..07 **CERTIFICADAS (7/10)**; C03-08 sigue **NO CERTIFICADA**, C03-09 NO INICIADA, **C03 NO CERTIFICADO, C04 BLOQUEADO** y **2/37 capítulos certificados (C01/C02)**.
+**Estado de inicio:** EN DESARROLLO TÉCNICO, **NO CERTIFICADA**. En `dev`, C03-01..07 **CERTIFICADAS (7/10)**, incluida **C03-07 CERTIFICADA (7/10)** por PR #68 y 11/11 CI POSTMERGE verificada; C03-08 sigue **NO CERTIFICADA**, C03-09 NO INICIADA, **C03 NO CERTIFICADO, C04 BLOQUEADO** y **2/37 capítulos certificados (C01/C02)**.
 
 **Autoridad:** Documento Maestro Único de CRECISOL `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` Git blob `214bf9c3d9763be23a77b7e0c464359584edde46`, SHA-256 `e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e`; `docs/MASTER_REFERENCE.md`, `docs/C03_PREPARACION.md`, `docs/planificacion-futura/C03_MICROFASES_PROPUESTAS.md`, `AGENTS.md` y Skill CRECISOL. Las 8 puertas normativas no sustituyen las 10 microfases C03.
 
