@@ -95,7 +95,7 @@ catch (ArgumentNullException) { rejectedNull = true; }
 Check(rejectedNull, "Null service collection rejected before any writes");
 
 var withDsn = new ServiceCollection();
-withDsn.AddPublicBrandingModule("Server=localhost;Database=disposable;Uid=readonly;Pwd=not-a-secret");
+withDsn.AddPublicBrandingModule("Server=127.0.0.1;Database=disposable;Uid=readonly");
 using (var provider = withDsn.BuildServiceProvider(new ServiceProviderOptions
        { ValidateScopes = true, ValidateOnBuild = true }))
 {
