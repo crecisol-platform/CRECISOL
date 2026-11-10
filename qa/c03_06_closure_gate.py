@@ -17,6 +17,7 @@ import c03_02_closure_gate as second
 import c03_01_closure_gate as first
 import c02_certification_gate as c02
 import c03_05_status as state
+import c03_06_status_audits as final_stage
 
 ROOT = Path(__file__).resolve().parents[1]
 WORD = ROOT / "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx"
@@ -121,6 +122,8 @@ def main():
     technical.audit_c()
     docs = {name: path.read_text(encoding="utf-8") for name, path in FILES.items()}
     validate_content(docs)
+    if state.sixth_certified(next((line for line in docs['plan'].splitlines() if line.startswith('C03 | ')), '')):
+        final_stage.run()
     for older in (fifth, fourth, third, second, first, c02):
         older.validate_content({name: p.read_text(encoding="utf-8")
                                 for name, p in older.FILES.items()})

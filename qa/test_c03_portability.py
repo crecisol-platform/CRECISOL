@@ -54,6 +54,13 @@ class C03PortabilityTests(TestCase):
         closure.validate_content(snapshot)
         closure.audit_document_mutations(snapshot)
 
+    def test_sixth_certificate_status_and_sequential_negative_cases(self):
+        import c03_06_status_audits as sixth
+        plan = (Path(__file__).resolve().parents[1] / "docs/PLAN_37_CAPITULOS.md").read_text(encoding="utf-8")
+        row = next((line for line in plan.splitlines() if line.startswith("C03 | ")), "")
+        if state.sixth_certified(row):
+            sixth.run()  # documentary-only, never create CI-only markers
+
     def test_ci_audit_c_fails_closed_without_real_proof(self):
         with TemporaryDirectory() as temp, mock.patch.object(api, "PROOF", Path(temp)):
             with self.assertRaisesRegex(AssertionError, "Missing real Actions step evidence"):

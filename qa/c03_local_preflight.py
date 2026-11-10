@@ -15,6 +15,7 @@ import c03_04_infrastructure_audits as c04
 import c03_05_api_audits as c05
 import c03_06_module_audits as c06
 import c03_05_status as state
+import c03_06_status_audits as final_stage
 import c03_05_closure_gate as closure
 import c03_04_closure_gate as historical_fourth
 import c03_03_closure_gate as historical_third
@@ -53,6 +54,9 @@ def main():
     if len(sys.argv) != 1:
         raise ValueError("Usage: python qa/c03_local_preflight.py (no fake C/CI flags)")
     check_portable_paths()
+    active = (ROOT / "docs/PLAN_37_CAPITULOS.md").read_text(encoding="utf-8")
+    if state.sixth_certified(next((row for row in active.splitlines() if row.startswith("C03 | ")), "")):
+        final_stage.run()  # static certified status only; no fake runtime C evidence
     documentary = {name: location.read_text(encoding="utf-8")
                    for name, location in closure.FILES.items()}
     closure.validate_content(documentary)  # STATIC archive check, no C/CI markers
