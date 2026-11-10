@@ -1,4 +1,4 @@
-"""CRECISOL C03: append-only sequential state guards for stages five and six.
+"""CRECISOL C03: append-only sequential state guards for stages five to seven.
 
 Historical acts remain immutable. Only the active plan heading and current C03
 row can promote status. Sixth-stage certification requires its *separate*
@@ -10,14 +10,23 @@ FIFTH_STATUS = (
 )
 CERTIFIED_STATUS = "**C03-01 A C03-05 CERTIFICADAS (5/10)**"
 SIXTH_STATUS = "**C03-01 A C03-06 CERTIFICADAS (6/10)**"
+SEVENTH_STATUS = "**C03-01 A C03-07 CERTIFICADAS (7/10)**"
 CERTIFIED_MERGE = "12fb19b0c35038c297939e17b27770c4fd63f77e"
 SIXTH_MERGE = "a1923d117febc5fd4e5a544b558c0f85ad517b44"
+SEVENTH_TECH_MERGE = "a256885afa5ee2f639bd4ed6f7d8595b709e6409"
+SEVENTH_ACTA_MERGE = "b1e019afabfb44f05076024b8d34cde74a340acc"
 PROOF_DOC = "C03_05_CERTIFICACION_POSTMERGE.md"
 SIXTH_PROOF = "C03_06_CERTIFICACION_POSTMERGE.md"
+SEVENTH_PROOF = "C03_07_CERTIFICACION_POSTMERGE.md"
+
+
+def seventh_certified(c03_row):
+    return SEVENTH_STATUS in c03_row
 
 
 def sixth_certified(c03_row):
-    return SIXTH_STATUS in c03_row
+    # Includes its certified successor. Archived sixth-stage evidence remains immutable.
+    return SIXTH_STATUS in c03_row or seventh_certified(c03_row)
 
 
 def fifth_certified(c03_row):
@@ -29,19 +38,23 @@ def fifth_active(c03_row):
 
 
 def next_locked(c03_row):
-    return "C03-07 NO INICIADA" if sixth_certified(c03_row) else "C03-06 NO INICIADA"
+    return ("C03-08 NO INICIADA" if seventh_certified(c03_row) else
+            "C03-07 NO INICIADA" if sixth_certified(c03_row) else "C03-06 NO INICIADA")
 
 
 def next_illicit(c03_row):
-    return "C03-07 INICIADA" if sixth_certified(c03_row) else "C03-06 INICIADA"
+    return ("C03-08 INICIADA" if seventh_certified(c03_row) else
+            "C03-07 INICIADA" if sixth_certified(c03_row) else "C03-06 INICIADA")
 
 
 def next_topic(c03_row):
-    return "C03-07" if sixth_certified(c03_row) else "C03-06"
+    return "C03-08" if seventh_certified(c03_row) else "C03-07" if sixth_certified(c03_row) else "C03-06"
 
 
 def fifth_status_marker(plan):
     """Exact first matching active marker for negative documentary mutations."""
+    if SEVENTH_STATUS in plan:
+        return SEVENTH_STATUS
     if SIXTH_STATUS in plan:
         return SIXTH_STATUS
     if CERTIFIED_STATUS in plan:
@@ -52,12 +65,16 @@ def fifth_status_marker(plan):
 
 
 def fifth_count_before(plan):
+    if SEVENTH_STATUS in plan:
+        return SEVENTH_STATUS
     if SIXTH_STATUS in plan:
         return SIXTH_STATUS
     return CERTIFIED_STATUS if CERTIFIED_STATUS in plan else "CERTIFICACIÓN (5/10)**"
 
 
 def fifth_count_after(plan):
+    if SEVENTH_STATUS in plan:
+        return "**C03-01 A C03-08 CERTIFICADAS (8/10)**"
     if SIXTH_STATUS in plan:
         return "**C03-01 A C03-07 CERTIFICADAS (7/10)**"
     return ("**C03-01 A C03-06 CERTIFICADAS (6/10)**"
@@ -65,6 +82,7 @@ def fifth_count_after(plan):
 
 
 def fifth_safe(c03_row):
+    seventh = seventh_certified(c03_row)
     sixth = sixth_certified(c03_row)
     fifth = CERTIFIED_STATUS in c03_row
     historical = FIFTH_STATUS in c03_row
@@ -77,7 +95,20 @@ def fifth_safe(c03_row):
               "2/37 capítulos certificados (C01 y C02)")
     if not all(item in c03_row for item in common):
         raise AssertionError("Sequential chapter locks lost")
-    if sixth:
+    if seventh:
+        exact = (
+            "C03-05 CERTIFICADA (5/10)", "C03-06 CERTIFICADA (6/10)",
+            "C03-07 CERTIFICADA (7/10)", "C03-08 NO INICIADA",
+            "PR #61", "PR #63", "PR #64",
+            "8/8 POSTMERGE SUCCESS", "5/5 POSTMERGE SUCCESS",
+            SIXTH_MERGE, SIXTH_PROOF, SEVENTH_TECH_MERGE,
+            SEVENTH_ACTA_MERGE, SEVENTH_PROOF
+        )
+        if not all(item in c03_row for item in exact):
+            raise AssertionError("Seventh-stage status lacks exact verified tech/acta CI or C03-08 lock")
+        if "8/10" in c03_row or "C03 CERTIFICADO" in c03_row:
+            raise AssertionError("Eighth microphase or whole chapter illegally advanced")
+    elif sixth:
         exact = (
             "C03-05 CERTIFICADA (5/10)", "C03-06 CERTIFICADA (6/10)",
             "C03-07 NO INICIADA", "PR #61", "5/5 POSTMERGE SUCCESS",
@@ -113,7 +144,18 @@ def fifth_plan_safe(plan_text):
     )
     if not all(item in active for item in mandatory):
         raise AssertionError("Active heading contradicts the locked C03 row")
-    if sixth_certified(row):
+    if seventh_certified(row):
+        for item in ("C03-05 CERTIFICADA (5/10)",
+                     "C03-06 CERTIFICADA (6/10)",
+                     "C03-07 CERTIFICADA (7/10)",
+                     "8/8 CI POSTMERGE SUCCESS", "5/5 CI POSTMERGE SUCCESS",
+                     SEVENTH_TECH_MERGE, SEVENTH_ACTA_MERGE,
+                     "C03-08 NO INICIADA"):
+            if item not in active:
+                raise AssertionError("Seventh-stage heading missing exact historical evidence: " + item)
+        if "8/10" in active or "C03 CERTIFICADO" in active:
+            raise AssertionError("Eighth stage/chapter illegally promoted")
+    elif sixth_certified(row):
         for item in ("C03-05 CERTIFICADA (5/10)",
                      "C03-06 CERTIFICADA (6/10)",
                      "5/5 CI POSTMERGE SUCCESS", SIXTH_MERGE):
