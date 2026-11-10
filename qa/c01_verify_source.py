@@ -10,6 +10,8 @@ import sys
 import xml.etree.ElementTree as ET
 from zipfile import ZipFile
 
+from master_source_guard import canonical_active_word
+
 ROOT = Path(__file__).resolve().parents[1]
 WORD = ROOT / 'docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx'
 MATRIX = ROOT / 'docs/c01/C01_01_MATRIZ_REQUISITOS.md'
@@ -37,7 +39,7 @@ def para_style(element: ET.Element) -> str:
 def source_parts() -> tuple[list[tuple[str, str]], list[list[list[str]]], str]:
     source = WORD.read_bytes()
     digest = sha256(source).hexdigest()
-    check(digest == EXPECTED_SHA, 'Word changed: old coverage is invalid')
+    check(canonical_active_word(EXPECTED_SHA), 'Word changed: old coverage is invalid')
     check(EXPECTED_SHA in MASTER_REFERENCE.read_text(encoding='utf-8'),
           'Canonical master reference does not contain Word hash')
     with ZipFile(WORD) as package:
