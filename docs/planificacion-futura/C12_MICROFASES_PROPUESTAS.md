@@ -28,7 +28,7 @@ Cada C12-XX requiere dependencia anterior cerrada, requisitos trazados, impacto 
 Incluso con 12/12 microfases cerradas, C12 necesita **auditoría integral triple, regresión, ausencia de P0/P1, acta y aceptación expresa** antes de habilitar C13. Este plan no demuestra implementación.\n
 ## Ampliación comercial COM-001..COM-014 — dependencia transversal (10-11-2026)
 
-**Solo planificación; NO IMPLEMENTADO / NO CERTIFICADO.** Requisitos derivados de `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de una actualización del Word maestro **todavía pendiente de incorporación y comprobación de huellas en GitHub**; esta nota no sustituye el Word ni habilita C12.
+**Solo planificación; NO IMPLEMENTADO / NO CERTIFICADO.** Requisitos derivados de `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de una actualización del Word maestro **ya incorporada en la rama del PR #73, con blob y SHA verificados; pendiente de CI, auditorías y fusión a dev**; esta nota no sustituye el Word ni habilita C12.
 
 - **COM:** COM-002, COM-005, COM-013.
 - **Microfases a revisar sin renumerar:** C12-01, C12-02, C12-08, C12-09 y C12-12.
