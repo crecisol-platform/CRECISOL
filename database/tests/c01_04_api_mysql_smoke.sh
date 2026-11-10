@@ -113,16 +113,19 @@ stop_api() {
 start_api
 wait_http 5184 200
 python3 qa/c01_04_http_smoke.py baseline 5184
+if [ "${CRECISOL_C03_05_CONTRACT_SMOKE:-0}" = "1" ]; then python3 qa/c03_05_http_smoke.py baseline 5184; fi
 
 # Platform publication absent must NEVER fall back to tenant, draft or cached brand.
 root_sql "DELETE FROM brand_publications WHERE scope_kind=1 AND scope_id=X'$ZERO'"
 python3 qa/c01_04_http_smoke.py absent 5184
+if [ "${CRECISOL_C03_05_CONTRACT_SMOKE:-0}" = "1" ]; then python3 qa/c03_05_http_smoke.py absent 5184; fi
 root_sql "INSERT INTO brand_publications(scope_kind,scope_id,published_revision) VALUES (1,X'$ZERO',2)"
 
 # MySQL CHECK allows harmless-length HTML but DOMAIN must reject it.
 root_sql "UPDATE brand_revisions SET name='<img src=x onerror=alert(1)>'
  WHERE scope_kind=1 AND scope_id=X'$ZERO' AND revision=2"
 python3 qa/c01_04_http_smoke.py invalid 5184
+if [ "${CRECISOL_C03_05_CONTRACT_SMOKE:-0}" = "1" ]; then python3 qa/c03_05_http_smoke.py invalid 5184; fi
 root_sql "UPDATE brand_revisions SET name='CRECISOL'
  WHERE scope_kind=1 AND scope_id=X'$ZERO' AND revision=2"
 python3 qa/c01_04_http_smoke.py baseline 5184
@@ -134,6 +137,7 @@ export ASPNETCORE_URLS="http://127.0.0.1:5185"
 start_api
 wait_http 5185 503
 python3 qa/c01_04_http_smoke.py unconfigured 5185
+if [ "${CRECISOL_C03_05_CONTRACT_SMOKE:-0}" = "1" ]; then python3 qa/c03_05_http_smoke.py unconfigured 5185; fi
 stop_api
 
 echo "C01-04 PASS: real .NET 10 API + MySQL $version + read-only grants, \
