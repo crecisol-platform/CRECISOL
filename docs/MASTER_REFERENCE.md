@@ -17,7 +17,7 @@
 
 ## Reglas de gobierno
 
-**ESTADO OPERATIVO VIGENTE DE C03:** 2/37 capítulos certificados (C01 y C02); C03-01..04 CERTIFICADAS (4/10); C03-05 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (5/10, CI documental condicionada); C03-06 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO. La descripción histórica de C03-04 y C03-05 no iniciada en el párrafo siguiente corresponde al momento anterior al PR técnico #57, no al estado actual. [Acta C03-05](c03/C03_05_ACTA_MICROFASE.md) condicionada a CI propia y [PR #57](https://github.com/solqaryn-platform/CRECISOL/pull/57); autoridad binaria Word/PDF sin modificación.
+**ESTADO OPERATIVO VIGENTE DE C03:** 2/37 capítulos certificados (C01 y C02); C03-01 a C03-05 CERTIFICADAS (5/10), C03-05 CERTIFICADA (5/10) por PR #58, 11/11 CI POSTMERGE SUCCESS sobre 12fb19b0c35038c297939e17b27770c4fd63f77e; C03-06 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO. El texto extenso siguiente sobre C03-04 pendiente y C03-05 no iniciada es **histórico**, anterior a PR #56/58. [Constancia definitiva de C03-05](c03/C03_05_CERTIFICACION_POSTMERGE.md) y [acta previa](c03/C03_05_ACTA_MICROFASE.md). Word/PDF y sus huellas originales intactos.
 
 - Usar esta edición para requisitos de producto, arquitectura, seguridad, parametrización, diseño e implementación secuencial de los **37 capítulos**.
 - El alcance incluye MySQL compartido por defecto con aislamiento obligatorio, modalidad dedicada opcional, login contextual sin selector, SuperAdmin con acceso excepcional auditado, componentes UI y multimedia seguros, y seguimiento universal de expedientes.
