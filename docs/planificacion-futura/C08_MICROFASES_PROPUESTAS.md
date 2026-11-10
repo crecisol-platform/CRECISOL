@@ -24,4 +24,14 @@
 
 Cada C08-XX requiere dependencia anterior cerrada, requisitos trazados, impacto `frontend/`/`backend/`/`database/`, branch específica, tests positivos y negativos reales, auditorías **A trazabilidad / B seguridad-tenancy / C arquitectura-rendimiento-UX**, acta, revisión del diff y secretos, CI PASS del último SHA, PR a `dev`, merge seguro, CI posterior y rollback. Guardar la especificación individual **solo al activar** como `docs/c08/C08_XX_ESPECIFICACION.md`. Si una puerta no pasa, **BLOQUEADO**; no falsificar PASS ni saltar dependencias. No producción ni SOLQARYN.
 
-Incluso con 11/11 microfases cerradas, C08 necesita **auditoría integral triple, regresión, ausencia de P0/P1, acta y aceptación expresa** antes de habilitar C09. Este plan no demuestra implementación.
+Incluso con 11/11 microfases cerradas, C08 necesita **auditoría integral triple, regresión, ausencia de P0/P1, acta y aceptación expresa** antes de habilitar C09. Este plan no demuestra implementación.\n
+## Ampliación comercial COM-001..COM-014 — planificación condicionada (10-11-2026)
+
+**Estado: propuesta documental / no implementada / no certificada.** La ampliación deriva del expediente `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de la edición comercial preparada del único Documento Maestro; **esa edición DOCX/PDF todavía debe incorporarse y verificarse con su SHA en GitHub antes de aprobar el plan como normativo**. Se conserva el número de microfases, la puerta de entrada secuencial y toda evidencia histórica. No se habilita código de C08.
+
+- **Requisitos relacionados:** COM-002..COM-010, COM-012, COM-013.
+- **Microfases técnicas a revisar:** C08-02, C08-03, C08-04, C08-05, C08-06, C08-07, C08-08, C08-09, C08-10 y C08-11 (no equivalen a puertas normativas `MAE-C08-xx`).
+- **Evidencia positiva futura exigida:** Publicar ofertas versionadas por modalidad/plan/plazo 3, 6, 12, 24 o 36 meses; calcular cuota anticipada determinista; aceptar versión exacta; simular facturación y gracia; permitir no renovación y solicitud de baja con acuse; gestionar consola SuperAdmin autorizada.
+- **Negativos obligatorios:** Precio nuevo no reescribe contratos; oferta oculta no se contrata; fallo de pago no activa servicio; renovación no cobra sin aceptación; borrado por mora y suspensión por eventos duplicados prohibidos.
+- **Pruebas propuestas:** COM-T01, COM-T02, COM-T03, COM-T04, COM-T05, COM-T06, COM-T08, COM-T11, COM-T12 y COM-T16; `DEFINIDAS / NO EJECUTADAS`.
+- **Gate:** revisar contradicciones y versión exacta del Word, políticas comerciales y jurídicas pendientes; pruebas reales + auditorías A/B/C + acta humana de C08 cuando el capítulo esté habilitado, sin cobros ni despliegues productivos en esta etapa.
