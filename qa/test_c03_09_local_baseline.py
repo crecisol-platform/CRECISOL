@@ -104,6 +104,18 @@ class RunnerTests(TestCase):
         with self.assertRaisesRegex(RuntimeError, "timeout after"):
             baseline.run_fixed("blocked", ["bash", "-c", "sleep 6 & wait"], 0.15)
 
+    def test_keyboard_interrupt_cleans_child_process_group(self):
+        fake = mock.Mock(pid=1975)
+        fake.wait.side_effect = [KeyboardInterrupt(), 0]
+        fake.poll.return_value = None
+        with mock.patch.object(baseline.subprocess, "Popen", return_value=fake), \
+             mock.patch.object(baseline.os, "killpg") as kill_group:
+            with self.assertRaises(KeyboardInterrupt):
+                baseline.run_fixed("interrupt", ["bash", "-c", "sleep 50"], 1)
+        kill_group.assert_called_once_with(1975, baseline.signal.SIGKILL)
+        fake.kill.assert_called_once()
+        self.assertEqual(fake.wait.call_count, 2)
+
     def test_simulated_ready_path_is_explicitly_not_certified(self):
         with mock.patch.object(baseline, "probe", return_value={"ready": True}), \
              mock.patch.object(baseline, "run_fixed", side_effect=[1.0] * 10) as ran:
