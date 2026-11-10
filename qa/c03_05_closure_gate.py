@@ -29,6 +29,7 @@ POST = ("42743329418", "42743329202", "42743329425")
 FILES = {
     "acta": ROOT / "docs/c03/C03_05_ACTA_MICROFASE.md",
     "spec": ROOT / "docs/c03/C03_05_ESPECIFICACION.md",
+    "postmerge": ROOT / "docs/c03/C03_05_CERTIFICACION_POSTMERGE.md",
     "plan": ROOT / "docs/PLAN_37_CAPITULOS.md",
     "prep": ROOT / "docs/C03_PREPARACION.md",
     "master": ROOT / "docs/MASTER_REFERENCE.md",
@@ -47,6 +48,7 @@ def validate_content(files):
     acta, plan, prep = files["acta"], files["plan"], files["prep"]
     master, spec = files["master"], files["spec"]
     row = next((r for r in plan.splitlines() if r.startswith("C03 | ")), "")
+    certified = state.fifth_certified(row)
     c04 = next((r for r in plan.splitlines() if r.startswith("C04 | ")), "")
     require(state.fifth_plan_safe(plan), "Fifth-phase status must be exact and C03/C04 locked")
     require(c04 == "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
@@ -55,12 +57,15 @@ def validate_content(files):
             and "2/37 capítulos certificados (C01 y C02)" in master,
             "Only C01/C02 chapters may be certified")
     require("ESTADO OPERATIVO VIGENTE DE C03" in master and
-            "C03-05 CERRADA TÉCNICAMENTE" in master and
+            ("C03-05 CERTIFICADA (5/10)" if certified else
+             "C03-05 CERRADA TÉCNICAMENTE") in master and
             "C03 NO CERTIFICADO" in master and "C04 BLOQUEADO" in master and
             WORD_SHA in master, "Canonical Word/status reference not preserved")
     for label in ("prep", "future", "global", "decisions", "agents"):
         document = files[label]
-        require("C03-05 CERRADA TÉCNICAMENTE" in document and
+        require(("C03-05" in document and
+                 ("CERTIFICADA (5/10)" in document or "CERTIFICADAS (5/10)" in document)
+                 if certified else "C03-05 CERRADA TÉCNICAMENTE" in document) and
                 "5/10" in document and "C03-06 NO INICIADA" in document and
                 "C03 NO CERTIFICADO" in document and "C04 BLOQUEADO" in document,
                 "Fifth stage missing or downstream not locked in " + label)
@@ -91,6 +96,20 @@ def validate_content(files):
                 "Acta C03-05 missing proof, explicit authorization or safety limit: " + item)
     require(all(ref in acta for ref in PRE + POST),
             "Acta must cite exact 3/3 PREMERGE and 3/3 POSTMERGE technical runs")
+    if certified:
+        post = files["postmerge"]
+        for marker in (state.CERTIFIED_MERGE, "11/11 CI POSTMERGE",
+                       "C03-05 CERTIFICADA (5/10)", "C03-06 NO INICIADA",
+                       "C03 NO CERTIFICADO", "C04 BLOQUEADO",
+                       WORD_SHA, "PR #58", "10/10 CI POSTMERGE"):
+            require(marker in post, "Missing final postmerge certification evidence: " + marker)
+        for rid in ("42745582070", "42745582156", "42745582469",
+                    "42745582342", "42745582158", "42745582393",
+                    "42745582165", "42745582189", "42745582417",
+                    "42745582396", "42745582068"):
+            require(rid in post, "Final POSTMERGE run evidence absent: " + rid)
+        require("12fb19b0c35038c297939e17b27770c4fd63f77e" in plan,
+                "Certified phase missing exact merged SHA in current plan")
     require("C03 CERTIFICADO" not in acta and "C04 HABILITADO" not in acta,
             "Acta cannot certify chapter C03 or open C04")
 
@@ -121,7 +140,9 @@ def main():
         ("unearned C04", "plan", "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
          "C04 | Multitenancy, dominios y aprovisionamiento | INICIADO"),
         ("forged microphase six", "plan",
-         "CERTIFICACIÓN (5/10)**", "CERTIFICACIÓN (6/10)**"),
+         state.fifth_count_before(plan), state.fifth_count_after(plan)),
+        ("forged final POSTMERGE run", "postmerge", "42745582469", "00000000000"),
+        ("forged final POSTMERGE SHA", "postmerge", state.CERTIFIED_MERGE, "0" * 40),
     )
     for name, key, before, after in mutants:
         copy = deepcopy(docs)
@@ -133,7 +154,7 @@ def main():
             continue
         raise AssertionError("Unsafe C03-05 certificate mutation accepted: " + name)
     print("PASS C03-05 certification gate: canonical Word, prior C02/C03-01..04 gates, "
-          "real DTO .NET10 and MySQL8.4 A/B/C, 12/12 documentation tamper attempts rejected; "
+          "real DTO .NET10 and MySQL8.4 A/B/C, 14/14 documentation tamper attempts rejected; "
           "human instruction is before testing and certificate is conditional on external PR CI.")
     print("LIMIT: C03-05 only 5/10; C03 chapter NOT certified; C04 and C03-06 blocked.")
 

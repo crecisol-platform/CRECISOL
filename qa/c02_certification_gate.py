@@ -196,7 +196,7 @@ def main():
          "2/37 capítulos certificados (C01 y C02)",
          "3/37 capítulos certificados (C01 y C02)"),
         ("C03 progressed beyond certified microphase", "plan",
-         (phase.FIFTH_STATUS if phase.FIFTH_STATUS in docs["plan"] else
+         (phase.fifth_status_marker(docs["plan"]) if phase.fifth_active(next((x for x in docs["plan"].splitlines() if x.startswith("C03 | ")), "")) else
           "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" if "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in docs["plan"] else
           ("**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**" if "**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**" in docs["plan"] else
           ("**C03-01 CERTIFICADA (1/10) Y C03-02 CERRADA TÉCNICAMENTE/APROBADA PARA CERTIFICACIÓN (2/10)**"
