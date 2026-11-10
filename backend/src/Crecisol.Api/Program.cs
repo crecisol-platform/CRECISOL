@@ -1,6 +1,6 @@
 using Crecisol.Api.Contracts;
 using Crecisol.Application.Branding;
-using Crecisol.Infrastructure.Branding;
+using Crecisol.Api.Modules.Branding;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,9 +18,7 @@ var trustedHosts = new HashSet<string>(allowed, StringComparer.OrdinalIgnoreCase
 // A connection string may originate ONLY from the server's environment,
 // never Host, query, headers, tenant IDs or a published response.
 var serverDsn = Environment.GetEnvironmentVariable("CRECISOL_C01_READONLY_DSN");
-builder.Services.AddSingleton<IPublishedPlatformBrandReader>(
-    _ => new MySqlPublishedPlatformBrandReader(serverDsn));
-builder.Services.AddScoped<ReadPublishedPlatformBrand>();
+builder.Services.AddPublicBrandingModule(serverDsn);
 
 var app = builder.Build();
 
