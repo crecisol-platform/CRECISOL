@@ -50,26 +50,28 @@ def require(condition, reason):
 def validate(docs):
     plan, evidence = docs["plan"], docs["evidence"]
     row = next((line for line in plan.splitlines() if line.startswith("C03 | ")), "")
+    seventh = phase.seventh_certified(row)
     require(phase.sixth_certified(row) and phase.fifth_plan_safe(plan),
-            "Only exactly documented 6/10 stage may be active")
+            "Only historical 6/10 or evidenced 7/10 state may be active")
     require("C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE" in plan,
-            "C04 was started before chapter C03 certification")
+            "C04 was started before C03 chapter certification")
     for name in ("master", "prep", "future", "global", "decisions",
-                 "agents", "readme", "c01", "c02", "protocol", "spec"):
+                 "agents", "readme", "c01", "c02", "protocol"):
         doc = docs[name]
         for term in ("C03-05 CERTIFICADA (5/10)", "C03-06 CERTIFICADA (6/10)",
-                     "C03-07 NO INICIADA", "C03 NO CERTIFICADO",
-                     "C04 BLOQUEADO"):
-            require(term in doc, "Stage-six current view diverged in " + name + ": " + term)
+                     phase.next_locked(row), "C03 NO CERTIFICADO", "C04 BLOQUEADO"):
+            require(term in doc, "Certified sixth-stage provenance missing from " +
+                    name + ": " + term)
+    for term in ("C03-07 NO INICIADA", "C03 NO CERTIFICADO",
+                 "C04 BLOQUEADO"):
+        require(term in docs["spec"], "Immutable historical C03-06 spec altered: " + term)
     require("2/37 capítulos certificados (C01 y C02)" in docs["master"] and
-            WORD_HASH in docs["master"],
-            "Master reference/source authority lost")
+            WORD_HASH in docs["master"], "Canonical master source modified")
     require("C03-06 CERRADA TÉCNICAMENTE" in docs["acta"] and
             "NO CERTIFICADA" in docs["acta"] and OWNER in docs["acta"],
-            "Historical acta must not be rewritten as a retrospective owner approval")
+            "Historical acta must not be rewritten")
     require("11/11 CI POSTMERGE" in docs["prior"] and
-            phase.CERTIFIED_MERGE in docs["prior"],
-            "Earlier fifth-phase certification lost")
+            phase.CERTIFIED_MERGE in docs["prior"], "Fifth-stage proof lost")
     for term in (phase.SIXTH_MERGE, "C03-06 CERTIFICADA (6/10)",
                  "C03-05 CERTIFICADA (5/10)", "PR #60", "PR #61",
                  "5/5 CI PREMERGE", "5/5 CI POSTMERGE",
@@ -78,36 +80,53 @@ def validate(docs):
                  "25/25", "15/15", "12/12", "27/27", "83 Chromium",
                  "37 casos HTTP", "MySQL8.4", WORD_HASH, OWNER,
                  "No se certifican BOLA/IDOR/MFA", "Rollback"):
-        require(term in evidence, "Verified postmerge proof incomplete: " + term)
+        require(term in evidence, "Historical C03-06 proof missing: " + term)
     for rid in RUNS:
-        require(rid in evidence, "Exact workflow run ID absent: " + rid)
+        require(rid in evidence, "Exact historical run ID absent: " + rid)
     require(phase.SIXTH_PROOF in row and "C03 CERTIFICADO" not in row,
-            "C03-06 certificate cannot advance the chapter")
-
+            "C03-06 proof cannot certify C03 chapter")
+    if seventh:
+        proof = ROOT / "docs/c03/C03_07_CERTIFICACION_POSTMERGE.md"
+        require(proof.is_file() and phase.SEVENTH_PROOF in row,
+                "Seventh-stage promotion lacks own evidence")
+        record = proof.read_text(encoding="utf-8")
+        for marker in (phase.SEVENTH_MERGE, phase.SEVENTH_TECH_MERGE,
+                       "C03-07 CERTIFICADA (7/10)", "C03-08 NO INICIADA",
+                       "C03 NO CERTIFICADO", "C04 BLOQUEADO"):
+            require(marker in record, "Seventh-stage record incomplete: " + marker)
+    else:
+        require("C03-07 NO INICIADA" in row,
+                "Seventh stage started without documentary CI")
 
 def negative_mutations(docs):
+    row = next((line for line in docs["plan"].splitlines()
+                if line.startswith("C03 | ")), "")
+    seventh = phase.seventh_certified(row)
+    next_stage = phase.next_locked(row)
     cases = (
-        ("seventh certificate", "plan", phase.SIXTH_STATUS,
-         "**C03-01 A C03-07 CERTIFICADAS (7/10)**"),
-        ("premature seventh", "plan", "C03-07 NO INICIADA", "C03-07 INICIADA"),
+        ("unearned next certificate", "plan", phase.SEVENTH_STATUS if seventh else phase.SIXTH_STATUS,
+         "**C03-01 A C03-08 CERTIFICADAS (8/10)**" if seventh else phase.SEVENTH_STATUS),
+        ("premature next phase", "plan", next_stage, phase.next_illicit(row)),
         ("unearned chapter", "plan", "C03 NO CERTIFICADO", "C03 CERTIFICADO"),
         ("unearned C04", "plan", "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
          "C04 | Multitenancy, dominios y aprovisionamiento | INICIADO"),
-        ("forged SHA", "plan", phase.SIXTH_MERGE, "0" * 40),
+        ("forged current SHA", "plan",
+         phase.SEVENTH_MERGE if seventh else phase.SIXTH_MERGE, "0" * 40),
         ("forged CI count", "plan", "5/5 CI POSTMERGE SUCCESS", "0/5 CI POSTMERGE SUCCESS"),
-        ("forged PR", "plan", "PR #61", "PR #99"),
+        ("forged PR", "plan", "PR #64" if seventh else "PR #61", "PR #99"),
         ("forged Word", "evidence", WORD_HASH, "0" * 64),
-        ("forged Actions run", "evidence", RUNS[-1], "00000000000"),
-        ("missing explicit owner", "evidence", OWNER, "SIN APROBACION"),
+        ("forged historic run", "evidence", RUNS[-1], "00000000000"),
+        ("missing historic owner", "evidence", OWNER, "SIN APROBACION"),
         ("unsafe private claim", "evidence", "No se certifican BOLA/IDOR/MFA",
          "Sí se certifican BOLA/IDOR/MFA"),
         ("unlocked C04 in proof", "evidence", "C04 BLOQUEADO", "C04 HABILITADO"),
-        ("changed current master next", "master", "C03-07 NO INICIADA", "C03-07 INICIADA"),
+        ("changed current master next", "master", next_stage, "C03-08 INICIADA" if seventh else "C03-07 INICIADA"),
         ("false preparation status", "prep", "C03-06 CERTIFICADA (6/10)",
          "C03-06 NO CERTIFICADA (6/10)"),
-        ("unlocked AGENTS next", "agents", "C03-07 NO INICIADA", "C03-07 INICIADA"),
-        ("README advanced illegally", "readme", "C03-06 CERTIFICADA (6/10)",
-         "C03-07 CERTIFICADA (7/10)"),
+        ("unlocked AGENTS next", "agents", next_stage, "C03-08 INICIADA" if seventh else "C03-07 INICIADA"),
+        ("README advanced illegally", "readme",
+         "C03-07 CERTIFICADA (7/10)" if seventh else "C03-06 CERTIFICADA (6/10)",
+         "C03-08 CERTIFICADA (8/10)" if seventh else "C03-07 CERTIFICADA (7/10)"),
     )
     for label, key, old, forged in cases:
         require(old in docs[key], "Invalid mutation fixture: " + label)
@@ -117,8 +136,8 @@ def negative_mutations(docs):
             validate(wrong)
         except (AssertionError, ValueError, KeyError, TypeError):
             continue
-        raise AssertionError("Unsafe stage-six documentary mutation accepted: " + label)
-    print("PASS C03-06 status B: 16/16 adversarial advancement/forged-evidence attempts rejected.")
+        raise AssertionError("Unsafe documentary mutation accepted: " + label)
+    print("PASS C03-06 historical chain B: 16/16 invalid changes rejected, seventh conditional.")
 
 
 def run():

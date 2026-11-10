@@ -58,7 +58,7 @@ def validate_content(files):
              "C03-05 NO INICIADA" in c03 if fourth_active else
              "C03-04 NO INICIADA" in c03) and
             "C03 NO CERTIFICADO" in c03 and "C04 BLOQUEADO" in c03 and
-            "C03 CERTIFICADO" not in c03 and ("7/10" if phase.sixth_certified(c03) else "6/10") not in c03,
+            "C03 CERTIFICADO" not in c03 and ("8/10" if phase.seventh_certified(c03) else "7/10" if phase.sixth_certified(c03) else "6/10") not in c03,
             "C03 chapter and technical microphase sequence incorrectly promoted")
     require(c04 == "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
             "C04 must remain blocked, not implemented")
