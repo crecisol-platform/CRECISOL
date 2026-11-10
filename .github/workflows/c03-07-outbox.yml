@@ -81,3 +81,8 @@ jobs:
         run: python3 qa/c03_07_outbox_audits.py C
       - name: Independent C03-07 acta and 15 documentary adversarial mutations
         run: python3 qa/c03_07_closure_gate.py
+      - name: Regress historical C02 and C03 documentary gates and Windows path contracts
+        run: |
+          python3 -m py_compile qa/c03_local_preflight.py qa/test_c03_portability.py
+          python3 qa/c03_local_preflight.py
+          python3 qa/test_c03_portability.py
