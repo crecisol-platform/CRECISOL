@@ -1,6 +1,6 @@
 # CRECISOL — C03-05 | Contratos API/DTO, validación y errores (especificación inicial)
 
-**Estado:** INICIADA — especificación y análisis de impacto; NO implementada, NO probada, NO certificada. Capítulo C03 NO CERTIFICADO; C04 BLOQUEADO. C01/C02 son los únicos capítulos certificados (2/37).
+**Estado:** IMPLEMENTACIÓN CODIFICADA EN RAMA DE TRABAJO; CI PREMERGE, A/B/C y certificación pendientes; **NO CERTIFICADA**. Capítulo C03 NO CERTIFICADO; C04 BLOQUEADO. C01/C02 son los únicos capítulos certificados (2/37).
 
 ## Puerta de entrada, evidencia verificable y autoridad
 - Repositorio autorizado exclusivamente `solqaryn-platform/CRECISOL`; rama base `dev` SHA `6cb6cb79792efdddeab5fef0f0596a6532ed3afc`; rama de trabajo `feature/c03-05-api-dto-contracts`.
@@ -36,3 +36,12 @@
 - P0: nuevos esquemas de error pueden filtrar excepciones o datos privados; fallar de forma genérica y no loggear secretos.
 - P1: cambios en semántica HTTP podrían romper consumidores C01/C02; preservar compatibilidad verificable.
 - La creación de este documento **no prueba ni certifica** C03-05. Revertir la rama/PR sin migraciones ni estado de producción. Sin cambios en `main`, SOLQARYN, VPS, DNS, cobros o despliegue.
+
+## Implementación sometida a CI (no certificación anticipada)
+
+- API: `PublishedPlatformBrandDto` y `PublishedBrandPresentationDto` son contratos de transporte explícitos, con los mismos 10/6 nombres JSON que el parser Angular vigente. Se conserva la ruta pública GET y se devuelve `Results.Json(PublishedPlatformBrandDto.FromApplication(brand))`, sin pasar entidades Domain, secretos ni revisiones privadas al serializador.
+- `PublicBrandRequestValidator` rechaza método distinto de GET, query, Authorization, X-Tenant-Id, cuerpo/Content-Length, chunked transfer y encabezados de sobrescritura; se conservan también Host allowlist y rechazo de Forwarded/X-Forwarded-Host en el pipeline.
+- Pruebas: `Crecisol.Api.ContractsTests` (.NET10, JSON y casos positivos/negativos), `qa/c03_05_http_smoke.py` (23 solicitudes reales baseline más ausencia, inválido, DSN no configurado), y auditorías A/B/C con 12 mutaciones rechazadas. Estas son **pruebas planificadas, no declaradas PASS** hasta ver sus runs sobre el commit exacto.
+- CI: `.github/workflows/c03-05-api-dto.yml` con .NET10 Release, regresiones C01-C03, MySQL8.4 efímero y SQL SELECT-only, HTTP real, auditorías independientes. El workflow integral C03-01 se habilita para regresión en la rama C03-05.
+- Impacto efectivo: se modifica exclusivamente API pública, pruebas, QA, script de prueba MySQL sin DDL y CI; sin nuevos endpoints, cambios Domain/Application/Infrastructure productivos, nuevas tablas, frontend, migraciones ni despliegue.
+- **NO GO** si falta un resultado `completed/success` en PREMERGE o POSTMERGE, o si hay algún P0/P1. El acta formal se redactará exclusivamente con resultados observados y aprobación humana, no con suposiciones.
