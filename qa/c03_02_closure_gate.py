@@ -57,7 +57,7 @@ def validate_content(files):
     fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in c03 or fifth_active
     third_active = third_status in c03 or fourth_active
     require((EXPECTED_C03_ROW in c03 or third_active) and
-            ("C03-06 NO INICIADA" in c03 if fifth_active else
+            (phase.next_locked(c03) in c03 if fifth_active else
              "C03-05 NO INICIADA" in c03 if fourth_active else
              "C03-04 NO INICIADA" in c03 if third_active else "C03-03 NO INICIADA" in c03)
             and "C03 NO CERTIFICADO" in c03 and "C04 BLOQUEADO" in c03,
@@ -168,8 +168,8 @@ def main():
         ("unearned C03 chapter certificate", "plan",
          "C03 NO CERTIFICADO", "C03 CERTIFICADO"),
         ("premature next microphase", "plan",
-         "C03-06 NO INICIADA" if fifth_active else "C03-05 NO INICIADA" if fourth_active else "C03-04 NO INICIADA" if third_active else "C03-03 NO INICIADA",
-         "C03-06 INICIADA" if fifth_active else "C03-05 INICIADA" if fourth_active else "C03-04 INICIADA" if third_active else "C03-03 INICIADA"),
+         phase.next_locked(next((line for line in docs["plan"].splitlines() if line.startswith("C03 | ")), "")) if fifth_active else "C03-05 NO INICIADA" if fourth_active else "C03-04 NO INICIADA" if third_active else "C03-03 NO INICIADA",
+         phase.next_illicit(next((line for line in docs["plan"].splitlines() if line.startswith("C03 | ")), "")) if fifth_active else "C03-05 INICIADA" if fourth_active else "C03-04 INICIADA" if third_active else "C03-03 INICIADA"),
         ("missing CI success count", "acta", "3/3 workflows", "0/3 workflows"),
         ("privacy disclaimer removed", "acta",
          "No se certifican", "Si se certifican"),

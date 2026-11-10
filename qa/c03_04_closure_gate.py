@@ -54,9 +54,9 @@ def validate_content(files):
     c04 = next((row for row in plan.splitlines() if row.startswith("C04 | ")), "")
     fifth_active = phase.fifth_plan_safe(plan)
     require((FOURTH_STATUS in c03 or fifth_active) and
-            ("C03-06 NO INICIADA" in c03 if fifth_active else "C03-05 NO INICIADA" in c03) and
+            (phase.next_locked(c03) in c03 if fifth_active else "C03-05 NO INICIADA" in c03) and
             "C03 NO CERTIFICADO" in c03 and "C04 BLOQUEADO" in c03 and
-            "C03 CERTIFICADO" not in c03 and "6/10" not in c03,
+            "C03 CERTIFICADO" not in c03 and ("7/10" if phase.sixth_certified(c03) else "6/10") not in c03,
             "Unauthorized C03-04/C03-05 progression or C03 chapter certification")
     require(c04 == "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
             "C04 was unlocked without C03 certification")
@@ -73,7 +73,7 @@ def validate_content(files):
     for name in ("prep", "future", "global", "decisions", "agents"):
         document = files[name]
         require("C03-04" in document and "4/10" in document and
-                ("C03-06 NO INICIADA" in document if fifth_active else
+                (phase.next_locked(c03) in document if fifth_active else
                  "C03-05 NO INICIADA" in document) and
                 "C03 NO CERTIFICADO" in document and "C04 BLOQUEADO" in document,
                 "Current approved phase not synchronized: " + name)
@@ -156,8 +156,8 @@ def main():
          phase.fifth_count_before(docs["plan"]) if phase.fifth_active(next((x for x in docs["plan"].splitlines() if x.startswith("C03 | ")), "")) else "CERTIFICACIÓN (4/10)**",
          phase.fifth_count_after(docs["plan"]) if phase.fifth_active(next((x for x in docs["plan"].splitlines() if x.startswith("C03 | ")), "")) else "CERTIFICACIÓN (5/10)**"),
         ("C03-05 started prematurely", "plan",
-         "C03-06 NO INICIADA" if phase.fifth_active(next((x for x in docs["plan"].splitlines() if x.startswith("C03 | ")), "")) else "C03-05 NO INICIADA",
-         "C03-06 INICIADA" if phase.fifth_active(next((x for x in docs["plan"].splitlines() if x.startswith("C03 | ")), "")) else "C03-05 INICIADA"),
+         phase.next_locked(next((x for x in docs["plan"].splitlines() if x.startswith("C03 | ")), "")) if phase.fifth_active(next((x for x in docs["plan"].splitlines() if x.startswith("C03 | ")), "")) else "C03-05 NO INICIADA",
+         phase.next_illicit(next((x for x in docs["plan"].splitlines() if x.startswith("C03 | ")), "")) if phase.fifth_active(next((x for x in docs["plan"].splitlines() if x.startswith("C03 | ")), "")) else "C03-05 INICIADA"),
         ("C04 prematurely unlocked", "plan",
          "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
          "C04 | Multitenancy, dominios y aprovisionamiento | INICIADO"),

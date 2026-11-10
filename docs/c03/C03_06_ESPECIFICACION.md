@@ -1,6 +1,6 @@
 # CRECISOL — C03-06 | Módulo vertical Branding e inyección explícita
 
-**Estado:** IMPLEMENTACIÓN TÉCNICA INICIADA, todavía **NO PROBADA NI CERTIFICADA**; certificación previa **C03-05 CERTIFICADA (5/10)**, C03-06 en desarrollo sobre rama de funcionalidad, C03-07 NO INICIADA, **C03 NO CERTIFICADO; C04 BLOQUEADO**.
+**Estado vigente:** **C03-06 CERTIFICADA (6/10)** tras PR #61 y 5/5 CI POSTMERGE SUCCESS en `a1923d117febc5fd4e5a544b558c0f85ad517b44` ([evidencia](C03_06_CERTIFICACION_POSTMERGE.md)), previa **C03-05 CERTIFICADA (5/10)**. **C03-07 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO.** **Estado histórico al iniciar esta especificación:** implementación en rama de trabajo, **NO PROBADA NI CERTIFICADA** entonces; esa frase no es la situación vigente.
 
 ## Autoridad / evidencia antes de escribir
 

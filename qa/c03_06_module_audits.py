@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 
 import c03_01_source as c03
 import c03_05_api_audits as c05
+import c03_05_status as stage
 
 ROOT = Path(__file__).resolve().parents[1]
 WORD = ROOT / "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx"
@@ -105,7 +106,9 @@ def audit_a():
         require(p.is_file(), "C03-06 deliverable missing: " + str(p))
     plan = read(PLAN)
     require("C03-05 CERTIFICADA (5/10)" in plan and
-            "C03-06 NO INICIADA" in plan and "C04 BLOQUEADO" in plan,
+            stage.fifth_plan_safe(plan) and
+            stage.next_locked(next((row for row in plan.splitlines() if row.startswith("C03 | ")), "")) in plan and
+            "C04 BLOQUEADO" in plan,
             "Previous stage must be certified before technical C03-06 merge")
     print("PASS C03-06 A: approved Word SHA, 7/9 original units and dependency rows, prior 5/10, scoped implementation.")
 

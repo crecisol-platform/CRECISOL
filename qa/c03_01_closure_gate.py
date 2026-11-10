@@ -81,7 +81,7 @@ def validate_content(files):
     fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in c03 or fifth_active
     third_active = third_status in c03 or fourth_active
     require((second_status in c03 or third_active) and
-            ("C03-06 NO INICIADA" in c03 if fifth_active else
+            (phase.next_locked(c03) in c03 if fifth_active else
              "C03-05 NO INICIADA" in c03 if fourth_active else
              "C03-04 NO INICIADA" in c03 if third_active else
              "C03-03 NO INICIADA" in c03),
@@ -94,7 +94,7 @@ def validate_content(files):
                 "C03 NO CERTIFICADO" in third and "C04 BLOQUEADO" in third,
                 "C03-03 needs its own limited owner authorization")
     if fifth_active:
-        require("5/10" in prep and "C03-06 NO INICIADA" in prep
+        require("5/10" in prep and phase.next_locked(c03) in prep
                 and "C03_05_ACTA_MICROFASE.md" in files["master"],
                 "C03-05 lacks its new acta or next-phase lock")
     if fourth_active:

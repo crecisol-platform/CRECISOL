@@ -20,12 +20,12 @@ class C03PortabilityTests(TestCase):
         self.assertNotIn("\\", "".join(domain.sources().keys()))
         self.assertNotIn("\\", "".join(app.authored_sources().keys()))
 
-    def test_only_fifth_stage_current_and_sixth_locked(self):
+    def test_only_current_phase_certified_and_next_phase_locked(self):
         plan = (state_plan := Path(__file__).resolve().parents[1] /
                 "docs/PLAN_37_CAPITULOS.md").read_text(encoding="utf-8")
         self.assertTrue(state.fifth_plan_safe(plan))
         for bad, changed in (
-            ("C03-06 NO INICIADA", "C03-06 INICIADA"),
+            (state.next_locked(plan), state.next_illicit(plan)),
             ("C03 NO CERTIFICADO", "C03 CERTIFICADO"),
             ("C04 BLOQUEADO", "C04 HABILITADO"),
         ):
@@ -38,7 +38,7 @@ class C03PortabilityTests(TestCase):
         readme = (root / "README.md").read_text(encoding="utf-8")
         current, historic = readme.split("## Historia fundacional — no vigente", 1)
         self.assertIn("2/37 capítulos certificados", current)
-        self.assertIn("C03-06 NO INICIADA", current)
+        self.assertIn(state.next_locked((root / "docs/PLAN_37_CAPITULOS.md").read_text(encoding="utf-8")), current)
         self.assertNotIn("0/37 capítulos certificados", current)
         self.assertIn("0/37 capítulos certificados", historic)
         first = (root / "docs/C01_PREPARACION.md").read_text(encoding="utf-8")
@@ -53,6 +53,13 @@ class C03PortabilityTests(TestCase):
                     for name, path in closure.FILES.items()}
         closure.validate_content(snapshot)
         closure.audit_document_mutations(snapshot)
+
+    def test_sixth_certificate_status_and_sequential_negative_cases(self):
+        import c03_06_status_audits as sixth
+        plan = (Path(__file__).resolve().parents[1] / "docs/PLAN_37_CAPITULOS.md").read_text(encoding="utf-8")
+        row = next((line for line in plan.splitlines() if line.startswith("C03 | ")), "")
+        if state.sixth_certified(row):
+            sixth.run()  # documentary-only, never create CI-only markers
 
     def test_ci_audit_c_fails_closed_without_real_proof(self):
         with TemporaryDirectory() as temp, mock.patch.object(api, "PROOF", Path(temp)):

@@ -66,7 +66,7 @@ def validate_content(files):
         require(("C03-05" in document and
                  ("CERTIFICADA (5/10)" in document or "CERTIFICADAS (5/10)" in document)
                  if certified else "C03-05 CERRADA TÉCNICAMENTE" in document) and
-                "5/10" in document and "C03-06 NO INICIADA" in document and
+                "5/10" in document and state.next_locked(row) in document and
                 "C03 NO CERTIFICADO" in document and "C04 BLOQUEADO" in document,
                 "Fifth stage missing or downstream not locked in " + label)
     require("C03-05" in spec and "NO CERTIFICADA" in spec and
@@ -125,7 +125,9 @@ def audit_document_mutations(docs):
         ("missing security mutations", "acta", "12/12 mutaciones adversariales", "0/12 mutaciones adversariales"),
         ("private caveat stripped", "acta", "NO se certifican BOLA/IDOR/MFA",
          "SÍ se certifican BOLA/IDOR/MFA"),
-        ("premature phase six", "plan", "C03-06 NO INICIADA", "C03-06 INICIADA"),
+        ("premature next microphase", "plan",
+         state.next_locked(next((line for line in docs["plan"].splitlines() if line.startswith("C03 | ")), "")),
+         state.next_illicit(next((line for line in docs["plan"].splitlines() if line.startswith("C03 | ")), ""))),
         ("premature chapter C03", "plan", "C03 NO CERTIFICADO", "C03 CERTIFICADO"),
         ("unearned C04", "plan", "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
          "C04 | Multitenancy, dominios y aprovisionamiento | INICIADO"),
