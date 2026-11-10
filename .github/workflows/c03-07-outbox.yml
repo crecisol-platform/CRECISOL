@@ -79,3 +79,5 @@ jobs:
           printf 'PASS: regressions\n' > .c03-07-ci-proof/regressions
       - name: Audit C runtime evidence architecture and bounded processing
         run: python3 qa/c03_07_outbox_audits.py C
+      - name: Independent C03-07 acta and 15 documentary adversarial mutations
+        run: python3 qa/c03_07_closure_gate.py
