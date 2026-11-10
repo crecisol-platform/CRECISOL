@@ -41,6 +41,8 @@ print('SYNTHETIC old chapter',sys.argv[1])
             'import unittest\nclass FixtureTest(unittest.TestCase):\n    def test_ok(self): self.assertTrue(True)\n', encoding='utf-8')
         (qa / 'test_c03_09_local_suite_contract.py').write_text(
             'import unittest\nclass FixtureShellTest(unittest.TestCase):\n    def test_ok(self): self.assertTrue(True)\n', encoding='utf-8')
+        (qa / 'test_c03_09_dev_db_tls_probe.py').write_text(
+            'import unittest\nclass FixtureDatabaseSafetyTest(unittest.TestCase):\n    def test_ok(self): self.assertTrue(True)\n', encoding='utf-8')
         (qa / 'c03_09_local_baseline.py').write_text("""import json,sys
 if '--self-test' in sys.argv:
     print('SYNTHETIC guard test')
@@ -91,13 +93,13 @@ raise RuntimeError('A synthetic fixture must never run real builds')
     def test_probe_runs_eight_static_checks_without_certifying(self):
         result = self.run_suite()
         self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
-        self.assertEqual(result.stdout.count('PASS '), 9)
+        self.assertEqual(result.stdout.count('PASS '), 10)
         manifest = self.evidence_manifest()
         self.assertEqual(manifest['audit_A_static_traceability'], 'PASS')
         self.assertEqual(manifest['audit_B_negative_guards'], 'PASS')
         self.assertEqual(manifest['audit_C_real_compatibility'], 'NOT_EXECUTED')
         self.assertFalse(manifest['phase_certified'])
-        self.assertTrue({'A_c03_07_source.txt','A_c03_08_source.txt','B_c03_07_negative.txt','B_c03_08_negative.txt','B_orchestrator_contracts.txt'}.issubset(manifest['file_sha256']))
+        self.assertTrue({'A_c03_07_source.txt','A_c03_08_source.txt','B_c03_07_negative.txt','B_c03_08_negative.txt','B_orchestrator_contracts.txt','B_dev_db_tls_safety.txt'}.issubset(manifest['file_sha256']))
 
     def test_run_without_toolchains_remains_blocked(self):
         result = self.run_suite('--run')
