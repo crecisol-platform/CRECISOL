@@ -71,3 +71,17 @@ Hallazgos detectados y corregidos antes de esta constancia:
 - **NO EJECUTADO:** `.NET 10`, `Node 24 + Angular 22`, `MySQL 8.4`, pruebas integrales de aislamiento ni métricas basales reales. La auditoría C integral sigue pendiente, así como acta, compilación, revisión humana y certificación.
 
 **Riesgos remanentes y cierre:** las pruebas de orquestación sintéticas no validan las pruebas históricas reales; las declaraciones A/B definitivas requieren ejecución del checkout completo y la tercera auditoría exige toolchains reales. Estado: **C03-09 EN DESARROLLO, NO CERTIFICADA; C03-10 PENDIENTE; C04 BLOQUEADO.** El bloqueo externo de GitHub Actions no impide estas preparaciones pero nunca se registra como CI satisfactoria.
+
+## Tercera ronda: acceso DEV remoto comunicado, sin tocar la base
+
+**Entrada del propietario (no verificada):** base de desarrollo `crecisol_dev` aparentemente vacía, en un servidor remoto, TCP 3306 y `SSL REQUIRED`; password no suministrada. No se registró host/IP ni cuenta de aplicación en el código o documentación. No se ha comprobado disponibilidad, versión `8.4.x`, vacío, permisos, identidad TLS ni red. Aunque el entorno sea DEV, no se presupone autorización para ensayos destructivos en una instancia persistente.
+
+**Auditoría A — trazabilidad (REVISIÓN DOCUMENTAL, PARCIAL):** C03-09 incorpora [C03_09_BASE_DEV_REMOTA_SEGURA.md](C03_09_BASE_DEV_REMOTA_SEGURA.md), `qa/c03_09_dev_db_tls_probe.py` y test independiente; sin cambiar Word/PDF, modelos de tenant, DDL, clientes Angular o API. La base remota se trata como recurso externo de lectura opcional, no sustituto de la base MySQL desechable para compatibilidad y regresiones.
+
+**Auditoría B — seguridad (13/13 CONTROLES OFFLINE PASS, no conexión):** pruebas ejecutadas con CPython en sandbox: plan sin conexión, aceptación explícita, opciones `VERIFY_IDENTITY`, ausencia de contraseña en argv/entorno, CA real por ruta absoluta fuera de Git, rechazo de base/version/cipher erróneos, resultados contaminados, SQL fijo solo `SELECT`/`SHOW`, errores privados y bandera `phase_certified=false`. Se repitieron **5/5** contratos de orquestación sintéticos del lanzador tras integrar el sexto control B. Total conjunto nuevo registrado: **33** (15 + 5 + 13). No ejecuta autenticación ni consultas reales.
+
+**Auditoría C — compatibilidad e infraestructura (PENDIENTE):** comandos de Python compilaron y tests sin red aprobaron, pero el entorno del asistente carece de MySQL 8.4 cliente/servidor, Node 24, .NET 10, CA y acceso autenticado. No se efectuaron compilaciones del producto, MySQL remota ni pruebas de rendimiento. El acceso remoto opt-in requerirá cert SAN/hostname, CA fuera de repo, privilegio de solo lectura, red restringida y consentimiento explícito.
+
+**Hallazgo documental adicional:** `docs/MASTER_REFERENCE.md` conserva una línea que trata PR #73 como candidato en borrador aunque su integración en `dev` fue verificada. Se anota inconsistencia de estado para remediación documental aislada; no se edita aquí para no alterar controles históricos de C01/C02/C03-01..08 sin regresiones completas.
+
+**Estado formal sin cambios:** C03-09 **EN DESARROLLO / NO CERTIFICADA**; C03-10 PENDIENTE; C03 NO CERTIFICADO; C04 BLOQUEADO; `dev`, `main` y el servidor remoto sin cambios. No se generó evidencia falsa de CI.
