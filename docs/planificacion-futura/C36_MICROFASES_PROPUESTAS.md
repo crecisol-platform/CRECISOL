@@ -23,4 +23,14 @@
 
 Implementar una microfase por vez, con especificación individual creada **solo al habilitarla** en `docs/c36/C36_XX_ESPECIFICACION.md`. Antes de escribir: repositorio, dev, skill, maestro, matriz, dependencias y riesgos. Evidencia de compilación real, pruebas positivas y negativas, auditorías A (requisitos), B (seguridad/tenancy), C (arquitectura/performance/UX), PR, diff, secreto y SHA, CI final y CI posterior, acta, reversión y cero P0/P1. Una falla o prueba requerida no ejecutada bloquea el avance. No VPS, pagos reales ni modificaciones SOLQARYN.
 
-Aunque se cierren 10/10, la certificación integral C36 requiere 3 auditorías de capítulo y aceptación expresa antes de habilitar C37. Los bloqueos de integración de terceros se conservan hasta autorización futura y pruebas reales, sin fingir certificación. Estado: PENDIENTE.
+Aunque se cierren 10/10, la certificación integral C36 requiere 3 auditorías de capítulo y aceptación expresa antes de habilitar C37. Los bloqueos de integración de terceros se conservan hasta autorización futura y pruebas reales, sin fingir certificación. Estado: PENDIENTE.\n
+## Ampliación comercial COM-001..COM-014 — dependencia transversal (10-11-2026)
+
+**Solo planificación; NO IMPLEMENTADO / NO CERTIFICADO.** Requisitos derivados de `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de una actualización del Word maestro **todavía pendiente de incorporación y comprobación de huellas en GitHub**; esta nota no sustituye el Word ni habilita C36.
+
+- **COM:** COM-001..COM-014.
+- **Microfases a revisar sin renumerar:** C36-01, C36-02, C36-03, C36-04, C36-06, C36-07, C36-08, C36-09 y C36-10.
+- **Aceptación futura:** Completar COM-T01..COM-T18 con expected/actual, capturas, pruebas reales, matrices cross-tenant, carreras, renovación y deuda; A/B/C por fase.
+- **Negativos:** Sin certificar por texto escrito; cero P0/P1, no mezclar datos, no perder históricos, no permitir cargo no confirmado ni renovación cancelada.
+- **Pruebas definidas y NO ejecutadas:** COM-T01..COM-T18.
+- **Gate:** Word aprobado y verificable, capítulo precedente certificado, A/B/C, CI y acta propia. Sin datos productivos, despliegues ni pagos reales.
