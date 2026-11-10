@@ -1,34 +1,43 @@
 # CRECISOL
 
-**Tu negocio, a tu manera.** — SaaS multitenant para comercio, servicios y membresías.
+**Tu negocio, a tu manera.** — SaaS multitenant en desarrollo para comercio, servicios y membresías.
 
-Repositorio privado e independiente. El Documento Maestro Único institucional se conserva en `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` con su exportación PDF. La trazabilidad de versión y las huellas verificadas constan en `docs/MASTER_REFERENCE.md`.
+## Estado vigente (GitHub, noviembre de 2026)
 
-## Estado inicial del desarrollo — 8 de noviembre de 2026
+**C01 CERTIFICADO (8/8), C02 CERTIFICADO (9/9; solo público/sintético); C03-01 a C03-05 CERTIFICADAS (5/10).**
+**2/37 capítulos certificados (C01 y C02). C03-06 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO.**
 
-- **37 capítulos documentados, 0 capítulos certificados en código.** La fase 1 corresponde al capítulo 01: identidad, visión, alcance y principios.
-- `main`: integración estable de documentación y cambios revisados; no presume software ya certificado.
-- `dev`: integración de desarrollo; tareas nuevas en `feature/cNN-*` y PR.
-- El repositorio contiene arquitectura, normas, estructura y verificaciones preliminares; **todavía no existe un SaaS operativo, infraestructura desplegada ni cobros**.
-- En este repositorio privado la protección automática de ramas no está activa por las condiciones del plan GitHub. Seguimos con PR, revisión manual y CI disponible; ver `docs/REPOSITORY_GATES.md`.
+Se verificó el [PR documental #58](https://github.com/solqaryn-platform/CRECISOL/pull/58) y sus **11/11 CI POSTMERGE SUCCESS**, sobre el commit 12fb19b0c35038c297939e17b27770c4fd63f77e. [Acta y evidencia definitiva C03-05](docs/c03/C03_05_CERTIFICACION_POSTMERGE.md).
 
-## Estructura
+**Autoridad funcional:** Documento Maestro Único Word y PDF de lectura, huellas en [MASTER_REFERENCE.md](docs/MASTER_REFERENCE.md). **Autoridad del estado vigente:** [PLAN_37_CAPITULOS.md](docs/PLAN_37_CAPITULOS.md). Las actas y notas antiguas conservan sus estados históricos, pero no sustituyen el encabezado de estado actual.
 
-- `frontend/` — Angular 22 y Node.js 24 para herramientas, sujetos a pruebas reales.
-- `backend/` — ASP.NET Core 10, arquitectura limpia y monolito modular.
-- `database/` — MySQL 8.4 LTS, esquema relacional con protección por tenant.
-- `docs/` — fuente maestra, diseño y secuencia de 37 capítulos.
-- `qa/` — verificaciones reproducibles y pruebas con evidencia.
-- `.agents/skills/crecisol-project-governance/` — Skill local de gobierno exclusiva de CRECISOL.
+## Qué existe y qué falta
 
-## Reglas de contribución
+- frontend/: Angular 22, sitio de marca pública, experiencias, demostraciones, alta de empresas, harness sintético y pruebas Chromium; Node.js 24 para tooling.
+- backend/: .NET 10, Domain/Application/Infrastructure/API, contratos tipados, validación HTTP y solo una ruta GET pública de marca PLATFORM.
+- database/: esquema MySQL 8.4 de marca inicial y pruebas desechables, sin datos ni conexiones productivas.
+- qa/: pruebas reales de integración/CI, auditorías A/B/C y evidencias posteriores por SHA.
+- .agents/skills/crecisol-project-governance/: única Skill local propia de CRECISOL.
 
-Revisar `AGENTS.md`, la Skill local y el maestro canónico antes de escribir. Un capítulo a la vez, con pruebas positivas/negativas y triple auditoría A/B/C antes de certificar. Aislamiento tenant/sucursal y autorización server-side obligatorios.
+No se ha implementado aún autenticación/MFA/RBAC privados, multitenancy shared/dedicated operativo, panel administrativo, CRUD de negocios, catálogo/inventario, pagos, workers, outbox ni despliegues. No es un SaaS productivo.
 
-No copiar credenciales, fuentes, configuraciones ni recursos de `solqaryn/Solqaryn`. Solo consulta autorizada; ningún cambio en SOLQARYN. No desplegar ni activar servicios externos durante la fase local.
+## Comprobación local en Windows, Linux y macOS
 
-**Comprobación inicial:** `python3 qa/validate_foundation.py` verifica estructura y alcance, **no compila ni certifica** Angular, .NET o MySQL.
+Desde la raíz del repositorio con Python 3.11+:
 
-## Referencias visuales históricas
+```powershell
+py -3.11 qa\c03_local_preflight.py
+py -3.11 qa\test_c03_portability.py
+```
 
-La [biblioteca de diseño curada](docs/referencias-visuales/README.md) documenta cómo nació la idea y los prototipos aprobados como **inspiración visual**, no como código ni como documentación normativa. Se mantendrá el logo oficial azul y se construirá el frontend de CRECISOL desde cero.
+En Linux/macOS: `python3 qa/c03_local_preflight.py` y `python3 qa/test_c03_portability.py`.
+
+El preflight ejecuta **solo auditorías A/B de fuente y seguridad estáticas de C03-01..05** y comprobación de rutas Windows. **No ejecuta auditoría C, compilaciones .NET/Angular, MySQL, Chromium ni certificación.** Las auditorías C exigen pruebas reales y marcadores temporales .c03-*-ci-proof generados después de los pasos correspondientes en GitHub Actions; no se crean, falsifican ni versionan para hacer pasar pruebas locales. [Workflow de compatibilidad](.github/workflows/c03-local-portability.yml).
+
+## Reglas de trabajo
+
+Leer [AGENTS.md](AGENTS.md) y la Skill local. Usar ramas feature/* y PR hacia dev, sin alterar main. Revisión de diff, seguridad multitenant y autorización backend antes de cualquier avance. No tocar SOLQARYN ni VPS, DNS, producción, pagos ni secretos reales. Las protecciones automáticas de ramas no están activas; se compensan con disciplina manual y CI.
+
+## Historia fundacional — no vigente
+
+El **8 de noviembre de 2026** el repositorio comenzó con **0/37 capítulos certificados**. Es un dato del origen del proyecto, **no el estado presente**. [Referencias visuales históricas](docs/referencias-visuales/README.md) son inspiración no normativa; se respeta el logo azul oficial.
