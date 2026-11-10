@@ -1,0 +1,60 @@
+name: CRECISOL C03 local static A-B and Windows path portability
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'docs/C01_PREPARACION.md'
+      - 'docs/C02_PREPARACION.md'
+      - 'docs/C03_PREPARACION.md'
+      - 'docs/PROTOCOLO_CONTINUIDAD_CRECISOL.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'docs/MASTER_REFERENCE.md'
+      - 'docs/DECISIONES_ABIERTAS.md'
+      - 'docs/c03/C03_05_*'
+      - 'docs/planificacion-futura/C03_MICROFASES_PROPUESTAS.md'
+      - 'qa/c03_*'
+      - '.github/workflows/c03-local-portability.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'docs/C01_PREPARACION.md'
+      - 'docs/C02_PREPARACION.md'
+      - 'docs/C03_PREPARACION.md'
+      - 'docs/PROTOCOLO_CONTINUIDAD_CRECISOL.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'docs/MASTER_REFERENCE.md'
+      - 'docs/DECISIONES_ABIERTAS.md'
+      - 'docs/c03/C03_05_*'
+      - 'docs/planificacion-futura/C03_MICROFASES_PROPUESTAS.md'
+      - 'qa/c03_*'
+      - '.github/workflows/c03-local-portability.yml'
+permissions:
+  contents: read
+jobs:
+  c03-static-windows-linux:
+    if: startsWith(github.head_ref, 'feature/c03-remediacion-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 12
+    steps:
+      - name: Checkout no persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install supported Python 3.11
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11'
+      - name: Compile pure Python scripts
+        run: python -m compileall -q qa
+      - name: Cross-platform audit key, status negative and CI proof fail-closed checks
+        run: python qa/test_c03_portability.py
+      - name: Actual canonical Word + source-only C03-01..05 A/B and Windows path audit
+        run: python qa/c03_local_preflight.py
