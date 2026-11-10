@@ -73,7 +73,7 @@ cd ~/src/CRECISOL
 bash qa/c03_09_local_suite.sh --probe
 ```
 
-El lanzador ejecuta **cuatro comprobaciones A** (maestro, preflight histórico y auditorías de código de C03-07/C03-08) y **cinco comprobaciones B** (15 pruebas del runner, 5 contratos sintéticos de orquestación, auditorías negativas C03-07/C03-08 y autoprueba fail-closed). Después detecta herramientas, SDKs, dependencias locales e imagen MySQL disponible.
+El lanzador ejecuta **cuatro comprobaciones A** (maestro, preflight histórico y auditorías de código de C03-07/C03-08) y **seis comprobaciones B** (15 pruebas del runner, 5 contratos sintéticos del lanzador, 13 controles offline de TLS/solo lectura DEV, auditorías negativas C03-07/C03-08 y autoprueba fail-closed). Después detecta herramientas, SDKs, dependencias locales e imagen MySQL disponible.
 
 - Si faltan herramientas, informa `BLOCKED_MISSING_LOCAL_TOOLCHAIN`, devuelve código **2** y deja C como **NOT_EXECUTED**; no inventa una medición.
 - La carpeta de evidencia se crea por defecto en `~/crecisol-local-evidence/c03-09-FECHA-SHA/`, **fuera del repositorio** y con permisos de usuario.
@@ -149,3 +149,18 @@ python3 -m unittest discover -s qa -p test_c03_09_local_suite_contract.py -v
 ```
 
 No equivalen a una auditoría C aprobada: C solo podrá completarse cuando `--run` ejecute Angular/.NET/MySQL reales. Toda evidencia indica `phase_certified=false` hasta la revisión del equipo y acta correspondiente.
+
+## DEV remoto anunciado: verificación independiente y estrictamente opt-in
+
+El propietario ha comunicado que existe `crecisol_dev` en un servidor remoto. Esto **no** cambia el benchmark local desechable: el lanzador de C03-09 NO conecta por defecto a esa base y jamás traslada allí los tests de escrituras, migraciones, outbox, excepciones de autorización o carga. Solo se añadió el **test de seguridad offline** como sexto control B.
+
+La verificación eventual de versión y TLS del servidor remoto se documenta en [C03_09_BASE_DEV_REMOTA_SEGURA.md](C03_09_BASE_DEV_REMOTA_SEGURA.md). Requiere CA confiable con identidad correcta, usuario de lectura de DEV configurado en MySQL login-path privado, el CLI instalado y confirmación explícita. Ningún certificado, password, host/IP, usuario o DSN entra en Git. Si falla la validación de CA/identidad, **no** usar un modo TLS menos estricto para evitar el error.
+
+Sin equipo y sin credenciales válidas el resultado continúa **NO EJECUTADO**. Ejecutar el plan seguro sin conectar sí es posible:
+
+```bash
+python3 qa/c03_09_dev_db_tls_probe.py --plan
+python3 -m unittest discover -s qa -p test_c03_09_dev_db_tls_probe.py -v
+```
+
+La nueva evidencia de seguridad eleva la cobertura sintética de instrumentación de **20 a 33 casos** (15 del runner, 5 del lanzador y 13 del verificador DEV). No se confunden con la auditoría C real, que sigue pendiente.
