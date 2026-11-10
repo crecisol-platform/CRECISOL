@@ -54,3 +54,20 @@ Hallazgos detectados y corregidos antes de esta constancia:
 - **Siguiente paso técnico:** ejecutar desde una PC preparada `bash qa/c03_09_local_suite.sh --probe` y luego `--run`, sobre el SHA real y un checkout limpio. Conservar manifiesto SHA-256, muestras y resultados; resolver fallos y completar A/B/C antes de cualquier certificación.
 
 **Conclusión honesta:** las preauditorías estáticas y las 14 pruebas de control del ejecutor evidencian preparación y correcciones; **no** prueban aún que CRECISOL compile o que su rendimiento y MySQL sean correctos.
+
+## Segunda ronda de preauditoría — fortalecimiento del mismo C03-09
+
+**A — Trazabilidad complementaria (revisión estática; no cierre):**
+- Verificados en GitHub el alcance actual de `dev` y de `feature/c03-09-compat-benchmark-local`, contratos de `qa/c03_07_outbox_audits.py` y `qa/c03_08_local_config_audits.py` y las modalidades A/B/C. Los comandos **A** y **B** de ambas microfases certificadas son estáticos; `C` exige sus pruebas de ejecución históricas y no se simula.
+- El ejecutor añade explícitamente cuatro verificaciones **A** y cinco verificaciones **B**, y rechaza `main`, otro origen Git, árboles sucios y un SHA no válido. Esto prepara la regresión documental y funcional, sin reabrir certificaciones previas.
+
+**B — Seguridad del ejecutor (20/20 pruebas en copias aisladas):**
+- `qa/test_c03_09_local_baseline.py`: **15/15** pruebas de Python positivas/negativas pasadas sobre una reproducción del código. Se añadió limpieza de grupos de procesos por `KeyboardInterrupt` además de timeout y redacción de logs de error.
+- `qa/test_c03_09_local_suite_contract.py`: **5/5** contratos sintéticos pasados en Linux: rechazo de rama `main`, rechazo de origen ajeno, preflight con nueve controles, `--run` bloqueado al faltar herramientas y fallo B simulado que bloquea C sin certificación.
+- El script Bash del lanzador y su test de contrato se verificaron además por **Git blob SHA-1 idéntico** a la rama: `74b5842e10dd73ce2943b4df47cd44cdbc157ece` y `6d1ef2f76ea3e2807b888a1a42a8eb6f5534dec4`. Las otras pruebas se ejecutaron en copias aisladas y **no** deben presentarse como un checkout completo autorizado de CRECISOL.
+
+**C — Arquitectura/compatibilidad (revisión estática PARCIAL):**
+- `bash -n` y `python3 -m py_compile` de los scripts locales: PASS. Los fixtures `--probe` y `--run` retornaron bloqueo predecible y `phase_certified=false` cuando faltaba el stack; se rechazó rama incorrecta **antes** de crear evidencia.
+- **NO EJECUTADO:** `.NET 10`, `Node 24 + Angular 22`, `MySQL 8.4`, pruebas integrales de aislamiento ni métricas basales reales. La auditoría C integral sigue pendiente, así como acta, compilación, revisión humana y certificación.
+
+**Riesgos remanentes y cierre:** las pruebas de orquestación sintéticas no validan las pruebas históricas reales; las declaraciones A/B definitivas requieren ejecución del checkout completo y la tercera auditoría exige toolchains reales. Estado: **C03-09 EN DESARROLLO, NO CERTIFICADA; C03-10 PENDIENTE; C04 BLOQUEADO.** El bloqueo externo de GitHub Actions no impide estas preparaciones pero nunca se registra como CI satisfactoria.
