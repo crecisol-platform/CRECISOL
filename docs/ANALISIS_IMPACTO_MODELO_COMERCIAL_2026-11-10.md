@@ -105,19 +105,26 @@ Estas cuestiones se relacionan con `ADR-005`, `ADR-006` y nuevas decisiones come
 - **Rollback:** cerrar el PR y eliminar su rama de trabajo si fuese necesario; no hay migraciones ni datos afectados.
 - **Pruebas (alcance original):** lectura y comparación GitHub de la base, revisión estática del texto y diff inicial del PR. Las verificaciones adicionales constan en la sección 8. **No afirmar auditorías A/B/C de software, compilaciones, CI ni certificación sin evidencias reales**.
 
-## 8. Actualización tras recibir los originales del propietario — 10-11-2026
+## 8. Evidencia de originales y subida real del Documento Maestro — 10-11-2026
 
-El propietario adjuntó a la conversación el DOCX y PDF originales. Se **comprobó localmente** que los SHA-256 coinciden exactamente con `docs/MASTER_REFERENCE.md`: DOCX original `e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e`, PDF original `17ffe48aab3b224cc9b11927c498e4f49c162d96bf639c894b84259f597738dd`. El bloqueo de acceso al binario **se resolvió para la edición local**, pero **el conector GitHub no permite subir binarios DOCX/PDF**; la integración de la nueva edición a esta rama está pendiente.
+El propietario adjuntó el DOCX y PDF institucionales, verificados por SHA-256 contra `docs/MASTER_REFERENCE.md`. La antigua limitación de obtención de binarios mediante el conector GitHub se resolvió mediante carga manual por el propietario **en la rama de trabajo del PR #73**, sin modificar `dev`:
 
-**Resultados locales reproducibles de la edición preparada (no existente aún en esta rama):**
+| Archivo canónico en el PR #73 | Tamaño real | SHA-256 | Git blob SHA-1 comprobado |
+| --- | ---: | --- | --- |
+| `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` | 1 353 343 bytes | `ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c` | `fe7aaab60b603f1844e18666e2f99c0ea97e86e9` |
+| `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf` | 4 657 572 bytes | `0dfd3217439760540390707ea8196d6252464a501a7fe3e6eafdc49eda39da77` | `93c8412b2450e85a882b622e7a012477c61c2359` |
 
-| Archivo preparado localmente | SHA-256 | Tamaño | Verificación |
-| --- | --- | ---: | --- |
-| `CRECISOL_DOCUMENTO_MAESTRO_UNICO_EDICION_COMERCIAL_2026-11-10.docx` | `ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c` | 1,353,343 bytes | 37 capítulos, 1,687 párrafos originales sin cambio, 189 tablas anteriores y logo idénticos, 5 tablas nuevas |
-| `CRECISOL_DOCUMENTO_MAESTRO_UNICO_EDICION_COMERCIAL_2026-11-10.pdf` | `eabf7641c93158d9a7519e4c2b5785015ef6908cbff9edf51844bdd58a3e7cf6` | 4,632,379 bytes | 237 páginas, 229 anteriores con cuerpo de texto idéntico en comparación PDF, 8 páginas añadidas |
+La copia canónica original del 08-11-2026, conservada en el historial Git, tenía Word SHA-256 `e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e` y PDF `17ffe48aab3b224cc9b11927c498e4f49c162d96bf639c894b84259f597738dd`. Ambos hashes y blobs originales quedaron registrados en el maestro de referencias, **sin sobrescribirlos ni convertirlos en el digest de la edición nueva**.
 
-La adenda comercial local incluye `COM-001..COM-014`, `COM-T01..COM-T18`, 37 referencias de capítulo y obligaciones transversales, con precios, días de gracia y penalidades pendientes de definición/validación legal. Renderizado mediante `render_docx.py` (237 páginas), inspección de miniaturas del anexo, ZIP CRC y ubicación de bloques PDF (sin contenido fuera del lienzo); **no se ejecutaron pruebas de software ni revisión legal**.
+**Pruebas locales ejecutadas:** CRC del ZIP DOCX, preservación estructural del prefijo histórico de 1 876 elementos XML (1 687 párrafos + 189 tablas), SHA-256 de C14N `6238a81010d8bfd035eda77fa33897a009f4b363d4e281723c723b6b60c807d5`, logo sin modificación y edición con 37 capítulos, 194 tablas totales y COM-001..014/COM-T01..18. Se renderizaron 237 páginas del DOCX; se comparó el contenido principal de las 229 páginas históricas con la edición actual y se inspeccionaron las ocho páginas adicionales. **Estas pruebas son documentales, no certifican funcionamiento del SaaS**.
 
-**Actualización de esta rama:** notas de planificación condicionada añadidas exclusivamente a 24 propuestas de microfases futuras (C04, C05, C06, C07, C08, C09, C12, C15, C17, C18, C19, C20, C21, C23, C25, C26, C27, C29, C30, C31, C33, C34, C36 y C37). También se añadieron referencias preparatorias en `docs/DECISIONES_ABIERTAS.md`, `docs/PLAN_37_CAPITULOS.md`, `docs/PLAN_MICROFASES_37_CAPITULOS_PROPUESTO.md`, `docs/ARQUITECTURA.md` y `docs/SEGURIDAD_MULTITENANT.md`. No se han abierto fases de código ni alterado la historia de C01, C02 o C03.
+## 9. Migración de validadores y puertas de CI (PR #73, documentación en revisión)
 
-**NO_GO de integración vigente:** no fusionar PR #73 sin incorporar el DOCX/PDF nuevos como la misma edición, actualizar `docs/MASTER_REFERENCE.md` con sus blobs Git reales, migrar validadores históricos de SHA/contenido/estructura, ejecutar CI y tres auditorías A/B/C exigibles. Los controles A/B/C estáticos locales son revisiones preliminares, no certificaciones ni aprobación jurídica. `dev` y `main` deben permanecer intactos hasta cumplir dichas puertas.
+El control de edición de `qa/master_source_guard.py` valida **simultáneamente** nuevo DOCX/PDF por SHA-256/blob, preservación C14N de 1 876 elementos antiguos, imagen original y cobertura comercial. Ejecuta mutaciones adversariales. Los validadores históricos de C01/C02/C03 mantienen sus constantes `EXPECTED_SHA`, `WORD_SHA` y `HASH` antiguas para verificar la cadena documental de certificación; solo delegan la comprobación del binario **activo** al control versionado, sin alterar la fuente original ni sus actas.
+
+- `qa/commercial_master_audits.py`: auditorías A (trazabilidad y 24 propuestas afectadas), B (ocho condiciones estáticas de seguridad más ocho mutaciones), C (37 capítulos + 18 pruebas + 194 tablas + PDF de 237 páginas).
+- `.github/workflows/commercial-master-gate.yml`: ejecuta las auditorías A/B/C y regresiones documentales de C01, C02 y C03, sin credenciales persistidas ni despliegue.
+- `.github/workflows/foundation-check.yml`: incorpora la prueba de integridad/mutación de las dos ediciones.
+- Planes y decisiones alineados a la **subida ya realizada en la rama**, con 37 capítulos y microfases originales intactos. No se tocan código de aplicación, migraciones ni actas históricas.
+
+**PENDIENTE / NO_GO:** resultados efectivos de CI para SHA final del PR #73, revisión completa de las auditorías documentales y de las regresiones provocadas por las nuevas huellas, revisión jurídica aplicable a penalidades/renovación/publicidad, aprobación humana antes de fusión. **El PR permanece borrador; C03-09 no iniciada; C04 bloqueado.** Ningún texto sobre CI o A/B/C equivale a afirmar éxito hasta disponer de resultados de ejecución concretos.
