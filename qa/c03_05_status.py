@@ -1,87 +1,136 @@
-"""C03-05 status machine: historic technical 5/10 or verified final 5/10.
+"""CRECISOL C03: append-only sequential state guards for stages five and six.
 
-No shortcut to C03-06 or C04. Historical evidence may remain verbatim in actas,
-but only the CURRENT plan heading and CURRENT C03 row define active status.
+Historical acts remain immutable. Only the active plan heading and current C03
+row can promote status. Sixth-stage certification requires its *separate*
+documentary evidence and MUST keep C03-07, C03 chapter and C04 locked.
 """
 FIFTH_STATUS = (
     "**C03-01, C03-02, C03-03 Y C03-04 CERTIFICADAS (4/10); "
     "C03-05 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (5/10)**"
 )
 CERTIFIED_STATUS = "**C03-01 A C03-05 CERTIFICADAS (5/10)**"
+SIXTH_STATUS = "**C03-01 A C03-06 CERTIFICADAS (6/10)**"
 CERTIFIED_MERGE = "12fb19b0c35038c297939e17b27770c4fd63f77e"
+SIXTH_MERGE = "a1923d117febc5fd4e5a544b558c0f85ad517b44"
 PROOF_DOC = "C03_05_CERTIFICACION_POSTMERGE.md"
+SIXTH_PROOF = "C03_06_CERTIFICACION_POSTMERGE.md"
+
+
+def sixth_certified(c03_row):
+    return SIXTH_STATUS in c03_row
 
 
 def fifth_certified(c03_row):
-    return CERTIFIED_STATUS in c03_row
+    return CERTIFIED_STATUS in c03_row or sixth_certified(c03_row)
 
 
 def fifth_active(c03_row):
     return fifth_certified(c03_row) or FIFTH_STATUS in c03_row
 
 
+def next_locked(c03_row):
+    return "C03-07 NO INICIADA" if sixth_certified(c03_row) else "C03-06 NO INICIADA"
+
+
+def next_illicit(c03_row):
+    return "C03-07 INICIADA" if sixth_certified(c03_row) else "C03-06 INICIADA"
+
+
+def next_topic(c03_row):
+    return "C03-07" if sixth_certified(c03_row) else "C03-06"
+
+
 def fifth_status_marker(plan):
-    """Return exact marker for documentary mutation tests, no substr shortcuts."""
+    """Exact first matching active marker for negative documentary mutations."""
+    if SIXTH_STATUS in plan:
+        return SIXTH_STATUS
     if CERTIFIED_STATUS in plan:
         return CERTIFIED_STATUS
     if FIFTH_STATUS in plan:
         return FIFTH_STATUS
-    raise AssertionError("No recognized fifth-phase provenance in plan")
+    raise AssertionError("No recognized fifth/sixth-phase provenance in plan")
 
 
 def fifth_count_before(plan):
-    return (CERTIFIED_STATUS if CERTIFIED_STATUS in plan
-            else "CERTIFICACIÓN (5/10)**")
+    if SIXTH_STATUS in plan:
+        return SIXTH_STATUS
+    return CERTIFIED_STATUS if CERTIFIED_STATUS in plan else "CERTIFICACIÓN (5/10)**"
 
 
 def fifth_count_after(plan):
+    if SIXTH_STATUS in plan:
+        return "**C03-01 A C03-07 CERTIFICADAS (7/10)**"
     return ("**C03-01 A C03-06 CERTIFICADAS (6/10)**"
             if CERTIFIED_STATUS in plan else "CERTIFICACIÓN (6/10)**")
 
 
 def fifth_safe(c03_row):
-    certified = fifth_certified(c03_row)
+    sixth = sixth_certified(c03_row)
+    fifth = CERTIFIED_STATUS in c03_row
     historical = FIFTH_STATUS in c03_row
-    if not certified and not historical:
+    require_exactly_one = int(sixth) + int(fifth) + int(historical)
+    if require_exactly_one == 0:
         return False
-    if certified and historical:
-        raise AssertionError("Contradictory active fifth-phase statuses")
-    required = (
-        "C03-06 NO INICIADA", "C03 NO CERTIFICADO", "C04 BLOQUEADO",
-        "2/37 capítulos certificados (C01 y C02)",
-    )
-    if not all(token in c03_row for token in required):
-        raise AssertionError("C03-05 status lost downstream chapter locks")
-    if certified:
-        for item in ("PR #58", "11/11 POSTMERGE SUCCESS", CERTIFIED_MERGE,
-                     PROOF_DOC, "C03-05 CERTIFICADA (5/10)"):
-            if item not in c03_row:
-                raise AssertionError("Final C03-05 status lacks verified provenance: " + item)
-    if "6/10" in c03_row or "C03 CERTIFICADO" in c03_row:
-        raise AssertionError("C03 chapter/sixth phase unlawfully promoted")
+    if require_exactly_one != 1:
+        raise AssertionError("Conflicting current fifth/sixth-phase statuses")
+    common = ("C03 NO CERTIFICADO", "C04 BLOQUEADO",
+              "2/37 capítulos certificados (C01 y C02)")
+    if not all(item in c03_row for item in common):
+        raise AssertionError("Sequential chapter locks lost")
+    if sixth:
+        exact = (
+            "C03-05 CERTIFICADA (5/10)", "C03-06 CERTIFICADA (6/10)",
+            "C03-07 NO INICIADA", "PR #61", "5/5 POSTMERGE SUCCESS",
+            SIXTH_MERGE, SIXTH_PROOF, CERTIFIED_MERGE
+        )
+        if not all(item in c03_row for item in exact):
+            raise AssertionError("Sixth-stage status has no verified previous gates or locked next stage")
+        if "7/10" in c03_row or "C03 CERTIFICADO" in c03_row:
+            raise AssertionError("Seventh microphase or chapter illegally advanced")
+    else:
+        if "C03-06 NO INICIADA" not in c03_row:
+            raise AssertionError("Fifth-stage status lost next-phase lock")
+        if fifth:
+            for item in ("PR #58", "11/11 POSTMERGE SUCCESS", CERTIFIED_MERGE,
+                         PROOF_DOC, "C03-05 CERTIFICADA (5/10)"):
+                if item not in c03_row:
+                    raise AssertionError("Final fifth-stage status lacks verified provenance: " + item)
+        if "6/10" in c03_row or "C03 CERTIFICADO" in c03_row:
+            raise AssertionError("Sixth phase/chapter illegally advanced before its acta")
     return True
 
 
 def fifth_plan_safe(plan_text):
-    """Fail closed if active header and chapter row diverge."""
+    """Fail closed when active heading and C03 row disagree on current stage."""
     rows = plan_text.splitlines()
-    c03 = next((row for row in rows if row.startswith("C03 | ")), "")
-    if not fifth_safe(c03):
+    row = next((line for line in rows if line.startswith("C03 | ")), "")
+    if not fifth_safe(row):
         return False
-    active = next((row for row in rows[:7] if "**ESTADO VIGENTE:" in row), "")
+    active = next((line for line in rows[:7] if "**ESTADO VIGENTE:" in line), "")
     mandatory = (
-        "2/37 capítulos certificados (C01 y C02)", "C03-06 NO INICIADA",
-        "C03 NO CERTIFICADO", "C04 BLOQUEADO",
+        "2/37 capítulos certificados (C01 y C02)",
+        next_locked(row), "C03 NO CERTIFICADO", "C04 BLOQUEADO",
     )
     if not all(item in active for item in mandatory):
-        raise AssertionError("C03-05 heading diverges from locked chapter row")
-    if fifth_certified(c03):
+        raise AssertionError("Active heading contradicts the locked C03 row")
+    if sixth_certified(row):
+        for item in ("C03-05 CERTIFICADA (5/10)",
+                     "C03-06 CERTIFICADA (6/10)",
+                     "5/5 CI POSTMERGE SUCCESS", SIXTH_MERGE):
+            if item not in active:
+                raise AssertionError("Certified sixth-stage heading lacks immutable evidence: " + item)
+        if "7/10" in active or "C03 CERTIFICADO" in active:
+            raise AssertionError("Seventh phase/chapter illegally advanced in active heading")
+    elif CERTIFIED_STATUS in row:
         for item in ("C03-05 CERTIFICADA (5/10)", "11/11 CI POSTMERGE SUCCESS",
                      CERTIFIED_MERGE):
             if item not in active:
-                raise AssertionError("Active heading lacks certified fifth-stage proof: " + item)
-    elif "C03-05 CERRADA TÉCNICAMENTE" not in active:
-        raise AssertionError("Technical fifth-stage heading is missing")
-    if "6/10" in active or "C03 CERTIFICADO" in active:
-        raise AssertionError("C03-06/C03 chapter unlawfully advanced in heading")
+                raise AssertionError("Certified fifth-stage heading lacks immutable evidence: " + item)
+        if "6/10" in active or "C03 CERTIFICADO" in active:
+            raise AssertionError("Sixth phase/chapter illegally advanced in active heading")
+    else:
+        if "C03-05 CERRADA TÉCNICAMENTE" not in active:
+            raise AssertionError("Historical fifth technical heading missing")
+        if "6/10" in active or "C03 CERTIFICADO" in active:
+            raise AssertionError("Sixth phase/chapter illegally advanced")
     return True
