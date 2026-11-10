@@ -77,7 +77,7 @@ def validate_content(files):
     second_status = ("**C03-01 CERTIFICADA (1/10) Y "
                      "C03-02 CERRADA TÉCNICAMENTE/APROBADA PARA CERTIFICACIÓN (2/10)**")
     third_status = "**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**"
-    fifth_active = phase.fifth_safe(c03)
+    fifth_active = phase.fifth_plan_safe(plan)
     fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in c03 or fifth_active
     third_active = third_status in c03 or fourth_active
     require((second_status in c03 or third_active) and

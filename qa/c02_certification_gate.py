@@ -53,7 +53,7 @@ def validate_content(files):
     # After C02 certification, opening *only* C03-01 is legitimate. Historical
     # C02 acta remains a snapshot; C04 must stay locked until C03 acceptance.
     c03_active = "**EN DESARROLLO C03-01 (0/10)**" in c03_row
-    fifth_active = phase.fifth_safe(c03_row)
+    fifth_active = phase.fifth_plan_safe(plan)
     c03_closed_four = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in c03_row or fifth_active
     c03_closed_three = ("**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**" in c03_row or c03_closed_four)
     c03_closed_two = "**C03-01 CERTIFICADA (1/10) Y C03-02 CERRADA TÉCNICAMENTE/APROBADA PARA CERTIFICACIÓN (2/10)**" in c03_row or c03_closed_three

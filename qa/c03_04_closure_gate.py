@@ -52,7 +52,7 @@ def validate_content(files):
     prep, master = files["prep"], files["master"]
     c03 = next((row for row in plan.splitlines() if row.startswith("C03 | ")), "")
     c04 = next((row for row in plan.splitlines() if row.startswith("C04 | ")), "")
-    fifth_active = phase.fifth_safe(c03)
+    fifth_active = phase.fifth_plan_safe(plan)
     require((FOURTH_STATUS in c03 or fifth_active) and
             ("C03-06 NO INICIADA" in c03 if fifth_active else "C03-05 NO INICIADA" in c03) and
             "C03 NO CERTIFICADO" in c03 and "C04 BLOQUEADO" in c03 and

@@ -51,7 +51,7 @@ def validate_content(files):
     plan, prep, master = files["plan"], files["prep"], files["master"]
     c03 = next((line for line in plan.splitlines() if line.startswith("C03 | ")), "")
     c04 = next((line for line in plan.splitlines() if line.startswith("C04 | ")), "")
-    fifth_active = phase.fifth_safe(c03)
+    fifth_active = phase.fifth_plan_safe(plan)
     fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in c03 or fifth_active
     require((THIRD_STATUS in c03 or fourth_active) and
             ("C03-06 NO INICIADA" in c03 if fifth_active else

@@ -401,7 +401,7 @@ def audit_c():
     prep = PREP.read_text(encoding="utf-8")
     row_c03 = next((line for line in plan.splitlines() if line.startswith("C03 | ")), "")
     row_c04 = next((line for line in plan.splitlines() if line.startswith("C04 | ")), "")
-    closed_fifth = phase.fifth_safe(row_c03)
+    closed_fifth = phase.fifth_plan_safe(plan)
     closed_fourth = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in row_c03 or closed_fifth
     closed_third = ("**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**" in row_c03
                     or closed_fourth)

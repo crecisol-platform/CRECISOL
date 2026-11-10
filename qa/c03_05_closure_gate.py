@@ -48,7 +48,7 @@ def validate_content(files):
     master, spec = files["master"], files["spec"]
     row = next((r for r in plan.splitlines() if r.startswith("C03 | ")), "")
     c04 = next((r for r in plan.splitlines() if r.startswith("C04 | ")), "")
-    require(state.fifth_safe(row), "Fifth-phase status must be exact and C03/C04 locked")
+    require(state.fifth_plan_safe(plan), "Fifth-phase status must be exact and C03/C04 locked")
     require(c04 == "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
             "C04 cannot start until entire C03 chapter certified")
     require("2/37 capítulos certificados (C01 y C02)" in plan[:1900]
