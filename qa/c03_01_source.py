@@ -15,6 +15,8 @@ import sys
 import xml.etree.ElementTree as ET
 import c03_05_status as phase
 
+from master_source_guard import canonical_active_word
+
 ROOT = Path(__file__).resolve().parents[1]
 WORD = ROOT / "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx"
 REFERENCE = ROOT / "docs/MASTER_REFERENCE.md"
@@ -71,7 +73,7 @@ def style_of(node):
 
 def chapter_items():
     raw = WORD.read_bytes()
-    require(sha256(raw).hexdigest() == EXPECTED_SHA,
+    require(canonical_active_word(EXPECTED_SHA),
             "Canonical Word sha256 mismatch")
     require(EXPECTED_SHA in REFERENCE.read_text(encoding="utf-8"),
             "MASTER_REFERENCE SHA does not match Word")

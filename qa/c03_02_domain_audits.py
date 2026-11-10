@@ -9,6 +9,8 @@ import xml.etree.ElementTree as ET
 
 import c03_01_source as previous
 
+from master_source_guard import canonical_active_word
+
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = ROOT / "backend/src/Crecisol.Domain"
 PROJECT = DOMAIN / "Crecisol.Domain.csproj"
@@ -56,7 +58,7 @@ def pure(project_text, code):
 
 
 def audit_a():
-    require(sha256(WORD.read_bytes()).hexdigest() == WORD_SHA,
+    require(canonical_active_word(WORD_SHA),
             "Original Word does not match the approved version")
     parts, table, _, _ = previous.original_parts()
     require(len(parts) == 7 and len(table) == 9 and table[1][0] == "Domain",

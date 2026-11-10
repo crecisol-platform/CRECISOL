@@ -24,4 +24,14 @@
 
 Implementar una microfase por vez, con especificación individual creada **solo al habilitarla** en `docs/c33/C33_XX_ESPECIFICACION.md`. Antes de escribir: repositorio, dev, skill, maestro, matriz, dependencias y riesgos. Evidencia de compilación real, pruebas positivas y negativas, auditorías A (requisitos), B (seguridad/tenancy), C (arquitectura/performance/UX), PR, diff, secreto y SHA, CI final y CI posterior, acta, reversión y cero P0/P1. Una falla o prueba requerida no ejecutada bloquea el avance. No VPS, pagos reales ni modificaciones SOLQARYN.
 
-Aunque se cierren 11/11, la certificación integral C33 requiere 3 auditorías de capítulo y aceptación expresa antes de habilitar C34. Los bloqueos de integración de terceros se conservan hasta autorización futura y pruebas reales, sin fingir certificación. Estado: PENDIENTE.
+Aunque se cierren 11/11, la certificación integral C33 requiere 3 auditorías de capítulo y aceptación expresa antes de habilitar C34. Los bloqueos de integración de terceros se conservan hasta autorización futura y pruebas reales, sin fingir certificación. Estado: PENDIENTE.\n
+## Ampliación comercial COM-001..COM-014 — planificación condicionada (10-11-2026)
+
+**Estado: propuesta documental / no implementada / no certificada.** La ampliación deriva del expediente `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de la edición comercial preparada del único Documento Maestro; **esa edición DOCX/PDF ya fue incorporada a la rama del PR #73 con SHA y blob verificados; su aprobación normativa sigue pendiente de CI y fusión a dev**. Se conserva el número de microfases, la puerta de entrada secuencial y toda evidencia histórica. No se habilita código de C33.
+
+- **Requisitos relacionados:** COM-001..COM-014 (impacto de datos).
+- **Microfases técnicas a revisar:** C33-01, C33-02, C33-03, C33-04, C33-08, C33-09, C33-10 y C33-11 (no equivalen a puertas normativas `MAE-C33-xx`).
+- **Evidencia positiva futura exigida:** Modelar entidades normalizadas para dirección, plan, oferta, precio/versión, contrato/aceptación, suscripción, ciclo, factura, pago/conciliación, campaña/ubicación y auditoría de plataforma.
+- **Negativos obligatorios:** Sin JSON libre que sustituya relaciones; DECIMAL y UTC; no SQL de tenant al catálogo global; FK e índices por ámbito; pagos no se asocian a empresa distinta; historia inmutable de contrato y precio.
+- **Pruebas propuestas:** COM-T01, COM-T04, COM-T07, COM-T08, COM-T16 y COM-T17; `DEFINIDAS / NO EJECUTADAS`.
+- **Gate:** revisar contradicciones y versión exacta del Word, políticas comerciales y jurídicas pendientes; pruebas reales + auditorías A/B/C + acta humana de C33 cuando el capítulo esté habilitado, sin cobros ni despliegues productivos en esta etapa.

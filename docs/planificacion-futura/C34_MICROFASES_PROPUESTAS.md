@@ -22,4 +22,14 @@
 
 Implementar una microfase por vez, con especificación individual creada **solo al habilitarla** en `docs/c34/C34_XX_ESPECIFICACION.md`. Antes de escribir: repositorio, dev, skill, maestro, matriz, dependencias y riesgos. Evidencia de compilación real, pruebas positivas y negativas, auditorías A (requisitos), B (seguridad/tenancy), C (arquitectura/performance/UX), PR, diff, secreto y SHA, CI final y CI posterior, acta, reversión y cero P0/P1. Una falla o prueba requerida no ejecutada bloquea el avance. No VPS, pagos reales ni modificaciones SOLQARYN.
 
-Aunque se cierren 9/9, la certificación integral C34 requiere 3 auditorías de capítulo y aceptación expresa antes de habilitar C35. Los bloqueos de integración de terceros se conservan hasta autorización futura y pruebas reales, sin fingir certificación. Estado: PENDIENTE.
+Aunque se cierren 9/9, la certificación integral C34 requiere 3 auditorías de capítulo y aceptación expresa antes de habilitar C35. Los bloqueos de integración de terceros se conservan hasta autorización futura y pruebas reales, sin fingir certificación. Estado: PENDIENTE.\n
+## Ampliación comercial COM-001..COM-014 — planificación condicionada (10-11-2026)
+
+**Estado: propuesta documental / no implementada / no certificada.** La ampliación deriva del expediente `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de la edición comercial preparada del único Documento Maestro; **esa edición DOCX/PDF ya fue incorporada a la rama del PR #73 con SHA y blob verificados; su aprobación normativa sigue pendiente de CI y fusión a dev**. Se conserva el número de microfases, la puerta de entrada secuencial y toda evidencia histórica. No se habilita código de C34.
+
+- **Requisitos relacionados:** COM-004, COM-008, COM-010, COM-011, COM-012.
+- **Microfases técnicas a revisar:** C34-01, C34-02, C34-03, C34-04, C34-05, C34-06, C34-08 y C34-09 (no equivalen a puertas normativas `MAE-C34-xx`).
+- **Evidencia positiva futura exigida:** Definir formulario SuperAdmin de tarifa, modalidad, plazo, visibilidad y campañas; portal empresa de contrato, factura, no renovación, solicitud de terminación y acuse verificable; pruebas responsive/teclado.
+- **Negativos obligatorios:** UI no reemplaza permisos backend; cambios de precio no reescriben historia; formulario no permite alterar plan de otra empresa ni ocultar opción de baja; ninguna entrada ejecuta código.
+- **Pruebas propuestas:** COM-T02, COM-T08, COM-T11, COM-T12, COM-T13; `DEFINIDAS / NO EJECUTADAS`.
+- **Gate:** revisar contradicciones y versión exacta del Word, políticas comerciales y jurídicas pendientes; pruebas reales + auditorías A/B/C + acta humana de C34 cuando el capítulo esté habilitado, sin cobros ni despliegues productivos en esta etapa.

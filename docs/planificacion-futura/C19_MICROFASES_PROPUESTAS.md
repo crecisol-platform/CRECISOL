@@ -24,4 +24,14 @@
 
 Solo iniciar una fila tras cerrar la anterior; crear su especificación individual `docs/c19/C19_XX_ESPECIFICACION.md` **en el momento de activarla**, con requisito trazable, directorios, autorizaciones, tests positivos y negativos ejecutados, 3 auditorías A/B/C, evidencia con SHA, PR de alcance mínimo, CI del último HEAD y post-merge en dev, acta, incidentes y rollback. Bloquear con hallazgos P0/P1, pruebas sin ejecutar, secreto o incompatibilidad; no relajar criterios ni hacer despliegues. Arquitectura separada frontend/backend/database; nunca editar SOLQARYN.
 
-**Certificación C19:** 11/11 no basta. Requiere auditoría integral del capítulo con tres perspectivas, regresión transversal, cero P0/P1 sin resolver, acta y aceptación expresa antes de C20. Todo permanece **PENDIENTE** hasta habilitación secuencial.
+**Certificación C19:** 11/11 no basta. Requiere auditoría integral del capítulo con tres perspectivas, regresión transversal, cero P0/P1 sin resolver, acta y aceptación expresa antes de C20. Todo permanece **PENDIENTE** hasta habilitación secuencial.\n
+## Ampliación comercial COM-001..COM-014 — planificación condicionada (10-11-2026)
+
+**Estado: propuesta documental / no implementada / no certificada.** La ampliación deriva del expediente `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de la edición comercial preparada del único Documento Maestro; **esa edición DOCX/PDF ya fue incorporada a la rama del PR #73 con SHA y blob verificados; su aprobación normativa sigue pendiente de CI y fusión a dev**. Se conserva el número de microfases, la puerta de entrada secuencial y toda evidencia histórica. No se habilita código de C19.
+
+- **Requisitos relacionados:** COM-011, COM-014.
+- **Microfases técnicas a revisar:** C19-02, C19-04, C19-05, C19-09, C19-10 y C19-11 (no equivalen a puertas normativas `MAE-C19-xx`).
+- **Evidencia positiva futura exigida:** Distinguir campaña institucional CRECISOL y Social Hub del tenant; respetar ubicación permitida, fechas, aprobación de creatividad, consentimiento/preferencias y métricas agregadas por scope.
+- **Negativos obligatorios:** Publicidad de marca asociada no expone clientes ni acceso a SOLQARYN; campaña deshabilitada no se publica; impedir HTML/JS inseguro, audiencias ajenas y mensajes no consentidos.
+- **Pruebas propuestas:** COM-T07, COM-T13 y COM-T14; `DEFINIDAS / NO EJECUTADAS`.
+- **Gate:** revisar contradicciones y versión exacta del Word, políticas comerciales y jurídicas pendientes; pruebas reales + auditorías A/B/C + acta humana de C19 cuando el capítulo esté habilitado, sin cobros ni despliegues productivos en esta etapa.

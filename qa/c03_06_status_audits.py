@@ -12,6 +12,8 @@ import sys
 
 import c03_05_status as phase
 
+from master_source_guard import canonical_active_word
+
 ROOT = Path(__file__).resolve().parents[1]
 WORD = ROOT / "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx"
 WORD_HASH = "e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e"
@@ -140,7 +142,7 @@ def negative_mutations(docs):
 
 
 def run():
-    require(sha256(WORD.read_bytes()).hexdigest() == WORD_HASH,
+    require(canonical_active_word(WORD_HASH),
             "Canonical Word SHA differs from approved authority")
     docs = {name: path.read_text(encoding="utf-8") for name, path in SOURCES.items()}
     validate(docs)

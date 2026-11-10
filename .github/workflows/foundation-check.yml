@@ -17,6 +17,8 @@ jobs:
           persist-credentials: false
       - name: Validate foundation and scope
         run: python3 qa/validate_foundation.py
+      - name: Verify new commercial master and immutable historical baseline
+        run: python3 qa/master_source_guard.py --self-test
       - name: Audit A / C01-01 canonical source and traceability
         run: |
           python3 qa/c01_verify_source.py

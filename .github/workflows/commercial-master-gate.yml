@@ -1,0 +1,53 @@
+name: CRECISOL comercial master Word-PDF documentary A-B-C
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx'
+      - 'docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf'
+      - 'docs/MASTER_REFERENCE.md'
+      - 'docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md'
+      - 'docs/DECISIONES_ABIERTAS.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'docs/PLAN_MICROFASES_37_CAPITULOS_PROPUESTO.md'
+      - 'docs/planificacion-futura/**'
+      - 'qa/master_source_guard.py'
+      - 'qa/commercial_master_audits.py'
+      - '.github/workflows/commercial-master-gate.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx'
+      - 'docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf'
+      - 'docs/MASTER_REFERENCE.md'
+      - 'docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md'
+      - 'qa/master_source_guard.py'
+      - 'qa/commercial_master_audits.py'
+permissions:
+  contents: read
+jobs:
+  commercial-document-gate:
+    name: Commercial master integrity and A-B-C (documentation only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Current Word-PDF pins and historical mutation controls
+        run: |
+          python3 -m py_compile qa/master_source_guard.py qa/commercial_master_audits.py
+          python3 qa/master_source_guard.py --self-test
+      - name: Audit A - traceability and historical preservation
+        run: python3 qa/commercial_master_audits.py A
+      - name: Audit B - static safety and 8 negative mutations
+        run: python3 qa/commercial_master_audits.py B
+      - name: Audit C - architecture and PDF structural coverage
+        run: python3 qa/commercial_master_audits.py C
+      - name: Regression C01 original chapter inventory
+        run: python3 qa/c01_verify_source.py
+      - name: Regression C02 original chapter inventory
+        run: python3 qa/c02_01_source.py A
+      - name: Regression C03 original chapter inventory
+        run: python3 qa/c03_01_source.py A

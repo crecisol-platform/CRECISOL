@@ -25,4 +25,14 @@
 
 C31-XX se habilita únicamente tras el cierre probado de su microfase inmediatamente anterior (C31-01 requiere la aceptación integral de C30), con especificación individual en `docs/c31/C31_XX_ESPECIFICACION.md` creada **al comenzar**, trazabilidad real, tests positivos y negativos, auditorías A/B/C, cero P0/P1 sin resolver, revisión de diff/secretos, PR a dev, CI sobre último HEAD y tras merge, acta y rollback. Si no hay herramienta para ejecutar una prueba, marcar **NO EJECUTADA** y bloquear. Nadie puede adelantar otra microfase/capítulo por una CI parcial. No producción ni SOLQARYN.
 
-El **capítulo C31** necesita además pruebas de regresión integral, auditorías A/B/C de capítulo, acta con aceptación expresa del propietario y certificación antes de habilitar C32. Cuando depende de aprobaciones externas o proveedor real y estos están prohibidos, el estado debe seguir **BLOQUEADO**, nunca certificado artificialmente.
+El **capítulo C31** necesita además pruebas de regresión integral, auditorías A/B/C de capítulo, acta con aceptación expresa del propietario y certificación antes de habilitar C32. Cuando depende de aprobaciones externas o proveedor real y estos están prohibidos, el estado debe seguir **BLOQUEADO**, nunca certificado artificialmente.\n
+## Ampliación comercial COM-001..COM-014 — planificación condicionada (10-11-2026)
+
+**Estado: propuesta documental / no implementada / no certificada.** La ampliación deriva del expediente `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de la edición comercial preparada del único Documento Maestro; **esa edición DOCX/PDF ya fue incorporada a la rama del PR #73 con SHA y blob verificados; su aprobación normativa sigue pendiente de CI y fusión a dev**. Se conserva el número de microfases, la puerta de entrada secuencial y toda evidencia histórica. No se habilita código de C31.
+
+- **Requisitos relacionados:** COM-005, COM-007, COM-009, COM-013.
+- **Microfases técnicas a revisar:** C31-01, C31-04, C31-05, C31-06, C31-07, C31-08, C31-09, C31-11 y C31-12 (no equivalen a puertas normativas `MAE-C31-xx`).
+- **Evidencia positiva futura exigida:** Modelar pagos SaaS separados de pagos de los negocios; cuota mensual anticipada o prepago total; simular fechas, conciliación, reintentos de suscripción, refund y cambios de renovación sin PSP real.
+- **Negativos obligatorios:** No doble cobro ni factura pagada sin evidencia; webhooks fuera de orden/repetidos no alteran saldo; no continuar cobro tras no renovación válida; no guardar PAN/CVV ni conectar cobro real.
+- **Pruebas propuestas:** COM-T03, COM-T04, COM-T05, COM-T06, COM-T12 y COM-T16; `DEFINIDAS / NO EJECUTADAS`.
+- **Gate:** revisar contradicciones y versión exacta del Word, políticas comerciales y jurídicas pendientes; pruebas reales + auditorías A/B/C + acta humana de C31 cuando el capítulo esté habilitado, sin cobros ni despliegues productivos en esta etapa.

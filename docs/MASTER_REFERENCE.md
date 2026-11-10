@@ -1,11 +1,28 @@
 # Documento Maestro Único — referencia canónica CRECISOL
 
-**Estado:** EDICIÓN INSTITUCIONAL VIGENTE para planificación, aprobada para versionamiento el 8 de noviembre de 2026. **No equivale a software implementado ni a certificación de seguridad.**
+**Estado por rama (2026-11-10):** edición comercial preparada en `feature/docs-modelo-comercial-impacto-20261110`, PR #73 en borrador. **La edición del 08-11-2026 continúa vigente en `dev` hasta la aceptación, auditorías y fusión autorizada**. Ni la edición nueva ni los ensayos documentales equivalen a software implementado o certificación jurídica.
 
-| Formato | Ruta canónica | Tamaño real | Git blob SHA-1 | SHA-256 del archivo |
+## Edición comercial 10-11-2026 — candidata del PR #73
+
+| Formato | Ruta canónica (rama del PR) | Tamaño | Git blob SHA-1 VERIFICADO | SHA-256 VERIFICADO |
 | --- | --- | ---: | --- | --- |
-| Word editable — autoridad | `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` | 1 344 481 bytes | `214bf9c3d9763be23a77b7e0c464359584edde46` | `e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e` |
-| PDF de lectura e impresión | `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf` | 4 490 865 bytes | `455847ae0cc3bf02b9b9c4c3435476d093918ea2` | `17ffe48aab3b224cc9b11927c498e4f49c162d96bf639c894b84259f597738dd` |
+| Word editable — autoridad en la rama | `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` | 1 353 343 bytes | `fe7aaab60b603f1844e18666e2f99c0ea97e86e9` | `ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c` |
+| PDF de lectura, derivado del Word | `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf` | 4 657 572 bytes | `93c8412b2450e85a882b622e7a012477c61c2359` | `0dfd3217439760540390707ea8196d6252464a501a7fe3e6eafdc49eda39da77` |
+
+- Confirmación de procedencia: el propietario adjuntó originales cuyos hashes coinciden con el baseline del 08-11-2026; subió los dos binarios nuevos a la rama del PR #73; los blobs Git almacenados se compararon directamente con los bytes del paquete entregado y coincidieron exactamente.
+- La nueva edición mantiene los **37 capítulos** y los **1 687 párrafos y 189 tablas históricos** como prefijo XML intacto, además del logotipo (SHA-256 `9e83d1d0a891565cf80a21a7e90d7afcaa24c9bb63e7d2a589790127dadd549f`); añade **77 párrafos y 5 tablas** de la adenda comercial, sin convertirla en un capítulo 38.
+- Evidencia reproducible del prefijo histórico: SHA-256 de C14N (XML `word/document.xml`, primeros 1 876 elementos del cuerpo excluyendo `sectPr`) `6238a81010d8bfd035eda77fa33897a009f4b363d4e281723c723b6b60c807d5`. Se preserva y vuelve a verificar mediante `qa/master_source_guard.py`.
+- PDF anterior: 229 páginas. PDF derivado nuevo: **237 páginas**, con 8 páginas añadidas y 229 páginas con el contenido principal preservado; la única diferencia observada en las originales es el denominador total del pie de página. La edición no certifica implementación de COM-001..COM-014 ni ejecución de COM-T01..COM-T18.
+- El expediente preparatorio es [`ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md`](ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md). **NO_GO de fusión** hasta validadores, tres auditorías exigibles, CI del SHA exacto y aprobación. No desplegar ni activar cobros.
+
+## Baseline original del 08-11-2026 — archivo histórico de certificaciones
+
+**Estas huellas son evidencia INMUTABLE de C01/C02/C03-01..08; no se reemplazan ni se reinterpretan como hash de la edición nueva.**
+
+| Formato | Ruta canónica del baseline en `dev` | Tamaño real | Git blob SHA-1 | SHA-256 original |
+| --- | --- | ---: | --- | --- |
+| Word original | `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` | 1 344 481 bytes | `214bf9c3d9763be23a77b7e0c464359584edde46` | `e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e` |
+| PDF original | `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf` | 4 490 865 bytes | `455847ae0cc3bf02b9b9c4c3435476d093918ea2` | `17ffe48aab3b224cc9b11927c498e4f49c162d96bf639c894b84259f597738dd` |
 
 ## Validación de procedencia y alcance
 

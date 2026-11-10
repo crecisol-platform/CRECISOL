@@ -16,4 +16,15 @@ La misma plataforma sirve a tenants segregados lógicamente en un MySQL comparti
 Identidad/SEO, dominio autorizado, íconos, textos, footer/copyright separado, tema, formularios, listas y módulos por tenant; nunca repetir literales. Versionar y previsualizar cambios antes y después de guardar y antes de descargar. Bloques allowlist sin código ejecutable.
 
 ## Calidad y lanzamiento
-CI/QA solo valida aspectos respaldados por herramientas reales, sin despliegues ni cobros productivos. Seguridad P0 es una puerta transversal. Detalles en docs/SEGURIDAD_MULTITENANT.md y .agents/skills/crecisol-project-governance/references/.
+CI/QA solo valida aspectos respaldados por herramientas reales, sin despliegues ni cobros productivos. Seguridad P0 es una puerta transversal. Detalles en docs/SEGURIDAD_MULTITENANT.md y .agents/skills/crecisol-project-governance/references/.\n\n## Contratos comerciales SaaS — diseño futuro condicionado a edición canónica
+
+**Fuente de análisis no normativo:** `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` (`COM-001..COM-014`). Aprobado conceptualmente por el propietario, pero el DOCX/PDF revisado está integrado en la rama del PR #73, pero no fusionado a dev ni certificado; no equivale a código.
+
+- **Dirección:** ruta contextual, subdominio y dominio verificado son vías de publicación/contexto; no deciden permisos, base de datos ni capacidades.
+- **Oferta SaaS:** una combinación versionada de modalidad de dirección, plan/entitlements, plazo contractual de 3/6/12/24/36 meses y periodicidad de cobro. Los cambios de catálogo no alteran versiones de contrato ya aceptadas.
+- **Plano de control:** CRECISOL administra precios, contratos, suscripciones, facturas, cobros/conciliación, estados de empresas y campañas institucionales. El plano de tenant administra operaciones, membresías y cobros de sus propios consumidores, sin mezclar registros financieros.
+- **UI:** consola SuperAdmin y autoservicio de propietario con autorización backend separada; precios/publicaciones/avisos/campañas configurables sin SQL/JS arbitrarios.
+- **Eventos:** transiciones idempotentes, reconciliación de pagos antes de activar servicios, suspensión reversible y cancelación/no renovación con trazabilidad.
+- **Contratos jurídicos:** renovación, gracia, penalidad, refund, datos retenidos y espacios publicitarios quedan sujetos a legalidad verificable y consentimiento expreso; no implementar cargas reales todavía.
+
+Implementación solamente cuando el capítulo correspondiente esté habilitado (principalmente C04/C08/C19/C20/C23/C26/C31/C33/C34/C36). C03-09 sigue pendiente.

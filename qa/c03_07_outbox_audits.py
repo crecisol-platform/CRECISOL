@@ -9,6 +9,8 @@ import xml.etree.ElementTree as ET
 
 import c03_01_source as source
 
+from master_source_guard import canonical_active_word
+
 ROOT = Path(__file__).resolve().parents[1]
 WORD = ROOT / "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx"
 WORD_SHA = "e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e"
@@ -96,7 +98,7 @@ def contract(p):
             "Microphase boundary not recorded")
 
 def audit_a():
-    require(sha256(WORD.read_bytes()).hexdigest() == WORD_SHA,
+    require(canonical_active_word(WORD_SHA),
             "Canonical Word SHA mismatch")
     original, table, _, _ = source.original_parts()
     require(len(original) == 7 and len(table) == 9 and

@@ -65,4 +65,10 @@
 
 El [protocolo de continuidad](PROTOCOLO_CONTINUIDAD_CRECISOL.md) define recuperación, bloqueo escritor, auditorías y reportes. **NO HAY automatizaciones creadas, activadas ni comprobadas** mediante este documento. Las tres tareas escalonadas propuestas cada 20 minutos no son compatibles con el límite de una hora por automatización y no constituyen una solución de exclusión mutua. Se requiere un único agente permitido con herramientas reales y un mecanismo de bloqueo probado antes de delegar escrituras.
 
-**Estado actual acreditado:** C01 5/8 microfases técnicamente cerradas, C01 no certificado, **0/37 capítulos certificados**. Siguiente fase ejecutable en secuencia: C01-06 (logo oficial), que permanece sin iniciar.
+**Estado actual acreditado:** C01 5/8 microfases técnicamente cerradas, C01 no certificado, **0/37 capítulos certificados**. Siguiente fase ejecutable en secuencia: C01-06 (logo oficial), que permanece sin iniciar.\n\n## Impacto transversal del modelo comercial — propuesta condicionada 2026-11-10
+
+Se identificaron `COM-001..COM-014` y `COM-T01..COM-T18` como nuevas obligaciones/propuestas de prueba; su trazabilidad y el mapa de los **37 capítulos** figuran en [análisis de impacto](ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md). Se han agregado notas de alcance a planes futuros realmente afectados, **sin renumerar sus microfases, crear nuevas actas ni habilitar capítulos**.
+
+Ámbitos principales: C04, C08, C19, C20, C23, C31, C33 y C34. Dependencias adicionales: C05, C06, C07, C09, C12, C15, C17, C18, C21, C25, C26, C27, C29, C30, C36 y C37. El resto recibe únicamente la referencia transversal del Word si su fase futura lo exige. Las microfases técnicas `CNN-xx` no equivalen a los pasos normativos del maestro `MAE-CNN-xx`; revisar ambas numeraciones antes de desarrollar.
+
+**Estado real conservado al 10-11-2026:** C01+C02 certificados, C03-01..08 certificadas, C03-09 no iniciada, C03 no certificado y C04 bloqueado. Las frases históricas anteriores que indican `0/37` o `C01-06 siguiente` describen instantes pasados y no prevalecen sobre esta constancia. Los binarios maestros ya están incorporados a la rama del PR #73 con huellas verificadas; los validadores versionados y las auditorías A/B/C requieren CI y revisión del SHA final antes de autorizar la fusión.

@@ -12,6 +12,8 @@ from zipfile import ZipFile
 import xml.etree.ElementTree as ET
 import zlib
 
+from master_source_guard import CURRENT_WORD_SHA, canonical_active_word
+
 ROOT = Path(__file__).resolve().parents[1]
 WORD = ROOT / "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx"
 EXPECTED = "e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e"
@@ -195,7 +197,8 @@ def tests():
     print("PASS candidate synthetic positive/negative tests (NOT logo approval)")
 
 def audits(kind):
-    data, ext, member, w, h = candidate(WORD,EXPECTED)
+    canonical_active_word(EXPECTED)
+    data, ext, member, w, h = candidate(WORD,CURRENT_WORD_SHA)
     spec = (ROOT/"docs/c01/C01_06_LOGO_CANDIDATO.md").read_text()
     if kind == "A":
         matrix = (ROOT/"docs/c01/C01_01_MATRIZ_REQUISITOS.md").read_text()
@@ -227,8 +230,9 @@ def main():
     elif a.audit:
         audits(a.audit)
     else:
-        data,ext,member,w,h=candidate(WORD,EXPECTED)
-        print("WORD SHA256",EXPECTED)
+        canonical_active_word(EXPECTED)
+        data,ext,member,w,h=candidate(WORD,CURRENT_WORD_SHA)
+        print("WORD SHA256",CURRENT_WORD_SHA)
         print("CANDIDATE",member,"dimensions",w,h,"bytes",len(data),"SHA256",sha256(data).hexdigest())
         print("STATUS UNAPPROVED; NOT INSTALLED")
         if a.extract_dir is not None:

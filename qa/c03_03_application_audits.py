@@ -9,6 +9,8 @@ import xml.etree.ElementTree as ET
 
 import c03_01_source as original
 
+from master_source_guard import canonical_active_word
+
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "backend/src/Crecisol.Application"
 APP_PROJECT = APP / "Crecisol.Application.csproj"
@@ -69,7 +71,7 @@ def pure(project, sources, api):
 
 
 def audit_a():
-    require(sha256(WORD.read_bytes()).hexdigest() == WORD_SHA,
+    require(canonical_active_word(WORD_SHA),
             "Canonical master Word changed")
     parts, table, _, _ = original.original_parts()
     require(len(parts) == 7 and len(table) == 9 and table[2][0] == "Application",
