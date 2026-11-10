@@ -24,7 +24,7 @@ Una sola microfase activa. Antes de cada una: releer el Word canónico (`docs/MA
 **Puerta de capítulo:** 8 microfases cerradas no equivalen a certificado. Requiere pruebas integrales, auditorías A/B/C independientes, acta de riesgos, cero P0/P1 sin resolver y aceptación expresa antes de C26. Mantener BLOQUEADO si el capítulo exige validación externa/productiva que no está autorizada. Estado de todo el capítulo: **PENDIENTE**.\n
 ## Ampliación comercial COM-001..COM-014 — dependencia transversal (10-11-2026)
 
-**Solo planificación; NO IMPLEMENTADO / NO CERTIFICADO.** Requisitos derivados de `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de una actualización del Word maestro **todavía pendiente de incorporación y comprobación de huellas en GitHub**; esta nota no sustituye el Word ni habilita C25.
+**Solo planificación; NO IMPLEMENTADO / NO CERTIFICADO.** Requisitos derivados de `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de una actualización del Word maestro **ya incorporada en la rama del PR #73, con blob y SHA verificados; pendiente de CI, auditorías y fusión a dev**; esta nota no sustituye el Word ni habilita C25.
 
 - **COM:** COM-001..COM-014.
 - **Microfases a revisar sin renumerar:** C25-01, C25-02, C25-04, C25-05, C25-06, C25-07 y C25-08.
