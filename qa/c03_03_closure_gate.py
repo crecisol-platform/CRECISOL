@@ -29,6 +29,7 @@ FILES = {
     "spec": ROOT / "docs/c03/C03_03_ESPECIFICACION.md",
     "first": ROOT / "docs/c03/C03_01_ACTA_MICROFASE.md",
     "second": ROOT / "docs/c03/C03_02_ACTA_MICROFASE.md",
+    "fourth": ROOT / "docs/c03/C03_04_ACTA_MICROFASE.md",
     "plan": ROOT / "docs/PLAN_37_CAPITULOS.md",
     "prep": ROOT / "docs/C03_PREPARACION.md",
     "master": ROOT / "docs/MASTER_REFERENCE.md",
@@ -49,31 +50,39 @@ def validate_content(files):
     plan, prep, master = files["plan"], files["prep"], files["master"]
     c03 = next((line for line in plan.splitlines() if line.startswith("C03 | ")), "")
     c04 = next((line for line in plan.splitlines() if line.startswith("C04 | ")), "")
-    require(THIRD_STATUS in c03 and
-            "C03-04 NO INICIADA" in c03 and
+    fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in c03
+    require((THIRD_STATUS in c03 or fourth_active) and
+            ("C03-05 NO INICIADA" in c03 if fourth_active else
+             "C03-04 NO INICIADA" in c03) and
             "C03 NO CERTIFICADO" in c03 and "C04 BLOQUEADO" in c03 and
-            "C03 CERTIFICADO" not in c03 and "4/10" not in c03,
+            "C03 CERTIFICADO" not in c03 and "5/10" not in c03,
             "C03 chapter and technical microphase sequence incorrectly promoted")
     require(c04 == "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
             "C04 must remain blocked, not implemented")
     require("2/37 capítulos certificados (C01 y C02)" in plan[:1800] and
             "2/37 capítulos certificados (C01 y C02)" in master,
             "Only C01 and C02 are certified chapters")
+    if fourth_active:
+        master_ok = ("C03-03 **CERTIFICADA (3/10)**" in master and
+                     "C03-04 **CERRADA TÉCNICAMENTE" in master and "4/10" in master)
+    else:
+        master_ok = "C03-03 **CERRADA TÉCNICAMENTE" in master and "3/10" in master
     require("C03-01 **CERTIFICADA**" in master and
-            "C03-02 **CERTIFICADA**" in master and
-            "C03-03 **CERRADA TÉCNICAMENTE" in master and
-            WORD_SHA in master and "3/10" in master and
+            "C03-02 **CERTIFICADA**" in master and master_ok and
+            WORD_SHA in master and
             "C03 NO CERTIFICADO" in master and "C04 BLOQUEADO" in master,
             "Canonical master reference or prior certification chain changed")
 
     for name in ("prep", "future", "global", "decisions", "agents"):
         doc = files[name]
-        require("C03-03" in doc and "3/10" in doc and
+        require("C03-03" in doc and
+                ("4/10" if fourth_active else "3/10") in doc and
                 "C03 NO CERTIFICADO" in doc and "C04 BLOQUEADO" in doc and
-                "C03-04" in doc and "NO INICIADA" in doc,
+                ("C03-05" if fourth_active else "C03-04") in doc and
+                "NO INICIADA" in doc,
                 "Current limited C03-03 status not synchronized: " + name)
-    require("C03-03 CERRADA TÉCNICAMENTE" in prep and
-            "CERTIFICADA (2/10)" in prep and
+    require("C03-03" in prep and
+            ("CERTIFICADA (3/10)" if fourth_active else "C03-03 CERRADA TÉCNICAMENTE") in prep and
             "3/3 CI técnicas POSTMERGE SUCCESS" in prep,
             "C03-03 plan missing technical handoff evidence")
     require("C03-03 CERRADA TÉCNICAMENTE" in spec and
@@ -117,6 +126,15 @@ def validate_content(files):
             "C03-03 acta missing actual C03-03 technical CI run IDs")
     require("C03 CERTIFICADO" not in acta,
             "C03 chapter may not be certified from a partial microphase")
+    if fourth_active:
+        fourth = files["fourth"]
+        require("C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA EXPRESAMENTE" in fourth
+                and "FORMALIZACIÓN EN CURSO" in fourth
+                and "Adelante por favor con ello" in fourth
+                and "d529f85f0bc8710940d195fceaea06bf6c5e674d" in fourth
+                and "C03-05 NO INICIADA" in fourth
+                and "C03 NO CERTIFICADO" in fourth and "C04 BLOQUEADO" in fourth,
+                "Fourth microphase must have its own limited owner approval")
 
 
 def main():
@@ -140,14 +158,18 @@ def main():
                 for key, path in c02.FILES.items()}
     c02.validate_content(c02_docs)
 
+    fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in docs["plan"]
     mutations = [
         ("owner authorization forged", "acta", OWNER_REPLY, "NO APROBADO"),
         ("technical merge SHA forged", "acta", TECHNICAL_SHA, "0" * 40),
         ("technical PREMERGE HEAD forged", "acta", TECHNICAL_HEAD, "0" * 40),
         ("technical POSTMERGE CI falsified", "acta", "42714098950", "00000000000"),
         ("C03 progression falsified", "plan",
-         "CERTIFICACIÓN (3/10)**", "CERTIFICACIÓN (4/10)**"),
-        ("C03-04 started prematurely", "plan", "C03-04 NO INICIADA", "C03-04 INICIADA"),
+         "CERTIFICACIÓN (4/10)**" if fourth_active else "CERTIFICACIÓN (3/10)**",
+         "CERTIFICACIÓN (5/10)**" if fourth_active else "CERTIFICACIÓN (4/10)**"),
+        ("next microphase started prematurely", "plan",
+         "C03-05 NO INICIADA" if fourth_active else "C03-04 NO INICIADA",
+         "C03-05 INICIADA" if fourth_active else "C03-04 INICIADA"),
         ("C04 unlocked", "plan",
          "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
          "C04 | Multitenancy, dominios y aprovisionamiento | INICIADO"),
@@ -171,7 +193,7 @@ def main():
         raise AssertionError("Tampered certificate accepted: " + label)
     print("C03-03 CERTIFICATION DOCUMENT GATE PASS: actual canonical Word, "
           "real A/B/C and .NET10 tests, PR #53 3/3 postmerge, owner approval, "
-          "C03-01/C03-02 historical gates, 3/10 limited state, C03 chapter "
+          "C03-01/C03-02 historical gates, 3/10 prior and 4/10 fourth stage limited state, C03 chapter "
           "uncertified, C03-04 not started, C04 blocked, 12/12 mutations rejected.")
     print("IMPORTANT: Formal certification remains CONDITIONAL until the "
           "acta PR PREMERGE and POSTMERGE workflows succeed on exact SHAs.")
