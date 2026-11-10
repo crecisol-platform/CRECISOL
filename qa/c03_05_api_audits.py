@@ -84,7 +84,7 @@ def invariant(api, dto, guard, smoke):
                    "TenantId", "ScopeId", "ConnectionString", "Password",
                    "public object", "dynamic ", "JsonExtensionData"):
         require(marker not in dto, "DTO introduced internal data or dynamic serialization: " + marker)
-    for marker in ("HttpMethods.IsGet", "QueryString.HasValue", '"Authorization"',
+    for marker in ("HttpMethods.IsGet", "!request.QueryString.HasValue", '"Authorization"',
                    '"X-Tenant-Id"', '"Content-Length"', '"Transfer-Encoding"',
                    '"X-HTTP-Method-Override"', '"X-Original-URL"', '"X-Rewrite-URL"'):
         require(marker in guard, "Request validation missing: " + marker)

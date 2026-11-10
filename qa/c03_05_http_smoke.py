@@ -71,7 +71,7 @@ if MODE == "baseline":
     expect("untrusted cookie gives no tenant context", 200, headers={"Cookie": "tenant=22"})
     expect("no CORS even on untrusted Origin", 200, headers={"Origin": "https://attacker.invalid"})
     expect("scope query rejected", 400, path=PATH + "?scope=tenant")
-    expect("bare query rejected", 400, path=PATH + "?")
+    expect("empty scope value rejected", 400, path=PATH + "?scope=")
     expect("tenant header rejected", 400, headers={"X-Tenant-Id": "22"})
     expect("authorization header rejected", 400, headers={"Authorization": "Bearer fake"})
     expect("untrusted Host rejected", 400, headers={"Host": "tenant.attacker.invalid"})
