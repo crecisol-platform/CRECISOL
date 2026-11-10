@@ -13,7 +13,7 @@
 
 Estas reglas son criterios de implementación, NO resultados ejecutados ni promesa de riesgo cero.\n\n## Controles P0 comerciales propuestos (COM-001..COM-014)
 
-**Planificación condicionada, sin código ni pruebas ejecutadas.** La adopción normativa requiere actualizar el Word canónico de CRECISOL y registrar nueva huella. Al implementar C04/C08/C19/C20/C23/C26/C31/C33/C34/C36:
+**Planificación condicionada, sin código ni pruebas ejecutadas.** El Word canónico comercial y su nueva huella ya constan en la rama del PR #73; su adopción normativa queda pendiente de las puertas de CI, auditoría y fusión a dev. Al implementar C04/C08/C19/C20/C23/C26/C31/C33/C34/C36:
 
 - La elección de slug, ruta, subdominio, dominio o tarifa **nunca** concede pertenencia ni privilegios. Host/claims/query falsos y cambios de caché/eventos deben fallar cerrados.
 - SuperAdmin modifica precios/contratos SaaS solo con MFA/step-up, permiso y auditoría; no accede a datos privados sin grant excepcional. Propietarios solo consultan/solicitan cambios de su contrato.
