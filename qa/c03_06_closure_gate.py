@@ -19,6 +19,8 @@ import c02_certification_gate as c02
 import c03_05_status as state
 import c03_06_status_audits as final_stage
 
+from master_source_guard import canonical_active_word
+
 ROOT = Path(__file__).resolve().parents[1]
 WORD = ROOT / "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx"
 HASH = "e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e"
@@ -116,7 +118,7 @@ def document_mutations(docs):
     print("PASS C03-06 ACTA B: 12/12 documentary tampering mutations rejected.")
 
 def main():
-    require(sha256(WORD.read_bytes()).hexdigest() == HASH, "Master Word altered")
+    require(canonical_active_word(HASH), "Master Word altered")
     technical.audit_a()
     technical.audit_b()
     technical.audit_c()
