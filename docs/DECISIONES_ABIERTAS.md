@@ -25,4 +25,4 @@
 
 **Pendientes obligatorios:** validar nomenclatura exacta de las tres modalidades frente al Word; precios/moneda/impuestos; fechas de gracia; prorrateos; aceptación de renovación; condiciones proporcionales de terminación; titular/emisor jurídico; auditoría de ley hondureña aplicable; retención/exportación; consentimientos para espacios publicitarios y selección futura de PSP. Ninguna de estas cuestiones se resuelve inventando importes o sanciones.
 
-**Gate:** edición DOCX/PDF del maestro pendiente de incorporación a GitHub y migración de hashes/validadores; hasta entonces solo existe planificación en PR borrador. Mantener C01/C02 y C03-01..08 históricos intactos, C03-09 pendiente, sin abrir C04 ni conectar cobros reales.
+**Gate:** edición DOCX/PDF del maestro incorporada a la rama del PR #73 con hashes y blobs verificados; migración de validadores y CI de aceptación aún sujetos a comprobación; hasta entonces solo existe planificación en PR borrador. Mantener C01/C02 y C03-01..08 históricos intactos, C03-09 pendiente, sin abrir C04 ni conectar cobros reales.
