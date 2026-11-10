@@ -95,7 +95,7 @@ def validate_content(files):
                 "C03-03 needs its own limited owner authorization")
     if fifth_active:
         require("5/10" in prep and "C03-06 NO INICIADA" in prep
-                and "C03-05_ACTA_MICROFASE.md" in files["master"],
+                and "C03_05_ACTA_MICROFASE.md" in files["master"],
                 "C03-05 lacks its new acta or next-phase lock")
     if fourth_active:
         prep_valid = ("4/10" in prep and "C03-04 CERRADA TÉCNICAMENTE" in prep
