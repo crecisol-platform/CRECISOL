@@ -101,7 +101,7 @@ def audit_a():
             "C03 NO certificado" in p["spec"] and
             "No se han" not in p["spec"],
             "Predecessor/provenance not traceable")
-    require("backend/src/Crecisol.Api/Program.cs" in
+    require("Program.cs" in
             (ROOT / "docs/c03/C03_06_ESPECIFICACION.md").read_text(encoding="utf-8"),
             "C03-06 API boundary not traceable")
     contract(p)
