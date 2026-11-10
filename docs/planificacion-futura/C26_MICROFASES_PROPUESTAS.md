@@ -27,7 +27,7 @@ C26-XX se habilita únicamente tras el cierre probado de su microfase inmediatam
 El **capítulo C26** necesita además pruebas de regresión integral, auditorías A/B/C de capítulo, acta con aceptación expresa del propietario y certificación antes de habilitar C27. Cuando depende de aprobaciones externas o proveedor real y estos están prohibidos, el estado debe seguir **BLOQUEADO**, nunca certificado artificialmente.\n
 ## Ampliación comercial COM-001..COM-014 — dependencia transversal (10-11-2026)
 
-**Solo planificación; NO IMPLEMENTADO / NO CERTIFICADO.** Requisitos derivados de `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de una actualización del Word maestro **todavía pendiente de incorporación y comprobación de huellas en GitHub**; esta nota no sustituye el Word ni habilita C26.
+**Solo planificación; NO IMPLEMENTADO / NO CERTIFICADO.** Requisitos derivados de `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de una actualización del Word maestro **ya incorporada en la rama del PR #73, con blob y SHA verificados; pendiente de CI, auditorías y fusión a dev**; esta nota no sustituye el Word ni habilita C26.
 
 - **COM:** COM-001..COM-014.
 - **Microfases a revisar sin renumerar:** C26-01, C26-02, C26-04, C26-05, C26-06, C26-07, C26-08, C26-09 y C26-11.
