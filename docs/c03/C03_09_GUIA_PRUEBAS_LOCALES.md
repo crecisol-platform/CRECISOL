@@ -73,9 +73,9 @@ cd ~/src/CRECISOL
 bash qa/c03_09_local_suite.sh --probe
 ```
 
-La sonda hace cuatro comprobaciones: integridad del maestro actual e histórico, preflight estático de microfases anteriores, nueve casos unitarios positivos/negativos del runner y autoevaluación del fail-closed. Luego detecta herramientas, SDKs, dependencias locales e imagen MySQL disponible.
+La sonda hace cuatro comprobaciones: integridad del maestro actual e histórico, preflight estático de microfases anteriores, catorce casos unitarios positivos/negativos del runner y autoevaluación del fail-closed. Luego detecta herramientas, SDKs, dependencias locales e imagen MySQL disponible.
 
-- Si faltan herramientas, informa `BLOCKED_MISSING_LOCAL_TOOLCHAIN` y deja C como **NOT_EXECUTED**; no inventa una medición.
+- Si faltan herramientas, informa `BLOCKED_MISSING_LOCAL_TOOLCHAIN`, devuelve código **2** y deja C como **NOT_EXECUTED**; no inventa una medición.
 - La carpeta de evidencia se crea por defecto en `~/crecisol-local-evidence/c03-09-FECHA-SHA/`, **fuera del repositorio** y con permisos de usuario.
 - `manifest.json` registra commit exacto, auditoría A documental, B de negativos, C de compatibilidad y huellas SHA-256 de cada archivo generado.
 
@@ -117,7 +117,7 @@ Reporta tiempos por muestra, mediana y p95 nearest-rank de *compilación*, y dur
 | Bloque | Evidencia local | Naturaleza |
 | --- | --- | --- |
 | A | `A_master_integrity.txt`, `A_historical_static.txt` | Trazabilidad e integridad documental; no certifica arquitectura integral |
-| B | `B_negative_unittests.txt`, `B_guard_selftest.txt` | Nueve tests negativos/positivos del runner y guardas contra falsos PASS |
+| B | `B_negative_unittests.txt`, `B_guard_selftest.txt` | Catorce tests negativos/positivos del runner y guardas contra falsos PASS |
 | C | `probe.json`, `C_runtime_benchmark.json` si se ejecutó | Compilaciones y MySQL reales, o motivo explícito `BLOCKED` |
 | Control | `manifest.json`, `source.txt` | Commit, hora, estados, hashes de evidencia e indicación `phase_certified=false` |
 
@@ -134,3 +134,5 @@ La carpeta de evidencia es privada. Compartir únicamente `manifest.json` y `pro
 - No declarar **C03-09 CERTIFICADA**, **C03 CERTIFICADO** ni habilitar C04 sin haber realizado A/B/C de microfase, revisión humana y evidencia real conforme al gobierno del proyecto.
 
 **Siguiente paso operativo:** ejecutar primero `--probe` en la PC del propietario, leer `probe.json`, preparar manualmente los prerrequisitos que realmente falten y luego ejecutar `--run`. No se requiere adquirir GitHub Pro ni habilitar gastos de Actions.
+
+**Alcance de aislamiento:** `NPM_CONFIG_OFFLINE=true` impide ciertas solicitudes del gestor npm, pero por sí solo no establece un cortafuegos para scripts de compilación o extensiones. `--network none` aplica exclusivamente al contenedor desechable MySQL; ejecutar las herramientas locales con dependencias verificadas y sin secretos ni datos productivos.
