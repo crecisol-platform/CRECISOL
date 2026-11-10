@@ -60,6 +60,10 @@ def contract(p):
                  "last_failure_code='lease-expired'",
                  "last_failure_code=IF(@permanent=1,'unsupported-version','retry')"):
         require(term in infra, "Atomic/fenced/idempotent storage invariant weakened: " + term)
+    require("lease_generation=@generation, lease_owner=@worker" in infra,
+            "Claim must advance generation and assign one owner atomically")
+    require(infra.count("lease_expires_at_utc>UTC_TIMESTAMP(6)") >= 3,
+            "ACK, failure and preflight all require a fresh lease")
     require(infra.count("scope_kind=1 AND scope_id=@scope") >= 6,
             "Every claim/ACK/failure/recovery must be pinned to PLATFORM scope")
     require("scope_kind=2" not in infra and "AddHostedService" not in infra,
