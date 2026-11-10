@@ -2,7 +2,7 @@
 
 **Estado histórico al redactar este protocolo: se había registrado UNA tarea horaria ChatGPT/GitHub; capacidades y desarrollo solo se acreditan por ejecución real.** Este documento no instala ni enciende agentes o tareas. Queda subordinado al Documento Maestro Único, \`AGENTS.md\`, \`.agents/skills/crecisol-project-governance/SKILL.md\`, \`docs/MASTER_REFERENCE.md\` y las actas oficiales. Repositorio exclusivo: \`solqaryn-platform/CRECISOL\`. **SOLQARYN: escritura absolutamente prohibida.**
 
-**ESTADO GLOBAL VIGENTE VERIFICADO EN GITHUB:** 2/37 capítulos certificados (C01 y C02); C03-05 CERTIFICADA (5/10), C03-06 CERTIFICADA (6/10) tras PR #61 y 5/5 CI POSTMERGE SUCCESS en `a1923d117febc5fd4e5a544b558c0f85ad517b44`; **C03-07 NO INICIADA, C03 NO CERTIFICADO, C04 BLOQUEADO**. [Constancia C03-06](c03/C03_06_CERTIFICACION_POSTMERGE.md). Este archivo **no acredita la vigencia ni ejecución de una automatización programada**: los calendarios históricos exigen verificación independiente.
+**ESTADO GLOBAL VIGENTE VERIFICADO EN GITHUB:** 2/37 capítulos certificados (C01 y C02); C03-05 CERTIFICADA (5/10), C03-06 CERTIFICADA (6/10) tras PR #61 y 5/5 CI POSTMERGE SUCCESS en `a1923d117febc5fd4e5a544b558c0f85ad517b44`; **C03-07 CERTIFICADA (7/10) tras PR #64 y 5/5 CI POSTMERGE SUCCESS en b1e019afabfb44f05076024b8d34cde74a340acc (PR técnico #63 a256885afa5ee2f639bd4ed6f7d8595b709e6409); C03-08 NO INICIADA, C03 NO CERTIFICADO, C04 BLOQUEADO**. [Constancia C03-06](c03/C03_06_CERTIFICACION_POSTMERGE.md). Este archivo **no acredita la vigencia ni ejecución de una automatización programada**: los calendarios históricos exigen verificación independiente.
 
 ## 1. Decisión de seguridad y frecuencia
 

@@ -2,7 +2,7 @@
 
 Área reservada para ASP.NET Core 10 / net10.0, Clean Architecture y módulos verticales ligeros. Domain independiente, Application por casos de uso, Infrastructure con adaptadores, API delgada, Workers con outbox cuando se implementen.
 
-Tenancy, auth, privacidad, historial y superadministración se validan en servidor. Existe una API ASP.NET Core 10 mínima con una sola lectura pública GET `/api/v1/public/branding/platform`; C03-06 CERTIFICADA (6/10) únicamente para composición explícita del módulo Branding. Los módulos privados, login, autorización multitenant, workers y endpoints de negocio no están implementados. C03-07 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO. C03-05 CERTIFICADA (5/10) como antecedente.
+Tenancy, auth, privacidad, historial y superadministración se validan en servidor. Existe una API ASP.NET Core 10 mínima con una sola lectura pública GET `/api/v1/public/branding/platform`; C03-06 CERTIFICADA (6/10) únicamente para composición explícita del módulo Branding. Los módulos privados, login, autorización multitenant, workers productivos y endpoints de negocio no están implementados. C03-07 añade solamente un relay de prueba PLATFORM interno, desactivado y sin efectos comerciales. C03-07 CERTIFICADA (7/10) tras PR #64 y 5/5 CI POSTMERGE SUCCESS en b1e019afabfb44f05076024b8d34cde74a340acc (PR técnico #63 a256885afa5ee2f639bd4ed6f7d8595b709e6409); C03-08 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO. C03-05 CERTIFICADA (5/10) como antecedente.
 
 ## C01-02 · Contratos de identidad (código real)
 
