@@ -1,6 +1,6 @@
 # Fase 1 · Capítulo 01 — CRECISOL: identidad, visión, alcance y principios
 
-**Estado vigente de C01:** CAPÍTULO 01 CERTIFICADO (8/8). **Antecedente al certificar C01: 1/37 capítulos certificados**; estado global actual **2/37 capítulos certificados (C01 y C02)**; C03-01 a C03-07 CERTIFICADAS (7/10), C03-05 CERTIFICADA (5/10), C03-06 CERTIFICADA (6/10), C03-07 CERTIFICADA (7/10) mediante PR #63 (8/8 CI POSTMERGE SUCCESS en a256885afa5ee2f639bd4ed6f7d8595b709e6409) y PR #64 (5/5 CI POSTMERGE SUCCESS en b1e019afabfb44f05076024b8d34cde74a340acc); C03-08 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO.** C01 conserva sus pruebas y acta históricas. C03-07 no certifica seguridad privada ni el capítulo C03 completo.
+**Estado vigente de C01:** CAPÍTULO 01 CERTIFICADO (8/8). **Antecedente al certificar C01: 1/37 capítulos certificados**; estado global actual **2/37 capítulos certificados (C01 y C02)**; C03-01 a C03-08 CERTIFICADAS (8/10), C03-05 CERTIFICADA (5/10), C03-06 CERTIFICADA (6/10), C03-07 CERTIFICADA (7/10) mediante PR #63 (8/8 CI POSTMERGE SUCCESS en a256885afa5ee2f639bd4ed6f7d8595b709e6409) y PR #64 (5/5 CI POSTMERGE SUCCESS en b1e019afabfb44f05076024b8d34cde74a340acc); C03-08 CERTIFICADA (8/10) por PR #70 (6/6 CI POSTMERGE SUCCESS, SHA 221afb6cc515fc79a3b6ca6e010af11f2e20b0a2) y PR #71 (5/5 CI POSTMERGE SUCCESS, SHA b333e58378b6a5ea0438f1ee6b11de85d9ce04df); C03-09 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO.** C01 conserva sus pruebas y acta históricas. C03-07 no certifica seguridad privada ni el capítulo C03 completo.
 
 ## Contrato de alcance
 

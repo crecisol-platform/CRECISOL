@@ -36,7 +36,7 @@ permissions:
   contents: read
 jobs:
   c03-static-windows-linux:
-    if: startsWith(github.head_ref, 'feature/c03-remediacion-') || startsWith(github.head_ref, 'feature/c03-06-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    if: startsWith(github.head_ref, 'feature/c03-remediacion-') || startsWith(github.head_ref, 'feature/c03-06-') || startsWith(github.head_ref, 'feature/c03-08-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
     strategy:
       fail-fast: false
       matrix:

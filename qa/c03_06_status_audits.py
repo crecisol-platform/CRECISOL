@@ -52,6 +52,7 @@ def validate(docs):
     row = next((line for line in plan.splitlines() if line.startswith("C03 | ")), "")
     require(phase.sixth_certified(row) and phase.fifth_plan_safe(plan),
             "Only verified stage-six or its certified successor may be active")
+    eighth = phase.eighth_certified(row)
     seventh = phase.seventh_certified(row)
     require("C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE" in plan,
             "C04 was started before chapter C03 certification")
@@ -59,6 +60,7 @@ def validate(docs):
                  "agents", "readme", "c01", "c02", "protocol", "spec"):
         doc = docs[name]
         next_marker = ("C03-07 NO INICIADA" if name == "spec" or not seventh
+                       else "C03-09 NO INICIADA" if eighth
                        else "C03-08 NO INICIADA")
         for term in ("C03-05 CERTIFICADA (5/10)", "C03-06 CERTIFICADA (6/10)",
                      next_marker, "C03 NO CERTIFICADO", "C04 BLOQUEADO"):
@@ -66,6 +68,9 @@ def validate(docs):
         if seventh and name != "spec":
             require("C03-07 CERTIFICADA (7/10)" in doc,
                     "Certified seventh stage omitted from current view: " + name)
+        if eighth and name != "spec":
+            require("C03-08 CERTIFICADA (8/10)" in doc,
+                    "Certified eighth stage omitted from current view: " + name)
     require("2/37 capítulos certificados (C01 y C02)" in docs["master"] and
             WORD_HASH in docs["master"],
             "Master reference/source authority lost")
@@ -92,11 +97,13 @@ def validate(docs):
 
 def negative_mutations(docs):
     row = next((line for line in docs["plan"].splitlines() if line.startswith("C03 | ")), "")
+    eighth = phase.eighth_certified(row)
     seventh = phase.seventh_certified(row)
-    from_marker = phase.SEVENTH_STATUS if seventh else phase.SIXTH_STATUS
-    to_marker = "**C03-01 A C03-08 CERTIFICADAS (8/10)**" if seventh else phase.SEVENTH_STATUS
-    next_marker = "C03-08 NO INICIADA" if seventh else "C03-07 NO INICIADA"
-    illicit_next = "C03-08 INICIADA" if seventh else "C03-07 INICIADA"
+    from_marker = phase.EIGHTH_STATUS if eighth else phase.SEVENTH_STATUS if seventh else phase.SIXTH_STATUS
+    to_marker = ("**C03-01 A C03-09 CERTIFICADAS (9/10)**" if eighth else
+                 phase.EIGHTH_STATUS if seventh else phase.SEVENTH_STATUS)
+    next_marker = phase.next_locked(row)
+    illicit_next = phase.next_illicit(row)
     cases = (
         ("unearned next certificate", "plan", from_marker, to_marker),
         ("premature next", "plan", next_marker, illicit_next),
@@ -117,8 +124,8 @@ def negative_mutations(docs):
          "C03-06 NO CERTIFICADA (6/10)"),
         ("unlocked AGENTS next", "agents", next_marker, illicit_next),
         ("README advanced illegally", "readme",
-         "C03-07 CERTIFICADA (7/10)" if seventh else "C03-06 CERTIFICADA (6/10)",
-         "C03-08 CERTIFICADA (8/10)" if seventh else "C03-07 CERTIFICADA (7/10)"),
+         "C03-08 CERTIFICADA (8/10)" if eighth else "C03-07 CERTIFICADA (7/10)" if seventh else "C03-06 CERTIFICADA (6/10)",
+         "C03-09 CERTIFICADA (9/10)" if eighth else "C03-08 CERTIFICADA (8/10)" if seventh else "C03-07 CERTIFICADA (7/10)"),
     )
     for label, key, old, forged in cases:
         require(old in docs[key], "Invalid mutation fixture: " + label)

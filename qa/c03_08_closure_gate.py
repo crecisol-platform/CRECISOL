@@ -40,8 +40,19 @@ def validate(docs):
     c04 = next((line for line in plan.splitlines() if line.startswith("C04 | ")), "")
     require(phase.seventh_certified(row) and phase.fifth_plan_safe(plan),
             "Predecessor C03-07 must remain the last formally certified microphase")
-    require("C03-08 NO INICIADA" in row and "C03 NO CERTIFICADO" in row and
-            "C04 BLOQUEADO" in row, "Do not certify C03-08 merely by drafting the acta")
+    certified = phase.eighth_certified(row)
+    require((("C03-08 CERTIFICADA (8/10)" in row and "C03-09 NO INICIADA" in row)
+             if certified else "C03-08 NO INICIADA" in row) and
+            "C03 NO CERTIFICADO" in row and "C04 BLOQUEADO" in row,
+            "Eighth-stage acta must preserve the current certificate and chapter locks")
+    if certified:
+        proof_file = ROOT / "docs/c03/C03_08_CERTIFICACION_POSTMERGE.md"
+        require(proof_file.is_file(), "No independent eighth-stage certificate exists")
+        proof = proof_file.read_text(encoding="utf-8")
+        for term in ("C03-08 CERTIFICADA (8/10)", "C03-09 NO INICIADA",
+                     TECH_MERGE, "b333e58378b6a5ea0438f1ee6b11de85d9ce04df",
+                     "C03 NO CERTIFICADO", "C04 BLOQUEADO"):
+            require(term in proof, "Independent eighth-stage certificate lacks: " + term)
     require(c04 == "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
             "C04 cannot be unlocked by the eighth microphase")
     require("2/37 capítulos certificados (C01 y C02)" in plan and
@@ -71,6 +82,8 @@ def validate(docs):
             "Eighth acta falsely certifies chapter or tenant routing")
 
 def negative_mutations(docs):
+    row = next((line for line in docs["plan"].splitlines() if line.startswith("C03 | ")), "")
+    next_phase = "C03-09" if phase.eighth_certified(row) else "C03-08"
     tests = (
         ("owner replaced", "acta", OWNER, "AUTORIZACION AUSENTE"),
         ("source SHA forged", "acta", HASH, "0"*64),
@@ -85,7 +98,7 @@ def negative_mutations(docs):
         ("chapter promotion", "plan", "C03 NO CERTIFICADO", "C03 CERTIFICADO"),
         ("C04 unblocked", "plan", "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
          "C04 | Multitenancy, dominios y aprovisionamiento | INICIADO"),
-        ("premature C03-08", "plan", "C03-08 NO INICIADA", "C03-08 INICIADA"),
+        ("premature next stage", "plan", next_phase + " NO INICIADA", next_phase + " INICIADA"),
         ("next stage started", "acta", "C03-09 NO INICIADA", "C03-09 INICIADA"),
         ("previous certificate forged", "prior", "C03-07 CERTIFICADA (7/10)",
          "C03-07 NO CERTIFICADA (7/10)"),

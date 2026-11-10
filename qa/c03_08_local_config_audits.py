@@ -7,6 +7,7 @@ import sys
 import xml.etree.ElementTree as ET
 
 import c03_01_source as source
+import c03_05_status as phase
 
 ROOT = Path(__file__).resolve().parents[1]
 WORD = ROOT / "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx"
@@ -101,11 +102,17 @@ def audit_a():
     plan = (ROOT / "docs/PLAN_37_CAPITULOS.md").read_text(encoding="utf-8")
     prep = (ROOT / "docs/C03_PREPARACION.md").read_text(encoding="utf-8")
     future = (ROOT / "docs/planificacion-futura/C03_MICROFASES_PROPUESTAS.md").read_text(encoding="utf-8")
+    require(phase.fifth_plan_safe(plan),
+            "Canonical sequential status must be valid before the local configuration audit")
+    row = next((line for line in plan.splitlines() if line.startswith("C03 | ")), "")
+    eighth = phase.eighth_certified(row)
+    next_lock = "C03-09 NO INICIADA" if eighth else "C03-08 NO INICIADA"
     for t in (plan, prep, future):
         require("C03-07 CERTIFICADA (7/10)" in t and
-                "C03-08 NO INICIADA" in t and
+                next_lock in t and
+                ("C03-08 CERTIFICADA (8/10)" in t if eighth else True) and
                 "C03 NO CERTIFICADO" in t and "C04 BLOQUEADO" in t,
-                "Previous stage and chapter lock lost")
+                "Previous stage, current stage or chapter lock lost")
     require("| C03-08 | Configuración segura y entornos locales |" in prep,
             "Exact microphase source absent")
     require("| C03-08 | Configuración y ambientes locales |" in future,
