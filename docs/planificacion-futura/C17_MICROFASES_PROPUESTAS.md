@@ -26,7 +26,7 @@ Solo iniciar una fila tras cerrar la anterior; crear su especificación individu
 **Certificación C17:** 10/10 no basta. Requiere auditoría integral del capítulo con tres perspectivas, regresión transversal, cero P0/P1 sin resolver, acta y aceptación expresa antes de C18. Todo permanece **PENDIENTE** hasta habilitación secuencial.\n
 ## Ampliación comercial COM-001..COM-014 — dependencia transversal (10-11-2026)
 
-**Solo planificación; NO IMPLEMENTADO / NO CERTIFICADO.** Requisitos derivados de `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de una actualización del Word maestro **todavía pendiente de incorporación y comprobación de huellas en GitHub**; esta nota no sustituye el Word ni habilita C17.
+**Solo planificación; NO IMPLEMENTADO / NO CERTIFICADO.** Requisitos derivados de `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de una actualización del Word maestro **ya incorporada en la rama del PR #73, con blob y SHA verificados; pendiente de CI, auditorías y fusión a dev**; esta nota no sustituye el Word ni habilita C17.
 
 - **COM:** COM-010, COM-012, COM-014.
 - **Microfases a revisar sin renumerar:** C17-01, C17-06, C17-07, C17-08 y C17-10.
