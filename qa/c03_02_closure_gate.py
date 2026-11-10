@@ -12,6 +12,7 @@ import sys
 
 import c03_01_closure_gate as prior
 import c03_02_domain_audits as domain
+import c03_05_status as phase
 
 ROOT = Path(__file__).resolve().parents[1]
 WORD_SHA = "e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e"
@@ -52,10 +53,12 @@ def validate_content(files):
             and "2/37 capítulos certificados (C01 y C02)" in master,
             "Only C01 and C02 may count as certified chapters")
     third_status = "**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**"
-    fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in c03
+    fifth_active = phase.fifth_safe(c03)
+    fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in c03 or fifth_active
     third_active = third_status in c03 or fourth_active
     require((EXPECTED_C03_ROW in c03 or third_active) and
-            ("C03-05 NO INICIADA" in c03 if fourth_active else
+            ("C03-06 NO INICIADA" in c03 if fifth_active else
+             "C03-05 NO INICIADA" in c03 if fourth_active else
              "C03-04 NO INICIADA" in c03 if third_active else "C03-03 NO INICIADA" in c03)
             and "C03 NO CERTIFICADO" in c03 and "C04 BLOQUEADO" in c03,
             "C03 microphase count or downstream phase was changed")
@@ -150,22 +153,23 @@ def main():
                 for key, path in prior.FILES.items()}
     historic["second"] = docs["acta"]
     prior.validate_content(historic)
-    fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in docs["plan"]
+    fifth_active = phase.fifth_safe(next((x for x in docs['plan'].splitlines() if x.startswith('C03 | ')), ''))
+    fourth_active = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in docs["plan"] or fifth_active
     third_active = ("**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**" in docs["plan"] or fourth_active)
     variants = [
         ("owner approval forged", "acta", OWNER_REPLY, "DENEGADO"),
         ("technical SHA forged", "acta", TECHNICAL_SHA, "0" * 40),
         ("wrong microphase count", "plan",
-         "CERTIFICACIÓN (4/10)**" if fourth_active else "CERTIFICACIÓN (3/10)**" if third_active else "CERTIFICACIÓN (2/10)**",
-         "CERTIFICACIÓN (5/10)**" if fourth_active else "CERTIFICACIÓN (4/10)**" if third_active else "CERTIFICACIÓN (3/10)**"),
+         "CERTIFICACIÓN (5/10)**" if fifth_active else "CERTIFICACIÓN (4/10)**" if fourth_active else "CERTIFICACIÓN (3/10)**" if third_active else "CERTIFICACIÓN (2/10)**",
+         "CERTIFICACIÓN (6/10)**" if fifth_active else "CERTIFICACIÓN (5/10)**" if fourth_active else "CERTIFICACIÓN (4/10)**" if third_active else "CERTIFICACIÓN (3/10)**"),
         ("unearned C04", "plan",
          "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
          "C04 | Multitenancy, dominios y aprovisionamiento | INICIADO"),
         ("unearned C03 chapter certificate", "plan",
          "C03 NO CERTIFICADO", "C03 CERTIFICADO"),
         ("premature next microphase", "plan",
-         "C03-05 NO INICIADA" if fourth_active else "C03-04 NO INICIADA" if third_active else "C03-03 NO INICIADA",
-         "C03-05 INICIADA" if fourth_active else "C03-04 INICIADA" if third_active else "C03-03 INICIADA"),
+         "C03-06 NO INICIADA" if fifth_active else "C03-05 NO INICIADA" if fourth_active else "C03-04 NO INICIADA" if third_active else "C03-03 NO INICIADA",
+         "C03-06 INICIADA" if fifth_active else "C03-05 INICIADA" if fourth_active else "C03-04 INICIADA" if third_active else "C03-03 INICIADA"),
         ("missing CI success count", "acta", "3/3 workflows", "0/3 workflows"),
         ("privacy disclaimer removed", "acta",
          "No se certifican", "Si se certifican"),
