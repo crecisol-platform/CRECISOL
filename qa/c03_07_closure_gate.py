@@ -58,7 +58,8 @@ def validate(docs):
             "Exact technical PRE/POSTMERGE run IDs are missing")
     require(TECH_MERGE in docs["acta"] and
             HASH in spec and "C03-07" in spec and
-            "C03-06 CERTIFICADA (6/10)" in docs["prior"],
+            "C03-06 CERTIFICADA (6/10)" in docs["prior"] and
+            phase.SIXTH_MERGE in docs["prior"],
             "Canonical technical source and predecessor proof missing")
     require("C03 CERTIFICADO" not in acta and "C04 HABILITADO" not in acta,
             "An acta must not certify the entire chapter or unlock C04")
