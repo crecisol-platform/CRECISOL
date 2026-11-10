@@ -400,7 +400,9 @@ def audit_c():
     prep = PREP.read_text(encoding="utf-8")
     row_c03 = next((line for line in plan.splitlines() if line.startswith("C03 | ")), "")
     row_c04 = next((line for line in plan.splitlines() if line.startswith("C04 | ")), "")
-    closed_third = "**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**" in row_c03
+    closed_fourth = "**C03-01, C03-02 Y C03-03 CERTIFICADAS (3/10); C03-04 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (4/10)**" in row_c03
+    closed_third = ("**C03-01 Y C03-02 CERTIFICADAS (2/10); C03-03 CERRADA TÉCNICAMENTE Y ACEPTADA PARA CERTIFICACIÓN (3/10)**" in row_c03
+                    or closed_fourth)
     closed_second = "**C03-01 CERTIFICADA (1/10) Y C03-02 CERRADA TÉCNICAMENTE/APROBADA PARA CERTIFICACIÓN (2/10)**" in row_c03 or closed_third
     closed = "**C03-01 CERRADA TÉCNICAMENTE (1/10)**" in row_c03 or closed_second
     active = "**EN DESARROLLO C03-01 (0/10)**" in row_c03
@@ -436,12 +438,24 @@ def audit_c():
                 third_path = ROOT / "docs/c03/C03_03_ACTA_MICROFASE.md"
                 require(third_path.is_file(), "C03-03 requires its own acta")
                 third = third_path.read_text(encoding="utf-8")
-                require("3/10" in prep and "C03-03 CERRADA TÉCNICAMENTE" in prep
-                        and "C03-04" in prep and "NO INICIADA" in prep
-                        and "c3bb9e4e314297c502b644ba1306a16364e7af2e" in third
+                require("c3bb9e4e314297c502b644ba1306a16364e7af2e" in third
                         and "Listo entonces adelante con el siguiente paso" in third
                         and "C03 NO CERTIFICADO" in third and "C04 BLOQUEADO" in third,
-                        "C03-03 progression requires its owner-approved acta")
+                        "C03-03 historical authorization/provenance lost")
+                if closed_fourth:
+                    fourth_path = ROOT / "docs/c03/C03_04_ACTA_MICROFASE.md"
+                    require(fourth_path.is_file(), "C03-04 requires own acta")
+                    fourth = fourth_path.read_text(encoding="utf-8")
+                    require("4/10" in prep and "C03-04 CERRADA TÉCNICAMENTE" in prep
+                            and "C03-05 NO INICIADA" in prep
+                            and "d529f85f0bc8710940d195fceaea06bf6c5e674d" in fourth
+                            and "Adelante por favor con ello" in fourth
+                            and "C03 NO CERTIFICADO" in fourth and "C04 BLOQUEADO" in fourth,
+                            "C03-04 progression requires its own approval and exact technical SHA")
+                else:
+                    require("3/10" in prep and "C03-03 CERRADA TÉCNICAMENTE" in prep
+                            and "C03-04" in prep and "NO INICIADA" in prep,
+                            "C03-03 progression must not auto-start C03-04")
             else:
                 require("2/10" in prep and "C03-02 CERRADA TÉCNICAMENTE" in prep
                         and "C03-03" in prep and "NO INICIADA" in prep,
@@ -462,6 +476,8 @@ def audit_c():
         link_files += (ROOT / "docs/c03/C03_02_ACTA_MICROFASE.md",)
     if closed_third:
         link_files += (ROOT / "docs/c03/C03_03_ACTA_MICROFASE.md",)
+    if closed_fourth:
+        link_files += (ROOT / "docs/c03/C03_04_ACTA_MICROFASE.md",)
     for path in link_files:
         for link in re.findall(r"\[[^\]]+\]\(([^)]+)\)", path.read_text(encoding="utf-8")):
             if link.startswith(("http:", "https:", "mailto:", "#")):
