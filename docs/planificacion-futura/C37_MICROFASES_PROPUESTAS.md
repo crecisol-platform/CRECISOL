@@ -21,4 +21,14 @@
 
 Implementar una microfase por vez, con especificación individual creada **solo al habilitarla** en `docs/c37/C37_XX_ESPECIFICACION.md`. Antes de escribir: repositorio, dev, skill, maestro, matriz, dependencias y riesgos. Evidencia de compilación real, pruebas positivas y negativas, auditorías A (requisitos), B (seguridad/tenancy), C (arquitectura/performance/UX), PR, diff, secreto y SHA, CI final y CI posterior, acta, reversión y cero P0/P1. Una falla o prueba requerida no ejecutada bloquea el avance. No VPS, pagos reales ni modificaciones SOLQARYN.
 
-Aunque se cierren 8/8, la certificación integral C37 requiere 3 auditorías de capítulo y aceptación expresa antes de cierre del programa de 37 capítulos, condicionado a todas las actas y aceptación final. Los bloqueos de integración de terceros se conservan hasta autorización futura y pruebas reales, sin fingir certificación. Estado: PENDIENTE.
+Aunque se cierren 8/8, la certificación integral C37 requiere 3 auditorías de capítulo y aceptación expresa antes de cierre del programa de 37 capítulos, condicionado a todas las actas y aceptación final. Los bloqueos de integración de terceros se conservan hasta autorización futura y pruebas reales, sin fingir certificación. Estado: PENDIENTE.\n
+## Ampliación comercial COM-001..COM-014 — dependencia transversal (10-11-2026)
+
+**Solo planificación; NO IMPLEMENTADO / NO CERTIFICADO.** Requisitos derivados de `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de una actualización del Word maestro **todavía pendiente de incorporación y comprobación de huellas en GitHub**; esta nota no sustituye el Word ni habilita C37.
+
+- **COM:** COM-006, COM-007, COM-008, COM-011, COM-014.
+- **Microfases a revisar sin renumerar:** C37-01, C37-03, C37-04, C37-05, C37-07 y C37-08.
+- **Aceptación futura:** Verificar fuentes oficiales vigentes sobre contratación SaaS, cancelación electrónica, renovación, información de precios, privacidad, publicidad y comprobantes; registrar citas exactas al adoptar reglas.
+- **Negativos:** No trasladar automáticamente prohibiciones sectoriales de telecomunicaciones a SaaS B2B ni afirmar validez de penalidades sin revisión jurídica.
+- **Pruebas definidas y NO ejecutadas:** COM-T11, COM-T12 y COM-T17.
+- **Gate:** Word aprobado y verificable, capítulo precedente certificado, A/B/C, CI y acta propia. Sin datos productivos, despliegues ni pagos reales.
