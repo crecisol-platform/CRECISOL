@@ -25,4 +25,14 @@
 
 Cada C12-XX requiere dependencia anterior cerrada, requisitos trazados, impacto `frontend/`/`backend/`/`database/`, branch específica, tests positivos y negativos reales, auditorías **A trazabilidad / B seguridad-tenancy / C arquitectura-rendimiento-UX**, acta, revisión del diff y secretos, CI PASS del último SHA, PR a `dev`, merge seguro, CI posterior y rollback. Guardar la especificación individual **solo al activar** como `docs/c12/C12_XX_ESPECIFICACION.md`. Si una puerta no pasa, **BLOQUEADO**; no falsificar PASS ni saltar dependencias. No producción ni SOLQARYN.
 
-Incluso con 12/12 microfases cerradas, C12 necesita **auditoría integral triple, regresión, ausencia de P0/P1, acta y aceptación expresa** antes de habilitar C13. Este plan no demuestra implementación.
+Incluso con 12/12 microfases cerradas, C12 necesita **auditoría integral triple, regresión, ausencia de P0/P1, acta y aceptación expresa** antes de habilitar C13. Este plan no demuestra implementación.\n
+## Ampliación comercial COM-001..COM-014 — dependencia transversal (10-11-2026)
+
+**Solo planificación; NO IMPLEMENTADO / NO CERTIFICADO.** Requisitos derivados de `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de una actualización del Word maestro **todavía pendiente de incorporación y comprobación de huellas en GitHub**; esta nota no sustituye el Word ni habilita C12.
+
+- **COM:** COM-002, COM-005, COM-013.
+- **Microfases a revisar sin renumerar:** C12-01, C12-02, C12-08, C12-09 y C12-12.
+- **Aceptación futura:** Separar catálogo, caja, pago y reembolso del negocio de cualquier factura por licencias SaaS de CRECISOL; ambos usan contratos distintos.
+- **Negativos:** No vender membresía SaaS con flujo de caja de tienda ni mezclar ingresos, reembolsos o saldos de un tenant con plano global.
+- **Pruebas definidas y NO ejecutadas:** COM-T05 y COM-T07.
+- **Gate:** Word aprobado y verificable, capítulo precedente certificado, A/B/C, CI y acta propia. Sin datos productivos, despliegues ni pagos reales.
