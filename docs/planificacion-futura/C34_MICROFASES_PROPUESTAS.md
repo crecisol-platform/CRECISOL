@@ -25,7 +25,7 @@ Implementar una microfase por vez, con especificación individual creada **solo 
 Aunque se cierren 9/9, la certificación integral C34 requiere 3 auditorías de capítulo y aceptación expresa antes de habilitar C35. Los bloqueos de integración de terceros se conservan hasta autorización futura y pruebas reales, sin fingir certificación. Estado: PENDIENTE.\n
 ## Ampliación comercial COM-001..COM-014 — planificación condicionada (10-11-2026)
 
-**Estado: propuesta documental / no implementada / no certificada.** La ampliación deriva del expediente `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de la edición comercial preparada del único Documento Maestro; **esa edición DOCX/PDF todavía debe incorporarse y verificarse con su SHA en GitHub antes de aprobar el plan como normativo**. Se conserva el número de microfases, la puerta de entrada secuencial y toda evidencia histórica. No se habilita código de C34.
+**Estado: propuesta documental / no implementada / no certificada.** La ampliación deriva del expediente `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de la edición comercial preparada del único Documento Maestro; **esa edición DOCX/PDF ya fue incorporada a la rama del PR #73 con SHA y blob verificados; su aprobación normativa sigue pendiente de CI y fusión a dev**. Se conserva el número de microfases, la puerta de entrada secuencial y toda evidencia histórica. No se habilita código de C34.
 
 - **Requisitos relacionados:** COM-004, COM-008, COM-010, COM-011, COM-012.
 - **Microfases técnicas a revisar:** C34-01, C34-02, C34-03, C34-04, C34-05, C34-06, C34-08 y C34-09 (no equivalen a puertas normativas `MAE-C34-xx`).
