@@ -1,6 +1,6 @@
 # CRECISOL — Capítulo 03 · Arquitectura técnica limpia y dependencias
 
-**ESTADO VIGENTE: 2/37 capítulos certificados (C01 y C02); C03-01 a C03-05 CERTIFICADAS (5/10), C03-05 CERTIFICADA (5/10) por PR #58, 11/11 CI POSTMERGE SUCCESS sobre 12fb19b0c35038c297939e17b27770c4fd63f77e; C03-06 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO.** C03-03 quedó CERTIFICADA mediante PR #54, SHA `1481dfbf75b3b47c8d5bc9d7bea56406e470f215`, 9/9 workflows POSTMERGE SUCCESS. C03-04 PR técnico #55 obtuvo 3/3 CI POSTMERGE SUCCESS; su acta formal aún requiere CI PREMERGE/POSTMERGE.
+**ESTADO VIGENTE: 2/37 capítulos certificados (C01 y C02); C03-01 a C03-05 CERTIFICADAS (5/10), C03-05 CERTIFICADA (5/10) por PR #58, 11/11 CI POSTMERGE SUCCESS sobre 12fb19b0c35038c297939e17b27770c4fd63f77e; C03-06 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO.** C03-03 quedó CERTIFICADA mediante PR #54, SHA `1481dfbf75b3b47c8d5bc9d7bea56406e470f215`, 9/9 workflows POSTMERGE SUCCESS. Registro histórico de C03-04: PR técnico #55 obtuvo 3/3 CI POSTMERGE SUCCESS; su acta quedó después certificada mediante PR #56 (10/10 CI POSTMERGE SUCCESS). La certificación de C03-05 corresponde al PR #58 con 11/11 CI POSTMERGE SUCCESS.
 
 ## Puerta de entrada verificada
 

@@ -1,6 +1,6 @@
 # Mapa preliminar de microfases CRECISOL — 37 capítulos
 
-**ESTADO VIGENTE: 2/37 capítulos certificados (C01 y C02); C03-01 a C03-05 CERTIFICADAS (5/10), C03-05 CERTIFICADA (5/10) por PR #58, 11/11 CI POSTMERGE SUCCESS sobre 12fb19b0c35038c297939e17b27770c4fd63f77e; C03-06 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO.** [C03-03 certificación PR #54](https://github.com/solqaryn-platform/CRECISOL/pull/54) SHA `1481dfbf75b3b47c8d5bc9d7bea56406e470f215` **9/9 POSTMERGE SUCCESS**; [C03-04 técnico PR #55](https://github.com/solqaryn-platform/CRECISOL/pull/55) SHA `d529f85f0bc8710940d195fceaea06bf6c5e674d` **3/3 POSTMERGE SUCCESS**, [acta C03-04](c03/C03_04_ACTA_MICROFASE.md) aceptada para certificación posterior; C03-06..10 y C04–C37 pendientes; C03-05 certificada (5/10), Word canónico intacto.
+**ESTADO VIGENTE: 2/37 capítulos certificados (C01 y C02); C03-01 a C03-05 CERTIFICADAS (5/10), C03-05 CERTIFICADA (5/10) por PR #58, 11/11 CI POSTMERGE SUCCESS sobre 12fb19b0c35038c297939e17b27770c4fd63f77e; C03-06 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO.** [C03-03 certificación PR #54](https://github.com/solqaryn-platform/CRECISOL/pull/54) SHA `1481dfbf75b3b47c8d5bc9d7bea56406e470f215` **9/9 POSTMERGE SUCCESS**; [C03-04 técnico PR #55](https://github.com/solqaryn-platform/CRECISOL/pull/55) SHA `d529f85f0bc8710940d195fceaea06bf6c5e674d` **3/3 POSTMERGE SUCCESS**, [acta histórica C03-04](c03/C03_04_ACTA_MICROFASE.md), formalizada después por PR #56; C03-06..10 y C04–C37 pendientes; C03-05 certificada (5/10), Word canónico intacto.
 
 ## Alcance del reparto
 

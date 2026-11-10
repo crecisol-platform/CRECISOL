@@ -1,6 +1,6 @@
 # CRECISOL · Protocolo de continuidad autónoma — ejecutor único con guardas SHA
 
-**Estado: UNA tarea horaria ChatGPT/GitHub configurada; capacidades y desarrollo solo se acreditan por ejecución real.** Este documento no instala ni enciende agentes o tareas. Queda subordinado al Documento Maestro Único, \`AGENTS.md\`, \`.agents/skills/crecisol-project-governance/SKILL.md\`, \`docs/MASTER_REFERENCE.md\` y las actas oficiales. Repositorio exclusivo: \`solqaryn-platform/CRECISOL\`. **SOLQARYN: escritura absolutamente prohibida.**
+**Estado histórico al redactar este protocolo: se había registrado UNA tarea horaria ChatGPT/GitHub; capacidades y desarrollo solo se acreditan por ejecución real.** Este documento no instala ni enciende agentes o tareas. Queda subordinado al Documento Maestro Único, \`AGENTS.md\`, \`.agents/skills/crecisol-project-governance/SKILL.md\`, \`docs/MASTER_REFERENCE.md\` y las actas oficiales. Repositorio exclusivo: \`solqaryn-platform/CRECISOL\`. **SOLQARYN: escritura absolutamente prohibida.**
 
 **ESTADO GLOBAL VIGENTE VERIFICADO EN GITHUB:** C01/C02 certificados (2/37), C03-01..05 CERTIFICADAS (5/10), C03-06 NO INICIADA, C03 NO CERTIFICADO y C04 BLOQUEADO. [Constancia C03-05](c03/C03_05_CERTIFICACION_POSTMERGE.md), SHA 12fb19b0c35038c297939e17b27770c4fd63f77e. **Este archivo no acredita la vigencia ni ejecución de ninguna automatización programada**; las secciones históricas de calendario y locks requieren verificación independiente.
 

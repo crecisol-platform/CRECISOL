@@ -14,6 +14,7 @@ import c03_03_application_audits as c03
 import c03_04_infrastructure_audits as c04
 import c03_05_api_audits as c05
 import c03_05_status as state
+import c03_05_closure_gate as closure
 
 ROOT = Path(__file__).resolve().parents[1]
 STAGES = (
@@ -45,6 +46,10 @@ def main():
     if len(sys.argv) != 1:
         raise ValueError("Usage: python qa/c03_local_preflight.py (no fake C/CI flags)")
     check_portable_paths()
+    documentary = {name: location.read_text(encoding="utf-8")
+                   for name, location in closure.FILES.items()}
+    closure.validate_content(documentary)  # STATIC archive check, no C/CI markers
+    print("PASS LOCAL DOCUMENTARY: fifth-stage archive and historical links, not remote CI")
     for name, module in STAGES:
         module.audit_a()
         module.audit_b()

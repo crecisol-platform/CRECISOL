@@ -33,6 +33,20 @@ class C03PortabilityTests(TestCase):
                 state.fifth_plan_safe(plan.replace(bad, changed))
         self.assertTrue(state_plan.is_file())
 
+    def test_readme_and_protocol_separate_current_from_history(self):
+        root = Path(__file__).resolve().parents[1]
+        readme = (root / "README.md").read_text(encoding="utf-8")
+        current, historic = readme.split("## Historia fundacional — no vigente", 1)
+        self.assertIn("2/37 capítulos certificados", current)
+        self.assertIn("C03-06 NO INICIADA", current)
+        self.assertNotIn("0/37 capítulos certificados", current)
+        self.assertIn("0/37 capítulos certificados", historic)
+        first = (root / "docs/C01_PREPARACION.md").read_text(encoding="utf-8")
+        self.assertIn("estado global actual **2/37 capítulos certificados", first[:700])
+        protocol = (root / "docs/PROTOCOLO_CONTINUIDAD_CRECISOL.md").read_text(encoding="utf-8")
+        self.assertIn("ESTADO GLOBAL VIGENTE", protocol[:1300])
+        self.assertIn("Instantánea HISTÓRICA", protocol)
+
     def test_ci_audit_c_fails_closed_without_real_proof(self):
         with TemporaryDirectory() as temp, mock.patch.object(api, "PROOF", Path(temp)):
             with self.assertRaisesRegex(AssertionError, "Missing real Actions step evidence"):
