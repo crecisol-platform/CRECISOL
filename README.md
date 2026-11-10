@@ -32,7 +32,7 @@ py -3.11 qa\test_c03_portability.py
 
 En Linux/macOS: `python3 qa/c03_local_preflight.py` y `python3 qa/test_c03_portability.py`.
 
-El preflight ejecuta **solo auditorías A/B de fuente y seguridad estáticas de C03-01..05** y comprobación de rutas Windows. **No ejecuta auditoría C, compilaciones .NET/Angular, MySQL, Chromium ni certificación.** Las auditorías C exigen pruebas reales y marcadores temporales .c03-*-ci-proof generados después de los pasos correspondientes en GitHub Actions; no se crean, falsifican ni versionan para hacer pasar pruebas locales. [Workflow de compatibilidad](.github/workflows/c03-local-portability.yml).
+El preflight ejecuta **solo auditorías A/B de fuente y seguridad estáticas de C03-01..06, además de 16/16 negativos documentales del estado 6/10** y comprobación de rutas Windows. **No ejecuta auditoría C, compilaciones .NET/Angular, MySQL, Chromium ni certificación.** Las auditorías C exigen pruebas reales y marcadores temporales .c03-*-ci-proof generados después de los pasos correspondientes en GitHub Actions; no se crean, falsifican ni versionan para hacer pasar pruebas locales. [Workflow de compatibilidad](.github/workflows/c03-local-portability.yml).
 
 ## Reglas de trabajo
 

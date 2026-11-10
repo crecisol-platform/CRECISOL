@@ -20,7 +20,7 @@ class C03PortabilityTests(TestCase):
         self.assertNotIn("\\", "".join(domain.sources().keys()))
         self.assertNotIn("\\", "".join(app.authored_sources().keys()))
 
-    def test_only_fifth_stage_current_and_sixth_locked(self):
+    def test_only_current_phase_certified_and_next_phase_locked(self):
         plan = (state_plan := Path(__file__).resolve().parents[1] /
                 "docs/PLAN_37_CAPITULOS.md").read_text(encoding="utf-8")
         self.assertTrue(state.fifth_plan_safe(plan))
