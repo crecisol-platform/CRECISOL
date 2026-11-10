@@ -113,18 +113,8 @@ def validate_content(files):
     require("C03 CERTIFICADO" not in acta and "C04 HABILITADO" not in acta,
             "Acta cannot certify chapter C03 or open C04")
 
-def main():
-    require(sha256(WORD.read_bytes()).hexdigest() == WORD_SHA,
-            "Canonical master binary changed")
-    technical.audit_a()
-    technical.audit_b()
-    technical.audit_c()
-    docs = {k: p.read_text(encoding="utf-8") for k, p in FILES.items()}
-    validate_content(docs)
-    for module in (fourth, third, second, first, c02):
-        historic = {k: p.read_text(encoding="utf-8")
-                    for k, p in module.FILES.items()}
-        module.validate_content(historic)
+def audit_document_mutations(docs):
+    """Run 14 negative documentary mutations without manufacturing runtime proofs."""
     mutants = (
         ("owner authorization removed", "acta", OWNER, "RECHAZADO"),
         ("technical premerge HEAD forged", "acta", TECH_HEAD, "0" * 40),
@@ -140,7 +130,7 @@ def main():
         ("unearned C04", "plan", "C04 | Multitenancy, dominios y aprovisionamiento | PENDIENTE",
          "C04 | Multitenancy, dominios y aprovisionamiento | INICIADO"),
         ("forged microphase six", "plan",
-         state.fifth_count_before(plan), state.fifth_count_after(plan)),
+         state.fifth_count_before(docs["plan"]), state.fifth_count_after(docs["plan"])),
         ("forged final POSTMERGE run", "postmerge", "42745582469", "00000000000"),
         ("forged final POSTMERGE SHA", "postmerge", state.CERTIFIED_MERGE, "0" * 40),
     )
@@ -153,6 +143,22 @@ def main():
         except (AssertionError, KeyError, ValueError, TypeError):
             continue
         raise AssertionError("Unsafe C03-05 certificate mutation accepted: " + name)
+    print("PASS C03-05 documentary mutations: 14/14 invalid acts rejected (static only).")
+
+
+def main():
+    require(sha256(WORD.read_bytes()).hexdigest() == WORD_SHA,
+            "Canonical master binary changed")
+    technical.audit_a()
+    technical.audit_b()
+    technical.audit_c()
+    docs = {k: p.read_text(encoding="utf-8") for k, p in FILES.items()}
+    validate_content(docs)
+    for module in (fourth, third, second, first, c02):
+        historic = {k: p.read_text(encoding="utf-8")
+                    for k, p in module.FILES.items()}
+        module.validate_content(historic)
+    audit_document_mutations(docs)
     print("PASS C03-05 certification gate: canonical Word, prior C02/C03-01..04 gates, "
           "real DTO .NET10 and MySQL8.4 A/B/C, 14/14 documentation tamper attempts rejected; "
           "human instruction is before testing and certificate is conditional on external PR CI.")

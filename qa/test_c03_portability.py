@@ -47,6 +47,13 @@ class C03PortabilityTests(TestCase):
         self.assertIn("ESTADO GLOBAL VIGENTE", protocol[:1300])
         self.assertIn("Instantánea HISTÓRICA", protocol)
 
+    def test_documentary_mutations_execute_locally_without_runtime_proofs(self):
+        import c03_05_closure_gate as closure
+        snapshot = {name: path.read_text(encoding="utf-8")
+                    for name, path in closure.FILES.items()}
+        closure.validate_content(snapshot)
+        closure.audit_document_mutations(snapshot)
+
     def test_ci_audit_c_fails_closed_without_real_proof(self):
         with TemporaryDirectory() as temp, mock.patch.object(api, "PROOF", Path(temp)):
             with self.assertRaisesRegex(AssertionError, "Missing real Actions step evidence"):

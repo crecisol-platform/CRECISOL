@@ -54,6 +54,7 @@ def main():
     documentary = {name: location.read_text(encoding="utf-8")
                    for name, location in closure.FILES.items()}
     closure.validate_content(documentary)  # STATIC archive check, no C/CI markers
+    closure.audit_document_mutations(documentary)
     for old in (historical_fourth, historical_third, historical_second,
                 historical_first, historical_c02):
         old_contents = {name: location.read_text(encoding="utf-8")
