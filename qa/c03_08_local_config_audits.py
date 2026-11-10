@@ -70,7 +70,7 @@ def invariant(p):
     require(api.index("LocalRuntimeSettings.Parse(") < api.index("var app = builder.Build();"),
             "Typed validation must occur before API starts serving requests")
     for token in (
-        "Rejected", "Orphaned", "external network", "Unknown", "traversal",
+        "Reject(() =>", "Orphaned", "external network", "Unknown", "traversal",
         "Full", "injection", "Duplicate", "localhost", "production"
     ):
         # All different attack families are materially present in executable tests.
@@ -111,7 +111,7 @@ def audit_a():
     require("| C03-08 | Configuración y ambientes locales |" in future,
             "Canonical future plan does not authorize C03-08 scope")
     invariant(read_all())
-    print("PASS C03-08 A: immutable Word SHA, 7/9 C03 matrix, 7/10 predecessor, no next-phase promotion.")
+    print("PASS C03-08 A: immutable Word SHA, 7 paragraphs/9 C03 matrix rows, 7/10 predecessor, no next-phase promotion.")
 
 def audit_b():
     parts = read_all()
