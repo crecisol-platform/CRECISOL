@@ -25,4 +25,14 @@
 
 Cada C09-XX requiere dependencia anterior cerrada, requisitos trazados, impacto `frontend/`/`backend/`/`database/`, branch específica, tests positivos y negativos reales, auditorías **A trazabilidad / B seguridad-tenancy / C arquitectura-rendimiento-UX**, acta, revisión del diff y secretos, CI PASS del último SHA, PR a `dev`, merge seguro, CI posterior y rollback. Guardar la especificación individual **solo al activar** como `docs/c09/C09_XX_ESPECIFICACION.md`. Si una puerta no pasa, **BLOQUEADO**; no falsificar PASS ni saltar dependencias. No producción ni SOLQARYN.
 
-Incluso con 12/12 microfases cerradas, C09 necesita **auditoría integral triple, regresión, ausencia de P0/P1, acta y aceptación expresa** antes de habilitar C10. Este plan no demuestra implementación.
+Incluso con 12/12 microfases cerradas, C09 necesita **auditoría integral triple, regresión, ausencia de P0/P1, acta y aceptación expresa** antes de habilitar C10. Este plan no demuestra implementación.\n
+## Ampliación comercial COM-001..COM-014 — dependencia transversal (10-11-2026)
+
+**Solo planificación; NO IMPLEMENTADO / NO CERTIFICADO.** Requisitos derivados de `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de una actualización del Word maestro **todavía pendiente de incorporación y comprobación de huellas en GitHub**; esta nota no sustituye el Word ni habilita C09.
+
+- **COM:** COM-004, COM-011, COM-012.
+- **Microfases a revisar sin renumerar:** C09-01, C09-02, C09-03, C09-04, C09-07, C09-08, C09-11 y C09-12.
+- **Aceptación futura:** Componentes editables y accesibles para tarjetas de ofertas, selector de plazos, avisos y slots publicitarios; preview segura sin alterar reglas de contrato.
+- **Negativos:** No ejecutar HTML/JS arbitario en anuncios ni convertir edición visual en autorización de catálogo global.
+- **Pruebas definidas y NO ejecutadas:** COM-T02, COM-T08, COM-T13 y COM-T14.
+- **Gate:** Word aprobado y verificable, capítulo precedente certificado, A/B/C, CI y acta propia. Sin datos productivos, despliegues ni pagos reales.
