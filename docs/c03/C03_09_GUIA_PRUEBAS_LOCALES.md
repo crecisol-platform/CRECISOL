@@ -73,7 +73,7 @@ cd ~/src/CRECISOL
 bash qa/c03_09_local_suite.sh --probe
 ```
 
-La sonda hace cuatro comprobaciones: integridad del maestro actual e histórico, preflight estático de microfases anteriores, catorce casos unitarios positivos/negativos del runner y autoevaluación del fail-closed. Luego detecta herramientas, SDKs, dependencias locales e imagen MySQL disponible.
+El lanzador ejecuta **cuatro comprobaciones A** (maestro, preflight histórico y auditorías de código de C03-07/C03-08) y **cinco comprobaciones B** (15 pruebas del runner, 5 contratos sintéticos de orquestación, auditorías negativas C03-07/C03-08 y autoprueba fail-closed). Después detecta herramientas, SDKs, dependencias locales e imagen MySQL disponible.
 
 - Si faltan herramientas, informa `BLOCKED_MISSING_LOCAL_TOOLCHAIN`, devuelve código **2** y deja C como **NOT_EXECUTED**; no inventa una medición.
 - La carpeta de evidencia se crea por defecto en `~/crecisol-local-evidence/c03-09-FECHA-SHA/`, **fuera del repositorio** y con permisos de usuario.
@@ -117,7 +117,7 @@ Reporta tiempos por muestra, mediana y p95 nearest-rank de *compilación*, y dur
 | Bloque | Evidencia local | Naturaleza |
 | --- | --- | --- |
 | A | `A_master_integrity.txt`, `A_historical_static.txt` | Trazabilidad e integridad documental; no certifica arquitectura integral |
-| B | `B_negative_unittests.txt`, `B_guard_selftest.txt` | Catorce tests negativos/positivos del runner y guardas contra falsos PASS |
+| B | `B_negative_unittests.txt`, `B_orchestrator_contracts.txt`, `B_c03_07_negative.txt`, `B_c03_08_negative.txt`, `B_guard_selftest.txt` | 15 tests del runner, 5 escenarios sintéticos del lanzador y regresiones B históricas; no sustituyen pruebas de backend |
 | C | `probe.json`, `C_runtime_benchmark.json` si se ejecutó | Compilaciones y MySQL reales, o motivo explícito `BLOCKED` |
 | Control | `manifest.json`, `source.txt` | Commit, hora, estados, hashes de evidencia e indicación `phase_certified=false` |
 
@@ -136,3 +136,16 @@ La carpeta de evidencia es privada. Compartir únicamente `manifest.json` y `pro
 **Siguiente paso operativo:** ejecutar primero `--probe` en la PC del propietario, leer `probe.json`, preparar manualmente los prerrequisitos que realmente falten y luego ejecutar `--run`. No se requiere adquirir GitHub Pro ni habilitar gastos de Actions.
 
 **Alcance de aislamiento:** `NPM_CONFIG_OFFLINE=true` impide ciertas solicitudes del gestor npm, pero por sí solo no establece un cortafuegos para scripts de compilación o extensiones. `--network none` aplica exclusivamente al contenedor desechable MySQL; ejecutar las herramientas locales con dependencias verificadas y sin secretos ni datos productivos.
+
+### Protección de rama y pruebas del lanzador
+
+El script de WSL2 solo admite `feature/c03-09-compat-benchmark-local` o `dev`, con origen `solqaryn-platform/CRECISOL` y árbol limpio. `main`, repositorios ajenos y árboles modificados se rechazan con código 2 **antes** de ejecutar pruebas. El propio ejecutor comprueba estos rechazos usando cinco fixtures Git temporales; sus datos son sintéticos y no incluyen credenciales reales.
+
+Para probar los controles sin ejecutar builds, con Python/Bash/Git disponibles, puedes ejecutar opcionalmente:
+
+```bash
+python3 -m unittest discover -s qa -p test_c03_09_local_baseline.py -v
+python3 -m unittest discover -s qa -p test_c03_09_local_suite_contract.py -v
+```
+
+No equivalen a una auditoría C aprobada: C solo podrá completarse cuando `--run` ejecute Angular/.NET/MySQL reales. Toda evidencia indica `phase_certified=false` hasta la revisión del equipo y acta correspondiente.
