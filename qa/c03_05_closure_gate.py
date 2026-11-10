@@ -126,7 +126,7 @@ def main():
     for name, key, before, after in mutants:
         copy = deepcopy(docs)
         require(before in copy[key], "Mutation fixture not found: " + name)
-        copy[key] = copy[key].replace(before, after, 1)
+        copy[key] = copy[key].replace(before, after)  # mutate all repeated evidence copies
         try:
             validate_content(copy)
         except (AssertionError, KeyError, ValueError, TypeError):
