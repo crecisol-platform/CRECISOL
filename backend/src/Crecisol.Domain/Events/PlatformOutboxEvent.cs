@@ -21,6 +21,11 @@ public sealed class PlatformOutboxEvent
     public Guid EventId { get; }
     public Guid CorrelationId { get; }
     public DateTime OccurredAtUtc { get; }
+    // Explicit platform scope: never a browser-supplied tenant or branch.
+    public byte ScopeKind => 1;
+    public Guid ScopeId => Guid.Empty;
+    public Guid? BranchId => null;
+    public Guid? CausationId => null;
     public string EventType => SupportedType;
     public int SchemaVersion => SupportedVersion;
     public string PayloadJson => FixedPayload;
