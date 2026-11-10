@@ -27,7 +27,7 @@ Cada C08-XX requiere dependencia anterior cerrada, requisitos trazados, impacto 
 Incluso con 11/11 microfases cerradas, C08 necesita **auditoría integral triple, regresión, ausencia de P0/P1, acta y aceptación expresa** antes de habilitar C09. Este plan no demuestra implementación.\n
 ## Ampliación comercial COM-001..COM-014 — planificación condicionada (10-11-2026)
 
-**Estado: propuesta documental / no implementada / no certificada.** La ampliación deriva del expediente `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de la edición comercial preparada del único Documento Maestro; **esa edición DOCX/PDF todavía debe incorporarse y verificarse con su SHA en GitHub antes de aprobar el plan como normativo**. Se conserva el número de microfases, la puerta de entrada secuencial y toda evidencia histórica. No se habilita código de C08.
+**Estado: propuesta documental / no implementada / no certificada.** La ampliación deriva del expediente `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de la edición comercial preparada del único Documento Maestro; **esa edición DOCX/PDF ya fue incorporada a la rama del PR #73 con SHA y blob verificados; su aprobación normativa sigue pendiente de CI y fusión a dev**. Se conserva el número de microfases, la puerta de entrada secuencial y toda evidencia histórica. No se habilita código de C08.
 
 - **Requisitos relacionados:** COM-002..COM-010, COM-012, COM-013.
 - **Microfases técnicas a revisar:** C08-02, C08-03, C08-04, C08-05, C08-06, C08-07, C08-08, C08-09, C08-10 y C08-11 (no equivalen a puertas normativas `MAE-C08-xx`).
