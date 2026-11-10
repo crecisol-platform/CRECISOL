@@ -26,7 +26,7 @@ C30-XX se habilita únicamente tras el cierre probado de su microfase inmediatam
 El **capítulo C30** necesita además pruebas de regresión integral, auditorías A/B/C de capítulo, acta con aceptación expresa del propietario y certificación antes de habilitar C31. Cuando depende de aprobaciones externas o proveedor real y estos están prohibidos, el estado debe seguir **BLOQUEADO**, nunca certificado artificialmente.\n
 ## Ampliación comercial COM-001..COM-014 — dependencia transversal (10-11-2026)
 
-**Solo planificación; NO IMPLEMENTADO / NO CERTIFICADO.** Requisitos derivados de `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de una actualización del Word maestro **todavía pendiente de incorporación y comprobación de huellas en GitHub**; esta nota no sustituye el Word ni habilita C30.
+**Solo planificación; NO IMPLEMENTADO / NO CERTIFICADO.** Requisitos derivados de `docs/ANALISIS_IMPACTO_MODELO_COMERCIAL_2026-11-10.md` y de una actualización del Word maestro **ya incorporada en la rama del PR #73, con blob y SHA verificados; pendiente de CI, auditorías y fusión a dev**; esta nota no sustituye el Word ni habilita C30.
 
 - **COM:** COM-002, COM-003, COM-004, COM-012.
 - **Microfases a revisar sin renumerar:** C30-01, C30-03, C30-04, C30-05, C30-06, C30-08, C30-09 y C30-10.
