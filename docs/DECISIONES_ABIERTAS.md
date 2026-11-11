@@ -26,3 +26,10 @@
 **Pendientes obligatorios:** validar nomenclatura exacta de las tres modalidades frente al Word; precios/moneda/impuestos; fechas de gracia; prorrateos; aceptación de renovación; condiciones proporcionales de terminación; titular/emisor jurídico; auditoría de ley hondureña aplicable; retención/exportación; consentimientos para espacios publicitarios y selección futura de PSP. Ninguna de estas cuestiones se resuelve inventando importes o sanciones.
 
 **Gate:** edición DOCX/PDF del maestro incorporada a la rama del PR #73 con hashes y blobs verificados; migración de validadores y CI de aceptación aún sujetos a comprobación; hasta entonces solo existe planificación en PR borrador. Mantener C01/C02 y C03-01..08 históricos intactos, C03-09 pendiente, sin abrir C04 ni conectar cobros reales.
+
+
+## ADR-015 — Cloudflare para medios, documentos y archivos (2026-11-11)
+
+**APROBADA COMO DIRECTRIZ DEL PROPIETARIO / NO IMPLEMENTADA.** Todos los archivos que se carguen en CRECISOL (logos, imágenes, documentos, contratos, adjuntos y videos) se almacenarán en Cloudflare y **MySQL conservará solo referencias estables y metadatos de permisos**, nunca binarios. El panel administrativo regulará permisos, cuotas, visibilidad, sustituciones y bajas. R2 queda como almacenamiento principal de objetos; Stream y Images son opciones condicionadas a evaluación de costos y necesidades futuras. Véase [ADR-015](ADR-015_CLOUDFLARE_ALMACENAMIENTO_MULTIMEDIA.md).
+
+**Trazabilidad:** capítulos canónicos C21 y C32, seguridad multitenant transversal. Este registro no implementa C04/C21/C32, no activa Cloudflare ni altera los activos históricos certificados, Word/PDF o main. C03 como capítulo sigue NO CERTIFICADO; C04 BLOQUEADO.
