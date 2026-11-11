@@ -1,5 +1,8 @@
 # CRECISOL — C03-09 | Acta de cierre técnico ACEPTADA — NO CERTIFICADA
 
+
+**ADENDA OPERATIVA DEL 11-11-2026, POSTERIOR A ESTA ACTA:** Por instrucción expresa del propietario rige [desarrollo y certificación autónomos sin GitHub Actions](../DECISION_OPERATIVA_2026-11-11_AUTONOMIA_SIN_GITHUB_ACTIONS.md). **Las puertas de CI PREMERGE/POSTMERGE citadas a continuación son requisitos históricos y ya no bloquean prospectivamente la certificación**. El propietario delega en el asistente la decisión técnica, pero **no** permite afirmar pruebas inexistentes ni omitir A/B/C ni runtime indispensable. El PR #74 se **cerró sin merge**, y el workflow nuevo de C03-09 se **retiró de la rama**, conservando el registro histórico de los intentos fallidos. El SHA de los builds exitosos permanece `53cc2134eca8b33c808bcd5d7643684b51080fa8`; esta adenda no constituye una prueba nueva ni certifica por sí sola C03-09. **Estado actual: cierre técnico aceptado, certificación pendiente de evaluación autónoma.**
+
 **Estado documental:** CIERRE TÉCNICO ACEPTADO EN CONVERSACIÓN POR EL PROPIETARIO (10-11-2026, hora local de Honduras). **NO CERTIFICADA**. No es una certificación PREMERGE/POSTMERGE ni acredita CI. La aceptación se refiere a la propuesta revisada en el SHA `3bdb2f02bf4b8bd5f9c823a71efe870bdc86e8cd` y a los resultados técnicos ejecutados en `53cc2134eca8b33c808bcd5d7643684b51080fa8`.
 
 **Microfase:** C03-09 de C03, compatibilidad real y rendimiento basal reproducible. **Estado de capítulos:** C01 y C02 certificados (2/37); C03-01..08 certificadas (8/10); **C03-09 pendiente de certificación**, C03-10 pendiente, C03 no certificado y C04 bloqueado.
