@@ -5,6 +5,8 @@ on:
     paths:
       - 'qa/c01_07_*'
       - 'frontend/playwright.c01-07.config.ts'
+      - 'frontend/tests/c01-05.public-brand.spec.ts'
+      - 'frontend/tests/c01-06.official-integration.spec.ts'
       - 'frontend/tests/c01-07.real-stack.spec.ts'
       - 'docs/c01/C01_07_*'
       - '.github/workflows/c01-07-regression.yml'
@@ -15,6 +17,8 @@ on:
     paths:
       - 'qa/c01_07_*'
       - 'frontend/playwright.c01-07.config.ts'
+      - 'frontend/tests/c01-05.public-brand.spec.ts'
+      - 'frontend/tests/c01-06.official-integration.spec.ts'
       - 'frontend/tests/c01-07.real-stack.spec.ts'
       - 'docs/c01/C01_07_*'
       - '.github/workflows/c01-07-regression.yml'
@@ -25,7 +29,7 @@ permissions:
 jobs:
   real-stack:
     name: C01-07 MySQL 8.4 + ASP.NET 10 + Angular 22 + Chromium + A B C
-    if: startsWith(github.head_ref, 'feature/c01-07-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    if: startsWith(github.head_ref, 'feature/c01-07-') || startsWith(github.head_ref, 'feature/c03-10-') || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
