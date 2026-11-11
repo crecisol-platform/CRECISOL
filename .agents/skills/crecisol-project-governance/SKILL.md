@@ -5,6 +5,10 @@ description: "Gobernanza técnica exclusiva del repositorio privado CRECISOL. Ap
 
 # CRECISOL · Gobierno técnico propio
 
+## Precedencia posterior autorizada — C03-10, 11-11-2026
+
+El propietario comunicó después de la decisión autónoma de esta misma fecha que CRECISOL pasó a público, habilitó Actions automáticos y autorizó intentar el cierre C03-10 usando CI. **Aplicar docs/DECISION_OPERATIVA_2026-11-11_RETORNO_CI_C03.md** como decisión prospectiva más reciente para este intento. El apartado 0 siguiente permanece como hecho histórico y no prohíbe el CI de C03-10. Se conservan pruebas reales, auditorías A/B/C, ausencia de P0/P1, gate SHA exacto y prohibición de SOLQARYN/producción. CI verde no certifica por sí sola.
+
 ## 0. Decisión del propietario — 11-11-2026 — sin GitHub Actions como gate
 - **Leer y aplicar** `docs/DECISION_OPERATIVA_2026-11-11_AUTONOMIA_SIN_GITHUB_ACTIONS.md` antes de programar, auditar o certificar. El propietario autorizó desarrollo, revisión, aprobación técnica y certificación autónomos **sin PC del propietario**.
 - GitHub queda como alojamiento y versionamiento del código. **GitHub Actions, CI PREMERGE/POSTMERGE, PR, runner de GitHub y su estado verde NO son requisitos de avance ni certificación** desde esta fecha. No activar CI manualmente, ni contratar runners, ni buscar cuentas alternativas para disponer de minutos. El usuario no quiere depender de GitHub para ejecutar pruebas.
