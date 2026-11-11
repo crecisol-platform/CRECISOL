@@ -4,6 +4,8 @@
 
 ## Estado vigente (GitHub, noviembre de 2026)
 
+**ACTUALIZACIÓN PREVALENTE (11-11-2026):** C01/C02 certificados (2/37). C03-01..09 certificadas en sus alcances; C03-10 **CERRADA TÉCNICAMENTE** por [PR #75](https://github.com/solqaryn-platform/CRECISOL/pull/75) y [acta](docs/c03/C03_10_ACTA_CIERRE_TECNICO_CI.md), con auditorías A/B/C y 16/16 CI POSTMERGE `SUCCESS` en dev `a8726d3ffd0ee08aae8bd25405b318ef262dea6c`. **C03 NO CERTIFICADO; C04 BLOQUEADO** hasta aceptación expresa. Los párrafos siguientes preservan el estado histórico de microfases anteriores.
+
 **C01 CERTIFICADO (8/8); C02 CERTIFICADO (9/9, alcance público/sintético); C03-05 CERTIFICADA (5/10), C03-06 CERTIFICADA (6/10), C03-07 CERTIFICADA (7/10) y C03-08 CERTIFICADA (8/10)**. [Evidencia C03-07](docs/c03/C03_07_CERTIFICACION_POSTMERGE.md).
 **2/37 capítulos certificados (C01 y C02); C03-01 a C03-08 CERTIFICADAS (8/10), C03-05 CERTIFICADA (5/10), C03-06 CERTIFICADA (6/10), C03-07 CERTIFICADA (7/10) mediante PR #63 (8/8 CI POSTMERGE SUCCESS en a256885afa5ee2f639bd4ed6f7d8595b709e6409) y PR #64 (5/5 CI POSTMERGE SUCCESS en b1e019afabfb44f05076024b8d34cde74a340acc); C03-08 CERTIFICADA (8/10) por PR #70 (6/6 CI POSTMERGE SUCCESS, SHA 221afb6cc515fc79a3b6ca6e010af11f2e20b0a2) y PR #71 (5/5 CI POSTMERGE SUCCESS, SHA b333e58378b6a5ea0438f1ee6b11de85d9ce04df); C03-09 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO.**
 
