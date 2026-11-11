@@ -1,6 +1,6 @@
 # CRECISOL — C03-10 | Encargo único de pruebas reales para Codex (SIN GitHub Actions)
 
-**Estado:** INSTRUCCIONES, no constancia de ejecución. **C03-10 NO CERTIFICADA; C03 NO CERTIFICADO; C04 BLOQUEADO.**  
+**Estado:** INSTRUCCIONES, no constancia de ejecución. **C03-10 NO CERTIFICADA; C03 NO CERTIFICADO; C04 BLOQUEADO.**
 **Repositorios permitidos:** solo `solqaryn-platform/CRECISOL`. Prohibido escribir en `solqaryn/Solqaryn`.
 
 ## 0. Límites irrevocables
