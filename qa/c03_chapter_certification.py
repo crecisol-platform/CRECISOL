@@ -62,7 +62,7 @@ def audit_a():
     acta, ledger = read(ACTA_PATH), read(LEDGER_PATH)
     contract(acta, ledger)
     plan = read("docs/PLAN_37_CAPITULOS.md")
-    need("docs/ESTADO_VIGENTE_CAPITULOS.md" in plan,
+    need("[Registro prospectivo de certificaciones](ESTADO_VIGENTE_CAPITULOS.md)" in plan,
          "Main plan must link new prospective state")
     need("C03 | Arquitectura técnica limpia y dependencias" in plan,
          "Original plan canonical chapter row removed")
