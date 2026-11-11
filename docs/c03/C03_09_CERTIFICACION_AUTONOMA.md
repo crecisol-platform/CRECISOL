@@ -4,12 +4,18 @@
 
 **Alcance único:** compatibilidad real de Angular 22/Node 24, SDK .NET 10, MySQL 8.4 LTS desechable, mediciones incrementales reproducibles y regresión del logo del Documento Maestro vigente. No se certifica el capítulo C03 integral, C03-10, el despliegue, producción, autorización privada, aislamiento multitenant del producto completo ni operaciones con base DEV remota.
 
-**Repositorio:** `solqaryn-platform/CRECISOL`.  
-**Rama de certificación:** `feature/c03-09-compat-benchmark-local`; se integrará exclusivamente en `dev` mediante operación Git controlada.  
-**Commit técnico ejecutado realmente:** `53cc2134eca8b33c808bcd5d7643684b51080fa8`.  
-**Último commit antes de formalizar este dictamen:** `ebbd4b17201bc5f306260959e7df7dd73721a2c5`.  
-**Base `dev` contrastada:** `25130475550cc2993e59d5ae4fc8537be0b47bea`.  
-**Documento Maestro vigente:** `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx`, SHA-256 `ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c`, según `docs/MASTER_REFERENCE.md`.  
+**Repositorio:** `solqaryn-platform/CRECISOL`.
+
+**Rama de certificación:** `feature/c03-09-compat-benchmark-local`; se integrará exclusivamente en `dev` mediante operación Git controlada.
+
+**Commit técnico ejecutado realmente:** `53cc2134eca8b33c808bcd5d7643684b51080fa8`.
+
+**Último commit antes de formalizar este dictamen:** `ebbd4b17201bc5f306260959e7df7dd73721a2c5`.
+
+**Base `dev` contrastada:** `25130475550cc2993e59d5ae4fc8537be0b47bea`.
+
+**Documento Maestro vigente:** `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx`, SHA-256 `ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c`, según `docs/MASTER_REFERENCE.md`.
+
 **Logotipo oficial aprobado:** SHA-256 `9e83d1d0a891565cf80a21a7e90d7afcaa24c9bb63e7d2a589790127dadd549f`.
 
 ## 1. Evidencia real, origen y responsabilidad
@@ -73,5 +79,6 @@ La nota `A_historical_static.txt` que decía `NO EJECUTADO` era una preauditorí
 - **C03-10:** siguiente microfase, exclusivamente auditorías integrales A/B/C y cierre del capítulo C03. **NO CERTIFICADA todavía**.
 - **C03 y C04:** C03 sigue **NO CERTIFICADO** hasta concluir C03-10; C04 permanece **BLOQUEADO**.
 
-**Responsable del dictamen:** asistente ChatGPT, revisión técnica delegada por el propietario; no se presume firma humana o criptográfica.  
+**Responsable del dictamen:** asistente ChatGPT, revisión técnica delegada por el propietario; no se presume firma humana o criptográfica.
+
 **Estado resultante de esta acta:** `C03-09 = CERTIFICADA_EN_SU_ALCANCE_TECNICO`; `C03 = EN_PROGRESO`; `C03-10 = NO INICIADA`.
