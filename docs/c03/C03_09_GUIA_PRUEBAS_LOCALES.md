@@ -191,3 +191,22 @@ bash qa/c03_09_local_suite.sh --probe
 ```
 
 No editar ni mover la carpeta de evidencias previas: las futuras ejecuciones crearán una carpeta nueva, con un SHA de commit actualizado.
+
+
+## Incidencia del Word en el prebuild Angular — reparación de C03-09
+
+El propietario reportó una ejecución local con **A/B PASS y API .NET incremental PASS**, seguida de `angular22_production_incremental_build` fallido por `FAIL C01-06: Canonical Word SHA mismatch`. El informe final tuvo C=`FAILED_RUNTIME` y `phase_certified=false`. **Se solicitó expresamente no repetir `Run`**.
+
+La causa está en el verificador del logo, no en Angular: usaba la SHA del Word de 08-11 en el extractor del Word nuevo de 10-11. El ajuste de `qa/c01_06_official_assets.py` ahora valida íntegramente el maestro **actual** y el prefijo histórico antes de extraer `word/media/image1.png`; el SHA aprobado del logo sigue fijo. La nueva regresión `qa/test_c03_09_word_logo_compat.py` comprueba que los dos SHA continúan separados y que el logo no se sustituye.
+
+**Comprobación aislada, sin `Run` ni compilación**, solo cuando se decida verificar la reparación en una copia limpia de la rama:
+
+```bash
+git status --short
+git pull --ff-only origin feature/c03-09-compat-benchmark-local
+python3 -m unittest discover -s qa -p test_c03_09_word_logo_compat.py -v
+```
+
+Esta comprobación lee el Word/PDF canónicos, verifica relaciones, extrae el logo en memoria y ejecuta negativas con DOCX sintéticos en archivos temporales. No genera los activos definitivos, no instala software, no conecta MySQL, no despliega ni inicia `Run`. El nuevo bloque B de la suite la ejecutará **antes** de cualquier benchmark C, si en el futuro se autoriza `--run`.
+
+Si la prueba falla, **no continuar a compilaciones**: conservar su diagnóstico y resolver el origen; nunca modificar el Word, quitar el prebuild o reemplazar el SHA por un comodín. La certificación C03-09 requiere aún las pruebas de compatibilidad reales y las tres auditorías completas.
