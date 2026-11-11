@@ -92,7 +92,7 @@ raise RuntimeError('A synthetic fixture must never run real builds')
         self.assertIn('valid CRECISOL checkout', result.stderr)
         self.assertFalse(self.evidence.exists())
 
-    def test_probe_runs_eight_static_checks_without_certifying(self):
+    def test_probe_runs_eleven_static_checks_without_certifying(self):
         result = self.run_suite()
         self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
         self.assertEqual(result.stdout.count('PASS '), 11)
