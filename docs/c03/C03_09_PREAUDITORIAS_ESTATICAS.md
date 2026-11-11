@@ -96,3 +96,26 @@ Hallazgos detectados y corregidos antes de esta constancia:
 **Corrección revisada:** `qa/c03_09_windows.ps1` elimina `wslpath` y utiliza `wsl.exe --cd` con ruta absoluta Windows o conversión UNC de WSL sin procesos externos. Propaga el código de salida y no instala herramientas. Se añadieron cuatro tests estáticos al conjunto de contratos del lanzador, que pasa de cinco a nueve escenarios de código. No se han ejecutado pruebas de PowerShell reales en esta sesión.
 
 **Pendiente:** validar nuevamente el lanzador en Windows, disponer de Node 24.15+, .NET 10, Docker Engine Linux y MySQL 8.4 para C. Las 15 pruebas de Python, 13 de seguridad DEV, cinco sintéticas originales del lanzador y cuatro comprobaciones estáticas nuevas no sustituyen compilaciones ni base real. C03-09 permanece **NO CERTIFICADA**; C03-10 y C04 sin habilitación.
+
+
+## Incidencia de prebuild C01-06 por nueva edición del Word — revisión sin ejecutar `Run`
+
+**Evidencia comunicada por el propietario (no descargada de su equipo):** durante `--run` en el commit `b8d1f1286a63b37807ac9000acac50eeee7d9e96`, A/B y build incremental API .NET pasaron; `angular22_production_incremental_build` falló antes de compilar por `FAIL C01-06: Canonical Word SHA mismatch`. El manifiesto registró C=`FAILED_RUNTIME` y `phase_certified=false`; el checkout local quedó sin cambios. El propietario pidió **no ejecutar de nuevo `Run` hasta investigar el Word**; se respetó.
+
+**Causa verificada en código de GitHub:** `frontend/package.json` llama durante `prebuild` a `qa/c01_06_official_assets.py --write`. Ese generador todavía usaba `candidate(WORD, EXPECTED)`, y `EXPECTED` es el SHA **histórico** `e45c2017e62bbbaa6853298efd5de5d785230005203d8791f791760f6f2c622e`. En contraste, `qa/master_source_guard.py` declara la edición comercial **actual** con SHA `ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c`. Por tanto, el generador fallaba legítimamente al comparar valores de ediciones diferentes.
+
+**Contraste independiente de los binarios, sin modificación:** se examinaron copias de ambos Word y PDF presentes en el entorno de revisión. SHA-256 de Word/PDF y blob Git del Word coinciden con las huellas del `docs/MASTER_REFERENCE.md` y la rama `dev`. La imagen `word/media/image1.png` de ambos Word tiene el **mismo** SHA aprobado `9e83d1d0a891565cf80a21a7e90d7afcaa24c9bb63e7d2a589790127dadd549f` y la relación interna `rId11` apunta a `media/image1.png` en ambos. La edición vigente conserva el fingerprint de los primeros 1.876 elementos OOXML `6238a81010d8bfd035eda77fa33897a009f4b363d4e281723c723b6b60c807d5`, con 1.687 párrafos y 189 tablas históricos. **No se modificó ningún Word, PDF, logo ni acta certificada.**
+
+**Corrección mínima en `qa/c01_06_official_assets.py`:** antes de extraer se invoca `canonical_active_word()`, que valida la edición actual y el prefijo histórico; después se ejecuta `candidate(WORD, CURRENT_WORD_SHA)`. La constante histórica `EXPECTED` de `qa/c01_06_logo_candidate.py` queda **intacta** para las auditorías antiguas, y `APPROVED_SHA` sigue rechazando cualquier imagen no autorizada. No se aceptan hashes arbitrarios ni se crea una lista permisiva de ediciones.
+
+**Regresiones añadidas:** `qa/test_c03_09_word_logo_compat.py` incorpora 8 pruebas: pines histórico/actual, orden de guardia y extracción, fallos de guardia, imagen modificada, relación distinta, DOCX sintético con SHA incorrecto, relación externa y verificación positiva **de solo lectura** del Word/PDF/logotipo reales. El lanzador `qa/c03_09_local_suite.sh` ejecutará esta batería en B **antes de iniciar cualquier benchmark C**, y sus contratos sintéticos se adaptan a once comprobaciones A/B.
+
+**Auditorías A/B/C de esta corrección:**
+- **A — trazabilidad:** causa vinculada a PR #73, Word/PDF actual e histórico, prebuild y C01-06; huellas de binarios reales y registro de dos versiones corroborados, sin reescribir la certificación original.
+- **B — seguridad:** la corrección conserva fail-closed ante Word incorrecto, archivo ZIP/OOXML alterado, logo cambiado o ruta externa. Los casos negativos han sido **codificados**, pero la nueva batería completa en el checkout Git aún NO ha sido ejecutada en el equipo del propietario.
+- **C — arquitectura y compatibilidad:** no hay cambio en Angular, .NET ni MySQL, ni en la lógica del logo recortado; la compilación Angular posterior a esta corrección, el benchmark real y el `Run` quedan **NO EJECUTADOS**, por instrucción del propietario. No se presenta el análisis de bytes como compilación exitosa.
+
+**Prueba de comprobación controlada permitida para más adelante (NO `Run`):**
+`python3 -m unittest discover -s qa -p test_c03_09_word_logo_compat.py -v`, previa actualización del checkout limpio. El archivo prueba la procedencia y extracción en memoria **sin escribir assets**, sin levantar API, Docker ni usar la base DEV remota. **No ejecutar nuevamente `Run` hasta revisar su salida y autorizar el siguiente paso.**
+
+**Estado:** C03-09 **EN DESARROLLO / NO CERTIFICADA**; C03-10 PENDIENTE; C03 NO CERTIFICADO; C04 BLOQUEADO. Las auditorías históricas permanecen inmutables.
