@@ -54,13 +54,14 @@ for (const viewport of [
     const symbol = top.locator('.header-brand-icon');
     await expect(symbol).toBeVisible();
     await expect(symbol).toHaveAttribute('src', emblem);
-    expect(await symbol.evaluate(img => (img as HTMLImageElement).naturalWidth)).toBe(558);
-    expect(await symbol.evaluate(img => (img as HTMLImageElement).naturalHeight)).toBe(537);
+    await expect(symbol).toHaveJSProperty('naturalWidth', 558);
+    await expect(symbol).toHaveJSProperty('naturalHeight', 537);
     await expect(top.locator('.wordmark-line')).toHaveCount(0);
     const hero = page.locator('.brand-art-logo');
     await expect(page.locator('.brand-art--logo-ready')).toHaveCount(1);
     await expect(hero).toBeVisible();
     await expect(hero).toHaveAttribute('src', official);
+    await expect(hero).toHaveJSProperty('naturalWidth', 1298);
     const image = await hero.evaluate(img => {
       const node = img as HTMLImageElement;
       return { width: node.naturalWidth, height: node.naturalHeight,
