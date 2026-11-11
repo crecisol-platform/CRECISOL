@@ -1,7 +1,9 @@
 # CRECISOL — Decisión operativa: desarrollo y certificación autónomos SIN GitHub Actions
 
-**Fecha de decisión:** 11 de noviembre de 2026, horario de Honduras.  
-**Autoridad de la decisión:** instrucción expresa del propietario en conversación CRECISOL: «GitHub solo será nuestro repositorio ... nada de estar dependiendo de pruebas de CI de GitHub Actions»; el propietario delega en el asistente la programación, revisión, aprobación y decisión técnica de cierre, con tres auditorías más estrictas.  
+**Fecha de decisión:** 11 de noviembre de 2026, horario de Honduras.
+
+**Autoridad de la decisión:** instrucción expresa del propietario en conversación CRECISOL: «GitHub solo será nuestro repositorio ... nada de estar dependiendo de pruebas de CI de GitHub Actions»; el propietario delega en el asistente la programación, revisión, aprobación y decisión técnica de cierre, con tres auditorías más estrictas.
+
 **Repositorio único:** `solqaryn-platform/CRECISOL`. **Nunca modificar `solqaryn/Solqaryn`.**
 
 ## 1. Cambio de gobierno prospectivo, sin reescribir el pasado
