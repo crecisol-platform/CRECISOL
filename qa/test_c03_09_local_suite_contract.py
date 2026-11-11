@@ -119,5 +119,37 @@ raise RuntimeError('A synthetic fixture must never run real builds')
         self.assertFalse(manifest['phase_certified'])
 
 
+
+class WindowsLauncherStaticTests(TestCase):
+    """Source-only guardrails: PowerShell/WSL execution remains an external test."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.script = (ROOT / 'c03_09_windows.ps1').read_text(encoding='utf-8')
+
+    def test_never_depends_on_wslpath_conversion(self):
+        self.assertNotIn('wslpath -a', self.script)
+        self.assertNotIn('--exec wslpath', self.script)
+        self.assertIn('("--cd", $repo, "--exec", "bash", "qa/c03_09_local_suite.sh", $option)', self.script)
+
+    def test_supports_wsl_unc_without_invoking_shell_interpolation(self):
+        self.assertIn('$linuxRelative = $Matches[2].Replace(', self.script)
+        self.assertIn('"--distribution", $distro, "--cd", $linuxRepo', self.script)
+        self.assertNotIn('Invoke-Expression', self.script)
+        self.assertNotIn('Start-Process', self.script)
+
+    def test_only_probe_or_run_and_propagates_runner_status(self):
+        self.assertIn('[ValidateSet("Probe", "Run")]', self.script)
+        self.assertIn('if ($Mode -eq "Run") { "--run" } else { "--probe" }', self.script)
+        self.assertIn('exit ([int]$exitCode)', self.script)
+        self.assertIn('Stop-LocalLauncher', self.script)
+
+    def test_launcher_has_no_implicit_install_or_remote_db_contact(self):
+        for disallowed in ('winget install', 'choco install', 'Invoke-WebRequest',
+                           'docker pull', 'npm install', 'dotnet restore',
+                           'mysql --host', 'crecisol_dev_readonly'):
+            with self.subTest(disallowed=disallowed):
+                self.assertNotIn(disallowed, self.script)
+
 if __name__ == '__main__':
     main()
