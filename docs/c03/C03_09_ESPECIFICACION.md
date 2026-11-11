@@ -75,3 +75,16 @@ Pruebas nuevas: **13/13 controles de seguridad offline** del comprobador `qa/tes
 En la auditoría documental se identificó además un texto histórico potencialmente desactualizado en `docs/MASTER_REFERENCE.md` que aún describe PR #73 como borrador pese a su fusión verificada. **No se modificó el maestro ni las fuentes históricas** en esta intervención de C03-09; se requiere una corrección documental acotada y con regresiones por separado. El bloqueo de CI POSTMERGE de PR #73 se mantiene como evidencia pendiente.
 
 **No iniciar C03-10 ni certificar C03-09** hasta realizar con herramientas reales las auditorías A/B/C del alcance y revisar los hallazgos. Ningún servicio remoto fue contactado ni configurado en este cambio.
+
+
+## Corrección transversal mínima de generación C01-06 requerida por C03-09
+
+Al ejecutar localmente la compatibilidad C03-09, el propietario reportó que la API .NET compiló pero el `prebuild` de Angular falló con `FAIL C01-06: Canonical Word SHA mismatch`. Esta incidencia es una **dependencia técnica de la microfase actual**, no una reapertura o modificación de certificaciones C01.
+
+Diagnóstico de raíz confirmado con código y documentos actuales: `qa/c01_06_official_assets.py` comparaba el DOCX con la huella de la edición histórica mediante `candidate(WORD, EXPECTED)`, mientras `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` fue actualizado a la edición comercial aprobada del 10-11-2026 y su hash vigente está en `master_source_guard.CURRENT_WORD_SHA`. El SHA histórico `EXPECTED` y el logotipo `APPROVED_SHA` permanecen correctos e inmutables.
+
+Corrección estricta: invocar `canonical_active_word()` y extraer desde `candidate(WORD, CURRENT_WORD_SHA)`, preservando rechazo de alteraciones y verificando que la imagen oficial mantiene su SHA original. En `qa/test_c03_09_word_logo_compat.py` se añadieron **ocho pruebas** de transición, incluidas negativas y extracción positiva del Word real sin escribir imágenes. La suite local las incorpora como auditoría B previa a compilar.
+
+Esta corrección afecta exclusivamente un helper histórico **necesario para el build actual** y nuevas pruebas de C03-09. No se modificaron Word/PDF, logo, frontend Angular, backend, tablas ni actas históricas; ningún hash se flexibilizó. En el entorno del asistente se verificaron directamente las huellas y los objetos internos de los Word/PDF original/comercial, y la preservación del prefijo original; el **test del checkout completo, compilación Angular y Run posteriores a la corrección NO se han ejecutado**.
+
+Estado sigue **NO CERTIFICADA** y no se abre C03-10.
