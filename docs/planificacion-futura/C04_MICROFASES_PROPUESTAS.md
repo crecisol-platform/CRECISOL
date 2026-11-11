@@ -1,5 +1,7 @@
 # C04 · Multitenancy, dominios y aprovisionamiento — microfases propuestas
 
+**PRECONDICIÓN POSTERIOR (11-11-2026):** Una vez efectivas la aceptación y CI PRE/POSTMERGE del [acta integral C03](../c03/C03_CERTIFICACION_INTEGRAL_2026_11_11.md), este capítulo queda habilitado EXCLUSIVAMENTE para preparar C04-01, catálogo confiable de tenants; las 12 microfases siguen NO IMPLEMENTADAS y C04 NO CERTIFICADO. La advertencia histórica de borrador/no habilitado que sigue corresponde al estado anterior a dicha puerta. Consultar [registro de estado](../ESTADO_VIGENTE_CAPITULOS.md) antes de tocar código.
+
 > **BORRADOR DE PLANIFICACIÓN; NO HABILITADO PARA DESARROLLO NI CERTIFICACIÓN.** Esta guía deriva del índice `docs/PLAN_37_CAPITULOS.md` y de las políticas transversales de CRECISOL. Antes de activar C04, contrastar cada punto con el texto íntegro del capítulo en el Word canónico, su SHA registrado en `docs/MASTER_REFERENCE.md` y sus anexos; ajustar el número o alcance por PR trazable. Este archivo **no modifica el Documento Maestro Único**.
 
 **Puerta de entrada:** C03 certificado, acta aceptada y CI de `dev` verde. Ninguna microfase de C04 puede codificarse durante C01 u otro capítulo anterior.
