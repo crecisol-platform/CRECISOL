@@ -1,0 +1,124 @@
+name: CRECISOL C03-10 integral A-B-C chapter gate
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c03/C03_10_*'
+      - 'docs/DECISION_OPERATIVA_2026-11-11_RETORNO_CI_C03.md'
+      - 'qa/c03_10_*'
+      - '.github/workflows/c03-10-integral.yml'
+      - 'AGENTS.md'
+      - '.agents/skills/crecisol-project-governance/SKILL.md'
+      - 'docs/MASTER_REFERENCE.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'frontend/**'
+      - 'backend/**'
+      - 'database/**'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c03/C03_10_*'
+      - 'docs/DECISION_OPERATIVA_2026-11-11_RETORNO_CI_C03.md'
+      - 'qa/c03_10_*'
+      - '.github/workflows/c03-10-integral.yml'
+      - 'AGENTS.md'
+      - '.agents/skills/crecisol-project-governance/SKILL.md'
+      - 'docs/MASTER_REFERENCE.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'frontend/**'
+      - 'backend/**'
+      - 'database/**'
+permissions:
+  contents: read
+jobs:
+  c03-10-integral:
+    name: C03-10 real A/B/C .NET10 Angular22 MySQL8.4 Chromium
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    steps:
+      - name: Read-only checkout without credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Independent audits A and B and historical C03 01-09 static negatives
+        run: |
+          test ! -e .c03-10-ci-proof
+          python3 -m py_compile qa/c03_10_integral_audits.py
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c03_10_integral_audits.py A
+          python3 qa/c03_10_integral_audits.py B
+          python3 qa/c03_local_preflight.py
+          python3 qa/c03_07_outbox_audits.py A
+          python3 qa/c03_07_outbox_audits.py B
+          python3 qa/c03_08_local_config_audits.py A
+          python3 qa/c03_08_local_config_audits.py B
+          python3 -m unittest discover -s qa -p 'test_c03_09_*.py' -v
+          python3 qa/c03_09_local_baseline.py --self-test
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install Node 24 for Angular 22
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Build and run .NET 10 contracts and security regression
+        run: |
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.Outbox.ContractsTests/Crecisol.Outbox.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet run -c Release --project backend/tests/Crecisol.Branding.ContractsTests/Crecisol.Branding.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Branding.ApplicationTests/Crecisol.Branding.ApplicationTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Domain.ContractsTests/Crecisol.Domain.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Application.ContractsTests/Crecisol.Application.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Infrastructure.ContractsTests/Crecisol.Infrastructure.ContractsTests.csproj -- contracts
+          dotnet run -c Release --project backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Api.ModuleTests/Crecisol.Api.ModuleTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.LocalConfig.ContractsTests/Crecisol.LocalConfig.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.Outbox.ContractsTests/Crecisol.Outbox.ContractsTests.csproj -- contracts
+          mkdir -p .c03-10-ci-proof .c03-07-ci-proof .c03-08-ci-proof
+          printf 'PASS: build\n' > .c03-07-ci-proof/build
+          printf 'PASS: contracts\n' > .c03-07-ci-proof/contracts
+          printf 'PASS: build\n' > .c03-08-ci-proof/build
+          printf 'PASS: contracts\n' > .c03-08-ci-proof/contracts
+          printf 'PASS dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c03-10-ci-proof/dotnet
+      - name: Build Angular 22 production with approved source assets
+        run: |
+          npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
+          npm audit --prefix frontend --omit=dev --audit-level=high
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+          npm run test:assets --prefix frontend
+          printf 'PASS angular sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c03-10-ci-proof/angular
+      - name: Real public Chromium and isolated pattern regressions
+        run: |
+          cd frontend
+          npx playwright install --with-deps chromium
+          npx playwright test tests/c01-05.public-brand.spec.ts tests/c01-06.official-integration.spec.ts tests/c01-08.brand-revision.spec.ts tests/c02-03.public-information.spec.ts tests/c02-04.private-paths.spec.ts tests/c02-05.interaction-states.spec.ts tests/c02-07.mobile-accessibility.spec.ts tests/c02-08.journeys-public.spec.ts --reporter=line
+          npm run test:c02-06
+          npx playwright test --config=playwright.patterns-a11y.config.ts --reporter=line
+          npx playwright test --config=playwright.journeys-patterns.config.ts --reporter=line
+          cd ..
+          printf 'PASS chromium sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c03-10-ci-proof/chromium
+      - name: Disposable MySQL 8.4 with no network and public API contract regression
+        run: |
+          bash -n database/tests/c03_07_outbox_mysql_smoke.sh
+          bash -n database/tests/c01_04_api_mysql_smoke.sh
+          bash database/tests/c03_07_outbox_mysql_smoke.sh
+          CRECISOL_C03_05_CONTRACT_SMOKE=1 CRECISOL_C03_08_LOCAL_PROFILE_SMOKE=1 bash database/tests/c01_04_api_mysql_smoke.sh
+          printf 'PASS: mysql\n' > .c03-07-ci-proof/mysql
+          printf 'PASS: mysql\n' > .c03-08-ci-proof/mysql
+          printf 'PASS: regressions\n' > .c03-07-ci-proof/regressions
+          printf 'PASS: regressions\n' > .c03-08-ci-proof/regressions
+          printf 'PASS mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c03-10-ci-proof/mysql
+      - name: Historical documentary regressions and portability
+        run: |
+          python3 qa/c03_local_preflight.py
+          python3 qa/test_c03_portability.py
+          python3 qa/c03_07_closure_gate.py
+          python3 qa/c03_08_closure_gate.py
+          python3 qa/c03_08_status_audits.py
+          printf 'PASS regressions sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c03-10-ci-proof/regressions
+      - name: Independent audit C rejects absent or stale same-run evidence
+        run: python3 qa/c03_10_integral_audits.py C
