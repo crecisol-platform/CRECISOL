@@ -85,3 +85,14 @@ Hallazgos detectados y corregidos antes de esta constancia:
 **Hallazgo documental adicional:** `docs/MASTER_REFERENCE.md` conserva una línea que trata PR #73 como candidato en borrador aunque su integración en `dev` fue verificada. Se anota inconsistencia de estado para remediación documental aislada; no se edita aquí para no alterar controles históricos de C01/C02/C03-01..08 sin regresiones completas.
 
 **Estado formal sin cambios:** C03-09 **EN DESARROLLO / NO CERTIFICADA**; C03-10 PENDIENTE; C03 NO CERTIFICADO; C04 BLOQUEADO; `dev`, `main` y el servidor remoto sin cambios. No se generó evidencia falsa de CI.
+
+
+## Verificación externa comunicada por el propietario y remediación del wrapper (C03-09)
+
+**Declaración recibida:** el propietario informó un checkout limpio en `feature/c03-09-compat-benchmark-local`, SHA exacto `01fbb85bf202615c172eb043822decb733af2e3b`; `git fetch`, `git switch` y `wsl --status` correctos con Ubuntu 2. El `Probe` de PowerShell arrancó, pero el `Run` falló por conversión de ruta vía `wslpath`. Se ejecutó desde WSL2 la suite Bash, con **A PASS; B PASS; C BLOCKED_MISSING_LOCAL_TOOLCHAIN; phase_certified false**. El propietario conservó la evidencia fuera del repositorio bajo una carpeta local con fecha y SHA.
+
+**Grado de evidencia:** reporte humano recibido, coherente con las condiciones de ejecución. No se ha recibido ni verificado de forma independiente su `manifest.json`, logs y hashes; por ello se **registra como ejecución declarada, no como certificación auditada**.
+
+**Corrección revisada:** `qa/c03_09_windows.ps1` elimina `wslpath` y utiliza `wsl.exe --cd` con ruta absoluta Windows o conversión UNC de WSL sin procesos externos. Propaga el código de salida y no instala herramientas. Se añadieron cuatro tests estáticos al conjunto de contratos del lanzador, que pasa de cinco a nueve escenarios de código. No se han ejecutado pruebas de PowerShell reales en esta sesión.
+
+**Pendiente:** validar nuevamente el lanzador en Windows, disponer de Node 24.15+, .NET 10, Docker Engine Linux y MySQL 8.4 para C. Las 15 pruebas de Python, 13 de seguridad DEV, cinco sintéticas originales del lanzador y cuatro comprobaciones estáticas nuevas no sustituyen compilaciones ni base real. C03-09 permanece **NO CERTIFICADA**; C03-10 y C04 sin habilitación.
