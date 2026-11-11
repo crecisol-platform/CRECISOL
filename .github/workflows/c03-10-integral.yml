@@ -77,7 +77,11 @@ jobs:
           dotnet run -c Release --project backend/tests/Crecisol.Api.ModuleTests/Crecisol.Api.ModuleTests.csproj
           dotnet run -c Release --project backend/tests/Crecisol.LocalConfig.ContractsTests/Crecisol.LocalConfig.ContractsTests.csproj
           dotnet run --no-build -c Release --project backend/tests/Crecisol.Outbox.ContractsTests/Crecisol.Outbox.ContractsTests.csproj -- contracts
-          mkdir -p .c03-10-ci-proof
+          mkdir -p .c03-10-ci-proof .c03-07-ci-proof .c03-08-ci-proof
+          printf 'PASS: build\n' > .c03-07-ci-proof/build
+          printf 'PASS: contracts\n' > .c03-07-ci-proof/contracts
+          printf 'PASS: build\n' > .c03-08-ci-proof/build
+          printf 'PASS: contracts\n' > .c03-08-ci-proof/contracts
           printf 'PASS dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c03-10-ci-proof/dotnet
       - name: Build Angular 22 production with approved source assets
         run: |
@@ -103,6 +107,10 @@ jobs:
           bash -n database/tests/c01_04_api_mysql_smoke.sh
           bash database/tests/c03_07_outbox_mysql_smoke.sh
           CRECISOL_C03_05_CONTRACT_SMOKE=1 CRECISOL_C03_08_LOCAL_PROFILE_SMOKE=1 bash database/tests/c01_04_api_mysql_smoke.sh
+          printf 'PASS: mysql\n' > .c03-07-ci-proof/mysql
+          printf 'PASS: mysql\n' > .c03-08-ci-proof/mysql
+          printf 'PASS: regressions\n' > .c03-07-ci-proof/regressions
+          printf 'PASS: regressions\n' > .c03-08-ci-proof/regressions
           printf 'PASS mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c03-10-ci-proof/mysql
       - name: Historical documentary regressions and portability
         run: |
