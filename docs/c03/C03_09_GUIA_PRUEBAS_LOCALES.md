@@ -164,3 +164,30 @@ python3 -m unittest discover -s qa -p test_c03_09_dev_db_tls_probe.py -v
 ```
 
 La nueva evidencia de seguridad eleva la cobertura sintética de instrumentación de **20 a 33 casos** (15 del runner, 5 del lanzador y 13 del verificador DEV). No se confunden con la auditoría C real, que sigue pendiente.
+
+
+## Corrección del lanzador de PowerShell tras prueba del propietario
+
+En la comprobación reportada por el propietario (commit `01fbb85bf202615c172eb043822decb733af2e3b`), el lanzamiento `-Mode Probe` se ejecutó, pero `-Mode Run` falló en la traducción interna mediante `wslpath`. El propietario ejecutó entonces el comando Bash directamente dentro de Ubuntu/WSL2 y reportó **A: PASS, B: PASS, C: BLOCKED_MISSING_LOCAL_TOOLCHAIN, phase_certified: false**. Esta información es **evidencia declarada por el propietario**; no se ha importado ni examinado directamente el `manifest.json` de su equipo.
+
+El archivo `qa/c03_09_windows.ps1` se corrigió para usar `wsl.exe --cd` sin ejecutar `wslpath`. La opción `--cd` admite una ruta absoluta de Windows; el script también reconoce rutas UNC `\\wsl.localhost\Distro\...` o `\\wsl$\Distro\...` y pasa explícitamente la distribución y ruta Linux. No introduce elevación de privilegios, descargas ni conexiones de bases de datos.
+
+Desde el checkout **limpio** de CRECISOL en PowerShell, actualizar únicamente la rama de trabajo y volver a probar el lanzador:
+
+```powershell
+git status --short
+git pull --ff-only origin feature/c03-09-compat-benchmark-local
+.\qa\c03_09_windows.ps1 -Mode Probe
+```
+
+Mientras falten Docker Engine Linux, SDK .NET 10, Node 24.15+ y la imagen MySQL 8.4, **se espera que el comando continúe devolviendo estado 2**. Lo importante de esta comprobación es que ahora ejecute la suite, repita A/B y genere el reporte de bloqueo, sin fallar en la traducción de rutas. No repetir `-Mode Run` para intentar una certificación mientras las herramientas requeridas sigan ausentes.
+
+Hay cuatro pruebas **estáticas** nuevas del lanzador dentro de `qa/test_c03_09_local_suite_contract.py`, además de sus cinco pruebas sintéticas anteriores. Esas guardas verifican ausencia de conversión `wslpath`, soporte de rutas, propagación de estados y ausencia de instalaciones. **La ejecución real de PowerShell en el equipo Windows sigue pendiente y es independiente de esas pruebas estáticas.**
+
+Si el wrapper sigue sin ejecutarse, utilizar sin cambios el camino funcional validado por el propietario:
+
+```bash
+bash qa/c03_09_local_suite.sh --probe
+```
+
+No editar ni mover la carpeta de evidencias previas: las futuras ejecuciones crearán una carpeta nueva, con un SHA de commit actualizado.
