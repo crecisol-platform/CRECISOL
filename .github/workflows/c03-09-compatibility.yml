@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     env:
-      CRECISOL_LOCAL_EVIDENCE_DIR: ${{ runner.temp }}/crecisol-c03-09-evidence
+      CRECISOL_LOCAL_EVIDENCE_DIR: /tmp/crecisol-c03-09-${{ github.run_id }}
     steps:
       - name: Checkout exact source branch, no persisted credentials
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -142,7 +142,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: CRECISOL-C03-09-LOCAL-ONLY-NOT-CERTIFIED
-          path: ${{ runner.temp }}/crecisol-c03-09-evidence/c03-09-*/
+          path: ${{ env.CRECISOL_LOCAL_EVIDENCE_DIR }}/c03-09-*/
           if-no-files-found: error
           retention-days: 3
           compression-level: 6
