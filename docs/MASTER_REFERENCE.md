@@ -1,5 +1,7 @@
 # Documento Maestro Único — referencia canónica CRECISOL
 
+**AVISO OPERATIVO VIGENTE DESDE 11-11-2026 (posterior a los registros históricos):** [Decisión del propietario: autonomía técnica sin dependencia de GitHub Actions](DECISION_OPERATIVA_2026-11-11_AUTONOMIA_SIN_GITHUB_ACTIONS.md). GitHub solo aloja y versiona código; **CI PREMERGE/POSTMERGE deja de ser requisito prospectivo**, sin alterar sus resultados históricos. El asistente ejecuta tres auditorías A/B/C rigurosas y pruebas reales aplicables; las pruebas no ejecutables por falta de herramientas se declaran como tales. El cierre técnico de **C03-09 fue aceptado**, pero aún **NO CERTIFICADO**; C03-10 y C04 no se habilitan sin gate de evidencia. Esta nota prevalece solo en el proceso operativo, **no modifica** el contenido funcional ni huellas del Documento Maestro Único.
+
 **Estado por rama (2026-11-10):** edición comercial preparada en `feature/docs-modelo-comercial-impacto-20261110`, PR #73 en borrador. **La edición del 08-11-2026 continúa vigente en `dev` hasta la aceptación, auditorías y fusión autorizada**. Ni la edición nueva ni los ensayos documentales equivalen a software implementado o certificación jurídica.
 
 ## Edición comercial 10-11-2026 — candidata del PR #73
