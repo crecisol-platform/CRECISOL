@@ -10,7 +10,8 @@ from pathlib import Path
 import struct
 import zlib
 
-from c01_06_logo_candidate import WORD, EXPECTED, candidate, check_png, check
+from c01_06_logo_candidate import WORD, candidate, check_png, check
+from master_source_guard import CURRENT_WORD_SHA, canonical_active_word
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "frontend/public/assets"
@@ -78,7 +79,10 @@ def crop_emblem(png):
 
 
 def output_assets():
-    data, ext, member, w, h = candidate(WORD, EXPECTED)
+    # The approved commercial appendix changed the DOCX bytes, not the official logo.
+    # Validate the current Word/PDF and immutable historic prefix before extraction.
+    canonical_active_word()
+    data, ext, member, w, h = candidate(WORD, CURRENT_WORD_SHA)
     check((ext, member, w, h) == ("png", "word/media/image1.png", 1298, 859),
           "Canonical image relationship changed")
     check(sha256(data).hexdigest() == APPROVED_SHA, "Owner-approved image hash mismatch")
