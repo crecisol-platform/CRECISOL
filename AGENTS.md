@@ -1,5 +1,9 @@
 # Agentes y colaboradores — CRECISOL
 
+**ACTUALIZACIÓN POSTERIOR DEL PROPIETARIO (11-11-2026, C03-10):** CRECISOL ahora es público y se autoriza el intento de restituir GitHub Actions automáticos para auditar C03-10. Aplicar [decisión prospectiva CI](docs/DECISION_OPERATIVA_2026-11-11_RETORNO_CI_C03.md) antes de la decisión previa que no dependía de Actions. A/B/C y evidencia real siguen siendo obligatorias; nada autoriza despliegues, producción, pagos o escrituras a SOLQARYN.
+
+**REFERENCIA HISTÓRICA PARA REGRESIONES (NO ESTADO ACTUAL):** cuando se certificó C03-08, el siguiente estado era «C03-09 NO INICIADA». Se conserva literalmente esa leyenda solo para que las auditorías documentales históricas detecten falsificaciones. El estado operativo actual es C03-09 CERTIFICADA EN SU ALCANCE (9/10), C03-10 EN AUDITORÍA, C03 NO CERTIFICADO y C04 BLOQUEADO.
+
 **DECISIÓN OPERATIVA DEL PROPIETARIO (11-11-2026):** Gobierno autónomo SIN dependencia de GitHub Actions y SIN PC del propietario. Leer antes de actuar [decisión sin Actions](docs/DECISION_OPERATIVA_2026-11-11_AUTONOMIA_SIN_GITHUB_ACTIONS.md). GitHub se usa exclusivamente para alojar y versionar código/documentos. El asistente programa, revisa, audita, aprueba y decide certificaciones con evidencia real suficiente y tres auditorías A/B/C más estrictas. **No exigir CI PREMERGE/POSTMERGE, PR, un runner GitHub ni firma humana nueva como gate**. Este cambio es prospectivo: no reescribir actas ni afirmar pruebas no realizadas, no saltarse P0/P1 ni certificar runtime imposible de verificar. Ningún trabajo asíncrono ni despliegue queda autorizado.
 
 
