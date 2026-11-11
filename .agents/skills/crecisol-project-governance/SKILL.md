@@ -5,6 +5,14 @@ description: "Gobernanza técnica exclusiva del repositorio privado CRECISOL. Ap
 
 # CRECISOL · Gobierno técnico propio
 
+## 0. Decisión del propietario — 11-11-2026 — sin GitHub Actions como gate
+- **Leer y aplicar** `docs/DECISION_OPERATIVA_2026-11-11_AUTONOMIA_SIN_GITHUB_ACTIONS.md` antes de programar, auditar o certificar. El propietario autorizó desarrollo, revisión, aprobación técnica y certificación autónomos **sin PC del propietario**.
+- GitHub queda como alojamiento y versionamiento del código. **GitHub Actions, CI PREMERGE/POSTMERGE, PR, runner de GitHub y su estado verde NO son requisitos de avance ni certificación** desde esta fecha. No activar CI manualmente, ni contratar runners, ni buscar cuentas alternativas para disponer de minutos. El usuario no quiere depender de GitHub para ejecutar pruebas.
+- Las auditorías A/B/C y **las pruebas reales aplicables siguen siendo obligatorias**; si un runtime esencial no está disponible aquí, la prueba se marca `NO EJECUTADA` y la certificación queda pendiente, sin engaños. No atribuir al asistente las ejecuciones históricas reportadas por Codex.
+- El propietario delegó la aceptación de microfases cuando la evidencia A/B/C sea suficiente; ninguna autorización habilita P0/P1, salto entre capítulos, producción, cobros ni SOLQARYN. La delegación no crea trabajo asíncrono.
+- Esta decisión prospectiva desplaza **solo** los gates previos de CI y firma humana por microfase; mantiene intactas las certificaciones históricas y todas las barreras de seguridad/tenancy.
+
+
 ## 1. Identidad y bloqueo de alcance
 - Proyecto: CRECISOL. Repositorio autorizado: solqaryn-platform/CRECISOL. Nunca presumir equivalencia con solqaryn/Solqaryn.
 - SOLQARYN: referencia institucional y, si se autoriza, únicamente consulta. Está terminantemente prohibido editar, crear PR, comentar, configurar automatizaciones o ejecutar comandos de escritura en SOLQARYN.
@@ -40,7 +48,7 @@ description: "Gobernanza técnica exclusiva del repositorio privado CRECISOL. Ap
 
 ## 5. Ramas y seguridad GitHub
 - main: rama de integración certificada, sin pushes directos una vez activadas protecciones.
-- dev: rama de integración de desarrollo. Cada capítulo usa feature/cNN-descripcion y PR revisado.
+- dev: rama de integración de desarrollo. Cada capítulo usa feature/cNN-descripcion. PR opcional; integración controlada por SHA/diff y auditorías reales, sin gate de Actions.
 - Antes de fusionar: diff, secretos, dependencias, permisos, tenancy, tests, compatibilidad, performance y documentación.
 - Todo workflow debe usar token de solo lectura salvo justificación, sin secretos de producción y sin despliegues automáticos.
 - No afirmar que main está protegida hasta leer reglas aplicadas realmente en GitHub.
