@@ -1,6 +1,6 @@
-# CRECISOL — C03-09 | Acta técnica PROPUESTA — NO CERTIFICADA
+# CRECISOL — C03-09 | Acta de cierre técnico ACEPTADA — NO CERTIFICADA
 
-**Estado documental:** PROPUESTA PARA REVISIÓN HUMANA. **NO CERTIFICADA**. No es un acta de certificación POSTMERGE ni una aprobación del propietario.
+**Estado documental:** CIERRE TÉCNICO ACEPTADO EN CONVERSACIÓN POR EL PROPIETARIO (10-11-2026, hora local de Honduras). **NO CERTIFICADA**. No es una certificación PREMERGE/POSTMERGE ni acredita CI. La aceptación se refiere a la propuesta revisada en el SHA `3bdb2f02bf4b8bd5f9c823a71efe870bdc86e8cd` y a los resultados técnicos ejecutados en `53cc2134eca8b33c808bcd5d7643684b51080fa8`.
 
 **Microfase:** C03-09 de C03, compatibilidad real y rendimiento basal reproducible. **Estado de capítulos:** C01 y C02 certificados (2/37); C03-01..08 certificadas (8/10); **C03-09 pendiente de certificación**, C03-10 pendiente, C03 no certificado y C04 bloqueado.
 
@@ -77,15 +77,16 @@ El cotejo de GitHub frente al SHA `dev` anterior identificó **13 archivos** de 
 2. `A_historical_static.txt` conserva textos de preflight antiguos que dicen `NO EJECUTADO`. Es un registro de una etapa anterior; no invalida ni sustituye la medición posterior en `C_runtime_benchmark.json`. La secuencia temporal debe preservarse.
 3. El cambio de fuente documental afectaba el prebuild del logo: fue corregido y probado localmente antes de la ejecución exitosa de C03-09.
 
-**Riesgos abiertos:** falta segunda lectura directa del paquete local por quien firme el acta; revisión del diff final documental; CI PREMERGE/POSTMERGE y revisión/aceptación formal pendientes. No se atribuyen aquí pruebas de autenticación privada ni datos del servidor DEV remoto.
+**Riesgos abiertos:** los archivos originales del equipo han sido validados por Codex, pero este asistente no los inspeccionó directamente; falta la revisión del último commit documental posterior a la aceptación y la CI PREMERGE/POSTMERGE. La aceptación humana del cierre técnico **ya fue recibida**, pero no autoriza fusión ni certificación. No se atribuyen aquí pruebas de autenticación privada ni datos del servidor DEV remoto.
 
 **Reversibilidad:** todos los cambios están en una rama `feature/`; no hay migraciones ni alteraciones de datos persistentes. En caso de hallazgo, no integrar a `dev`; corregir exclusivamente la rama de CRECISOL y repetir solo las pruebas afectadas. Nunca modificar `solqaryn/Solqaryn`.
 
 ## 5. Puertas pendientes de certificación — obligatorias
 
-- [ ] Revisar y aceptar formalmente la propuesta por el propietario **con referencia expresa a C03-09 y al SHA correspondiente**.
-- [ ] Validar el paquete local `manifest.json` y SHA-256 de las 16 evidencias desde la fuente original o una entrega auditada; registrar conclusión del revisor, sin publicar secretos ni archivos de máquinas.
-- [ ] Revisar el diff final y la integridad del registro documental generado después del SHA técnico de las pruebas.
+- [x] Aceptación humana del **cierre técnico propuesto de C03-09**, recibida en respuesta a la pregunta explícita del asistente. Respuesta literal: **«adelante con ello»** (10-11-2026, conversación CRECISOL). Se refiere al acta propuesta SHA `3bdb2f02bf4b8bd5f9c823a71efe870bdc86e8cd` y al SHA de pruebas `53cc2134eca8b33c808bcd5d7643684b51080fa8`. **No** constituye aprobación del PR, merge o certificación.
+- [x] Validación local del paquete por **Codex en el equipo del propietario**, según sus dos informes: `manifest.json`, `probe.json`, benchmark y SHA-256 **16/16**; no se compartieron binarios ni secretos. **Nota de procedencia:** este asistente únicamente recibió el dictamen, no leyó los archivos locales.
+- [x] Revisión de Codex del diff de **14 archivos** de la propuesta `3bdb2f02...` frente a `dev` y `git diff --check` limpio; la documentación nueva no altera código ejecutado.
+- [ ] Comprobar el SHA y diff **del commit documental de aceptación posterior** sin atribuirle compilaciones nuevas.
 - [ ] Preparar PR técnico exclusivamente hacia `dev`, cuando se autorice y pueda procesarse su CI; verificar **PREMERGE** del SHA exacto.
 - [ ] Tras la integración autorizada, verificar **POSTMERGE** en `dev` `completed/success` sobre el SHA exacto. Un estado `failure`, `skipped` o `pending` **no equivale a PASS**.
 - [ ] Formalizar el acta definitiva con resultados verificables de las tres auditorías y certificación del SHA correcto. **No reutilizar esta propuesta como prueba de CI.**
@@ -94,10 +95,21 @@ El cotejo de GitHub frente al SHA `dev` anterior identificó **13 archivos** de 
 
 ## 6. Dictamen provisional
 
-**Dictamen recomendado:** `C03-09: APTA PARA PROPONER CIERRE TÉCNICO, NO CERTIFICADA`.
+**Dictamen actualizado:** `C03-09: CIERRE TÉCNICO ACEPTADO — NO CERTIFICADA`.
 
 Los resultados comunicados por Codex respaldan que las pruebas locales requeridas funcionaron con el stack real, pero **no autorizan todavía a marcar la microfase como CERTIFICADA**. El registro oficial de `dev` no se modifica por esta propuesta, C03-10 no se inicia y C04 permanece bloqueado.
 
-**Firma/aceptación del propietario:** PENDIENTE.
+**Aceptación del propietario:** RECIBIDA en la conversación el **10-11-2026**, respuesta literal «adelante con ello» a la pregunta de aprobación del cierre técnico de C03-09. Es **aceptación conversacional contextual**, no firma criptográfica, ni autorización para abrir/fusionar un PR.
 
 **Certificación documental y CI:** PENDIENTES.
+
+## 7. Registro de aceptación humana del cierre técnico (sin certificación)
+
+**Secuencia y alcance de la decisión:**
+1. Codex comunicó haber revalidado, en el equipo local, las 16 evidencias y los 14 archivos de la propuesta, con controles A/B/C satisfactorios para el alcance C03-09.
+2. El asistente presentó la propuesta y preguntó de forma explícita si el propietario aprobaba el **cierre técnico de C03-09 manteniendo NO CERTIFICADA**.
+3. El propietario respondió **«adelante con ello»**. Se registra como consentimiento contextual y específico al cierre técnico; **no** se amplía a autorización de PR, CI con costes, fusión ni certificación.
+4. El acta conserva separados el **SHA de pruebas reales** `53cc2134eca8b33c808bcd5d7643684b51080fa8`, el **SHA de la propuesta revisada** `3bdb2f02bf4b8bd5f9c823a71efe870bdc86e8cd` y el commit posterior que registra esta aceptación. Este último **no recibió nuevas compilaciones** y únicamente modifica este acta.
+
+**Cierre administrativo de la etapa técnica:** ACEPTADO, sujeto a puertas formales de certificación. No se declara `CERTIFICADA`, `phase_certified=true`, CI `success` ni aprobación de C03-10. Quedan pendientes las verificaciones PREMERGE/POSTMERGE sobre sus SHA exactos y la correspondiente acta **definitiva**. Hasta entonces, **C03-10 y C04 permanecen bloqueadas**.
+
