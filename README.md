@@ -1,5 +1,7 @@
 # CRECISOL
 
+**TRANSICIÓN INSTITUCIONAL C03 (11-11-2026, POSTERIOR A ESTADOS HISTÓRICOS):** El propietario autorizó expresamente certificar C03 después de comprobar A/B/C y CI. [Acta de certificación integral](docs/c03/C03_CERTIFICACION_INTEGRAL_2026_11_11.md) y [registro de estado prospectivo](docs/ESTADO_VIGENTE_CAPITULOS.md). Al aprobar CI PREMERGE y POSTMERGE del acta, **C03 CERTIFICADO (10/10), 3/37 capítulos (C01, C02 y C03)**; solo entonces C04-01 queda habilitada PARA PREPARACIÓN, nunca certificada ni desplegada. Las leyendas anteriores «2/37», «C03 NO CERTIFICADO» y «C04 BLOQUEADO» permanecen como capturas históricas de sus auditorías, no son el estado actual tras las puertas. No tocar Word/PDF, producción ni SOLQARYN.
+
 **Tu negocio, a tu manera.** — SaaS multitenant en desarrollo para comercio, servicios y membresías.
 
 ## Estado vigente (GitHub, noviembre de 2026)

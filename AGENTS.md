@@ -1,5 +1,7 @@
 # Agentes y colaboradores — CRECISOL
 
+**NUEVA AUTORIDAD DE ESTADO (11-11-2026):** Consultar [docs/ESTADO_VIGENTE_CAPITULOS.md](docs/ESTADO_VIGENTE_CAPITULOS.md) y [acta integral C03](docs/c03/C03_CERTIFICACION_INTEGRAL_2026_11_11.md). Por aceptación expresa y tras la nueva CI PRE/POSTMERGE, C03 se declara CERTIFICADO (10/10), 3/37; C04 habilitado solo para preparar C04-01. Los estados más antiguos del presente archivo se mantienen literalmente como historial para no falsear sus auditorías. Sin desplegar ni ejecutar Cloudflare, DNS, pagos o SOLQARYN.
+
 **ACTUALIZACIÓN POSTERIOR DEL PROPIETARIO (11-11-2026, C03-10):** CRECISOL ahora es público y se autoriza el intento de restituir GitHub Actions automáticos para auditar C03-10. Aplicar [decisión prospectiva CI](docs/DECISION_OPERATIVA_2026-11-11_RETORNO_CI_C03.md) antes de la decisión previa que no dependía de Actions. A/B/C y evidencia real siguen siendo obligatorias; nada autoriza despliegues, producción, pagos o escrituras a SOLQARYN.
 
 **REFERENCIA HISTÓRICA PARA REGRESIONES (NO ESTADO ACTUAL):** cuando se certificó C03-08, el siguiente estado era «C03-09 NO INICIADA». Se conserva literalmente esa leyenda solo para que las auditorías documentales históricas detecten falsificaciones. El estado operativo actual es C03-09 CERTIFICADA EN SU ALCANCE (9/10), C03-10 CERRADA TÉCNICAMENTE (acta y 16/16 CI técnica), C03 NO CERTIFICADO y C04 BLOQUEADO.

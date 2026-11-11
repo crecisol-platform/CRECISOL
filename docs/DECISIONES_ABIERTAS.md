@@ -1,5 +1,7 @@
 # Decisiones documentales y arquitectónicas abiertas
 
+**DECISIÓN POSTERIOR DE CERTIFICACIÓN C03 (11-11-2026):** El propietario dio aceptación expresa CONDICIONADA a verificaciones reales del capítulo C03; consultar [acta integral C03](c03/C03_CERTIFICACION_INTEGRAL_2026_11_11.md) y [registro prospectivo](ESTADO_VIGENTE_CAPITULOS.md). C03=10/10, 3/37 efectivo solo al completar CI de la propia acta; C04 habilitado únicamente para preparación C04-01. Las decisiones ADR pendientes y las instantáneas históricas no se eliminan.
+
 - **ADR-001 — ABIERTA:** monolito modular inicial; extraer microservicios solo con mediciones y ADR aprobado.
 - **ADR-002 — ABIERTA:** seleccionar y validar proveedor EF Core para .NET 10 y MySQL 8.4; ejecutar pruebas de migración e integridad.
 - **ADR-003 — ABIERTA:** resolver SSR/híbrido Angular según rendimiento medido y alojamiento futuro.
