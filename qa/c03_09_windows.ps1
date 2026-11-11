@@ -59,4 +59,4 @@ try {
 if ($null -eq $exitCode) {
     Stop-LocalLauncher "WSL2 did not return an execution status"
 }
-exit [int] $exitCode
+exit ([int]$exitCode)
