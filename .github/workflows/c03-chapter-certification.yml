@@ -1,0 +1,51 @@
+name: CRECISOL C03 chapter certification A-B-C evidence gate
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c03/C03_CERTIFICACION_INTEGRAL_2026_11_11.md'
+      - 'docs/ESTADO_VIGENTE_CAPITULOS.md'
+      - 'qa/c03_chapter_certification.py'
+      - '.github/workflows/c03-chapter-certification.yml'
+      - 'AGENTS.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'docs/MASTER_REFERENCE.md'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c03/C03_CERTIFICACION_INTEGRAL_2026_11_11.md'
+      - 'docs/ESTADO_VIGENTE_CAPITULOS.md'
+      - 'qa/c03_chapter_certification.py'
+      - '.github/workflows/c03-chapter-certification.yml'
+      - 'AGENTS.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'docs/MASTER_REFERENCE.md'
+permissions:
+  contents: read
+jobs:
+  c03-chapter-certificate:
+    name: C03 chapter A-B-C prospective gate and owner acceptance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Audit A actual canonical sources and predecessor closures
+        run: |
+          test ! -e .c03-chapter-cert-proof
+          python3 -m py_compile qa/c03_chapter_certification.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/validate_foundation.py
+          python3 qa/c03_10_integral_audits.py A
+          python3 qa/c03_chapter_certification.py A
+          mkdir -p .c03-chapter-cert-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c03-chapter-cert-proof/A
+      - name: Audit B security contracts and seven adversarial state mutations
+        run: |
+          python3 qa/c03_10_integral_audits.py B
+          python3 qa/c03_chapter_certification.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c03-chapter-cert-proof/B
+      - name: Audit C same-run evidence identity and scope
+        run: python3 qa/c03_chapter_certification.py C
