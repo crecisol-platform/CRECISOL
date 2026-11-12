@@ -98,7 +98,7 @@ BEGIN
      p_tenant = X'00000000000000000000000000000000' OR
      p_actor = X'00000000000000000000000000000000' OR
      (p_address_mode IS NULL OR p_address_mode NOT IN (1,2,3)) OR
-     NOT REGEXP_LIKE(p_business, '^[a-z][a-z0-9-]{1,62}[a-z0-9]
+     NOT REGEXP_LIKE(p_business, '^[a-z][a-z0-9-]{1,62}[a-z0-9]$', 'c') THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid trusted provisioning intent';
   END IF;
 
