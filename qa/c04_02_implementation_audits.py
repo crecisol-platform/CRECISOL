@@ -91,7 +91,7 @@ MARKERS = {
         "expect_privilege_denial \"DROP\"",
         "CRECISOL_C04_02_TEST_DSN",
         "trap cleanup EXIT",
-        "No API, router or deployment",
+        "no API, router or deployment",
     ),
     "workflow": (
         "dotnet-version: '10.0.x'",
