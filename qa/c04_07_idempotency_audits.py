@@ -125,7 +125,7 @@ MARKERS = {
         "COMMIT;",
         "SELECT 'REPLAY' AS outcome",
         "SELECT 'CREATED' AS outcome",
-        "REGEXP_LIKE(p_business,",
+        "NOT REGEXP_LIKE(p_business, '^[a-z][a-z0-9-]{1,62}[a-z0-9]$', 'c') THEN",
     ),
     "smoke": (
         "mysql:8.4@sha256:",
