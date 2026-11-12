@@ -22,7 +22,7 @@
 | P1 | Contrato de estados/identidad, autorización de plataforma y roles; DSN no público | DOCUMENTADO, NO IMPLEMENTADO |
 | P2 | Riesgos T01–T18 y responsabilidades por microfase | DOCUMENTADO; negativos runtime NO EJECUTADOS |
 | P3 | Auditorías preparatorias A/B/C mediante workflow sólo lectura y SHA exacto | PENDIENTE DE CI PROPIA |
-| P4 | Acta de preparación con diff, fuente, hallazgos y aceptación para diseñar implementación posterior | PENDIENTE |
+| P4 | [Acta de preparación con diff, fuente y hallazgos](c04/C04_01_ACTA_PREPARACION.md) | REDACTADA; CI FINAL Y REGISTRO POSTMERGE PENDIENTES |
 | P5 | Construir, probar y certificar el catálogo real | **NO AUTORIZADO POR ESTA PREPARACIÓN** |
 
 ## 4. Calidad obligatoria para decidir implementación
