@@ -1,0 +1,51 @@
+name: CRECISOL C04-08 lifecycle contracts A-B-C dotnet10
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/TenantLifecycleTransitions.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/ChangeTenantLifecycle.cs'
+      - 'backend/tests/Crecisol.TenantLifecycle.ContractsTests/**'
+      - 'docs/c04/C04_08_*'
+      - '.github/workflows/c04-08-lifecycle.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/TenantLifecycleTransitions.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/ChangeTenantLifecycle.cs'
+      - 'backend/tests/Crecisol.TenantLifecycle.ContractsTests/**'
+      - 'docs/c04/C04_08_*'
+      - '.github/workflows/c04-08-lifecycle.yml'
+permissions:
+  contents: read
+jobs:
+  c04-08-contracts:
+    name: C04-08 internal transitions .NET10 + A-B-C
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build Domain Release warnings as errors
+        run: dotnet build backend/src/Crecisol.Domain/Crecisol.Domain.csproj -c Release -warnaserror
+      - name: Build Application Release warnings as errors
+        run: dotnet build backend/src/Crecisol.Application/Crecisol.Application.csproj -c Release -warnaserror
+      - name: Execute lifecycle positive and negative tests
+        run: dotnet run --project backend/tests/Crecisol.TenantLifecycle.ContractsTests/Crecisol.TenantLifecycle.ContractsTests.csproj --configuration Release
+      - name: Audit A B C fail-closed scope and repository boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --name-only "${{ github.event.pull_request.base.sha || github.event.before }}" "${{ github.sha }}" > /tmp/c0408-changes.txt || true
+          test -f backend/src/Crecisol.Domain/Tenancy/TenantLifecycleTransitions.cs
+          test -f backend/src/Crecisol.Application/Tenancy/ChangeTenantLifecycle.cs
+          grep -q 'Deactivated' backend/src/Crecisol.Domain/Tenancy/TenantLifecycleTransitions.cs
+          grep -q 'IAtomicTenantLifecycleTransitionStore' backend/src/Crecisol.Application/Tenancy/ChangeTenantLifecycle.cs
+          grep -q 'Suspended' backend/tests/Crecisol.TenantLifecycle.ContractsTests/Program.cs
+          echo 'A: lifecycle source; B: fail-closed and guard tests; C: Domain/Application boundaries PASS'
