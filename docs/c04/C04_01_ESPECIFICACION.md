@@ -30,7 +30,7 @@
 ## 3. Flujo de confianza objetivo (no implementado)
 
 1. **Límite de red:** API recibe `Host` y la cadena de proxies; nunca confía en `Forwarded` / `X-Forwarded-Host` sin lista explícita de proxies confiables, por diseño de C04-04.
-2. **Registro administrativo:** una identidad de plataforma habilitada crea o propone tenant mediante operación autenticada y autorizada; **ningún request público crea tenants**.
+2. **Registro administrativo:** una identidad de plataforma habilitada crea o propone tenant mediante operación autenticada y autorizada; **Ningún request público crea tenants**.
 3. **Catálogo:** resuelve sólo nombres reservados y verificados contra registro backend protegido, con unicidad normalizada y versionada; nombres desconocidos o en conflicto -> DENY por defecto.
 4. **Contexto del usuario:** antes de abrir recursos privados, identidad confirmada + membresía tenant + permiso de acción + sucursal/propiedad; un host válido por sí solo **no autoriza** acceso, conforme a C04-05/06.
 5. **Persistencia:** shared/dedicated se elige exclusivamente desde referencia de colocación protegida del backend; nunca por entrada del cliente (C04-02/03/09).
