@@ -9,6 +9,8 @@ public sealed record TenantId
     private TenantId(Guid value) => Value = value;
     public Guid Value { get; }
 
+    public override string ToString() => "TenantId[redacted]";
+
     public static TenantId From(Guid value)
     {
         if (value == Guid.Empty)
