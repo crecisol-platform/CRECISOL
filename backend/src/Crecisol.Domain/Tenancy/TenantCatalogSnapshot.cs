@@ -54,6 +54,9 @@ public sealed record TenantCatalogSnapshot
     public long Revision { get; }
     public DateTimeOffset UpdatedAtUtc { get; }
 
+    // Records otherwise include internal and potentially personal fields in ToString.
+    public override string ToString() => "TenantCatalogSnapshot[redacted]";
+
     /// <summary>
     /// Deserializes only from a future trusted backend catalog adapter.
     /// Callers MUST NOT hydrate from request headers, host, cookies or claims.
