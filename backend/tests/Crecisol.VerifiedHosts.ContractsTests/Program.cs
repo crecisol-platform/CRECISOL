@@ -50,7 +50,7 @@ Check(verifiedA.AddressMode == TenantAddressMode.Subdomain && verifiedA.Revision
 Check(verifiedB.AddressMode == TenantAddressMode.CustomDomain && verifiedB.TenantId == tenantB,
     "Custom-domain binding belongs to correct tenant");
 Check(verifiedA.IsVerifiedAt(now), "Verified host is current inside its UTC window");
-Check(verifiedA.IsVerifiedAt(verifiedAt), "Verification valid at exact initial UTC instant");
+Check(verifiedA.IsVerifiedAt(changedAt), "Verified host becomes active at trusted catalogue publication time");
 Check(!verifiedA.IsVerifiedAt(expiry), "Verification invalid at exact expiry instant");
 Check(verifiedA.ToString() == "VerifiedTenantHostBinding[redacted]",
     "Binding diagnostics redact tenant, hostname and verification dates");
