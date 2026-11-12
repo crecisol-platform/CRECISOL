@@ -57,3 +57,54 @@ CREATE TABLE c04_resource_events (
 -- WARNING: these tables are intentionally NOT wired to EF, API, DI or tenant routing.
 -- Domain-specific resources, authorization, branch membership, migration tracking,
 -- retention, index performance and operational rollback remain NO-GO until tested.
+
+-- A valid parent FK cannot by itself prevent an UPDATE that reparents a row
+-- to ANOTHER EXISTING TENANT or branch. Freeze ownership identifiers even when
+-- the target would satisfy all PK/FK/UNIQUE constraints. MySQL 8.4 trigger
+-- errors are SQLSTATE 45000, code 1644; verified with valid-target attacks.
+-- These triggers do NOT grant identity, membership, SELECT filtering, or roles.
+DELIMITER $$
+CREATE TRIGGER trg_c04_tenant_identity_immutable
+BEFORE UPDATE ON c04_tenants
+FOR EACH ROW
+BEGIN
+  IF NOT (OLD.tenant_id <=> NEW.tenant_id) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'C04 tenant identity immutable';
+  END IF;
+END$$
+
+CREATE TRIGGER trg_c04_branch_ownership_immutable
+BEFORE UPDATE ON c04_branches
+FOR EACH ROW
+BEGIN
+  IF NOT (OLD.tenant_id <=> NEW.tenant_id)
+    OR NOT (OLD.branch_id <=> NEW.branch_id) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'C04 branch ownership immutable';
+  END IF;
+END$$
+
+CREATE TRIGGER trg_c04_resource_ownership_immutable
+BEFORE UPDATE ON c04_resources
+FOR EACH ROW
+BEGIN
+  IF NOT (OLD.tenant_id <=> NEW.tenant_id)
+    OR NOT (OLD.branch_id <=> NEW.branch_id)
+    OR NOT (OLD.resource_id <=> NEW.resource_id) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'C04 resource ownership immutable';
+  END IF;
+END$$
+
+CREATE TRIGGER trg_c04_event_append_only_update
+BEFORE UPDATE ON c04_resource_events
+FOR EACH ROW
+BEGIN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'C04 event is append only';
+END$$
+
+CREATE TRIGGER trg_c04_event_append_only_delete
+BEFORE DELETE ON c04_resource_events
+FOR EACH ROW
+BEGIN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'C04 event cannot be removed';
+END$$
+DELIMITER ;
