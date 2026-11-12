@@ -5,6 +5,8 @@ description: "Gobernanza técnica exclusiva del repositorio CRECISOL. Aplicar an
 
 # CRECISOL · Gobierno técnico propio
 
+**PRECEDENCIA PROSPECTIVA ACTUAL (11-11-2026):** `docs/c03/C03_RATIFICACION_INSTITUCIONAL_POSTMIGRACION_2026_11_11.md` y `docs/ESTADO_VIGENTE_CAPITULOS.md` gobiernan el intento de cierre institucional de C03 tras la transferencia a `crecisol-platform/CRECISOL`. PR #80 aportó 17/17 CI SUCCESS y 10/10 microfases trazables; PR #79 conserva runs antiguos `queued`, no PASS. Solo declarar C03 CERTIFICADO (3/37) cuando el nuevo PR de ratificación supere CI PREMERGE/POSTMERGE con SHA exacto, auditorías A/B/C y sin P0/P1. Antes: C03 PENDIENTE, C04 BLOQUEADO. Después: preparar solo C04-01. Mantener histórico sin reescritura, sin desplegar ni escribir en SOLQARYN.
+
 **Ubicación vigente verificada (11-11-2026):** `crecisol-platform/CRECISOL`, ID `1450414592`, rama `dev`. Las rutas antiguas en decisiones históricas no autorizan nuevas escrituras. Ver `docs/MIGRACION_ORGANIZACION_GITHUB_2026_11_11.md`. PR #79 fusionado; CI POSTMERGE en cola, por lo que C03 no está certificado efectivamente y C04 sigue bloqueado. Sin alteraciones a SOLQARYN ni producción.
 
 ## Precedencia posterior autorizada — C03-10, 11-11-2026
