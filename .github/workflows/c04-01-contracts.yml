@@ -1,0 +1,65 @@
+name: CRECISOL C04-01 catalogo tenants Domain Application A-B-C
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/**'
+      - 'backend/src/Crecisol.Application/Tenancy/**'
+      - 'backend/tests/Crecisol.TenantCatalog.ContractsTests/**'
+      - 'docs/c04/C04_01_*'
+      - 'qa/c04_01_normative_inventory.py'
+      - 'qa/c04_01_contracts_audits.py'
+      - '.github/workflows/c04-01-contracts.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/**'
+      - 'backend/src/Crecisol.Application/Tenancy/**'
+      - 'backend/tests/Crecisol.TenantCatalog.ContractsTests/**'
+      - 'docs/c04/C04_01_*'
+      - 'qa/c04_01_normative_inventory.py'
+      - 'qa/c04_01_contracts_audits.py'
+      - '.github/workflows/c04-01-contracts.yml'
+permissions:
+  contents: read
+jobs:
+  c04-01-contracts:
+    name: C04-01 catalogo interno A-B-C and .NET10 positive negative
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout CRECISOL read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Audit A canonical Word and original C04 normative map
+        run: |
+          test ! -e .c04-01-contracts-proof
+          python3 -m py_compile qa/c04_01_normative_inventory.py qa/c04_01_contracts_audits.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c04_01_normative_inventory.py verify
+          python3 qa/c04_01_preparation_audits.py A
+          python3 qa/c04_01_contracts_audits.py A
+          mkdir -p .c04-01-contracts-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-01-contracts-proof/A
+      - name: Audit B reject unsafe trust-boundary mutations
+        run: |
+          python3 qa/c04_01_contracts_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-01-contracts-proof/B
+      - name: Install approved .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build production API and tenant contracts in Release with errors as warnings
+        run: |
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.TenantCatalog.ContractsTests/Crecisol.TenantCatalog.ContractsTests.csproj -c Release --nologo -warnaserror
+      - name: Execute C04-01 real .NET10 positives and negatives
+        run: |
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.TenantCatalog.ContractsTests/Crecisol.TenantCatalog.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Domain.ContractsTests/Crecisol.Domain.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Application.ContractsTests/Crecisol.Application.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj
+          printf 'PASS dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-01-contracts-proof/dotnet
+      - name: Audit C same SHA A-B-dotnet and architecture boundary
+        run: python3 qa/c04_01_contracts_audits.py C

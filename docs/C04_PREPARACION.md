@@ -1,5 +1,7 @@
 # CRECISOL — Capítulo 04 · Preparación y control de entrada
 
+**ACTUALIZACIÓN PROSPECTIVA — 12-11-2026, autorización de continuar C04-01:** tras completar la preparación auditada en [PR #82](https://github.com/crecisol-platform/CRECISOL/pull/82#issuecomment-6824560520), el propietario autorizó seguir con la **implementación acotada de contratos internos de C04-01** en [PR #83](https://github.com/crecisol-platform/CRECISOL/pull/83). Consultar [matriz del Word y código de contratos](c04/C04_01_IMPLEMENTACION_CONTRATOS.md) y [acta técnica condicionada](c04/C04_01_ACTA_CONTRATOS.md). La preparación previa no autorizaba código por sí misma; esta autorización nueva es solo para C04-01. **C04-01 NO CERTIFICADA** hasta cumplir CI PREMERGE y POSTMERGE de su propio PR; ningún endpoint, tenant activo, DSN o persistencia se habilita. Tras el gate exacto podrá certificarse exclusivamente el contrato interno y preparar C04-02; antes, C04-02 a C04-12 permanecen bloqueadas. Los párrafos siguientes registran el estado histórico de la preparación.
+
 **Estado actual:** capítulo **C04 NO IMPLEMENTADO / NO CERTIFICADO**; únicamente **C04-01 EN PREPARACIÓN**; C04-02..12 BLOQUEADAS, C05 BLOQUEADO. No confundir especificación con producto desarrollado.
 
 **Repositorio operativo:** `crecisol-platform/CRECISOL`, rama `dev`. La propiedad original del repositorio no ha cambiado (GitHub ID `1450414592`). No modificar SOLQARYN ni recursos productivos.
