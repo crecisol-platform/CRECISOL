@@ -101,7 +101,7 @@ foreach (var forbidden in new[] {
     "Placement", "Claims", "Host", "Token", "Membership", "Owner", "Password"})
     Check(!serialized.Contains(forbidden, StringComparison.OrdinalIgnoreCase),
         "Internal projection never serializes " + forbidden);
-Check(view.GetType().GetProperties().Length == 5,
+Check(view!.GetType().GetProperties().Length == 5,
     "Response has exactly five allowlisted properties");
 Check(await useCase.ExecuteAsync(second, CancellationToken.None) is null,
     "Authorized read for unknown ID returns no data");
