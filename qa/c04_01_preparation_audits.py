@@ -113,6 +113,7 @@ def spec_contract(txt: str) -> None:
 def audit_a() -> None:
     need(canonical_active_word(), "Pinned master Word/PDF changed")
     source_sha, size, start, stop, _ = chapter_sections()
+    need(source_sha in read(SPEC), "Canonical C04 chapter text fingerprint missing")
     spec_contract(read(SPEC))
     plan = read(PLAN)
     need("| C04-01 | Catálogo confiable de tenants |" in plan,
