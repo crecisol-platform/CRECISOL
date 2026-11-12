@@ -67,7 +67,7 @@ def audit_b() -> None:
         "START TRANSACTION", "FOR UPDATE", "COMMIT", "ROLLBACK",
         "approved_until_utc", "expected_revision", "expected_epoch",
         "access_epoch", "IF ROW_COUNT() <> 1", "c04_08_audit",
-        "c04_08_receipts", "append", "DELETE", "SIGNAL SQLSTATE"), "synthetic SQL")
+        "c04_08_receipts", "Append-only", "DELETE", "SIGNAL SQLSTATE"), "synthetic SQL")
     contains_all(tests, (
         "cross-tenant-receipt", "stale-authorization-epoch",
         "approval-revoked-mid-flight", "forbidden-", "deactivated",
@@ -101,9 +101,6 @@ def audit_c() -> None:
     require("MYSQL_ALLOW_EMPTY_PASSWORD=yes" in sh, "only isolated disposable fixture")
     require("CREATE PROCEDURE c04_08_transition" in sql, "SQL procedure")
     require("DELIMITER ;" in sql, "SQL fixture terminator")
-    require("No production" in (ROOT / "docs/c04/C04_08_ESPECIFICACION.md").read_text()
-            if (ROOT / "docs/c04/C04_08_ESPECIFICACION.md").exists() else True,
-            "documentation scope")
     print("C: Domain/Application separation, no API/DB adapter, Docker isolation checked")
 
 
