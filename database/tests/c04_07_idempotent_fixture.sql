@@ -97,7 +97,7 @@ BEGIN
      p_operation = X'00000000000000000000000000000000' OR
      p_tenant = X'00000000000000000000000000000000' OR
      p_actor = X'00000000000000000000000000000000' OR
-     p_address_mode NOT IN (1,2,3) OR
+     (p_address_mode IS NULL OR p_address_mode NOT IN (1,2,3)) OR
      p_business NOT REGEXP '^[a-z][a-z0-9-]{1,62}[a-z0-9]$' THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid trusted provisioning intent';
   END IF;
@@ -141,8 +141,7 @@ BEGIN
        AND tenant_id = p_tenant
        AND business_key = p_business
        AND address_mode = p_address_mode
-       AND lifecycle_state = 1
-     FOR UPDATE;
+       AND lifecycle_state = 1;
     IF v_draft_count != 1 THEN
       SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Partial or altered provisioning receipt';
