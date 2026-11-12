@@ -228,6 +228,15 @@ def guard(data: dict[str, str]) -> None:
             "Read approval -> atomic commit -> verify approval -> receipt sequence required")
     require(ddl.count("CREATE TRIGGER trg_c04_07_") == 4,
             "All four table write/erase triggers must exist")
+    require(ddl.count("CREATE PROCEDURE c04_07_create_or_replay(") == 1,
+            "Exactly one synthetic provisioning procedure required")
+    require(ddl.count("SELECT 'CREATED' AS outcome") == 1 and
+            ddl.count("SELECT 'REPLAY' AS outcome") == 1,
+            "No duplicated procedure tail or replay path permitted")
+    require(ddl.rstrip().endswith("END$$\\nDELIMITER ;".replace("\\\\n", "\\n")),
+            "SQL fixture must terminate exactly after closing its procedure")
+    require(ddl.count("\\nDELIMITER ;") == 1,
+            "SQL fixture may contain only one closing delimiter")
     require(ddl.count("UNIQUE KEY uq_c04_07_") == 4,
             "Four additional unique indexes required beyond the two PKs")
     executable_sql = "\n".join(line.split("--", 1)[0] for line in ddl.splitlines())
