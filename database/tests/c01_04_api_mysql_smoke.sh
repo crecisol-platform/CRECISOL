@@ -30,12 +30,29 @@ docker run --rm -d --network none --name "$CONTAINER" \
   -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -e MYSQL_DATABASE="$DB" \
   mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902 >/dev/null
 
+# The official mysql:8.4 entrypoint starts a TEMPORARY local server to
+# initialize the database, then shuts it down and starts the final server.
+# SELECT 1 against the temporary server is NOT a stable readiness signal:
+# the next SQL call can hit its shutdown and fail with ERROR 2002.
+# Wait for the pinned image's completion marker, then two final SQL probes.
 ready=0
+init_done=0
 for i in $(seq 1 90); do
-  if root_sql "SELECT 1" >/dev/null 2>&1; then ready=1; break; fi
+  if [ "$init_done" -eq 0 ] &&
+     docker logs "$CONTAINER" 2>&1 |
+       grep -Fq 'MySQL init process done. Ready for start up.'; then
+    init_done=1
+  fi
+  if [ "$init_done" -eq 1 ] && root_sql "SELECT 1" >/dev/null 2>&1; then
+    sleep 1
+    if root_sql "SELECT 1" >/dev/null 2>&1; then ready=1; break; fi
+  fi
   sleep 1
 done
-if [ "$ready" -ne 1 ]; then echo "FAIL MySQL startup" >&2; exit 1; fi
+if [ "$ready" -ne 1 ]; then
+  echo "FAIL MySQL final server initialization/socket readiness" >&2
+  exit 1
+fi
 version="$(root_sql 'SELECT VERSION()')"
 case "$version" in 8.4.*) echo "C01-04 isolated real MySQL $version" ;;
   *) echo "FAIL expected MySQL 8.4, found $version" >&2; exit 1 ;;
