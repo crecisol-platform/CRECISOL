@@ -233,9 +233,9 @@ def guard(data: dict[str, str]) -> None:
     require(ddl.count("SELECT 'CREATED' AS outcome") == 1 and
             ddl.count("SELECT 'REPLAY' AS outcome") == 1,
             "No duplicated procedure tail or replay path permitted")
-    require(ddl.rstrip().endswith("END$$\\nDELIMITER ;".replace("\\\\n", "\\n")),
+    require(ddl.rstrip().endswith("END$$\nDELIMITER ;"),
             "SQL fixture must terminate exactly after closing its procedure")
-    require(ddl.count("\\nDELIMITER ;") == 1,
+    require(ddl.count("\nDELIMITER ;") == 1,
             "SQL fixture may contain only one closing delimiter")
     require(ddl.count("UNIQUE KEY uq_c04_07_") == 4,
             "Four additional unique indexes required beyond the two PKs")
