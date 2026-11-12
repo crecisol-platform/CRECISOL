@@ -31,6 +31,36 @@ runner_sql() {
   docker exec -e MYSQL_PWD="$CI_PASSWORD" "$CONTAINER" \
     mysql -uc04_07_ci_runner --batch --skip-column-names -D "$DB" -e "$1"
 }
+# Real InnoDB can choose a deadlock victim (ER_LOCK_DEADLOCK 1213) during
+# UNIQUE-key contention. Retrying the IDENTICAL approved intent is safe only
+# after the aborted connection/transaction has closed. 1205 is likewise
+# transient; semantic conflict 1644 is never retried or converted to success.
+runner_sql_retry() {
+  local statement="$1" output attempt=1 max_attempts=8 pause
+  while [ "$attempt" -le "$max_attempts" ]; do
+    if output=$(runner_sql "$statement" 2>&1); then
+      printf '%s\n' "$output"
+      return 0
+    fi
+    case "$output" in
+      *"ERROR 1213"*|*"ERROR 1205"*)
+        if [ "$attempt" -ge "$max_attempts" ]; then
+          echo "FAIL C04-07 transient MySQL retry budget exhausted" >&2
+          return 1
+        fi
+        printf 'retry %s\n' "$attempt" >> "$TMP/real-deadlock-retries"
+        pause="$(printf '0.%03d' "$((attempt * 30 + RANDOM % 25))")"
+        sleep "$pause"
+        attempt=$((attempt+1))
+        ;;
+      *)
+        printf '%s\n' "$output" >&2
+        return 1
+        ;;
+    esac
+  done
+  return 1
+}
 call_sql() {
   local operation="$1" tenant="$2" actor="$3" key="$4" mode="$5" digest="$6"
   printf "CALL c04_07_create_or_replay(X'%s',X'%s',X'%s','%s',%s,X'%s');" \
@@ -159,11 +189,11 @@ eq "lost response after commit returns replay" "REPLAY" "$(runner_sql "$CALL_CRA
 RACE_OP="55555555555555555555555555555555"
 RACE_TENANT="66666666666666666666666666666666"
 RACE_CALL="$(call_sql "$RACE_OP" "$RACE_TENANT" "$ACT_A" 'concurrent-tenant' 3 "$DIGEST_B")"
-runner_sql "SET @c04_07_ci_hold_lock=1; $RACE_CALL" > "$TMP/same-0" 2>&1 &
+runner_sql_retry "SET @c04_07_ci_hold_lock=1; $RACE_CALL" > "$TMP/same-0" 2>&1 &
 pids=("$!")
 sleep 0.1
 for n in $(seq 1 11); do
-  runner_sql "$RACE_CALL" > "$TMP/same-$n" 2>&1 &
+  runner_sql_retry "$RACE_CALL" > "$TMP/same-$n" 2>&1 &
   pids+=("$!")
 done
 for n in $(seq 0 11); do
@@ -196,7 +226,7 @@ pids=()
 for n in $(seq 1 12); do
   op="$(printf '%032x' "$((500+n))")"
   ten="$(printf '%032x' "$((700+n))")"
-  runner_sql "$(call_sql "$op" "$ten" "$ACT_A" 'collision-business' 1 "$DIGEST_A")" \
+  runner_sql_retry "$(call_sql "$op" "$ten" "$ACT_A" 'collision-business' 1 "$DIGEST_A")" \
     > "$TMP/diff-$n" 2>&1 &
   pids+=("$!")
 done
@@ -216,6 +246,11 @@ for n in $(seq 1 12); do
 done
 eq "no duplicate business identity created" "1" "$(root_sql \
   "SELECT COUNT(*) FROM c04_07_tenant_drafts WHERE business_key='collision-business'")"
+if [ -f "$TMP/real-deadlock-retries" ]; then
+  echo "PASS C04-07 recovered transient deadlocks: $(wc -l < "$TMP/real-deadlock-retries") bounded attempts"
+else
+  echo "PASS C04-07 no transient deadlocks required retry on this run"
+fi
 
 # Post-commit identity, tenant and business identity are append-only even if
 # an attacker can satisfy a different existing unique target.
