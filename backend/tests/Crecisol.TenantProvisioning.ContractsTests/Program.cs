@@ -225,7 +225,7 @@ var twoPlans = new Dictionary<TenantProvisioningOperationId,
 };
 var multiStore = new SyntheticAtomicStore(now);
 var multi = new ProvisionApprovedTenantDraft(
-    new FakePlanReader((id, _) => twoPlans.GetValueOrDefault(id)),
+    new FakePlanReader((_, id) => twoPlans.GetValueOrDefault(id)),
     multiStore, new FakeClock(_ => now));
 var aResult = await multi.ExecuteAsync(opA, CancellationToken.None);
 var bResult = await multi.ExecuteAsync(opB, CancellationToken.None);
