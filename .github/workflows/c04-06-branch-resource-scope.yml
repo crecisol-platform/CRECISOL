@@ -1,0 +1,76 @@
+name: CRECISOL C04-06 branch-owner-action scope A-B-C dotnet10
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/TenantBranchResourceScope.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/ResolveCurrentBranchResourceScope.cs'
+      - 'backend/tests/Crecisol.BranchResource.ContractsTests/**'
+      - 'qa/c04_06_scope_audits.py'
+      - 'docs/c04/C04_06_*'
+      - '.github/workflows/c04-06-branch-resource-scope.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/TenantBranchResourceScope.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/ResolveCurrentBranchResourceScope.cs'
+      - 'backend/tests/Crecisol.BranchResource.ContractsTests/**'
+      - 'qa/c04_06_scope_audits.py'
+      - 'docs/c04/C04_06_*'
+      - '.github/workflows/c04-06-branch-resource-scope.yml'
+permissions:
+  contents: read
+jobs:
+  c04-06-branch-resource:
+    name: C04-06 branch resource owner exact grant and actions .NET10 A-B-C
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout CRECISOL read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: A canonical Word, predecessor and branch-scope traceability
+        run: |
+          test ! -e .c04-06-scope-proof
+          python3 -m py_compile qa/c04_06_scope_audits.py
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c04_01_normative_inventory.py verify
+          python3 qa/c04_01_contracts_audits.py A
+          python3 qa/c04_02_implementation_audits.py A
+          python3 qa/c04_03_contracts_audits.py A
+          python3 qa/c04_04_hosts_audits.py A
+          python3 qa/c04_05_identity_audits.py A
+          python3 qa/c04_06_scope_audits.py A
+          mkdir -p .c04-06-scope-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-06-scope-proof/A
+      - name: B negative branch resource owner action and guard mutations
+        run: |
+          python3 qa/c04_01_contracts_audits.py B
+          python3 qa/c04_02_implementation_audits.py B
+          python3 qa/c04_03_contracts_audits.py B
+          python3 qa/c04_04_hosts_audits.py B
+          python3 qa/c04_05_identity_audits.py B
+          python3 qa/c04_06_scope_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-06-scope-proof/B
+      - name: Install pinned .NET 10 SDK family
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build API and branch/resource tests Release warnings-as-errors
+        run: |
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.BranchResource.ContractsTests/Crecisol.BranchResource.ContractsTests.csproj -c Release --nologo -warnaserror
+      - name: Execute .NET10 A/B cross-branch owner and existing tenancy regressions
+        run: |
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.BranchResource.ContractsTests/Crecisol.BranchResource.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantIdentity.ContractsTests/Crecisol.TenantIdentity.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.VerifiedHosts.ContractsTests/Crecisol.VerifiedHosts.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantStorage.ContractsTests/Crecisol.TenantStorage.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantCatalog.ContractsTests/Crecisol.TenantCatalog.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.SharedTenancy.ContractsTests/Crecisol.SharedTenancy.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj
+          printf 'PASS dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-06-scope-proof/dotnet
+      - name: C prove A B and .NET10 tests same SHA/run Clean Architecture
+        run: python3 qa/c04_06_scope_audits.py C
