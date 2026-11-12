@@ -1,0 +1,41 @@
+# CRECISOL — C04-06 · Alcance interno de sucursal, recurso, propietario y acción
+
+**Fecha:** 12-11-2026, Honduras. **Repositorio autorizado:** `crecisol-platform/CRECISOL`, ID `1450414592`. **Base verificada:** `dev` SHA `148ca91e62ac893629ca89c2515d2285db6e6eef`; rama `feature/c04-06-branch-resource-scope-20261112`. **Estado:** C04-06 EN DESARROLLO, NO CERTIFICADA; **C04-07 BLOQUEADA**.
+
+## 1. Autoridad, alcance y puerta de entrada
+
+El Documento Maestro Único `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` SHA-256 `ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c` y PDF de lectura SHA-256 `0dfd3217439760540390707ea8196d6252464a501a7fe3e6eafdc49eda39da77` son inmutables. Capítulo C04 original: 72 párrafos, SHA-256 texto `95be2bb0210e108317e67bd08fb9b2899d33554e684bb2d9ae3c8eced6995058`. Ocho gates normativos `MAE-C04` NO sustituyen 12 microfases.
+
+Puerta anterior: [acta C04-05 efectiva #93](https://github.com/crecisol-platform/CRECISOL/pull/93#issuecomment-6834180210), `dev` SHA final `148ca91e62ac893629ca89c2515d2285db6e6eef`, 4/4 CI documental POSTMERGE SUCCESS; **certificación limitada a contratos internos**, sin autenticación persistente ni HTTP privada. Capítulos completos 3/37.
+
+Fila original `docs/planificacion-futura/C04_MICROFASES_PROPUESTAS.md`: **C04-06 Contexto de sucursal y recurso**, evidencia positiva **Scopes por branch/owner en backend**, prueba negativa **No heredar permisos de otra sucursal**.
+
+## 2. Separación de responsabilidades y modelo de seguridad
+
+Esta microfase implementa exclusivamente **Domain + Application + pruebas y QA** para correlación interna con catálogo de pruebas; no cambios a `Program.cs`, DI, `Infrastructure/`, `database/`, `frontend/`, controladores, migraciones ni endpoints. Sin sesión real, roles productivos, DB real de permisos o acceso a datos privados.
+
+- `Domain/Tenancy/TenantBranchResourceScope.cs`: tipos opacos `TenantBranchId` y `TenantResourceId` no vacíos; clave de acción `TenantRequiredAction` canónica ASCII en minúsculas (`module.action` o `module.subject.action`) definida **solo por política del backend**, sin roles/sectores hardcoded; `TrustedBranchResourceSnapshot` de catálogo protegido con `TenantId`, `BranchId`, `ResourceId`, `OwnerActorId`, estado Active/Suspended/Deleted, revisión, hora UTC; `TrustedActorBranchGrantSnapshot` con `ActorId`, tenant, branch, acción, alcance `OwnerOnly` o `BranchWide`, estado Pending/Active/Suspended/Revoked, revisión y vencimiento UTC; evidencia tipada `TenantBranchResourceScopeEvidence`, con revisiones e IDs opacos, NO credencial/bearer ni acceso a datos.
+- `Application/Tenancy/ResolveCurrentBranchResourceScope.cs`: usar **primero** `ResolveCurrentTenantIdentityContext.ExecuteAsync` de C04-05; no aceptar identidad/tenant/sucursal/rol/host/claims del cliente; buscar recurso por `TenantId` autorizado + `TenantResourceId` únicamente como **selector no autorizante**; rechazar recursos de otro tenant/ID, suspendidos y metadata futura. Consultar **todas** las concesiones exactas por actor+tenant+branch+acción; cero, nulo o duplicado = rechazo; comprobación de los cuatro campos, revisión, vigencia UTC; `OwnerOnly` exige `OwnerActorId == ActorId`, `BranchWide` solo con concesión explícita de esa sucursal y acción, nunca heredar de A→B. Releer recurso y concesiones, y **re-ejecutar identidad C04-05** antes de devolver evidencia para detectar cambios de revisión/branch/owner/acción/sesión/host. Reloj backend UTC validado tras esperas; cancelación antes y después de cada consulta.
+- `ITrustedTenantScopedResourceReader`: solo metadatos internos, lookup con **ambos** tenant y resource ID, NO contenido privado/DSN.
+- `ITrustedActorBranchGrantReader`: consultar concesiones exactas por actor+tenant+branch+acción, sin primera coincidencia ni permisos generales implícitos.
+- `TenantRequiredAction.FromServerPolicy(...)` se usa **exclusivamente con nombres definidos por política backend del endpoint**; **NUNCA** mapearlo desde query/cuerpo/cabecera/claim del navegador. Id de recurso puede provenir de URL pero solo selecciona candidato, **jamás concede acceso**.
+
+**NO se modela un bypass SuperAdmin.** Si requiere inspección de datos privados, una autorización excepcional futura con MFA, motivo, caducidad y auditoría seguirá siendo obligatoria. En caso de ambigüedad: denegación segura. No existe sucursal por defecto ni permiso heredable entre sucursales. Los records son snapshots de **catálogo confiable supuesto**: un atacante puede construir tipos en tests, pero ninguna API los acepta o confía en cliente.
+
+## 3. Matriz obligatoria de pruebas
+
+Positivos: actor A con identidad y membresía A vigente, recurso de branch A, concesión exacta y vigente OwnerOnly con dueño A; otro actor con concesión BranchWide explícita para branch A; dos sucursales A/B del mismo tenant con concesión SOLO en una; diferentes tenants A/B; acciones parametrizables explícitas `case.read` y `case.update`, ambas requieren grant propio.
+
+Negativos P0: recurso B (tenant o branch), identidad ajena, grant de actor B, branch B, tenant B, acción distinta, grant duplicado, grant del mismo actor y branch pero de `OwnerOnly` sobre recurso de otro owner, recurso suspendido/deleted, grant pending/suspended/revoked, expiración exacta, fecha futura, IDs vacíos, action key con URL/espacios/Unicode/inyección/comodín; datos de catálogo de otro tenant/ID, revocación entre dos lecturas, cambio branch/owner, grant cambia de modo/revisión/acción, identidad host cambia durante operación; no fallback a privilegio global/administrador o a branch sin referencia.
+
+Negativos P1: cancelación antes de identidad, tras recurso, tras grant, tras relectura y antes de emitir evidencia; errores de puertos que deben propagarse con denegación; reloj no UTC; revisión cero/negativa; no logs de IDs, permisos, datos ni DSN; no rutas ni DI privadas.
+
+**Límite temporal:** revalidación de snapshots mitiga carreras durante el cálculo, pero **NO garantiza atomicidad** ante revocación posterior: la operación de datos deberá acoplar la comprobación al uso de recurso por query/transaction con filtros `tenant_id + branch_id + resource_id + owner_id` y control de revisión en futuras microfases. Un resultado de C04-06 **no autoriza por sí solo** leer/escribir, exportar, ver medios, cachear, iniciar jobs o seleccionar DB. C04-11 tendrá que probar BOLA/IDOR HTTP y SQL de punta a punta.
+
+## 4. Puertas A/B/C, secuencia de certificación
+
+**A:** comparar Documento Maestro Word/PDF, huellas, texto C04 (72), fila C04-06 y dependencia C04-05; verificar Domain→Application, sin rutas nuevas. **B:** ataques A/B por tenant, sucursal/owner/acción, revocación, mutaciones de guards, cancelación y privilegios. **C:** compilar .NET10 `Release -warnaserror`, ejecutar tests reales y regresiones C04-01…05, evidencias A/B/.NET del mismo SHA/run, revisar rendimiento de número acotado de lecturas y no exponer información privada. MySQL 8.4, Angular 22/Node24 y Chromium por workflows independientes.
+
+**NO_GO** hasta: cero hallazgos P0/P1 en superficie interna probada; 100% de PREMERGE aplicables `completed/success` en HEAD técnico; diff revisado; fusión técnica SOLO en `dev`; todos los POSTMERGE técnicos del SHA integrado `success`; acta documental separada con PRE/POSTMERGE `success`; comentario institucional final con SHAs y run IDs. Un `skipped` o `pending` no cuenta como PASS; fallos históricos se preservan y corrigen por **nueva** ejecución. Sin CI real o discrepancia no certificar ni avanzar.
+
+**Alcance certificable, si cumple:** C04-06 contratos y lógica interna de scopes por branch, owner y acción (6/12), NO autorización productiva. C04-07 habilitada **solo para preparación**; C04 NO CERTIFICADO, capítulos institucionales 3/37. `main`, maestros Word/PDF, SOLQARYN, Cloudflare/DNS, VPS, producción, facturación y pagos permanecen sin modificaciones. Reversión: revertir exclusivamente squash técnico y acta C04-06 con regresiones.
