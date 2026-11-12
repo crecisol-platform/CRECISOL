@@ -90,7 +90,7 @@ def audit_b():
         ("unearned C04", acta, ledger.replace("HABILITADO PARA PREPARACIÓN DEL C04-01, NO CERTIFICADO",
                                              "CERTIFICADO Y DESPLEGADO", 1)),
         ("missing owner acceptance", acta.replace("«OK, VERIFICA SI YA ESTA TODO LISTO POR FAVOR Y CERTIFICA PARA CONTINUAR CON EL DESARROLLO»", "NO", 1), ledger),
-        ("forged base", acta.replace(BASE, "0" * 40, 1), ledger),
+        ("forged base", acta.replace(BASE, "0" * 40), ledger),
         ("missing latest regression", acta.replace("43092865466", "0" * 11, 1), ledger),
         ("lost CI gate", acta, ledger.replace("CI POSTMERGE", "SIN CI")),
         ("no approval constraint", acta.replace("DICTAMEN FAVORABLE CONDICIONADO", "APROBADO SIN PRUEBAS", 1), ledger),
