@@ -98,8 +98,23 @@ def audit_b() -> None:
     api = (ROOT / "backend/src/Crecisol.Api/Program.cs").read_text(encoding="utf-8")
     need("Tenancy" not in api and "/api/v1/tenants" not in api,
          "A private tenant API was enabled prematurely")
-    need(not list((ROOT / "database").glob("c04*")),
-         "C04-02 or C04 dedicated schema was prematurely added")
+    # Preserve the C04-01 gate while permitting a separately traceable C04-02
+    # candidate ONLY when its own isolated smoke, CI and scope documentation exist.
+    # Never allow other C04 SQL or an API to slip through this regression gate.
+    c04_schemas = {p.name for p in (ROOT / "database").glob("c04*")}
+    need(c04_schemas <= {"c04_02_shared_schema.sql"},
+         "Unknown C04 schema added without a corresponding authorized microphase")
+    if "c04_02_shared_schema.sql" in c04_schemas:
+        for relative in (
+            "database/tests/c04_02_application_schema_smoke.sh",
+            ".github/workflows/c04-02-application-schema.yml",
+            "docs/c04/C04_02_IMPLEMENTACION_ESQUEMA_SHARED.md",
+        ):
+            need((ROOT / relative).is_file(),
+                 "C04-02 schema missing its own execution/traceability gate: " + relative)
+        spec = (ROOT / "docs/c04/C04_02_IMPLEMENTACION_ESQUEMA_SHARED.md").read_text(encoding="utf-8")
+        need("NO CERTIFICADO" in spec and "C04-03" in spec,
+             "C04-02 scope certification boundary was removed")
     for key in ("id","entity","app"):
         need("Microsoft.AspNetCore" not in files[key] and
              "MySql" not in files[key] and
@@ -119,8 +134,8 @@ def audit_b() -> None:
             else:
                 raise AssertionError("Unsafe mutation survived: " + key + " " + token[:45])
     print("PASS C04-01 B: " + str(accepted) +
-          " adversarial contract mutations rejected; no tenant API/DDL, no auth bypass or DSN; "
-          "runtime cross-tenant MySQL tests NOT PERFORMED")
+          " adversarial contract mutations rejected; C04-01 without private API or permissive auth; C04-02 DDL only with its own gates; "
+          "runtime cross-tenant MySQL tests NOT PERFORMED in C04-01")
 
 def audit_c() -> None:
     need(os.environ.get("GITHUB_ACTIONS") == "true",
