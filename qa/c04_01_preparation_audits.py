@@ -141,7 +141,7 @@ def audit_b() -> None:
         if raw not in spec:
             raw = term
         need(raw in spec, "Cannot mutate exact boundary: " + name)
-        mutant = spec.replace(raw, "[ATTACKER REMOVED TRUST BOUNDARY]", 1)
+        mutant = spec.replace(raw, "[ATTACKER REMOVED TRUST BOUNDARY]")
         try:
             spec_contract(mutant)
         except AssertionError:
