@@ -114,7 +114,7 @@ MARKERS = {
         "C04-05 NO CERTIFICADA",
         "C04-06 BLOQUEADA",
         "No usar tenant_id como permiso",
-        "no autenticación productiva",
+        "sin autenticación productiva",
     ),
     "workflow": (
         "dotnet-version: '10.0.x'",
