@@ -35,7 +35,7 @@ jobs:
       - name: B adversarial preparation regression
         run: |
           python3 qa/c04_02_preparation_audits.py B
-      - name: MySQL 8.4 application DDL: real positive and negative attacks
+      - name: 'MySQL 8.4 application DDL: real positive and negative attacks'
         run: bash database/tests/c04_02_application_schema_smoke.sh
       - name: C explicit scope guard
         run: |
