@@ -221,7 +221,10 @@ public sealed record TenantIdentityContextEvidence
         ArgumentNullException.ThrowIfNull(membership);
         ArgumentNullException.ThrowIfNull(host);
         ArgumentNullException.ThrowIfNull(catalog);
-        if (session.ActorId != membership.ActorId ||
+        if (session.State != ActorSessionState.Active ||
+            membership.State != TenantMembershipState.Active ||
+            catalog.State != TenantLifecycleState.Active ||
+            session.ActorId != membership.ActorId ||
             host.TenantId != membership.TenantId ||
             catalog.TenantId != host.TenantId ||
             catalog.AddressMode != host.AddressMode ||
