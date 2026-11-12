@@ -1,4 +1,4 @@
-name: CRECISOL C04-08 lifecycle contracts A-B-C dotnet10
+name: CRECISOL C04-08 lifecycle contracts .NET10 preliminary
 on:
   pull_request:
     branches: [dev]
@@ -20,7 +20,7 @@ permissions:
   contents: read
 jobs:
   c04-08-contracts:
-    name: C04-08 internal transitions .NET10 + A-B-C
+    name: C04-08 internal transitions .NET10 preliminary
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -38,7 +38,7 @@ jobs:
         run: dotnet build backend/src/Crecisol.Application/Crecisol.Application.csproj -c Release -warnaserror
       - name: Execute lifecycle positive and negative tests
         run: dotnet run --project backend/tests/Crecisol.TenantLifecycle.ContractsTests/Crecisol.TenantLifecycle.ContractsTests.csproj --configuration Release
-      - name: Audit A B C fail-closed scope and repository boundaries
+      - name: Preliminary structural sanity checks (not A-B-C certification)
         shell: bash
         run: |
           set -euo pipefail
@@ -48,4 +48,4 @@ jobs:
           grep -q 'Deactivated' backend/src/Crecisol.Domain/Tenancy/TenantLifecycleTransitions.cs
           grep -q 'IAtomicTenantLifecycleTransitionStore' backend/src/Crecisol.Application/Tenancy/ChangeTenantLifecycle.cs
           grep -q 'Suspended' backend/tests/Crecisol.TenantLifecycle.ContractsTests/Program.cs
-          echo 'A: lifecycle source; B: fail-closed and guard tests; C: Domain/Application boundaries PASS'
+          echo 'Preliminary structure checked; A/B/C full audits and MySQL remain pending'
