@@ -230,8 +230,8 @@ def guard(data: dict[str, str]) -> None:
             "All four table write/erase triggers must exist")
     require(ddl.count("UNIQUE KEY uq_c04_07_") == 4,
             "Four additional unique indexes required beyond the two PKs")
-    executable_sql = "\\n".join(line.split("--", 1)[0] for line in ddl.splitlines())
-    require(not re.search(r"\\bINSERT\\s+IGNORE\\b|\\bON\\s+DUPLICATE\\s+KEY\\s+UPDATE\\b",
+    executable_sql = "\n".join(line.split("--", 1)[0] for line in ddl.splitlines())
+    require(not re.search(r"\bINSERT\s+IGNORE\b|\bON\s+DUPLICATE\s+KEY\s+UPDATE\b",
                           executable_sql, re.IGNORECASE),
             "No unsafe duplicate key mutation permitted")
     require(ddl.index("START TRANSACTION;") <
