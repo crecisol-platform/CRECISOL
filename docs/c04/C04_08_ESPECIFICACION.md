@@ -10,16 +10,16 @@
 - Fuente funcional: `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` (SHA-256 registrado `ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c`), `docs/MASTER_REFERENCE.md`; capítulo normativo C04, 72 párrafos y huella textual consignada en acta C04-07. Matriz de doce microfases técnicas en `docs/planificacion-futura/C04_MICROFASES_PROPUESTAS.md`: positivo «Transiciones seguras y auditables», negativo «Suspensión no deja acceso residual».
 - La certificación de C04-07 **no** prueba autenticación ni revocación de sesiones reales. La preparación C04-08 no puede afirmar esas capacidades.
 
-## 2. Máquina de estados preliminar (sujeta a cotejo final con Word)
+> **Compatibilidad verificada con el código:** `TenantLifecycleState.Deactivated` es el estado existente para la baja lógica; NO crear un valor `Deleted` ni borrar físicamente filas. La especificación inicial fue corregida antes de implementación/certificación.\n\n## 2. Máquina de estados preliminar (sujeta a cotejo final con Word)
 
 Mantener separados el estado de aprovisionamiento `Draft` y el estado de habilitación de acceso; NO activar tenants desde la creación sintética.
 - `Draft`: sin acceso privado; eventual activación exige decisión administrativa autenticada y autorizada *en fases habilitadas*, no por esta preparación.
 - `Active`: estado conceptual que permitiría acceso únicamente tras las demás verificaciones de identidad, membresía, rol, sucursal, recurso y vigencia; el estado `Active` **nunca es permiso por sí solo**.
 - `Suspended`: denegación inmediata en toda nueva evaluación de autorización y procesos internos; retener información sin borrarla. Bloquear escritura, lecturas privadas, trabajos en cola, exportaciones, previsualizaciones, medios, caché y sesiones al integrar esas superficies.
-- `Deleted` lógico: negar acceso y aprovisionamiento ordinario; preservar evidencia, integridad referencial, auditoría y retención legal aplicable. Ninguna operación física de borrado/destrucción incluida.
+- `Deactivated` lógico: negar acceso y aprovisionamiento ordinario; preservar evidencia, integridad referencial, auditoría y retención legal aplicable. Ninguna operación física de borrado/destrucción incluida.
 - `Reactivated` no es estado persistente independiente: evento auditado de `Suspended -> Active` solo con autorización confiable, revisión coincidente, motivos y comprobaciones vigentes; no por pago/HTTP/host o token aislado.
 
-**Transiciones a validar:** `Active -> Suspended`, `Suspended -> Active` y `Active|Suspended -> Deleted` lógico. Transiciones desde `Draft`, recuperación de `Deleted`, repetición con mismo ID o cambios de negocio requieren decisión normativa explícita; en tanto, **DENY por defecto**. No admitir `Deleted -> Active` por la operación de reactivación.
+**Transiciones a validar:** `Active -> Suspended`, `Suspended -> Active` y `Active|Suspended -> Deactivated` lógico. Transiciones desde `Draft`, recuperación de `Deactivated`, repetición con mismo ID o cambios de negocio requieren decisión normativa explícita; en tanto, **DENY por defecto**. No admitir `Deactivated -> Active` por la operación de reactivación.
 
 ## 3. Contrato mínimo propuesto
 
@@ -40,7 +40,7 @@ La caché, tokens/sesiones y workers futuros deben validar el epoch/revisión ac
 | Token/sesión previamente emitidos tras suspensión | DENY por estado/epoch vigente; nunca aprovechar autorización vieja |
 | Worker/cola/export/cache/preview después de suspensión | DENY/pausa y aislamiento; sin exposición residual |
 | Actor, tenant, host o claims falsificados | DENY sin modificación ni filtración |
-| Reactivación de Deleted o Draft | DENY |
+| Reactivación de Deactivated o Draft | DENY |
 | Cambio de estado con revisión obsoleta | CONFLICT/DENY; cero efectos secundarios |
 | Dos cambios concurrentes con misma revisión | Uno solo confirma, el otro conflicto; auditoría exacta |
 | OperationId duplicada con intención diferente | DENY por colisión semántica |
