@@ -114,7 +114,7 @@ MARKERS = {
         "DECLARE CONTINUE HANDLER FOR 1062 SET v_duplicate = TRUE",
         "INSERT INTO c04_07_operations",
         "IF v_duplicate THEN",
-        "WHERE operation_id = p_operation FOR UPDATE",
+        "WHERE operation_id = p_operation FOR SHARE",
         "NOT (v_tenant <=> p_tenant)",
         "NOT (v_actor <=> p_actor)",
         "NOT (v_business <=> p_business)",
