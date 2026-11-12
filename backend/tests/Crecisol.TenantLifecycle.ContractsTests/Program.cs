@@ -165,6 +165,7 @@ store.Receipt = TrustedTenantLifecycleReceipt.FromTrustedAtomicStore(
 await DenyAsync(async () => { await service.ExecuteAsync(op, CancellationToken.None); },
     "different-intent-receipt");
 store.Receipt = receipt;
+reader.ReadCount = 0;
 reader.ChangeOnSecondRead = true;
 await DenyAsync(async () => { await service.ExecuteAsync(op, CancellationToken.None); },
     "approval-revoked-mid-flight");
