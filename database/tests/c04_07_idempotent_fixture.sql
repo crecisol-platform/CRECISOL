@@ -118,12 +118,15 @@ BEGIN
   IF v_duplicate THEN
     -- The duplicate may be on OP, TENANT or BUSINESS key. Return REPLAY ONLY
     -- if the SAME operation and FULL intent match an existing complete draft.
+    -- FOR SHARE is enough because operation/draft rows are immutable; unlike
+    -- FOR UPDATE it avoids S->X upgrade deadlocks between duplicate callers.
+    -- Future adapters still need bounded retry of SQL 1213/1205 outside txn.
     SELECT operation_id, tenant_id, sponsor_actor_id,
            business_key, address_mode, intent_sha256
       INTO v_operation, v_tenant, v_actor,
            v_business, v_mode, v_fingerprint
       FROM c04_07_operations
-     WHERE operation_id = p_operation FOR UPDATE;
+     WHERE operation_id = p_operation FOR SHARE;
 
     IF v_operation IS NULL OR
        NOT (v_tenant <=> p_tenant) OR
