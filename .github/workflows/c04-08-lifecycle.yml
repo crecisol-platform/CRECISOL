@@ -1,4 +1,4 @@
-name: CRECISOL C04-08 lifecycle contracts .NET10 preliminary
+name: CRECISOL C04-08 lifecycle A-B-C .NET10 MySQL8.4 synthetic
 on:
   pull_request:
     branches: [dev]
@@ -6,6 +6,8 @@ on:
       - 'backend/src/Crecisol.Domain/Tenancy/TenantLifecycleTransitions.cs'
       - 'backend/src/Crecisol.Application/Tenancy/ChangeTenantLifecycle.cs'
       - 'backend/tests/Crecisol.TenantLifecycle.ContractsTests/**'
+      - 'database/tests/c04_08_*'
+      - 'qa/c04_08_lifecycle_audits.py'
       - 'docs/c04/C04_08_*'
       - '.github/workflows/c04-08-lifecycle.yml'
   push:
@@ -14,38 +16,70 @@ on:
       - 'backend/src/Crecisol.Domain/Tenancy/TenantLifecycleTransitions.cs'
       - 'backend/src/Crecisol.Application/Tenancy/ChangeTenantLifecycle.cs'
       - 'backend/tests/Crecisol.TenantLifecycle.ContractsTests/**'
+      - 'database/tests/c04_08_*'
+      - 'qa/c04_08_lifecycle_audits.py'
       - 'docs/c04/C04_08_*'
       - '.github/workflows/c04-08-lifecycle.yml'
 permissions:
   contents: read
 jobs:
-  c04-08-contracts:
-    name: C04-08 internal transitions .NET10 preliminary
+  c04-08-lifecycle:
+    name: C04-08 A-B-C + .NET10 + MySQL8.4 real disposable
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 60
     steps:
-      - name: Checkout read-only
+      - name: Checkout read-only without persistent credentials
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-      - name: Setup .NET 10
+      - name: A normative and source authority
+        run: |
+          set -euo pipefail
+          python3 -m py_compile qa/c04_08_lifecycle_audits.py
+          bash -n database/tests/c04_08_lifecycle_smoke.sh
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c04_08_lifecycle_audits.py A
+          mkdir -p .c04-08-ci-proof
+          printf 'A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-08-ci-proof/A
+      - name: B negative boundary and mutation audit
+        run: |
+          set -euo pipefail
+          python3 qa/c04_08_lifecycle_audits.py B
+          printf 'B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-08-ci-proof/B
+      - name: Install .NET 10 official pinned setup
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
         with:
           dotnet-version: '10.0.x'
-      - name: Build Domain Release warnings as errors
-        run: dotnet build backend/src/Crecisol.Domain/Crecisol.Domain.csproj -c Release -warnaserror
-      - name: Build Application Release warnings as errors
-        run: dotnet build backend/src/Crecisol.Application/Crecisol.Application.csproj -c Release -warnaserror
-      - name: Execute lifecycle positive and negative tests
-        run: dotnet run --project backend/tests/Crecisol.TenantLifecycle.ContractsTests/Crecisol.TenantLifecycle.ContractsTests.csproj --configuration Release
-      - name: Preliminary structural sanity checks (not A-B-C certification)
-        shell: bash
+      - name: Build API and C04-08 .NET10 warnings as errors
         run: |
           set -euo pipefail
-          git diff --name-only "${{ github.event.pull_request.base.sha || github.event.before }}" "${{ github.sha }}" > /tmp/c0408-changes.txt || true
-          test -f backend/src/Crecisol.Domain/Tenancy/TenantLifecycleTransitions.cs
-          test -f backend/src/Crecisol.Application/Tenancy/ChangeTenantLifecycle.cs
-          grep -q 'Deactivated' backend/src/Crecisol.Domain/Tenancy/TenantLifecycleTransitions.cs
-          grep -q 'IAtomicTenantLifecycleTransitionStore' backend/src/Crecisol.Application/Tenancy/ChangeTenantLifecycle.cs
-          grep -q 'Suspended' backend/tests/Crecisol.TenantLifecycle.ContractsTests/Program.cs
-          echo 'Preliminary structure checked; A/B/C full audits and MySQL remain pending'
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj --configuration Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.TenantLifecycle.ContractsTests/Crecisol.TenantLifecycle.ContractsTests.csproj --configuration Release --nologo -warnaserror
+      - name: Run lifecycle and preceding tenancy regression tests
+        run: |
+          set -euo pipefail
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.TenantLifecycle.ContractsTests/Crecisol.TenantLifecycle.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantProvisioning.ContractsTests/Crecisol.TenantProvisioning.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.BranchResource.ContractsTests/Crecisol.BranchResource.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantIdentity.ContractsTests/Crecisol.TenantIdentity.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.VerifiedHosts.ContractsTests/Crecisol.VerifiedHosts.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantStorage.ContractsTests/Crecisol.TenantStorage.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantCatalog.ContractsTests/Crecisol.TenantCatalog.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.SharedTenancy.ContractsTests/Crecisol.SharedTenancy.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj
+          printf 'dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-08-ci-proof/dotnet
+      - name: Real isolated MySQL 8.4 lifecycle concurrency and rollback
+        run: |
+          set -euo pipefail
+          bash database/tests/c04_08_lifecycle_smoke.sh
+          printf 'mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-08-ci-proof/mysql
+      - name: C architecture and combined same-SHA proof
+        run: |
+          set -euo pipefail
+          python3 qa/c04_08_lifecycle_audits.py C
+          for stage in A B dotnet mysql; do
+            test -s ".c04-08-ci-proof/$stage"
+            grep -Fq "sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c04-08-ci-proof/$stage"
+          done
+          echo "C04-08 A/B/C plus .NET/MySQL same SHA/run SUCCESS; still synthetic."
