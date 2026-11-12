@@ -58,6 +58,13 @@ public enum TrustedResourceState
     Deleted = 3
 }
 
+public enum TrustedBranchState
+{
+    Active = 1,
+    Suspended = 2,
+    Deactivated = 3
+}
+
 /// <summary>
 /// Resource ownership + branch metadata from a future tenant-scoped SERVER
 /// catalog. Does not contain or expose the private resource content.
@@ -66,13 +73,17 @@ public sealed record TrustedBranchResourceSnapshot
 {
     private TrustedBranchResourceSnapshot(
         TenantId tenantId, TenantBranchId branchId, TenantResourceId resourceId,
-        TenantActorId ownerActorId, TrustedResourceState state, long revision,
-        DateTimeOffset updatedAtUtc)
+        TenantActorId ownerActorId, TrustedBranchState branchState,
+        long branchRevision, DateTimeOffset branchUpdatedAtUtc,
+        TrustedResourceState state, long revision, DateTimeOffset updatedAtUtc)
     {
         TenantId = tenantId;
         BranchId = branchId;
         ResourceId = resourceId;
         OwnerActorId = ownerActorId;
+        BranchState = branchState;
+        BranchRevision = branchRevision;
+        BranchUpdatedAtUtc = branchUpdatedAtUtc;
         State = state;
         Revision = revision;
         UpdatedAtUtc = updatedAtUtc;
@@ -82,30 +93,39 @@ public sealed record TrustedBranchResourceSnapshot
     public TenantBranchId BranchId { get; }
     public TenantResourceId ResourceId { get; }
     public TenantActorId OwnerActorId { get; }
+    public TrustedBranchState BranchState { get; }
+    public long BranchRevision { get; }
+    public DateTimeOffset BranchUpdatedAtUtc { get; }
     public TrustedResourceState State { get; }
     public long Revision { get; }
     public DateTimeOffset UpdatedAtUtc { get; }
 
     public static TrustedBranchResourceSnapshot RestoreFromTrustedResourceReader(
         TenantId tenantId, TenantBranchId branchId, TenantResourceId resourceId,
-        TenantActorId ownerActorId, TrustedResourceState state, long revision,
-        DateTimeOffset updatedAtUtc)
+        TenantActorId ownerActorId, TrustedBranchState branchState,
+        long branchRevision, DateTimeOffset branchUpdatedAtUtc,
+        TrustedResourceState state, long revision, DateTimeOffset updatedAtUtc)
     {
         ArgumentNullException.ThrowIfNull(tenantId);
         ArgumentNullException.ThrowIfNull(branchId);
         ArgumentNullException.ThrowIfNull(resourceId);
         ArgumentNullException.ThrowIfNull(ownerActorId);
-        if (!Enum.IsDefined(state) || revision <= 0)
-            throw new InvalidOperationException("Invalid resource lifecycle or revision.");
+        if (!Enum.IsDefined(state) || revision <= 0 ||
+            !Enum.IsDefined(branchState) || branchRevision <= 0)
+            throw new InvalidOperationException("Invalid resource/branch lifecycle or revision.");
         RequireUtc(updatedAtUtc);
+        RequireUtc(branchUpdatedAtUtc);
         return new TrustedBranchResourceSnapshot(
-            tenantId, branchId, resourceId, ownerActorId, state, revision, updatedAtUtc);
+            tenantId, branchId, resourceId, ownerActorId, branchState,
+            branchRevision, branchUpdatedAtUtc, state, revision, updatedAtUtc);
     }
 
     public bool IsActiveAtUtc(DateTimeOffset nowUtc)
     {
         RequireUtc(nowUtc);
-        return State == TrustedResourceState.Active && UpdatedAtUtc <= nowUtc;
+        return State == TrustedResourceState.Active &&
+            BranchState == TrustedBranchState.Active &&
+            UpdatedAtUtc <= nowUtc && BranchUpdatedAtUtc <= nowUtc;
     }
 
     internal static void RequireUtc(DateTimeOffset value)
@@ -223,7 +243,7 @@ public sealed record TenantBranchResourceScopeEvidence
         TenantResourceId resourceId, TenantRequiredAction requiredAction,
         BranchGrantScope scope, long sessionRevision, long membershipRevision,
         long hostRevision, long tenantCatalogRevision, long resourceRevision,
-        long branchGrantRevision)
+        long branchRevision, long branchGrantRevision)
     {
         ActorId = actorId;
         TenantId = tenantId;
@@ -236,6 +256,7 @@ public sealed record TenantBranchResourceScopeEvidence
         HostRevision = hostRevision;
         TenantCatalogRevision = tenantCatalogRevision;
         ResourceRevision = resourceRevision;
+        BranchRevision = branchRevision;
         BranchGrantRevision = branchGrantRevision;
     }
 
@@ -250,6 +271,7 @@ public sealed record TenantBranchResourceScopeEvidence
     public long HostRevision { get; }
     public long TenantCatalogRevision { get; }
     public long ResourceRevision { get; }
+    public long BranchRevision { get; }
     public long BranchGrantRevision { get; }
 
     public static TenantBranchResourceScopeEvidence FromTrustedInternalSnapshots(
@@ -278,14 +300,16 @@ public sealed record TenantBranchResourceScopeEvidence
             identity.MembershipRevision <= 0 ||
             identity.HostRevision <= 0 ||
             identity.TenantCatalogRevision <= 0 ||
-            resource.Revision <= 0 || grant.Revision <= 0)
+            resource.Revision <= 0 || resource.BranchRevision <= 0 ||
+            grant.Revision <= 0)
             throw new UnauthorizedAccessException("Resource scope evidence is not valid.");
 
         return new TenantBranchResourceScopeEvidence(
             identity.ActorId, identity.TenantId, resource.BranchId, resource.ResourceId,
             requiredAction, grant.Scope, identity.SessionRevision,
             identity.MembershipRevision, identity.HostRevision,
-            identity.TenantCatalogRevision, resource.Revision, grant.Revision);
+            identity.TenantCatalogRevision, resource.Revision,
+            resource.BranchRevision, grant.Revision);
     }
 
     public override string ToString() => "TenantBranchResourceScopeEvidence[redacted]";
