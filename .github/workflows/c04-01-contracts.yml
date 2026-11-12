@@ -1,0 +1,38 @@
+name: CRECISOL C04-01 catalogo tenants Domain Application A-B-C
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/**'
+      - 'backend/src/Crecisol.Application/Tenancy/**'
+      - 'backend/tests/Crecisol.TenantCatalog.ContractsTests/**'
+      - 'docs/c04/C04_01_*'
+      - 'qa/c04_01_normative_inventory.py'
+      - 'qa/c04_01_contracts_audits.py'
+      - '.github/workflows/c04-01-contracts.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/**'
+      - 'backend/src/Crecisol.Application/Tenancy/**'
+      - 'backend/tests/Crecisol.TenantCatalog.ContractsTests/**'
+      - 'docs/c04/C04_01_*'
+      - 'qa/c04_01_normative_inventory.py'
+      - 'qa/c04_01_contracts_audits.py'
+      - '.github/workflows/c04-01-contracts.yml'
+permissions:
+  contents: read
+jobs:
+  c04-01-contracts:
+    name: C04-01 verified Word source and .NET10 contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Extract exact normative source for design review
+        run: |
+          python3 -m py_compile qa/c04_01_normative_inventory.py
+          python3 qa/c04_01_normative_inventory.py inventory
