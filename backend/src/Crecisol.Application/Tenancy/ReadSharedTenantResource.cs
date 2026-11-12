@@ -65,14 +65,19 @@ public interface ISharedTenantResourceReader
 /// actor's permitted scope BEFORE touching storage. No permissive resolver/DI
 /// registration is provided by C04-02.
 /// </summary>
-public sealed class ReadSharedTenantResource(
-    IAuthorizedSharedReadScopeResolver authorization,
-    ISharedTenantResourceReader reader)
+public sealed class ReadSharedTenantResource
 {
-    private readonly IAuthorizedSharedReadScopeResolver authorization =
-        authorization ?? throw new ArgumentNullException(nameof(authorization));
-    private readonly ISharedTenantResourceReader reader =
-        reader ?? throw new ArgumentNullException(nameof(reader));
+    private readonly IAuthorizedSharedReadScopeResolver authorization;
+    private readonly ISharedTenantResourceReader reader;
+
+    public ReadSharedTenantResource(
+        IAuthorizedSharedReadScopeResolver authorization,
+        ISharedTenantResourceReader reader)
+    {
+        this.authorization = authorization ??
+            throw new ArgumentNullException(nameof(authorization));
+        this.reader = reader ?? throw new ArgumentNullException(nameof(reader));
+    }
 
     public async Task<SharedResourceReadResult?> ExecuteAsync(
         Guid resourceId, CancellationToken cancellationToken)
