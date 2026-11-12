@@ -166,8 +166,12 @@ for n in $(seq 1 11); do
   runner_sql "$RACE_CALL" > "$TMP/same-$n" 2>&1 &
   pids+=("$!")
 done
-for pid in "${pids[@]}"; do
-  if ! wait "$pid"; then echo 'FAIL C04-07 same-operation concurrent caller' >&2; exit 1; fi
+for n in $(seq 0 11); do
+  if ! wait "${pids[$n]}"; then
+    echo "FAIL C04-07 same-operation concurrent caller worker=$n" >&2
+    sed -n '1,30p' "$TMP/same-$n" >&2
+    exit 1
+  fi
 done
 created=0
 replay=0
