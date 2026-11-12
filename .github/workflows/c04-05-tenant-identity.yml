@@ -1,0 +1,73 @@
+name: CRECISOL C04-05 tenant identity, host and membership A-B-C dotnet10
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/TenantIdentityContext.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/ResolveCurrentTenantIdentityContext.cs'
+      - 'backend/tests/Crecisol.TenantIdentity.ContractsTests/**'
+      - 'qa/c04_05_identity_audits.py'
+      - 'docs/c04/C04_05_*'
+      - '.github/workflows/c04-05-tenant-identity.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/TenantIdentityContext.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/ResolveCurrentTenantIdentityContext.cs'
+      - 'backend/tests/Crecisol.TenantIdentity.ContractsTests/**'
+      - 'qa/c04_05_identity_audits.py'
+      - 'docs/c04/C04_05_*'
+      - '.github/workflows/c04-05-tenant-identity.yml'
+permissions:
+  contents: read
+jobs:
+  c04-05-identity:
+    name: C04-05 actor session + verified host + exact membership, .NET10 A-B-C
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout CRECISOL without write credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: A verify canonical source C04 and strict internal scope
+        run: |
+          test ! -e .c04-05-identity-proof
+          python3 -m py_compile qa/c04_05_identity_audits.py
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c04_01_normative_inventory.py verify
+          python3 qa/c04_01_contracts_audits.py A
+          python3 qa/c04_02_implementation_audits.py A
+          python3 qa/c04_03_contracts_audits.py A
+          python3 qa/c04_04_hosts_audits.py A
+          python3 qa/c04_05_identity_audits.py A
+          mkdir -p .c04-05-identity-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-05-identity-proof/A
+      - name: B negative trust-boundary mutations across C04
+        run: |
+          python3 qa/c04_01_contracts_audits.py B
+          python3 qa/c04_02_implementation_audits.py B
+          python3 qa/c04_03_contracts_audits.py B
+          python3 qa/c04_04_hosts_audits.py B
+          python3 qa/c04_05_identity_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-05-identity-proof/B
+      - name: Install approved .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build real .NET 10 API and C04-05 tests Release as errors
+        run: |
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.TenantIdentity.ContractsTests/Crecisol.TenantIdentity.ContractsTests.csproj -c Release --nologo -warnaserror
+      - name: Execute .NET10 positive, cross-tenant negative and regressions
+        run: |
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.TenantIdentity.ContractsTests/Crecisol.TenantIdentity.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.VerifiedHosts.ContractsTests/Crecisol.VerifiedHosts.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantStorage.ContractsTests/Crecisol.TenantStorage.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantCatalog.ContractsTests/Crecisol.TenantCatalog.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.SharedTenancy.ContractsTests/Crecisol.SharedTenancy.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj
+          printf 'PASS dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-05-identity-proof/dotnet
+      - name: C provenance same-run SHA, quality and clean dependency gate
+        run: python3 qa/c04_05_identity_audits.py C
