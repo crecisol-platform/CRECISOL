@@ -25,6 +25,9 @@ Check(firstRecord.State == TenantLifecycleState.Draft,
     "Draft status is a catalog label only");
 Check(firstRecord.AddressMode == TenantAddressMode.PathSlug,
     "Address mode is descriptive, not host verification");
+Check(!firstRecord.ToString().Contains("Café", StringComparison.Ordinal) &&
+      !first.ToString().Contains("11111111", StringComparison.Ordinal),
+    "Diagnostic stringification redacts tenant identifiers and names");
 Check(typeof(TenantCatalogSnapshot).GetProperties().All(p => p.SetMethod is null),
     "Catalog snapshot cannot be mutated by a caller");
 
