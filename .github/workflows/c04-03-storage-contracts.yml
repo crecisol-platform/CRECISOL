@@ -1,0 +1,66 @@
+name: CRECISOL C04-03 dedicated placement contracts A-B-C dotnet10
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/TenantStoragePlacement.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/ResolveCurrentTenantStorage.cs'
+      - 'backend/tests/Crecisol.TenantStorage.ContractsTests/**'
+      - 'docs/c04/C04_03_*'
+      - 'qa/c04_03_contracts_audits.py'
+      - '.github/workflows/c04-03-storage-contracts.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/TenantStoragePlacement.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/ResolveCurrentTenantStorage.cs'
+      - 'backend/tests/Crecisol.TenantStorage.ContractsTests/**'
+      - 'docs/c04/C04_03_*'
+      - 'qa/c04_03_contracts_audits.py'
+      - '.github/workflows/c04-03-storage-contracts.yml'
+permissions:
+  contents: read
+jobs:
+  c04-03-contracts:
+    name: C04-03 server-only typed location A-B-C and .NET10 negatives
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout CRECISOL read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: A canonical Word C04 and boundary checks
+        run: |
+          test ! -e .c04-03-contract-proof
+          python3 -m py_compile qa/c04_03_contracts_audits.py
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c04_01_normative_inventory.py verify
+          python3 qa/c04_01_contracts_audits.py A
+          python3 qa/c04_02_implementation_audits.py A
+          python3 qa/c04_03_contracts_audits.py A
+          mkdir -p .c04-03-contract-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-03-contract-proof/A
+      - name: B adversarial mutations and authorization/DSN boundaries
+        run: |
+          python3 qa/c04_01_contracts_audits.py B
+          python3 qa/c04_02_implementation_audits.py B
+          python3 qa/c04_03_contracts_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-03-contract-proof/B
+      - name: Install approved .NET10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile API and C04-03 contracts Release as errors
+        run: |
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.TenantStorage.ContractsTests/Crecisol.TenantStorage.ContractsTests.csproj -c Release --nologo -warnaserror
+      - name: Execute real C04-03 positive negative dotnet10 tests and regressions
+        run: |
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.TenantStorage.ContractsTests/Crecisol.TenantStorage.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantCatalog.ContractsTests/Crecisol.TenantCatalog.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.SharedTenancy.ContractsTests/Crecisol.SharedTenancy.ContractsTests.csproj
+          printf 'PASS dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-03-contract-proof/dotnet
+      - name: C same-run SHA proof and dependency review
+        run: python3 qa/c04_03_contracts_audits.py C
