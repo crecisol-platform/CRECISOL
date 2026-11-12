@@ -438,6 +438,22 @@ Expect<ArgumentNullException>(() => NewResolver(
 
 Expect<InvalidOperationException>(() =>
     TenantIdentityContextEvidence.FromVerifiedInternalEvidence(
+        Session(state: ActorSessionState.Revoked), goodMembership,
+        new VerifiedTenantHostHint(tenantA, TenantAddressMode.Subdomain, 5), goodTenant),
+    "Revoked actor cannot forge identity evidence directly");
+Expect<InvalidOperationException>(() =>
+    TenantIdentityContextEvidence.FromVerifiedInternalEvidence(
+        goodSession, Membership(state: TenantMembershipState.Suspended),
+        new VerifiedTenantHostHint(tenantA, TenantAddressMode.Subdomain, 5), goodTenant),
+    "Suspended membership cannot forge identity evidence directly");
+Expect<InvalidOperationException>(() =>
+    TenantIdentityContextEvidence.FromVerifiedInternalEvidence(
+        goodSession, goodMembership,
+        new VerifiedTenantHostHint(tenantA, TenantAddressMode.Subdomain, 5),
+        Tenant(state: TenantLifecycleState.Suspended)),
+    "Suspended tenant cannot forge identity evidence directly");
+Expect<InvalidOperationException>(() =>
+    TenantIdentityContextEvidence.FromVerifiedInternalEvidence(
         goodSession, Membership(tenant: tenantB),
         new VerifiedTenantHostHint(tenantA, TenantAddressMode.Subdomain, 5), goodTenant),
     "Cross-tenant binding cannot manufacture context evidence");
