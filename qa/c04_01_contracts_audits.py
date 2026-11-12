@@ -134,7 +134,7 @@ def audit_b() -> None:
             else:
                 raise AssertionError("Unsafe mutation survived: " + key + " " + token[:45])
     print("PASS C04-01 B: " + str(accepted) +
-          " adversarial contract mutations rejected; no tenant API/DDL, no auth bypass or DSN; "
+          " adversarial contract mutations rejected; C04-01 without private API or permissive auth; C04-02 DDL only with its own gates; "
           "runtime cross-tenant MySQL tests NOT PERFORMED in C04-01")
 
 def audit_c() -> None:
