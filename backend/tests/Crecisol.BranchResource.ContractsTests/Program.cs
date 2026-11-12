@@ -26,10 +26,13 @@ TrustedBranchResourceSnapshot Resource(
     TenantId? tenant = null, TenantBranchId? branch = null,
     TenantResourceId? resource = null, TenantActorId? owner = null,
     TrustedResourceState state = TrustedResourceState.Active,
-    long revision = 4, DateTimeOffset? updated = null) =>
+    long revision = 4, DateTimeOffset? updated = null,
+    TrustedBranchState branchState = TrustedBranchState.Active,
+    long branchRevision = 11, DateTimeOffset? branchUpdated = null) =>
     TrustedBranchResourceSnapshot.RestoreFromTrustedResourceReader(
         tenant ?? tenantA, branch ?? branchA, resource ?? resourceA,
-        owner ?? actorA, state, revision, updated ?? changed);
+        owner ?? actorA, branchState, branchRevision, branchUpdated ?? changed,
+        state, revision, updated ?? changed);
 
 TrustedActorBranchGrantSnapshot Grant(
     TenantActorId? actor = null, TenantId? tenant = null,
@@ -108,10 +111,11 @@ Check(result.ActorId == actorA && result.TenantId == tenantA &&
 Check(result.RequiredAction == actionRead &&
       result.Scope == BranchGrantScope.OwnerOnly,
       "Action and owner-only mode preserved in internal result");
-Check(result.ResourceRevision == 4 && result.BranchGrantRevision == 7 &&
+Check(result.ResourceRevision == 4 && result.BranchRevision == 11 &&
+      result.BranchGrantRevision == 7 &&
       result.SessionRevision == 2 && result.MembershipRevision == 3 &&
       result.HostRevision == 5 && result.TenantCatalogRevision == 6,
-      "All six protected revision fields retained");
+      "All seven protected revision fields retained");
 Check(result.ToString() == "TenantBranchResourceScopeEvidence[redacted]",
       "Resource evidence redactable without IDs or actions");
 Check(baselineResources.Calls == 2 && baselineGrants.Calls == 2 &&
@@ -209,7 +213,8 @@ foreach (string? attack in new string?[] {
 
 Expect<ArgumentNullException>(() =>
     TrustedBranchResourceSnapshot.RestoreFromTrustedResourceReader(
-        null!, branchA, resourceA, actorA, TrustedResourceState.Active, 1, changed),
+        null!, branchA, resourceA, actorA, TrustedBranchState.Active, 11, changed,
+        TrustedResourceState.Active, 1, changed),
     "Resource snapshot cannot have null tenant");
 Expect<ArgumentNullException>(() =>
     TrustedBranchResourceSnapshot.RestoreFromTrustedResourceReader(
@@ -221,12 +226,22 @@ Expect<ArgumentNullException>(() =>
     "Resource snapshot cannot have null resource ID");
 Expect<ArgumentNullException>(() =>
     TrustedBranchResourceSnapshot.RestoreFromTrustedResourceReader(
-        tenantA, branchA, resourceA, null!, TrustedResourceState.Active, 1, changed),
+        tenantA, branchA, resourceA, null!, TrustedBranchState.Active, 11, changed,
+        TrustedResourceState.Active, 1, changed),
     "Resource snapshot cannot have null owner");
 Expect<InvalidOperationException>(() => Resource(revision: 0),
     "Zero resource revision rejected");
 Expect<InvalidOperationException>(() => Resource(revision: -7),
     "Negative resource revision rejected");
+Expect<InvalidOperationException>(() => Resource(branchRevision: 0),
+    "Zero branch revision rejected");
+Expect<InvalidOperationException>(() => Resource(branchRevision: -2),
+    "Negative branch revision rejected");
+Expect<InvalidOperationException>(() => Resource(branchState: (TrustedBranchState)77),
+    "Unknown branch state rejected");
+Expect<InvalidOperationException>(() =>
+    Resource(branchUpdated: changed.ToOffset(TimeSpan.FromHours(-6))),
+    "Non-UTC branch timestamp rejected");
 Expect<InvalidOperationException>(() => Resource(state: (TrustedResourceState)77),
     "Unknown resource state rejected");
 Expect<InvalidOperationException>(() => Resource(updated: default(DateTimeOffset)),
@@ -238,6 +253,12 @@ Check(!Resource(state: TrustedResourceState.Suspended).IsActiveAtUtc(now),
     "Suspended resource fails even when ID and owner match");
 Check(!Resource(state: TrustedResourceState.Deleted).IsActiveAtUtc(now),
     "Deleted resource fails even when ID and owner match");
+Check(!Resource(branchState: TrustedBranchState.Suspended).IsActiveAtUtc(now),
+    "Suspended branch denies all scoped resources");
+Check(!Resource(branchState: TrustedBranchState.Deactivated).IsActiveAtUtc(now),
+    "Deactivated branch denies all scoped resources");
+Check(!Resource(branchUpdated: now.AddHours(1)).IsActiveAtUtc(now),
+    "Future branch catalog snapshot cannot grant access");
 Check(!Resource(updated: now.AddDays(1)).IsActiveAtUtc(now),
     "Future resource metadata cannot be used");
 Expect<InvalidOperationException>(() =>
@@ -371,6 +392,14 @@ await Deny<UnauthorizedAccessException>("Deleted resource cannot be selected",
     resources: new FakeResourceReader((_, _, _, _) =>
         Task.FromResult<TrustedBranchResourceSnapshot?>(
             Resource(state: TrustedResourceState.Deleted))));
+await Deny<UnauthorizedAccessException>("Suspended branch cannot authorize resource",
+    resources: new FakeResourceReader((_, _, _, _) =>
+        Task.FromResult<TrustedBranchResourceSnapshot?>(
+            Resource(branchState: TrustedBranchState.Suspended))));
+await Deny<UnauthorizedAccessException>("Deactivated branch cannot authorize resource",
+    resources: new FakeResourceReader((_, _, _, _) =>
+        Task.FromResult<TrustedBranchResourceSnapshot?>(
+            Resource(branchState: TrustedBranchState.Deactivated))));
 await Deny<UnauthorizedAccessException>("Future-dated resource cannot be selected",
     resources: new FakeResourceReader((_, _, _, _) =>
         Task.FromResult<TrustedBranchResourceSnapshot?>(
@@ -419,6 +448,14 @@ await Deny<UnauthorizedAccessException>("Resource revision changed mid-request f
     resources: new FakeResourceReader((n, _, _, _) =>
         Task.FromResult<TrustedBranchResourceSnapshot?>(
             n == 1 ? goodResource : Resource(revision: 99))));
+await Deny<UnauthorizedAccessException>("Branch suspended mid-request fails",
+    resources: new FakeResourceReader((n, _, _, _) =>
+        Task.FromResult<TrustedBranchResourceSnapshot?>(
+            n == 1 ? goodResource : Resource(branchState: TrustedBranchState.Suspended))));
+await Deny<UnauthorizedAccessException>("Branch revision changed mid-request fails",
+    resources: new FakeResourceReader((n, _, _, _) =>
+        Task.FromResult<TrustedBranchResourceSnapshot?>(
+            n == 1 ? goodResource : Resource(branchRevision: 99))));
 await Deny<UnauthorizedAccessException>("Resource deleted mid-request fails",
     resources: new FakeResourceReader((n, _, _, _) =>
         Task.FromResult<TrustedBranchResourceSnapshot?>(
@@ -594,6 +631,11 @@ Expect<UnauthorizedAccessException>(() =>
     TenantBranchResourceScopeEvidence.FromTrustedInternalSnapshots(
         baseIdentity, Resource(state: TrustedResourceState.Deleted), goodGrant,
         actionRead, now), "Direct evidence constructor rejects deleted resource");
+Expect<UnauthorizedAccessException>(() =>
+    TenantBranchResourceScopeEvidence.FromTrustedInternalSnapshots(
+        baseIdentity, Resource(branchState: TrustedBranchState.Suspended),
+        goodGrant, actionRead, now),
+    "Direct evidence constructor rejects suspended branch");
 Expect<UnauthorizedAccessException>(() =>
     TenantBranchResourceScopeEvidence.FromTrustedInternalSnapshots(
         baseIdentity, goodResource, Grant(state: BranchGrantState.Revoked),
