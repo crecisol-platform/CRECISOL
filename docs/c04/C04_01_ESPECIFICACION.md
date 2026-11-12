@@ -6,6 +6,28 @@
 **Punto de partida:** C03 institucional certificado (10/10) mediante [PR #81](https://github.com/crecisol-platform/CRECISOL/pull/81) y [cierre verificable](https://github.com/crecisol-platform/CRECISOL/pull/81#issuecomment-6812682477), `dev` SHA `30c976e1db9add6ea00b07549c34f3c50d98dc31`, 6/6 CI PREMERGE aplicables y 17/17 CI POSTMERGE SUCCESS.  
 **Autoridad funcional:** único Word `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` y PDF de lectura con hashes de `docs/MASTER_REFERENCE.md`. [Plan técnico preliminar de 12 microfases](../planificacion-futura/C04_MICROFASES_PROPUESTAS.md). Esta especificación no modifica el Maestro ni convierte la propuesta de 12 filas en una norma nueva.
 
+## 0. Comprobación de fuente canónica — extracción ejecutada
+
+El runner real del PR #82 extrajo del único Word canónico el **capítulo 04** entre los párrafos técnicos `1735..1807`: `6 680` caracteres y SHA-256 del texto normalizado `95be2bb0210e108317e67bd08fb9b2899d33554e684bb2d9ae3c8eced6995058`. Es evidencia de lectura del Word, **no** certificación del capítulo.
+
+**Huellas integrales verificadas del Documento Maestro Único:**
+- Word SHA-256: `ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c`.
+- PDF SHA-256: `0dfd3217439760540390707ea8196d6252464a501a7fe3e6eafdc49eda39da77`.
+- Los blobs Git y la autoridad funcional se mantienen inalterados, según `docs/MASTER_REFERENCE.md`.
+
+**Trazabilidad directamente observada en el capítulo 04 del Word:** modalidad A (ruta bajo el dominio SaaS), modalidad B (subdominio de plataforma) y modalidad C (dominio propio del cliente); slug único con redirección canónica y reserva de nombres sensibles; creación conjunta de tenant, dueño, plan, contrato, dominio provisional y defaults de forma atómica o saga compensable; prohibición de publicar altas parciales; retry idempotente; login sin código de empresa; prohibición de confiar en `tenant_id` del navegador; filtrado tenant/sucursal en backend. La **implementación atómica** corresponde a C04-07, mientras que C04-01 sólo prepara el catálogo y su contrato seguro.
+
+| Requisito de fuente C04 | Relación acotada con C04-01 | Dependencia posterior |
+| --- | --- | --- |
+| Modalidades ruta, subdominio, dominio propio | `AddressClaim` documenta tipo y reserva; **sin activar DNS** | C04-04/07 |
+| Slug único / reserva de palabras sensibles | Identidad canónica y concurrencia planeadas; sin crear por `Host` | C04-04/07 |
+| Alta tenant + propietario + plan + contrato + defaults | Estados de `TenantRecord` y referencias comerciales separadas | C04-07 y C08 |
+| No publicar altas parciales / idempotencia | `LifecycleState` no equivale a acceso; transición segura prevista | C04-07/08 |
+| Login sin código empresa, `tenant_id` no confiable | Catálogo nunca otorga membresía o autorización | C04-05/06 |
+| Filtrado datos por tenant y sucursal | Identificadores opacos y denegación por defecto | C04-02/05/06/11 |
+
+**Límite de cotejo:** el auditor automatizado validó ubicación y contenido base del capítulo y el pin criptográfico; los demás requisitos normativos de la tabla de capítulo continúan sujetos a revisión línea por línea al autorizar la implementación, sin convertir este extracto en una sustitución del Word.
+
 ## 1. Objetivo, límite y responsabilidad
 
 **Objetivo único C04-01:** definir contratos, invariantes y pruebas para un catálogo **confiable y administrado desde backend** que distinga la identidad del tenant, su nombre, estado y referencias comerciales/de dominio **sin exponer detalles de infraestructura**. Ningún tenant debe nacer por recibir un `Host` arbitrario. Todas las altas, reservas, transiciones y asignaciones de ámbito deben pasar por autoridad administrativa explícita en etapas autorizadas.
