@@ -218,11 +218,13 @@ Expect<ArgumentNullException>(() =>
     "Resource snapshot cannot have null tenant");
 Expect<ArgumentNullException>(() =>
     TrustedBranchResourceSnapshot.RestoreFromTrustedResourceReader(
-        tenantA, null!, resourceA, actorA, TrustedResourceState.Active, 1, changed),
+        tenantA, null!, resourceA, actorA, TrustedBranchState.Active, 11, changed,
+        TrustedResourceState.Active, 1, changed),
     "Resource snapshot cannot have null branch");
 Expect<ArgumentNullException>(() =>
     TrustedBranchResourceSnapshot.RestoreFromTrustedResourceReader(
-        tenantA, branchA, null!, actorA, TrustedResourceState.Active, 1, changed),
+        tenantA, branchA, null!, actorA, TrustedBranchState.Active, 11, changed,
+        TrustedResourceState.Active, 1, changed),
     "Resource snapshot cannot have null resource ID");
 Expect<ArgumentNullException>(() =>
     TrustedBranchResourceSnapshot.RestoreFromTrustedResourceReader(
