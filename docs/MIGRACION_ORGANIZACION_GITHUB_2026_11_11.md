@@ -26,7 +26,7 @@ Se actualizaron exclusivamente `AGENTS.md`, `.agents/skills/crecisol-project-gov
 
 - El repositorio autorizado es `crecisol-platform/CRECISOL`; `dev` sigue siendo la rama de integración.
 - Se preservaron intencionalmente PR, SHA, URL y estados históricos sin reescribir sus afirmaciones originales.
-- No se editó `frontend/`, `backend/`, `database/`, `qa/` ni `.github/workflows/`.
+- En el primer corte no se editaron `frontend/`, `backend/`, `database/`, `qa/` ni `.github/workflows/`. La corrección posterior de `qa/c03_chapter_certification.py` se describe en la sección 8; frontend/backend/database/workflows permanecen intactos.
 - Los blobs Git de `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` (`fe7aaab60b603f1844e18666e2f99c0ea97e86e9`) y del PDF (`93c8412b2450e85a882b622e7a012477c61c2359`) coincidieron entre el SHA base y la rama de corrección. El Word/PDF y sus huellas documentadas no se alteraron.
 
 ## 3. Auditoría A — trazabilidad e integridad documental
@@ -70,3 +70,15 @@ Se evaluaron **18/18 aserciones estáticas** contra archivos obtenidos de la ram
 4. Rollback: no fusionar el PR, o revertir el merge documental si se detecta una regresión. Preservar actas históricas, blobs maestros, branches y evidencia de la transferencia.
 
 **Cierre de este registro:** control documental delimitado; **sin certificación integral del SaaS ni del capítulo C03**.
+
+## 8. Adenda correctiva — evidencia real de CI del PR #80
+
+**Antecedente:** GitHub Actions pudo iniciar runners estándar para el PR #80 sin contratar un plan. En el SHA inicial `38abecc0b96a66c407335c2d013263e79279a0e7`, Foundation y la auditoría del maestro comercial fueron SUCCESS; C03-07, C03-08, C03-10 y el gate C03 fueron FAILURE; 11 workflows fueron SKIPPED por condiciones de rutas/ramas. Ninguno de estos hechos constituye certificación de C03.
+
+**Corrección 1 (A/C, documentación, commit `407849c634d15a203cc00113b2ba4d4477bc94f6`):** la nota de transferencia agregada antes del encabezado histórico `**ESTADO VIGENTE:**` lo había desplazado fuera de las primeras siete líneas exigidas por `qa/c03_05_status.py`. Los logs de C03-07/08/10 reportaron `Active heading contradicts the locked C03 row`. Se reubicó la nota después del encabezado histórico, manteniendo ese estado inmutable y el bloqueo C04. Asimismo se añadió la referencia textual exacta `docs/ESTADO_VIGENTE_CAPITULOS.md`, exigida por el gate C03.
+
+**Corrección 2 (B, prueba negativa, commit `b849ea5197dab4356667111fe2b42abf4ad1fb36`):** en el acta histórica de C03 el SHA de baseline `5b7c963c310d4947519ce4c8959568f8ad02143f` aparece dos veces. El escenario adversarial `forged base` mutaba solo una aparición y no podía demostrar el rechazo de evidencia falsificada por completo. Se fortaleció exclusivamente el fixture en `qa/c03_chapter_certification.py`, usando `acta.replace(BASE, "0" * 40)` para invalidar **todas** sus apariciones, en lugar de modificar solamente la primera. No se alteró el acta, ni el contrato de validación, ni se desactivaron pruebas.
+
+**Auditoría A (trazabilidad):** modificaciones de PR limitadas a referencias del repositorio CRECISOL, al encabezado del plan y al fixture adversarial; contenido histórico y maestro Word/PDF preservados. **Auditoría B (seguridad):** no hay secretos, autorización debilitada ni despliegues; la mutación negativa es más exhaustiva. **Auditoría C (ejecución):** logs reales inspeccionados de los runs `43135261853`, `43135261829`, `43135261726`, `43135261665` y `43135792841`. La suite C03-07 llegó a ejecutar pruebas con .NET 10 y MySQL 8.4 antes del bloqueo documental. Las ejecuciones posteriores de los commits de corrección deben revisarse por separado; no se afirma SUCCESS para ellas hasta confirmación en GitHub.
+
+**Estado y riesgos:** PR #80 en borrador; `dev` y `main` no modificadas por este PR. La ejecución anterior del commit de `dev`, run `43097016405`, sigue en `queued` sin resultado. El ticket de soporte `#4991772` aparece `Cerrado` en captura del propietario, pero la respuesta y justificación de cierre no están verificadas. Se debe solicitar reapertura o escalamiento si permanece bloqueada. No corresponde contratar GitHub Team para solventar estos errores.
