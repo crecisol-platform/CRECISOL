@@ -67,7 +67,7 @@ jobs:
           dotnet run --no-build -c Release --project backend/tests/Crecisol.SharedTenancy.ContractsTests/Crecisol.SharedTenancy.ContractsTests.csproj
           dotnet run -c Release --project backend/tests/Crecisol.TenantCatalog.ContractsTests/Crecisol.TenantCatalog.ContractsTests.csproj
           printf 'PASS dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-02-impl-proof/dotnet
-      - name: 'MySQL 8.4 application SQL: DDL, positives and 9 negative attacks'
+      - name: 'MySQL 8.4 application SQL: DDL, ownership immutability and negative attacks'
         run: bash database/tests/c04_02_application_schema_smoke.sh
       - name: 'MySQL 8.4 with .NET10: read-only authorized scope and A/B boundary'
         run: |
