@@ -56,7 +56,7 @@ eq "B predicate excludes A branch" "0" "$(sql "SELECT COUNT(*) FROM c04_resource
 eq "unscoped SELECT IS unsafe: returns both" "2" "$(sql "SELECT COUNT(*) FROM c04_resources")"
 reject "A resource in B branch" "INSERT INTO c04_resources (tenant_id,branch_id,resource_id,external_key) VALUES (X'$A',X'$BBR',X'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA','wrong')"
 reject "B event bound to A resource" "INSERT INTO c04_resource_events (tenant_id,branch_id,resource_id,event_id,event_kind) VALUES (X'$B',X'$ABR',X'$ITEM',X'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',1)"
-reject "cross-tenant resource reparent" "UPDATE c04_resources SET tenant_id=X'$B' WHERE tenant_id=X'$A' AND branch_id=X'$ABR' AND resource_id=X'$ITEM'"
+expect_immutable "cross-tenant resource reparent" "UPDATE c04_resources SET tenant_id=X'$B' WHERE tenant_id=X'$A' AND branch_id=X'$ABR' AND resource_id=X'$ITEM'"
 reject "restrict delete event parent" "DELETE FROM c04_resources WHERE tenant_id=X'$A' AND branch_id=X'$ABR' AND resource_id=X'$ITEM'"
 reject "same-scope external key duplicate" "INSERT INTO c04_resources (tenant_id,branch_id,resource_id,external_key) VALUES (X'$A',X'$ABR',X'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC','shared')"
 reject "unknown tenant" "INSERT INTO c04_branches (tenant_id,branch_id,display_label) VALUES (X'DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD',X'$ABR','Unknown')"
