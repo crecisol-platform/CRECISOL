@@ -18,6 +18,18 @@ trap cleanup EXIT
 sql() { docker exec "$CONTAINER" mysql -uroot --batch --skip-column-names -D "$DB" -e "$1"; }
 eq() { local name="$1" want="$2" got="$3"; if [ "$want" != "$got" ]; then echo "FAIL $name: expected $want got $got" >&2; exit 1; fi; positive=$((positive+1)); echo "PASS $name"; }
 reject() { local name="$1" statement="$2" result; if result=$(sql "$statement" 2>&1); then echo "FAIL accepted: $name" >&2; exit 1; fi; case "$result" in *"ERROR 1452"*|*"ERROR 1451"*|*"ERROR 1062"*|*"ERROR 3819"*|*"ERROR 1048"*) ;; *) echo "FAIL unexpected error $name: $result" >&2; exit 1 ;; esac; negative=$((negative+1)); echo "PASS rejected $name"; }
+expect_immutable() {
+  local label="$1" statement="$2" result
+  if result=$(sql "$statement" 2>&1); then
+    echo "FAIL C04-02 IMMUTABILITY: accepted $label" >&2; exit 1
+  fi
+  case "$result" in
+    *"ERROR 1644"*) ;;
+    *) echo "FAIL C04-02 wrong immutability denial ($label): $result" >&2; exit 1 ;;
+  esac
+  negative=$((negative+1))
+  echo "PASS immutable ownership rejected: $label"
+}
 docker run --rm -d --network none --name "$CONTAINER" -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -e MYSQL_DATABASE="$DB" "$IMAGE" >/dev/null
 ready=0
 boot=0
@@ -51,4 +63,26 @@ reject "unknown tenant" "INSERT INTO c04_branches (tenant_id,branch_id,display_l
 reject "zero tenant" "INSERT INTO c04_tenants (tenant_id,lifecycle_state) VALUES (X'$ZERO',3)"
 reject "invalid state" "INSERT INTO c04_tenants (tenant_id,lifecycle_state) VALUES (X'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE',9)"
 reject "zero branch" "INSERT INTO c04_branches (tenant_id,branch_id,display_label) VALUES (X'$A',X'$ZERO','Zero branch')"
+# A composite FK validates references but DOES NOT, by itself, forbid an
+# UPDATE to another existing parent. These changes are valid without triggers.
+eq "five ownership and append-only triggers" "5" "$(sql "SELECT COUNT(*) FROM information_schema.triggers WHERE trigger_schema=DATABASE() AND trigger_name LIKE 'trg_c04_%'")"
+sql "INSERT INTO c04_branches (tenant_id,branch_id,display_label) VALUES (X'$A',X'77777777777777777777777777777777','A vacant branch')"
+sql "INSERT INTO c04_resources (tenant_id,branch_id,resource_id,external_key) VALUES (X'$A',X'$ABR',X'99999999999999999999999999999999','a-transfer-target')"
+sql "INSERT INTO c04_tenants (tenant_id,lifecycle_state) VALUES (X'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',3)"
+expect_immutable "resource A to EXISTING B tenant and branch with no colliding ID" \
+  "UPDATE c04_resources SET tenant_id=X'$B',branch_id=X'$BBR' WHERE tenant_id=X'$A' AND branch_id=X'$ABR' AND resource_id=X'99999999999999999999999999999999'"
+expect_immutable "resource within tenant A to another VALID branch" \
+  "UPDATE c04_resources SET branch_id=X'77777777777777777777777777777777' WHERE tenant_id=X'$A' AND branch_id=X'$ABR' AND resource_id=X'99999999999999999999999999999999'"
+expect_immutable "empty A branch to EXISTING B tenant" \
+  "UPDATE c04_branches SET tenant_id=X'$B' WHERE tenant_id=X'$A' AND branch_id=X'77777777777777777777777777777777'"
+expect_immutable "tenant ID rekey without any dependent rows" \
+  "UPDATE c04_tenants SET tenant_id=X'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB' WHERE tenant_id=X'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'"
+expect_immutable "event to existing foreign tenant/resource" \
+  "UPDATE c04_resource_events SET tenant_id=X'$B',branch_id=X'$BBR' WHERE tenant_id=X'$A' AND branch_id=X'$ABR' AND resource_id=X'$ITEM' AND event_id=X'$EV'"
+expect_immutable "append-only event content update" \
+  "UPDATE c04_resource_events SET event_kind=2 WHERE tenant_id=X'$A' AND branch_id=X'$ABR' AND resource_id=X'$ITEM' AND event_id=X'$EV'"
+expect_immutable "append-only event deletion" \
+  "DELETE FROM c04_resource_events WHERE tenant_id=X'$A' AND branch_id=X'$ABR' AND resource_id=X'$ITEM' AND event_id=X'$EV'"
+eq "A remains owner after denied valid-target reparent" "1" "$(sql "SELECT COUNT(*) FROM c04_resources WHERE tenant_id=X'$A' AND branch_id=X'$ABR' AND resource_id=X'99999999999999999999999999999999'")"
+eq "event remains append-only after denied deletion" "1" "$(sql "SELECT COUNT(*) FROM c04_resource_events WHERE tenant_id=X'$A' AND branch_id=X'$ABR' AND resource_id=X'$ITEM' AND event_id=X'$EV'")"
 echo "PASS C04-02 APPLICATION DDL: $positive positive and $negative negative checks; NO application auth certified."
