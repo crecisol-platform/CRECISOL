@@ -12,7 +12,7 @@ C04-01 fue certificada **solo en alcance de contratos Domain/Application**, sin 
 
 | Archivo nuevo | Responsabilidad | Límite |
 | --- | --- | --- |
-| `database/c04_02_shared_schema.sql` | Tablas `c04_tenants`, `c04_branches`, `c04_resources`, `c04_resource_events`; PK/FK compuestas; `UNIQUE` por tenant+sucursal; `RESTRICT` | DDL aplicable solo a base nueva desechable, no migration `up` de bases existentes |
+| `database/c04_02_shared_schema.sql` | Tablas `c04_tenants`, `c04_branches`, `c04_resources`, `c04_resource_events`; PK/FK compuestas, `UNIQUE` scoped, `RESTRICT`, triggers que impiden reasignar ownership hacia otros padres VÁLIDOS y bloquean UPDATE/DELETE de eventos | DDL aplicable solo a base nueva desechable, no migration `up` de bases existentes |
 | `backend/src/Crecisol.Application/Tenancy/ReadSharedTenantResource.cs` | Puerto que resuelve un ámbito autorizado **antes** de leer; actor sin permiso = denegación; valida resultado contra tenant, branch e ID | No acepta tenant ni branch de request; no registra resolvedor productivo |
 | `backend/src/Crecisol.Infrastructure/Tenancy/MySqlRfc4122Guid.cs` | Conversión UUID↔`BINARY(16)` con orden RFC 4122 y rechazo de GUID cero/longitud incorrecta | Sin normalización implícita de orden de bytes |
 | `backend/src/Crecisol.Infrastructure/Tenancy/MySqlSharedTenantResourceReader.cs` | `SELECT` parametrizado por `tenant_id`, `branch_id`, `resource_id`; salida validada; sin fallback ni SQL dinámico | DSN suministrado solo por backend confiable; nunca desde navegador |
@@ -26,14 +26,14 @@ C04-01 fue certificada **solo en alcance de contratos Domain/Application**, sin 
 
 1. Un GUID, host, slug, cookie o cabecera nunca es permiso. `IAuthorizedSharedReadScopeResolver` devolverá un ámbito solamente tras verificar identidad, membresía, acción, sucursal y, para datos privados, propiedad del recurso. Su implementación REAL permanece pendiente de C04-05/06; ningún endpoint la usa hoy.
 2. El caso de uso no acepta parámetros tenant/sucursal del cliente y deniega antes de consultar si no hay ámbito autorizado. Aunque un adaptador malicioso devuelva otro tenant, branch o recurso, la respuesta se rechaza.
-3. La SQL filtra expresamente los tres IDs en `WHERE` y utiliza parámetros binarios. Se verifica contra dos tenants con identificadores de sucursal/recurso repetidos. La PK/FK no evita un `SELECT` sin predicado: queda documentado, sin atribuir row-level security a MySQL.
+3. La SQL filtra expresamente los tres IDs en `WHERE` y utiliza parámetros binarios. Se verifica contra dos tenants con identificadores de sucursal/recurso repetidos. La PK/FK NO impide por sí sola un UPDATE hacia un tenant/sucursal destino VÁLIDO; por eso el esquema tiene cinco triggers de identidad inmutable/bitácora append-only, probados con ataques SQLSTATE 45000 (ERROR 1644). Las FK tampoco evitan un `SELECT` sin predicado: queda documentado, sin atribuir row-level security a MySQL.
 4. La prueba del lector usa credenciales creadas solo en CI, `GRANT SELECT` sobre `c04_resources` exclusivamente. No puede actualizar, borrar, eliminar tablas ni enumerar el catálogo. Se destruye el contenedor al finalizar, con acceso a puerto aleatorio vinculado a `127.0.0.1`.
 5. No se añaden permisos SuperAdmin, escritura de datos, modelos de negocio, router dedicated, archivos/Cloudflare, cachés, colas, backups o migraciones sobre tablas C01/C03. Esas superficies permanecen separadamente bloqueadas.
 
 ## 4. Tres auditorías, evidencia y puerta de salida
 
 - **A / normativa:** Word/PDF y SHA exacto; 72 párrafos y contenido `FK compuestas con tenant`; correspondencia C04-02 con la planificación; diff solo en su alcance; reversibilidad.
-- **B / seguridad:** mutaciones adversariales individuales del DDL, contrato, SQL y runner; pruebas A→B/B→A y branch; autorizador ausente/error/cancelación; permisos SQL mínimos y prohibición de rutas privadas no autorizadas.
+- **B / seguridad:** mutaciones adversariales individuales del DDL, triggers, contrato, SQL y runner; pruebas A→B/B→A hacia destinos inexistentes **y existentes**, branch, evento append-only; autorizador ausente/error/cancelación; permisos SQL mínimos y prohibición de rutas privadas no autorizadas.
 - **C / ingeniería:** .NET 10 compilado realmente, MySqlConnector existente 2.6.2 sin paquetes nuevos, pruebas de RFC4122 y MySQL 8.4 en runner; evidencias A/B/.NET/MySQL mismo SHA/run; índices, regresiones C03/C04-01 y CI PREMERGE/POSTMERGE al integrar.
 
 **NO_GO:** si falla algo obligatorio, no hay PR listo, integración, certificación ni paso a C04-03. Los resultados históricos fallidos permanecen en GitHub, corregidos solo mediante nuevas ejecuciones y SHAs.
