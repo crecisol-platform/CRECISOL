@@ -23,7 +23,7 @@ Documento Maestro Único `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` SHA-256 `e
 
 ## 3. Tres auditorías y pruebas reales — PREMERGE
 
-**HEAD técnico** `4b3b82311...` [SHA exacto: `4b3b82a4884e27b5ab09eb6ebc03bb6e6a3d308f`]. **5/5 workflows aplicables SUCCESS**; tres `skipped` condicionales nunca contados como PASS.
+**HEAD técnico** `4b3b82a4884e27b5ab09eb6ebc03bb6e6a3d308f`. **5/5 workflows aplicables SUCCESS**; tres `skipped` condicionales nunca contados como PASS.
 
 | Gate PREMERGE | Run real | Resultado |
 | --- | --- | --- |
