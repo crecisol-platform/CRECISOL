@@ -41,6 +41,12 @@ MARKERS = {
         "CONSTRAINT fk_c04_event_resource FOREIGN KEY (tenant_id, branch_id, resource_id)",
         "ON DELETE RESTRICT ON UPDATE RESTRICT",
         "ENGINE=InnoDB",
+        "CREATE TRIGGER trg_c04_tenant_identity_immutable",
+        "CREATE TRIGGER trg_c04_branch_ownership_immutable",
+        "CREATE TRIGGER trg_c04_resource_ownership_immutable",
+        "CREATE TRIGGER trg_c04_event_append_only_update",
+        "CREATE TRIGGER trg_c04_event_append_only_delete",
+        "SIGNAL SQLSTATE '45000'",
     ),
     "app": (
         "ResolveForCurrentActorAsync(cancellationToken);",
@@ -93,6 +99,17 @@ MARKERS = {
         "trap cleanup EXIT",
         "no API, router or deployment",
     ),
+    "smoke": (
+        'expect_immutable "resource A to EXISTING B tenant and branch with no colliding ID"',
+        'expect_immutable "resource within tenant A to another VALID branch"',
+        'expect_immutable "empty A branch to EXISTING B tenant"',
+        'expect_immutable "tenant ID rekey without any dependent rows"',
+        'expect_immutable "event to existing foreign tenant/resource"',
+        'expect_immutable "append-only event content update"',
+        'expect_immutable "append-only event deletion"',
+        "ERROR 1644",
+        "A remains owner after denied valid-target reparent",
+    ),
     "workflow": (
         "dotnet-version: '10.0.x'",
         "backend/tests/Crecisol.SharedTenancy.ContractsTests/Crecisol.SharedTenancy.ContractsTests.csproj",
@@ -123,6 +140,10 @@ def guard(files: dict[str, str]) -> None:
     ddl = files["ddl"]
     need(ddl.count("CREATE TABLE c04_") == 4, "Only four C04 SHARED tables allowed")
     need(ddl.count("FOREIGN KEY") == 3, "Three scoped FKs required")
+    need(ddl.count("CREATE TRIGGER") == 5,
+         "Five immutable identity/history triggers required")
+    need(ddl.count("SIGNAL SQLSTATE '45000'") == 5,
+         "Every ownership/history mutation must fail with SQLSTATE 45000")
     need(ddl.count("ON DELETE RESTRICT ON UPDATE RESTRICT") == 3,
          "No cascade or cross-tenant reparenting")
     need("FOREIGN_KEY_CHECKS=0" not in ddl, "FK enforcement must remain active")
