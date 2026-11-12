@@ -66,7 +66,7 @@ var revoked = Binding(tenantA, hostA, TenantAddressMode.Subdomain,
 Check(!pending.IsVerifiedAt(now), "Pending cannot authorize a routing hint");
 Check(!suspended.IsVerifiedAt(now), "Suspended cannot authorize a routing hint");
 Check(!revoked.IsVerifiedAt(now), "Revoked cannot authorize a routing hint");
-Check(!verifiedA.IsVerifiedAt(verifiedAt.AddMinutes(1)) == false,
+Check(verifiedA.IsVerifiedAt(verifiedAt.AddMinutes(1)),
     "Verification evidence valid after first minute");
 var futureAt = verifiedAt.AddDays(4);
 var future = Binding(tenantA, hostA, TenantAddressMode.Subdomain,
