@@ -1,0 +1,57 @@
+name: CRECISOL C04-02 shared tenant FK preparation A-B-C MySQL8.4
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'database/tests/fixtures/c04_02_*.sql'
+      - 'database/tests/c04_02_*.sh'
+      - 'qa/c04_02_*.py'
+      - 'docs/c04/C04_02_*'
+      - 'docs/ESTADO_VIGENTE_CAPITULOS.md'
+      - '.github/workflows/c04-02-preparation.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'database/tests/fixtures/c04_02_*.sql'
+      - 'database/tests/c04_02_*.sh'
+      - 'qa/c04_02_*.py'
+      - 'docs/c04/C04_02_*'
+      - 'docs/ESTADO_VIGENTE_CAPITULOS.md'
+      - '.github/workflows/c04-02-preparation.yml'
+permissions:
+  contents: read
+jobs:
+  c04-02-shared-preparation:
+    name: C04-02 actual MySQL8.4 FK isolation + A-B-C
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout without token persistence
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: A - pinned normative Word and previous microphase regression
+        run: |
+          test ! -e .c04-02-prep-proof
+          python3 -m py_compile qa/c04_02_preparation_audits.py
+          bash -n database/tests/c04_02_shared_integrity_smoke.sh
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c04_01_normative_inventory.py verify
+          python3 qa/c04_01_preparation_audits.py A
+          python3 qa/c04_01_contracts_audits.py A
+          python3 qa/c04_02_preparation_audits.py A
+          mkdir -p .c04-02-prep-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-02-prep-proof/A
+      - name: B - reject cross-tenant and dangerous relational mutations
+        run: |
+          python3 qa/c04_01_preparation_audits.py B
+          python3 qa/c04_01_contracts_audits.py B
+          python3 qa/c04_02_preparation_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-02-prep-proof/B
+      - name: Real MySQL 8.4 isolated fixture with positive/negative SQL tests
+        run: |
+          bash database/tests/c04_02_shared_integrity_smoke.sh
+          printf 'PASS mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-02-prep-proof/mysql
+      - name: C - verify A/B/MySQL identity and no runtime tenant activation
+        run: python3 qa/c04_02_preparation_audits.py C
