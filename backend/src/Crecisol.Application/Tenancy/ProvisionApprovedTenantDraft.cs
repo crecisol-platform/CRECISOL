@@ -21,6 +21,9 @@ public interface ITrustedTenantProvisioningPlanReader
 /// it MUST read back and compare the FULL immutable intent fingerprint, actor,
 /// tenant, key, mode and committed Draft row under lock; conflicting replay
 /// MUST fail. It must check current approval under the SAME transaction.
+/// When InnoDB chooses a deadlock/lock-timeout victim (1213/1205), future
+/// adapters should retry the SAME immutable plan with a bounded backoff after
+/// rollback, never retry semantic mismatches or turn 1644 into success.
 /// It MUST NOT use insert-ignore, mutate existing rows, or publish Active.
 /// No production adapter exists in C04-07.
 /// </summary>
