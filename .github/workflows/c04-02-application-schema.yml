@@ -1,0 +1,45 @@
+name: CRECISOL C04-02 application schema MySQL 8.4
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'database/c04_02_shared_schema.sql'
+      - 'database/tests/c04_02_application_schema_smoke.sh'
+      - 'docs/c04/C04_02_IMPLEMENTACION_ESQUEMA_SHARED.md'
+      - '.github/workflows/c04-02-application-schema.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'database/c04_02_shared_schema.sql'
+      - 'database/tests/c04_02_application_schema_smoke.sh'
+      - 'docs/c04/C04_02_IMPLEMENTACION_ESQUEMA_SHARED.md'
+      - '.github/workflows/c04-02-application-schema.yml'
+permissions:
+  contents: read
+jobs:
+  application-schema:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout no credential persistence
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: A source and schema syntax
+        run: |
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c04_01_normative_inventory.py verify
+          bash -n database/tests/c04_02_application_schema_smoke.sh
+          python3 qa/c04_02_preparation_audits.py A
+      - name: B adversarial preparation regression
+        run: |
+          python3 qa/c04_02_preparation_audits.py B
+      - name: MySQL 8.4 application DDL: real positive and negative attacks
+        run: bash database/tests/c04_02_application_schema_smoke.sh
+      - name: C explicit scope guard
+        run: |
+          test -f database/c04_02_shared_schema.sql
+          test -f docs/c04/C04_02_IMPLEMENTACION_ESQUEMA_SHARED.md
+          ! grep -Eiq 'CREATE[[:space:]]+USER|GRANT[[:space:]]+ALL|SET[[:space:]]+FOREIGN_KEY_CHECKS[[:space:]]*=[[:space:]]*0' database/c04_02_shared_schema.sql
+          echo 'PASS: DDL real exercised. Auth, adapter and production still blocked; this workflow alone never certifies C04-02.'
