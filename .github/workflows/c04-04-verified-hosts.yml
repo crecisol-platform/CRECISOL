@@ -1,0 +1,72 @@
+name: CRECISOL C04-04 verified-host A-B-C .NET10 hostile headers
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/VerifiedTenantHost.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/ResolveVerifiedTenantHost.cs'
+      - 'backend/src/Crecisol.Api/Configuration/StrictVerifiedHostTransport.cs'
+      - 'backend/tests/Crecisol.VerifiedHosts.ContractsTests/**'
+      - 'qa/c04_04_hosts_audits.py'
+      - 'docs/c04/C04_04_*'
+      - '.github/workflows/c04-04-verified-hosts.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/VerifiedTenantHost.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/ResolveVerifiedTenantHost.cs'
+      - 'backend/src/Crecisol.Api/Configuration/StrictVerifiedHostTransport.cs'
+      - 'backend/tests/Crecisol.VerifiedHosts.ContractsTests/**'
+      - 'qa/c04_04_hosts_audits.py'
+      - 'docs/c04/C04_04_*'
+      - '.github/workflows/c04-04-verified-hosts.yml'
+permissions:
+  contents: read
+jobs:
+  c04-04-verified-hosts:
+    name: C04-04 DNS host boundaries, lifecycle, spoofed Forwarded, .NET10
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout source read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: A canonical Word, source scope and no private routing
+        run: |
+          test ! -e .c04-04-host-proof
+          python3 -m py_compile qa/c04_04_hosts_audits.py
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c04_01_normative_inventory.py verify
+          python3 qa/c04_01_contracts_audits.py A
+          python3 qa/c04_02_implementation_audits.py A
+          python3 qa/c04_03_contracts_audits.py A
+          python3 qa/c04_04_hosts_audits.py A
+          mkdir -p .c04-04-host-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-04-host-proof/A
+      - name: B mutations for DNS, Forwarded, ambiguity and cross-tenant
+        run: |
+          python3 qa/c04_01_contracts_audits.py B
+          python3 qa/c04_02_implementation_audits.py B
+          python3 qa/c04_03_contracts_audits.py B
+          python3 qa/c04_04_hosts_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-04-host-proof/B
+      - name: Install approved .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build API and C04-04 security tests Release with warnings as errors
+        run: |
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.VerifiedHosts.ContractsTests/Crecisol.VerifiedHosts.ContractsTests.csproj -c Release --nologo -warnaserror
+      - name: Execute .NET10 hostile HTTP host and lifecycle tests and regressions
+        run: |
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.VerifiedHosts.ContractsTests/Crecisol.VerifiedHosts.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantStorage.ContractsTests/Crecisol.TenantStorage.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantCatalog.ContractsTests/Crecisol.TenantCatalog.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.SharedTenancy.ContractsTests/Crecisol.SharedTenancy.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj
+          printf 'PASS dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-04-host-proof/dotnet
+      - name: C same-run SHA/run and Clean Architecture gate
+        run: python3 qa/c04_04_hosts_audits.py C
