@@ -1,9 +1,11 @@
 ---
 name: crecisol-project-governance
-description: "Gobernanza técnica exclusiva del repositorio privado CRECISOL. Aplicar antes de analizar, programar, documentar, probar, auditar o publicar cualquier cambio de CRECISOL: valida alcance, Documento Maestro Único, secuencia de 37 capítulos, aislamiento multitenant, seguridad, calidad, arquitectura frontend/backend/database y evidencia. Rechaza toda escritura a SOLQARYN."
+description: "Gobernanza técnica exclusiva del repositorio CRECISOL. Aplicar antes de analizar, programar, documentar, probar, auditar o publicar cualquier cambio de CRECISOL: valida alcance, Documento Maestro Único, secuencia de 37 capítulos, aislamiento multitenant, seguridad, calidad, arquitectura frontend/backend/database y evidencia. Rechaza toda escritura a SOLQARYN."
 ---
 
 # CRECISOL · Gobierno técnico propio
+
+**Ubicación vigente verificada (11-11-2026):** `crecisol-platform/CRECISOL`, ID `1450414592`, rama `dev`. Las rutas antiguas en decisiones históricas no autorizan nuevas escrituras. Ver `docs/MIGRACION_ORGANIZACION_GITHUB_2026_11_11.md`. PR #79 fusionado; CI POSTMERGE en cola, por lo que C03 no está certificado efectivamente y C04 sigue bloqueado. Sin alteraciones a SOLQARYN ni producción.
 
 ## Precedencia posterior autorizada — C03-10, 11-11-2026
 
@@ -18,7 +20,7 @@ El propietario comunicó después de la decisión autónoma de esta misma fecha 
 
 
 ## 1. Identidad y bloqueo de alcance
-- Proyecto: CRECISOL. Repositorio autorizado: solqaryn-platform/CRECISOL. Nunca presumir equivalencia con solqaryn/Solqaryn.
+- Proyecto: CRECISOL. Repositorio autorizado: crecisol-platform/CRECISOL. Nunca presumir equivalencia con solqaryn/Solqaryn.
 - SOLQARYN: referencia institucional y, si se autoriza, únicamente consulta. Está terminantemente prohibido editar, crear PR, comentar, configurar automatizaciones o ejecutar comandos de escritura en SOLQARYN.
 - Este archivo fue redactado exclusivamente para CRECISOL, no es una copia de la Skill de SOLQARYN.
 - Alcance de esta etapa: código, pruebas y documentación locales o en el repositorio CRECISOL; no VPS, DNS, despliegues, datos productivos ni cobros reales.

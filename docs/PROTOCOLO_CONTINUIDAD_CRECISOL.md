@@ -1,5 +1,7 @@
 # CRECISOL · Protocolo de continuidad autónoma — ejecutor único con guardas SHA
 
+**ACTUALIZACIÓN DE UBICACIÓN (11-11-2026):** único repositorio autorizado `crecisol-platform/CRECISOL` (ID `1450414592`, rama `dev`). El anterior `solqaryn-platform/CRECISOL` aparece únicamente por su contexto histórico: prohibidas nuevas escrituras allí. [Acta de migración](MIGRACION_ORGANIZACION_GITHUB_2026_11_11.md). El gate CI del PR #79 continúa en cola; C03 sin certificación efectiva, C04 bloqueado. No tocar SOLQARYN ni servicios productivos.
+
 **REGISTRO POSTERIOR DE ESTADO (11-11-2026):** La aceptación del propietario habilita certificar C03 solo tras CI real del acta nueva. Ver [registro prospectivo](ESTADO_VIGENTE_CAPITULOS.md): C03 CERTIFICADO 10/10 y 3/37 efectivos al cumplirse PREMERGE, merge a dev y POSTMERGE; C04-01 habilitada solo para preparación. Las declaraciones siguientes de C03 NO CERTIFICADO y C04 BLOQUEADO son capturas históricas preservadas, NO una revocación de la certificación posterior.
 
 **ESTADO GLOBAL VIGENTE — C03-10 (11-11-2026):** 2/37 capítulos certificados (C01 y C02); C03-01..09 certificadas en sus respectivos alcances, C03-09 con certificación autónoma documentada y código integrado a dev; C03-10 CERRADA TÉCNICAMENTE (A/B/C y CI POSTMERGE 16/16), C03 NO CERTIFICADO, C04 BLOQUEADO. El propietario ha habilitado GitHub Actions automáticos en CRECISOL público para este intento; ver DECISION_OPERATIVA_2026-11-11_RETORNO_CI_C03.md. El registro antiguo siguiente es histórico y no prevalece.
