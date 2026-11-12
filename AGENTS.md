@@ -1,5 +1,7 @@
 # Agentes y colaboradores — CRECISOL
 
+**UBICACIÓN OPERATIVA VIGENTE (11-11-2026):** repositorio original ID `1450414592`, ahora `crecisol-platform/CRECISOL` (rama `dev`). [Registro de migración](docs/MIGRACION_ORGANIZACION_GITHUB_2026_11_11.md). El propietario anterior solo figura como origen histórico y no autoriza nuevos cambios. El gate de C03 tras PR #79 sigue en cola (`43097016405`): **C03 NO CERTIFICADO; C04 BLOQUEADO**. No escribir a SOLQARYN.
+
 **NUEVA AUTORIDAD DE ESTADO (11-11-2026):** Consultar [docs/ESTADO_VIGENTE_CAPITULOS.md](docs/ESTADO_VIGENTE_CAPITULOS.md) y [acta integral C03](docs/c03/C03_CERTIFICACION_INTEGRAL_2026_11_11.md). Por aceptación expresa y tras la nueva CI PRE/POSTMERGE, C03 se declara CERTIFICADO (10/10), 3/37; C04 habilitado solo para preparar C04-01. Los estados más antiguos del presente archivo se mantienen literalmente como historial para no falsear sus auditorías. Sin desplegar ni ejecutar Cloudflare, DNS, pagos o SOLQARYN.
 
 **ACTUALIZACIÓN POSTERIOR DEL PROPIETARIO (11-11-2026, C03-10):** CRECISOL ahora es público y se autoriza el intento de restituir GitHub Actions automáticos para auditar C03-10. Aplicar [decisión prospectiva CI](docs/DECISION_OPERATIVA_2026-11-11_RETORNO_CI_C03.md) antes de la decisión previa que no dependía de Actions. A/B/C y evidencia real siguen siendo obligatorias; nada autoriza despliegues, producción, pagos o escrituras a SOLQARYN.
@@ -9,7 +11,7 @@
 **DECISIÓN OPERATIVA DEL PROPIETARIO (11-11-2026):** Gobierno autónomo SIN dependencia de GitHub Actions y SIN PC del propietario. Leer antes de actuar [decisión sin Actions](docs/DECISION_OPERATIVA_2026-11-11_AUTONOMIA_SIN_GITHUB_ACTIONS.md). GitHub se usa exclusivamente para alojar y versionar código/documentos. El asistente programa, revisa, audita, aprueba y decide certificaciones con evidencia real suficiente y tres auditorías A/B/C más estrictas. **No exigir CI PREMERGE/POSTMERGE, PR, un runner GitHub ni firma humana nueva como gate**. Este cambio es prospectivo: no reescribir actas ni afirmar pruebas no realizadas, no saltarse P0/P1 ni certificar runtime imposible de verificar. Ningún trabajo asíncrono ni despliegue queda autorizado.
 
 
-1. Alcance permitido: **solqaryn-platform/CRECISOL** exclusivamente. Nunca escribir en **solqaryn/Solqaryn** ni en su Skill.
+1. Alcance permitido: **crecisol-platform/CRECISOL** exclusivamente. Nunca escribir en **solqaryn/Solqaryn** ni en su Skill.
 2. Cargar primero .agents/skills/crecisol-project-governance/SKILL.md y los documentos que indique; atender la referencia al Documento Maestro Único en docs/MASTER_REFERENCE.md.
 3. Verificar repositorio, rama, diff actual y permisos antes de editar. Si main carece de protección, priorizar PR en dev y no asumir protección.
 4. No desplegar a VPS, dominios, Cloudflare, servicios externos ni configurar cobros en la etapa de código local.
