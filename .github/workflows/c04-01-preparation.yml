@@ -1,0 +1,45 @@
+name: CRECISOL C04-01 preparacion catalogo tenants A-B-C
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/C04_PREPARACION.md'
+      - 'docs/c04/C04_01_*'
+      - 'qa/c04_01_preparation_audits.py'
+      - '.github/workflows/c04-01-preparation.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/C04_PREPARACION.md'
+      - 'docs/c04/C04_01_*'
+      - 'qa/c04_01_preparation_audits.py'
+      - '.github/workflows/c04-01-preparation.yml'
+permissions:
+  contents: read
+jobs:
+  c04-01-preparation:
+    name: C04-01 source and A-B-C preparatory controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout read-only without persisted token
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Audit A canonical Word chapter source and C03 gate
+        run: |
+          test ! -e .c04-01-prep-proof
+          python3 -m py_compile qa/c04_01_preparation_audits.py
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c03_10_integral_audits.py A
+          python3 qa/c04_01_preparation_audits.py source
+          python3 qa/c04_01_preparation_audits.py A
+          mkdir -p .c04-01-prep-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-01-prep-proof/A
+      - name: Audit B reject falsified tenancy preparation boundaries
+        run: |
+          python3 qa/c04_01_preparation_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-01-prep-proof/B
+      - name: Audit C same-run evidence and no tenant private activation
+        run: python3 qa/c04_01_preparation_audits.py C
