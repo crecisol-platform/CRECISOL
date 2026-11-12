@@ -1,7 +1,8 @@
 # CRECISOL — Registro de estado vigente y certificaciones de capítulos
 
 **Fecha de decisión:** 11 de noviembre de 2026, Honduras.
-**Repositorio único:** solqaryn-platform/CRECISOL. **Rama de integración:** dev.
+**Repositorio único vigente:** crecisol-platform/CRECISOL, ID `1450414592`. **Rama de integración:** dev.
+**Verificación posterior a la transferencia (11-11-2026):** PR #79 fusionado en `833d82d6b0293bf556e4d493685afdbc1fac7e0e`, pero CI POSTMERGE `queued`, run `43097016405` (sin trabajos iniciados). Reporte a GitHub Support enviado, sin número confirmado. **No se cumplen todavía las condiciones de efectividad: C03 NO CERTIFICADO; C04 BLOQUEADO.** El traslado no constituye prueba ni certificación. [Registro de migración](MIGRACION_ORGANIZACION_GITHUB_2026_11_11.md).
 **Jerarquía:** Documento Maestro Único vigente y sus hashes siguen siendo autoridad FUNCIONAL; este registro solo es autoridad del ESTADO OPERATIVO, subordinado al acta y CI del SHA exacto. Los estados históricos embebidos en documentos de auditorías anteriores no se reescriben y no prevalecen.
 
 ## Certificación integral del capítulo 03 — transición controlada
