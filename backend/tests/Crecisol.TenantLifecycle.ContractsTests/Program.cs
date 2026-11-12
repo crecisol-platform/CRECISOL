@@ -1,4 +1,5 @@
 using Crecisol.Domain.Tenancy;
+using Crecisol.Application.Tenancy;
 
 var passed = 0;
 void Check(bool condition, string name)
@@ -118,4 +119,94 @@ Invalid(() => TrustedTenantLifecycleReceipt.FromTrustedAtomicStore(
 Invalid(() => TrustedTenantLifecycleReceipt.FromTrustedAtomicStore(
     tenantA, op, intent.IntentFingerprint, TenantLifecycleState.Suspended, 8, 0, now), "invalid-receipt-epoch");
 
-Console.WriteLine($"C04-08 Domain positive/negative assertions SUCCESS: {passed}");
+
+var reader = new FakeDecisionReader(intent);
+var store = new FakeLifecycleStore(receipt);
+var clock = new FakeClock(now.AddSeconds(1));
+var service = new ChangeTenantLifecycle(reader, store, clock);
+var result = await service.ExecuteAsync(op, CancellationToken.None);
+Check(result == receipt, "application-valid-receipt");
+Check(store.Calls == 1 && reader.Calls == 2, "two-decision-checks-one-store");
+Check((await service.ExecuteAsync(op, CancellationToken.None)) == receipt,
+    "identical-replay-returns-same-receipt");
+
+async Task DenyAsync(Func<Task> action, string name)
+{
+    try
+    {
+        await action();
+        throw new Exception("C04-08 MUST DENY: " + name);
+    }
+    catch (UnauthorizedAccessException) { passed++; }
+}
+
+reader.Intent = null;
+await DenyAsync(async () => { await service.ExecuteAsync(op, CancellationToken.None); },
+    "missing-admin-decision");
+reader.Intent = intent;
+store.Receipt = TrustedTenantLifecycleReceipt.FromTrustedAtomicStore(
+    tenantB, op, intent.IntentFingerprint, TenantLifecycleState.Suspended, 8, 12, now);
+await DenyAsync(async () => { await service.ExecuteAsync(op, CancellationToken.None); },
+    "cross-tenant-receipt");
+store.Receipt = TrustedTenantLifecycleReceipt.FromTrustedAtomicStore(
+    tenantA, op, intent.IntentFingerprint, TenantLifecycleState.Suspended, 8, 11, now);
+await DenyAsync(async () => { await service.ExecuteAsync(op, CancellationToken.None); },
+    "stale-authorization-epoch");
+store.Receipt = TrustedTenantLifecycleReceipt.FromTrustedAtomicStore(
+    tenantA, op, intent.IntentFingerprint, TenantLifecycleState.Active, 8, 12, now);
+await DenyAsync(async () => { await service.ExecuteAsync(op, CancellationToken.None); },
+    "wrong-target-state");
+store.Receipt = TrustedTenantLifecycleReceipt.FromTrustedAtomicStore(
+    tenantA, Guid.NewGuid(), intent.IntentFingerprint, TenantLifecycleState.Suspended, 8, 12, now);
+await DenyAsync(async () => { await service.ExecuteAsync(op, CancellationToken.None); },
+    "different-operation-receipt");
+store.Receipt = TrustedTenantLifecycleReceipt.FromTrustedAtomicStore(
+    tenantA, op, new string('a', 64), TenantLifecycleState.Suspended, 8, 12, now);
+await DenyAsync(async () => { await service.ExecuteAsync(op, CancellationToken.None); },
+    "different-intent-receipt");
+store.Receipt = receipt;
+reader.ChangeOnSecondRead = true;
+await DenyAsync(async () => { await service.ExecuteAsync(op, CancellationToken.None); },
+    "approval-revoked-mid-flight");
+reader.ChangeOnSecondRead = false;
+reader.ReadCount = 0;
+await DenyAsync(async () => { await service.ExecuteAsync(Guid.NewGuid(), CancellationToken.None); },
+    "unknown-operation");
+await DenyAsync(async () => { await service.ExecuteAsync(Guid.Empty, CancellationToken.None); },
+    "empty-operation-app");
+
+Console.WriteLine($"C04-08 Domain/Application positive/negative assertions SUCCESS: {passed}");
+
+sealed class FakeClock(DateTimeOffset now) : ITrustedHostUtcClock
+{
+    public DateTimeOffset GetUtcNow() => now;
+}
+
+sealed class FakeDecisionReader(TrustedTenantLifecycleIntent initial) : ITrustedTenantLifecycleDecisionReader
+{
+    public TrustedTenantLifecycleIntent? Intent { get; set; } = initial;
+    public bool ChangeOnSecondRead { get; set; }
+    public int ReadCount { get; set; }
+    public int Calls => ReadCount;
+    public Task<TrustedTenantLifecycleIntent?> ReadAuthorizedIntentAsync(Guid operation, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        ReadCount++;
+        return Task.FromResult(ChangeOnSecondRead && ReadCount % 2 == 0
+            ? null : Intent);
+    }
+}
+
+sealed class FakeLifecycleStore(TrustedTenantLifecycleReceipt initial) : IAtomicTenantLifecycleTransitionStore
+{
+    public TrustedTenantLifecycleReceipt Receipt { get; set; } = initial;
+    public int Calls { get; private set; }
+    public Task<TrustedTenantLifecycleReceipt> CommitOrReplayAsync(
+        TrustedTenantLifecycleIntent intent, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        Calls++;
+        return Task.FromResult(Receipt);
+    }
+}
+
