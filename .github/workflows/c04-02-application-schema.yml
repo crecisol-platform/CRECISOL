@@ -1,45 +1,77 @@
-name: CRECISOL C04-02 application schema MySQL 8.4
+name: CRECISOL C04-02 SHARED application A-B-C dotnet10 MySQL8.4
 on:
   pull_request:
     branches: [dev]
     paths:
       - 'database/c04_02_shared_schema.sql'
-      - 'database/tests/c04_02_application_schema_smoke.sh'
+      - 'database/tests/c04_02_*.sh'
+      - 'backend/src/Crecisol.Application/Tenancy/**'
+      - 'backend/src/Crecisol.Infrastructure/Tenancy/**'
+      - 'backend/tests/Crecisol.SharedTenancy.ContractsTests/**'
+      - 'qa/c04_02_implementation_audits.py'
       - 'docs/c04/C04_02_IMPLEMENTACION_ESQUEMA_SHARED.md'
       - '.github/workflows/c04-02-application-schema.yml'
   push:
     branches: [dev]
     paths:
       - 'database/c04_02_shared_schema.sql'
-      - 'database/tests/c04_02_application_schema_smoke.sh'
+      - 'database/tests/c04_02_*.sh'
+      - 'backend/src/Crecisol.Application/Tenancy/**'
+      - 'backend/src/Crecisol.Infrastructure/Tenancy/**'
+      - 'backend/tests/Crecisol.SharedTenancy.ContractsTests/**'
+      - 'qa/c04_02_implementation_audits.py'
       - 'docs/c04/C04_02_IMPLEMENTACION_ESQUEMA_SHARED.md'
       - '.github/workflows/c04-02-application-schema.yml'
 permissions:
   contents: read
 jobs:
-  application-schema:
+  c04-02-implementation:
+    name: C04-02 real .NET10 and MySQL8.4 A-B-C + attacks
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 45
     steps:
-      - name: Checkout no credential persistence
+      - name: Checkout without credential persistence
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-      - name: A source and schema syntax
+      - name: A canonical source, shell syntax and stage scope
         run: |
+          test ! -e .c04-02-impl-proof
+          python3 -m py_compile qa/c04_02_implementation_audits.py
+          bash -n database/tests/c04_02_application_schema_smoke.sh
+          bash -n database/tests/c04_02_backend_reader_smoke.sh
           python3 qa/validate_foundation.py
           python3 qa/master_source_guard.py --self-test
           python3 qa/c04_01_normative_inventory.py verify
-          bash -n database/tests/c04_02_application_schema_smoke.sh
+          python3 qa/c04_01_contracts_audits.py A
           python3 qa/c04_02_preparation_audits.py A
-      - name: B adversarial preparation regression
+          python3 qa/c04_02_implementation_audits.py A
+          mkdir -p .c04-02-impl-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-02-impl-proof/A
+      - name: B adversarial trust-boundary mutations and C04-01 regression
         run: |
+          python3 qa/c04_01_contracts_audits.py B
           python3 qa/c04_02_preparation_audits.py B
-      - name: 'MySQL 8.4 application DDL: real positive and negative attacks'
-        run: bash database/tests/c04_02_application_schema_smoke.sh
-      - name: C explicit scope guard
+          python3 qa/c04_02_implementation_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-02-impl-proof/B
+      - name: Install pinned major .NET SDK 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build API and C04-02 contracts with errors as warnings
         run: |
-          test -f database/c04_02_shared_schema.sql
-          test -f docs/c04/C04_02_IMPLEMENTACION_ESQUEMA_SHARED.md
-          ! grep -Eiq 'CREATE[[:space:]]+USER|GRANT[[:space:]]+ALL|SET[[:space:]]+FOREIGN_KEY_CHECKS[[:space:]]*=[[:space:]]*0' database/c04_02_shared_schema.sql
-          echo 'PASS: DDL real exercised. Auth, adapter and production still blocked; this workflow alone never certifies C04-02.'
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.SharedTenancy.ContractsTests/Crecisol.SharedTenancy.ContractsTests.csproj -c Release --nologo -warnaserror
+      - name: Real .NET10 contract security and GUID tests
+        run: |
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.SharedTenancy.ContractsTests/Crecisol.SharedTenancy.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantCatalog.ContractsTests/Crecisol.TenantCatalog.ContractsTests.csproj
+          printf 'PASS dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-02-impl-proof/dotnet
+      - name: 'MySQL 8.4 application SQL: DDL, positives and 9 negative attacks'
+        run: bash database/tests/c04_02_application_schema_smoke.sh
+      - name: 'MySQL 8.4 with .NET10: read-only authorized scope and A/B boundary'
+        run: |
+          bash database/tests/c04_02_backend_reader_smoke.sh
+          printf 'PASS mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-02-impl-proof/mysql
+      - name: C architecture, same SHA-run proof and no premature routes
+        run: python3 qa/c04_02_implementation_audits.py C
