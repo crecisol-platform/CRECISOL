@@ -10,7 +10,9 @@
 - Fuente funcional: `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` (SHA-256 registrado `ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c`), `docs/MASTER_REFERENCE.md`; capítulo normativo C04, 72 párrafos y huella textual consignada en acta C04-07. Matriz de doce microfases técnicas en `docs/planificacion-futura/C04_MICROFASES_PROPUESTAS.md`: positivo «Transiciones seguras y auditables», negativo «Suspensión no deja acceso residual».
 - La certificación de C04-07 **no** prueba autenticación ni revocación de sesiones reales. La preparación C04-08 no puede afirmar esas capacidades.
 
-> **Compatibilidad verificada con el código:** `TenantLifecycleState.Deactivated` es el estado existente para la baja lógica; NO crear un valor `Deleted` ni borrar físicamente filas. La especificación inicial fue corregida antes de implementación/certificación.\n\n## 2. Máquina de estados preliminar (sujeta a cotejo final con Word)
+> **Compatibilidad verificada con el código:** `TenantLifecycleState.Deactivated` es el estado existente para la baja lógica; NO crear un valor `Deleted` ni borrar físicamente filas. La especificación inicial fue corregida antes de implementación/certificación.
+
+## 2. Máquina de estados preliminar (sujeta a cotejo final con Word)
 
 Mantener separados el estado de aprovisionamiento `Draft` y el estado de habilitación de acceso; NO activar tenants desde la creación sintética.
 - `Draft`: sin acceso privado; eventual activación exige decisión administrativa autenticada y autorizada *en fases habilitadas*, no por esta preparación.
@@ -36,7 +38,7 @@ La caché, tokens/sesiones y workers futuros deben validar el epoch/revisión ac
 | Suspender Active con actor autorizado, revisión vigente | Estado Suspended, revision +1, evento auditado único, acceso lógico DENY |
 | Repetir idéntica operación | Replay inmutable sin segunda transición ni segundo evento |
 | Reactivar Suspended con autorización y prerequisitos vigentes | Active con nueva revisión y evento de reactivación |
-| Borrado lógico Active o Suspended | Deleted, datos retenidos y referencia existente; acceso DENY |
+| Borrado lógico Active o Suspended | Deactivated, datos retenidos y referencia existente; acceso DENY |
 | Token/sesión previamente emitidos tras suspensión | DENY por estado/epoch vigente; nunca aprovechar autorización vieja |
 | Worker/cola/export/cache/preview después de suspensión | DENY/pausa y aislamiento; sin exposición residual |
 | Actor, tenant, host o claims falsificados | DENY sin modificación ni filtración |
