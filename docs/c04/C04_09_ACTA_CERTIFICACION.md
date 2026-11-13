@@ -24,6 +24,24 @@ Fuente canónica: `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx`, huella SHA-256 `
 
 En el SHA técnico mencionado, Foundation, C04-01, C04-02 y la CI específica C04-09 fueron consultadas en `SUCCESS`. La regresión integral C03-10 estaba todavía `in_progress` al redactar este registro y **NO se presume exitosa**. La lista de workflows `skipped` condicionales no constituye evidencias de PASS. Se exige cierre del gate integral antes de fusionar #101. Las ejecuciones fallidas en SHAs anteriores por SQL y sintaxis Python siguen conservadas históricamente y se corrigieron mediante commits nuevos, no alterando los resultados anteriores.
 
+## 2.2 Fusión técnica controlada y CI posterior (NO presupone aprobación)
+
+**PREMERGE del PR #101:** SHA `572dd4c92de34674245d10005e2cfa84f1d750e0`, **5/5 workflows aplicables completed/success**: C04-09 seis auditorías [43340890924](https://github.com/crecisol-platform/CRECISOL/actions/runs/43340890924); C03-10 integral [43340890944](https://github.com/crecisol-platform/CRECISOL/actions/runs/43340890944); C04-02 [43340890979](https://github.com/crecisol-platform/CRECISOL/actions/runs/43340890979); C04-01 [43340891082](https://github.com/crecisol-platform/CRECISOL/actions/runs/43340891082); Foundation [43340891028](https://github.com/crecisol-platform/CRECISOL/actions/runs/43340891028). Tres condicionales `skipped` excluidas del conteo. **0 fallos vigentes en este SHA PREMERGE.**
+
+GitHub confirmó fusión `squash` del PR técnico #101 únicamente a `dev` con commit **`34136e598d01e0f491c1da71e2892b5079ca017f`**, dejando `main`, Word/PDF y SOLQARYN intactos.
+
+**Siete POSTMERGE técnicos iniciados sobre el SHA exacto, pendientes al redactar:**
+
+- C04-09 seis auditorías [.NET10/MySQL8.4, run 43341716324](https://github.com/crecisol-platform/CRECISOL/actions/runs/43341716324)
+- C03-10 integral [43341716522](https://github.com/crecisol-platform/CRECISOL/actions/runs/43341716522)
+- C04-02 MySQL [43341716369](https://github.com/crecisol-platform/CRECISOL/actions/runs/43341716369)
+- C04-01 catálogo [43341716466](https://github.com/crecisol-platform/CRECISOL/actions/runs/43341716466)
+- C03-02 Domain [43341716356](https://github.com/crecisol-platform/CRECISOL/actions/runs/43341716356)
+- C03-03 Application [43341716609](https://github.com/crecisol-platform/CRECISOL/actions/runs/43341716609)
+- Foundation [43341716330](https://github.com/crecisol-platform/CRECISOL/actions/runs/43341716330)
+
+**Esta lista documenta identificadores; NO constituye 7/7 PASS hasta comprobar completed/success individualmente.** Solo tras 7/7 exactos podrá el PR #100 pasar su propia puerta documental y formalizar el cierre.
+
 ## 3. Seis auditorías finales independientes obligatorias
 
 | Auditoría | Requisito para dictamen final |
