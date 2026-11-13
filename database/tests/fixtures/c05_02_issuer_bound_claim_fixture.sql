@@ -165,8 +165,7 @@ DELIMITER //
 CREATE PROCEDURE c05_02_claim_bound_once(
   IN p_tenant BINARY(16), IN p_invitation BINARY(16),
   IN p_actor BINARY(16), IN p_recipient BINARY(16),
-  IN p_digest BINARY(32), IN p_terms BIGINT UNSIGNED,
-  IN p_revision BIGINT UNSIGNED
+  IN p_digest BINARY(32)
 )
 SQL SECURITY DEFINER
 BEGIN
@@ -210,8 +209,7 @@ BEGIN
     AND invitation.invitation_id=p_invitation
     AND invitation.recipient_id=p_recipient
     AND invitation.token_digest=p_digest
-    AND invitation.terms_version=p_terms
-    AND invitation.revision=p_revision
+    AND invitation.revision=1
     AND invitation.lifecycle='PENDING'
     AND invitation.issued_at_utc<=UTC_TIMESTAMP(6)
     AND UTC_TIMESTAMP(6)<invitation.expires_at_utc
