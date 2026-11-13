@@ -375,6 +375,15 @@ check "physical backup restoration data hash" "$backup_hash" "$restored_hash"
 check "physical restoration removes partial DDL" "0" "$(root_sql "
  SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='c04_09_ded_b'
  AND table_name='resources' AND column_name='migration_tag'")"
+# The protected recovery procedure (not just this shell) MUST verify the
+# original snapshot digest. Corrupt the restored payload and demand a hard deny.
+root_sql "UPDATE c04_09_ded_b.resources SET payload='TAMPERED' WHERE resource_id=1"
+deny_root "protected recovery rejects altered restored payload" \
+ "CALL c04_09_control.verify_restored_and_release('$winning_op',1)"
+restore_checked "$winning_op" "c04_09_ded_b" "$TMP/ded_b_backup.sql"
+check "second physical restoration recovers snapshot hash" "$backup_hash" "$(root_sql "
+ SELECT SHA2(CONCAT(resource_id,':',payload),256)
+ FROM c04_09_ded_b.resources WHERE resource_id=1")"
 check "recovered gate releases only after restoration" "RESTORED" "$(root_sql "
  CALL c04_09_control.verify_restored_and_release('$winning_op',1)")"
 check "immutable ledger records historical failed-recovered operation" "recovered" "$(root_sql "
