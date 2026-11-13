@@ -107,6 +107,10 @@ GUARDS = {
         "Issuer loses entitlement at atomic backend boundary",
         "Unverified recipient cannot be inserted",
         "Expired invitation creation fails closed in SQL adapter",
+        "Adapter cannot UPDATE tenant lifecycle directly",
+        "Adapter cannot INSERT invitation metadata outside definer procedure",
+        "Sixteen concurrent real SQL ISSUANCES exactly ONE pending invitation",
+        "SQL has exactly one active pending A recipient after issuance race",
         "PASS C05-02 actual .NET10 + MySQL8.4 adapter",
     ),
     "script": (
