@@ -138,7 +138,7 @@ GUARDS = {
         "SyntheticCurrentHost",
         "IsolatedMailboxSink",
         "CryptographicOperations.ZeroMemory(master)",
-        "Distinct",
+        "Opaque intents are distinct",
         "EphemeralEmailPossessionCode.Generate()",
         "Domain-separated 256-bit challenge",
         "different tenant or intent",
