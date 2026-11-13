@@ -32,6 +32,13 @@ deny_runner() {
  fi
  case "$out" in
   *"ERROR 1644"*|*"ERROR 1142"*|*"ERROR 1143"*|*"ERROR 1044"*|*"ERROR 1370"*|*"ERROR 1227"*) ;;
+  *"ERROR 1292"*)
+    # MySQL 8.4 strict coercion rejects this hostile boolean expression
+    # BEFORE the protected procedure can check the scoped lookup. Do not
+    # permit 1292 for any other attack, where it might mask a bad fixture.
+    [ "$label" = "O11-07 forged SQL boolean expression cannot bypass cache scope" ] || {
+      echo "FAIL O11 unexpected cast error for $label: $out" >&2; exit 1;
+    } ;;
   *) echo "FAIL O11 unexpected error for $label: $out" >&2; exit 1 ;;
  esac
  NEG=$((NEG+1))
