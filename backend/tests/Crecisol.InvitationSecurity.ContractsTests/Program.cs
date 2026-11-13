@@ -192,6 +192,9 @@ await RejectClaim("Self-invitation cannot claim", f => f.UseIssuerAsRecipient = 
 await RejectClaim("Missing consent denied", f => f.HasConsent = false);
 await RejectClaim("Consent from tenant B denied", f => f.TermsTenant = f.TenantB);
 await RejectClaim("Stale terms policy denied", f => f.TermsVersion = 41);
+await RejectClaim("Published tenant policy changed denied", f => f.PublishedTermsVersion = 43);
+await RejectClaim("Published tenant terms drift mid-flight denied",
+    f => f.ChangePublishedTermsOnSecondRead = true);
 await RejectClaim("Future consent denied", f => f.TermsInFuture = true);
 await RejectClaim("Unverified direct host denied", f => f.ActiveHost = f.OtherHost);
 await RejectClaim("Suspended tenant denied", f => f.ActiveTenant = false);
@@ -357,6 +360,9 @@ sealed class Fixture
     public bool ChangeTenantOnSecondRead { get; set; }
     public TenantId? TermsTenant { get; set; }
     public long TermsVersion { get; set; } = 42;
+    public long PublishedTermsVersion { get; set; } = 42;
+    public bool ChangePublishedTermsOnSecondRead { get; set; }
+    public int PublishedTermsReads { get; private set; }
     public ActorSessionState SessionStatus { get; set; } = ActorSessionState.Active;
     public int PolicyCalls { get; private set; }
     public int TargetCalls { get; private set; }
@@ -466,7 +472,14 @@ sealed class Fixture
         var clock = Clock;
         return new ClaimInternalInvitation(
             DirectHost, new ResolveVerifiedTenantHost(Hosts, clock),
-            Tenants, Recipients, Terms, Ledger, clock);
+            Tenants, Recipients, Terms,
+            new CurrentTermsPort(tenant =>
+            {
+                PublishedTermsReads++;
+                return ChangePublishedTermsOnSecondRead && PublishedTermsReads >= 2
+                    ? PublishedTermsVersion + 1 : PublishedTermsVersion;
+            }),
+            Ledger, clock);
     }
 }
 
@@ -533,6 +546,12 @@ sealed class TargetPort(Func<TenantId, RecipientChannelBindingId, bool> eligible
     public Task<bool> IsEligibleAsync(
         TenantId tenant, RecipientChannelBindingId recipient, CancellationToken ct)
     { ct.ThrowIfCancellationRequested(); return Task.FromResult(eligible(tenant, recipient)); }
+}
+sealed class CurrentTermsPort(Func<TenantId, long?> current)
+    : ITrustedCurrentInvitationTermsPolicy
+{
+    public Task<long?> ReadCurrentTermsVersionAsync(TenantId tenant, CancellationToken ct)
+    { ct.ThrowIfCancellationRequested(); return Task.FromResult(current(tenant)); }
 }
 sealed class RecipientReader(Func<VerifiedRecipientChannel?> proof) : ITrustedCurrentRecipientChannel
 {
