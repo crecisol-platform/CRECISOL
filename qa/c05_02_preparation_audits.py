@@ -68,7 +68,7 @@ def contract(spec: str) -> None:
     for marker in (
         "NO IMPLEMENTADA / NO CERTIFICADA", "C05-01", "C05-02",
         "C05-03..11", "C06", "No enumeración de correos",
-        "uso único atómico", "tenant", "MFA",
+        "una sola consumición atómica", "tenant", "MFA",
         SOURCE_SHA, CURRENT_WORD_SHA, CURRENT_PDF_SHA, PREDECESSOR, COMMENT
     ):
         need(marker.casefold() in clean.casefold(), "Missing authority/limit: " + marker)
