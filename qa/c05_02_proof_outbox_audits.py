@@ -49,6 +49,7 @@ MARKERS = {
         "envelope.KeyVersion != keyVersion",
         "c05_02_outbox_issue",
         "c05_02_outbox_claim",
+        "c05_02_outbox_can_dispatch",
         "c05_02_outbox_mark_sent",
         "c05_02_outbox_mark_failed",
         "trustedDelivery.DeliverToRecordedMailboxAsync(",
@@ -68,6 +69,8 @@ MARKERS = {
         "CHECK (key_version > 0 AND attempts BETWEEN 0 AND 3)",
         "CREATE PROCEDURE c05_02_outbox_issue",
         "CREATE PROCEDURE c05_02_outbox_claim",
+        "CREATE PROCEDURE c05_02_outbox_can_dispatch",
+        "v_outbox_expiry>UTC_TIMESTAMP(6)",
         "CREATE PROCEDURE c05_02_outbox_mark_sent",
         "CREATE PROCEDURE c05_02_outbox_mark_failed",
         "SQL SECURITY DEFINER",
@@ -111,6 +114,7 @@ MARKERS = {
         "--network bridge -p '127.0.0.1::3306'",
         "openssl rand -hex 32",
         "c05_02_delivery_outbox_atomic_fixture.sql",
+        "c05_02_outbox_can_dispatch",
         "GRANT EXECUTE ON PROCEDURE",
         "GRANT SELECT ON",
         "CRECISOL_C05_02_OUTBOX_MASTER_HEX",
@@ -161,8 +165,8 @@ def invariants(data: dict[str, str]) -> None:
     need("GRANT ALL" not in data["smoke"] and
          "GRANT UPDATE ON \`$DB\`.c05_02_delivery_outbox TO 'c05_02_outbox_worker'" not in data["smoke"],
          "Outbox worker may only EXECUTE trusted state mutations")
-    need("CREATE TABLE users" not in data["sql"].lower() and
-         "CREATE TABLE memberships" not in data["sql"].lower() and
+    need("create table users" not in data["sql"].lower() and
+         "create table memberships" not in data["sql"].lower() and
          "password_hash" not in data["sql"].lower(),
          "C05-02 outbox fixture cannot create identity/grant tables")
     need("workflow_dispatch:" not in data["workflow"] and
@@ -179,8 +183,6 @@ def invariants(data: dict[str, str]) -> None:
 def audit_a() -> None:
     predecessor_a()
     invariants(sources())
-    need((ROOT / "docs/c05/C05_02_PUERTA_ENTREGA_PRIVACIDAD_20261113.md").exists() is False or
-         True, "PR121 is optional and must not affect this gated test")
     print("PASS outbox A: Word/C05 predecessor, tenant safety, protected only test transport")
 
 def audit_b() -> None:
