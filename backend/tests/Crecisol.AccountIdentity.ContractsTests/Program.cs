@@ -405,10 +405,10 @@ using (var cancelled = new CancellationTokenSource())
         () => NewResolver().ExecuteAsync(cancelled.Token),
         "Pre-cancelled flow never grants account/tenant link");
 }
-var args = typeof(ResolveCurrentAccountTenantLink)
+var parameters = typeof(ResolveCurrentAccountTenantLink)
     .GetMethod(nameof(ResolveCurrentAccountTenantLink.ExecuteAsync))!
     .GetParameters();
-Check(args.Length == 1 && args[0].ParameterType == typeof(CancellationToken),
+Check(parameters.Length == 1 && parameters[0].ParameterType == typeof(CancellationToken),
     "Use case accepts cancellation ONLY, never caller-supplied tenant_id/email/claims/host");
 Check(typeof(AccountTenantBindingEvidence).GetProperties()
     .All(p => p.Name is not ("Role" or "Permission" or "ConnectionString" or "Token")),
