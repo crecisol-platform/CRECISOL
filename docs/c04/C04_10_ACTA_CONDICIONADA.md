@@ -1,5 +1,8 @@
 # CRECISOL — C04-10 · Acta de control CONDICIONADA, NO EFICAZ
 
+**Nota institucional posterior (12-11-2026):** este archivo documenta el estado **histórico** de la fase de preparación y sus gates pendientes en aquel momento; NO es la autoridad final del estado actual. La [ratificación propuesta de C04-10](C04_10_CERTIFICACION_INSTITUCIONAL.md) contiene las cuatro puertas originales **20/20 SUCCESS**, commits y runs reales. Su eficacia institucional solo comienza tras aprobar también la CI del PR de ratificación, fusionarlo a `dev` y publicar comentario permanente. Los términos «no eficaz», «draft» y «sin fusionar» que siguen en esta acta son afirmaciones **de fecha histórica** y se preservan sin reescribirlas. Hasta la eficacia de la ratificación nueva, C04-10 permanece NO CERTIFICADA.
+
+
 **Estado:** C04-10 EN DESARROLLO / NO CERTIFICADA. No es un acta de cierre. **Fecha:** 12-11-2026 (Honduras). **Repositorio:** `crecisol-platform/CRECISOL`, ID 1450414592. **Base verificada:** `dev` SHA `ba08137fc4ea1d39f21e63ce0cd9e3d309f585fb`.
 
 ## 1. Autoridad y dependencia previa
