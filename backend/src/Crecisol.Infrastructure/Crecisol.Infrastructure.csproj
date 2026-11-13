@@ -8,5 +8,6 @@
   <ItemGroup>
     <ProjectReference Include="../Crecisol.Application/Crecisol.Application.csproj" />
     <PackageReference Include="MySqlConnector" Version="2.6.2" />
+    <PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1" />
   </ItemGroup>
 </Project>
