@@ -7,7 +7,8 @@ on:
       - 'backend/src/Crecisol.Application/Identity/**'
       - 'backend/tests/Crecisol.AccountIdentity.ContractsTests/**'
       - 'qa/c05_01_identity_audits.py'
-      - 'docs/c05/C05_01_*'
+      - 'docs/c05/IMPLEMENTACION_C05_01_*'
+      - 'docs/c05/ACTA_C05_01_*'
       - '.github/workflows/c05-01-account-model.yml'
   push:
     branches: [dev]
@@ -16,7 +17,8 @@ on:
       - 'backend/src/Crecisol.Application/Identity/**'
       - 'backend/tests/Crecisol.AccountIdentity.ContractsTests/**'
       - 'qa/c05_01_identity_audits.py'
-      - 'docs/c05/C05_01_*'
+      - 'docs/c05/IMPLEMENTACION_C05_01_*'
+      - 'docs/c05/ACTA_C05_01_*'
       - '.github/workflows/c05-01-account-model.yml'
 permissions:
   contents: read
