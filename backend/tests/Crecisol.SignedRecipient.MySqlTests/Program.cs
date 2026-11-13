@@ -253,6 +253,19 @@ try
     try { Pass(!await Claim(tenantA,a.Id,a.Code,expired),
         "HMAC-valid expired session proof denied"); }
     finally { CryptographicOperations.ZeroMemory(expired); }
+    var extreme=SignTestOnly(tenantA,actorA,
+        RecipientChannelBindingId.From(Guid.Parse(RA)),sessionA,
+        issueTime:long.MinValue,expiryTime:long.MaxValue);
+    try { Pass(!await Claim(tenantA,a.Id,a.Code,extreme),
+        "HMAC-valid extreme signed timestamps fail closed without overflow"); }
+    finally { CryptographicOperations.ZeroMemory(extreme); }
+    var overlong=SignTestOnly(tenantA,actorA,
+        RecipientChannelBindingId.From(Guid.Parse(RA)),sessionA,
+        issueTime:issued.ToUnixTimeSeconds(),
+        expiryTime:expires.ToUnixTimeSeconds()+200);
+    try { Pass(!await Claim(tenantA,a.Id,a.Code,overlong),
+        "HMAC-valid proof over five-minute policy window denied"); }
+    finally { CryptographicOperations.ZeroMemory(overlong); }
     var future=SignTestOnly(tenantA,actorA,
         RecipientChannelBindingId.From(Guid.Parse(RA)),sessionA,
         issueTime:expires.ToUnixTimeSeconds()+10,
