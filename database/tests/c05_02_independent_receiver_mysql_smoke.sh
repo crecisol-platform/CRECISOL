@@ -2,7 +2,7 @@
 # CRECISOL C05-02 ONLY. Local disposable MySQL8.4, separate .NET10 SMTP receiver, synthetic mail.
 set -euo pipefail
 IMAGE="mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902"
-NAME="crecisol-c0502-independent-receiver-$RANDOM-$"
+NAME="crecisol-c0502-independent-receiver-$(openssl rand -hex 8)"
 DB="c05_02_disposable"
 ROOT_PASSWORD="$(openssl rand -hex 24)"
 INGEST_PASSWORD="$(openssl rand -hex 24)"
