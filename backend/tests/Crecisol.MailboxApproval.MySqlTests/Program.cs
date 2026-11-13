@@ -820,9 +820,11 @@ Check((await ChangeConfirm(hostA.Value,raceOld)).Status==
     "First old-mail proof recorded before concurrent second-mail redemption");
 var race=await Task.WhenAll(Enumerable.Range(0,16).Select(_=>
     ChangeConfirm(hostA.Value,raceNew)));
+var raceDistribution=string.Join(", ",race.GroupBy(x=>x.Status)
+    .OrderBy(x=>(int)x.Key).Select(x=>$"{(int)x.Key}:{x.Count()}"));
 Check(race.Count(x=>x.Status==HttpStatusCode.NoContent)==1 &&
       race.Count(x=>x.Status==HttpStatusCode.Unauthorized)==15,
-    "16 concurrent real HTTP/MySQL second confirmations: exactly 1 winner and 15 denied");
+    "16 concurrent real HTTP/MySQL second confirmations: exactly 1 winner and 15 denied; observed "+raceDistribution);
 var secondDigest=recoveryProtector.DigestCanonicalMailbox(
     CanonicalLoginHandle.Parse(secondEmail)).CopyForTrustedLedger();
 try
