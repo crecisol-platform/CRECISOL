@@ -116,6 +116,7 @@ BEGIN
     DECLARE v_attempts INT DEFAULT 3;
     DECLARE v_lease_until DATETIME(6) DEFAULT NULL;
     DECLARE v_outbox_digest BINARY(32) DEFAULT NULL;
+    DECLARE v_outbox_expiry DATETIME(6) DEFAULT NULL;
     DECLARE v_claimed INT DEFAULT 0;
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
@@ -132,8 +133,8 @@ BEGIN
       INTO v_proof_state,v_proof_digest,v_proof_expiry
       FROM c05_02_mailbox_proofs
       WHERE tenant_id=p_tenant AND intent_id=p_intent FOR UPDATE;
-    SELECT lifecycle,attempts,leased_until_utc,challenge_digest
-      INTO v_state,v_attempts,v_lease_until,v_outbox_digest
+    SELECT lifecycle,attempts,leased_until_utc,challenge_digest,expires_utc
+      INTO v_state,v_attempts,v_lease_until,v_outbox_digest,v_outbox_expiry
       FROM c05_02_delivery_outbox
       WHERE tenant_id=p_tenant AND intent_id=p_intent FOR UPDATE;
 
@@ -141,6 +142,7 @@ BEGIN
         AND v_intent_expiry>UTC_TIMESTAMP(6)
         AND v_proof_state='PENDING'
         AND v_proof_expiry>UTC_TIMESTAMP(6)
+        AND v_outbox_expiry>UTC_TIMESTAMP(6)
         AND v_proof_digest=v_outbox_digest
         AND (v_state='PENDING' OR
             (v_state='LEASED' AND v_lease_until<=UTC_TIMESTAMP(6)))
@@ -170,6 +172,31 @@ BEGIN
          WHERE tenant_id=p_tenant AND intent_id=p_intent
            AND lifecycle='LEASED' AND lease_nonce=p_lease;
     END IF;
+END//
+
+-- Shrink the suspend/revoke race before touching the trusted local delivery.
+-- This is a point-in-time check, NOT an authorization to send from production.
+CREATE PROCEDURE c05_02_outbox_can_dispatch(
+    IN p_tenant BINARY(16), IN p_intent BINARY(16),
+    IN p_lease BINARY(16)
+)
+SQL SECURITY DEFINER
+BEGIN
+    SELECT IF(EXISTS(
+        SELECT 1 FROM c05_02_delivery_outbox o
+        JOIN c05_02_mailbox_proofs p
+          ON p.tenant_id=o.tenant_id AND p.intent_id=o.intent_id
+        JOIN c05_02_neutral_intents i
+          ON i.tenant_id=o.tenant_id AND i.intent_id=o.intent_id
+        JOIN c05_02_tenants t ON t.tenant_id=o.tenant_id
+        WHERE o.tenant_id=p_tenant AND o.intent_id=p_intent
+          AND o.lifecycle='LEASED' AND o.lease_nonce=p_lease
+          AND o.leased_until_utc>UTC_TIMESTAMP(6)
+          AND o.expires_utc>UTC_TIMESTAMP(6)
+          AND i.expires_at_utc>UTC_TIMESTAMP(6)
+          AND p.lifecycle='PENDING' AND p.challenge_digest=o.challenge_digest
+          AND p.expires_utc>UTC_TIMESTAMP(6) AND t.lifecycle='ACTIVE'
+    ),'ALLOW','DENIED') AS result;
 END//
 
 CREATE PROCEDURE c05_02_outbox_mark_sent(
