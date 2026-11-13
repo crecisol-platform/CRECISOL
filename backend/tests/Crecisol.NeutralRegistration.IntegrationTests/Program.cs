@@ -319,6 +319,31 @@ await RequireDbDeny("INSERT INTO c05_02_neutral_quota (tenant_id) VALUES (NULL)"
     "Ingestion role cannot change or bypass the quota table");
 await RequireDbDeny("UPDATE c05_02_neutral_intents SET key_version=2 WHERE 1=0",
     "Ingestion role cannot replace cryptographic metadata");
+// Forty real parallel .NET MySqlConnector calls from a SECOND trusted socket
+// address must admit exactly 8 rows in the same 15-minute quota bucket.
+// This deliberately stresses simultaneous initial quota creation and renewal
+// rather than only sequential HTTP requests.
+var priorCount = await ScalarAsync(admin,
+    $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{A}'");
+var competingPeer = IPAddress.Parse("2001:db8::ff").GetAddressBytes();
+using (var concurrentLedger = new MySqlDisposableNeutralRegistrationRecorder(
+    limitedDsn, key, 1))
+{
+    var race = Enumerable.Range(0, 40).Select(i =>
+        Task.Run(() => concurrentLedger.RecordWithoutEnumerationAsync(
+            TenantId.From(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")),
+            "parallel+" + i + "@example.test", competingPeer,
+            DateTimeOffset.UtcNow, CancellationToken.None)));
+    await Task.WhenAll(race);
+}
+var afterRace = await ScalarAsync(admin,
+    $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{A}'");
+Pass(afterRace == priorCount + 8,
+    "Forty concurrent real MySQL intake calls admit exactly eight within a tenant quota");
+Pass(await ScalarAsync(admin,
+    $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{B}'") == 1,
+    "Concurrent tenant A quota cannot insert or suppress tenant B records");
+
 await app.StopAsync();
 CryptographicOperations.ZeroMemory(key);
 
