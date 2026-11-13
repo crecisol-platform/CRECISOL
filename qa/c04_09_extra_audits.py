@@ -110,6 +110,8 @@ def audit_e():
         "state='failed'", "state='recovered'",
         "DDL is still applied: verify backup restoration",
         "Recovery CAS lost",
+        "baseline_payload_sha256",
+        "Restored data snapshot digest mismatch",
         "inflight_operation=p_op"
     ), "protected synthetic ledger and recovery")
     expect_all(SMOKE, (
@@ -133,7 +135,9 @@ def audit_e():
         "verified ledger may not be deleted",
         "restore_checked",
         "wrong dedicated restore destination accepted",
-        "rejected wrong restoration did not modify A"
+        "rejected wrong restoration did not modify A",
+        "protected recovery rejects altered restored payload",
+        "second physical restoration recovers snapshot hash"
     ), "executable concurrency/recovery tests")
     require("ALTER TABLE c04_09_ded_b.resources ADD COLUMN migration_tag" in SMOKE,
             "DDL fixture must actually mutate dedicated schema")
