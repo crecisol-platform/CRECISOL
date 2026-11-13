@@ -20,6 +20,12 @@
 
 **Hallazgos que deben mantenerse abiertos hasta prueba real:** riesgo P0 de reutilizar la misma clave entre A/B aunque compartan `resource_id`, revocación de acceso después de encolar y antes de procesar, reactivar sin invalidar epoch, cambios de dueño/branch y ejecutor que confunde `operation_id` con permiso. Las nuevas restricciones de versión y revisión deben comprobarse, no certificarse por revisión visual.
 
+## 2.1 Evidencia PREMERGE técnica disponible, NO cierre
+
+El PR técnico #104 conserva HEAD `8a1e8fea89ca324a131cf6b3710e885f3745e74f`. El workflow específico [C04-10, run 43345315412](https://github.com/crecisol-platform/CRECISOL/actions/runs/43345315412) concluyó **completed/success** y registró en su log **145 aserciones .NET positivas y 119 negativas**, más **27 verificaciones MySQL 8.4 positivas y 43 negativas**, con 12 solicitudes concurrentes al mismo job (**1 claim y 11 BUSY, sin doble ejecución**). Auditorías A/B/C y seis mutaciones negativas estáticas de guardas aprobadas en el mismo SHA/run. Suite integrada `.NET 10 Release -warnaserror` y regresiones anteriores aprobadas.
+
+**La regresión integral C03-10 todavía no se presume SUCCESS** al incorporar esta evidencia. Permanecen pendientes el total de workflows PREMERGE aplicables, la fusión técnica a `dev`, su CI POSTMERGE, las puertas del PR documental y el comentario institucional definitivo. Un workflow `skipped` condicional no cuenta como aprobado.
+
 ## 3. Condiciones de fusión y certificado
 
 1. Confirmar SHA técnico final del PR #104 y que su diff contiene únicamente los contratos, las pruebas y los gates C04-10 sin conexión a producción.
