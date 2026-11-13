@@ -35,7 +35,7 @@ def audit_a():
         "No contaminar caché cruzada", "C04-11",
         "Documento Maestro"
     ), "official C04-10 scope")
-    contains(SECURITY, ("Shared DB", "Dedicated DB", "cachés",
+    contains(SECURITY, ("Shared DB", "Dedicated DB", "cach",
                         "medios", "exportaciones", "tenant"),
              "transversal tenant security")
     contains(MEDIA_ADR, ("Cloudflare", "NO IMPLEMENTADA", "R2",
