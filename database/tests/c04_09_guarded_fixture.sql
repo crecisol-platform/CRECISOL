@@ -64,7 +64,17 @@ CREATE TABLE c04_09_control.ledger (
    REFERENCES c04_09_control.targets(target_id) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB;
 
-DELIMITER $$
+DELIMITER $
+-- Valid-target ownership attacks must fail even when the new tenant exists
+-- and no PK/unique collision would prevent the reparenting.
+CREATE TRIGGER c0409_shared_owner_immutable
+BEFORE UPDATE ON c04_09_shared.resources FOR EACH ROW
+BEGIN
+ IF NOT (OLD.tenant_id <=> NEW.tenant_id) OR
+    NOT (OLD.resource_id <=> NEW.resource_id) THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Shared resource ownership immutable';
+ END IF;
+END$
 CREATE TRIGGER c0409_target_binding_immutable
 BEFORE UPDATE ON c04_09_control.targets FOR EACH ROW
 BEGIN
@@ -83,7 +93,11 @@ BEGIN
     NOT (OLD.migration_version <=> NEW.migration_version) OR
     NOT (OLD.checksum <=> NEW.checksum) OR
     NOT (OLD.fence <=> NEW.fence) OR
-    (OLD.state='verified' AND NEW.state <> 'verified') THEN
+    NOT (
+       OLD.state <=> NEW.state
+       OR (OLD.state='applying' AND NEW.state IN ('verified','failed'))
+       OR (OLD.state='failed' AND NEW.state='recovered')
+    ) THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration ledger identity immutable';
  END IF;
 END$$
