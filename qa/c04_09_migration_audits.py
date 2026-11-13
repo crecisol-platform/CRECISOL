@@ -29,7 +29,7 @@ def audit_a():
                           "PlacementRevision", "MigrationVersion", "Checksum"),
                  "domain migration scope")
     shared = (ROOT / "backend/src/Crecisol.Domain/Tenancy/TrustedSharedSchemaMigrationPlan.cs").read_text()
-    contains_all(shared, ("PlatformShared", "ProtectedSharedSchemaFamily",
+    contains_all(shared, ("Platform-wide", "ProtectedSharedSchemaFamily",
                           "ExpectedSchemaRevision", "SchemaFamily"), "platform-wide schema authority")
     required("TenantId" not in shared.replace("TenantId, DedicatedStorageSlotId", ""),
              "shared scope cannot carry a per-tenant identifier")
