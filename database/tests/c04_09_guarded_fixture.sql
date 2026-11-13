@@ -276,17 +276,28 @@ CREATE PROCEDURE c04_09_control.mark_failed(
 SQL SECURITY DEFINER
 BEGIN
  DECLARE v_target VARCHAR(12) DEFAULT NULL;
+ DECLARE v_locked_target VARCHAR(12) DEFAULT NULL;
+ DECLARE v_ledger_op CHAR(32) DEFAULT NULL;
  DECLARE v_gate CHAR(32) DEFAULT NULL;
  DECLARE v_fence BIGINT UNSIGNED DEFAULT NULL;
  DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
  START TRANSACTION;
- SELECT target_id INTO v_target FROM c04_09_control.ledger
- WHERE operation_id=p_op AND fence=p_fence AND state='applying' FOR UPDATE;
+ -- Preserve approvals -> target -> gate -> ledger lock order also on recovery.
+ SELECT target_id INTO v_target FROM c04_09_control.approvals
+ WHERE operation_id=p_op FOR UPDATE;
  IF v_target IS NULL THEN
-  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Cannot mark non-applying operation failed';
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Unknown operation for failure recovery';
  END IF;
+ SELECT target_id INTO v_locked_target FROM c04_09_control.targets
+ WHERE target_id=v_target FOR UPDATE;
  SELECT inflight_operation,fence INTO v_gate,v_fence FROM c04_09_control.gates
  WHERE target_id=v_target FOR UPDATE;
+ SELECT operation_id INTO v_ledger_op FROM c04_09_control.ledger
+ WHERE operation_id=p_op AND target_id=v_target
+   AND fence=p_fence AND state='applying' FOR UPDATE;
+ IF v_ledger_op IS NULL OR v_locked_target IS NULL THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Cannot mark non-applying operation failed';
+ END IF;
  IF NOT (v_gate <=> p_op) OR v_fence <> p_fence THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Failure recovery fencing mismatch';
  END IF;
@@ -301,13 +312,15 @@ SQL SECURITY DEFINER
 BEGIN
  DECLARE v_target VARCHAR(12) DEFAULT NULL;
  DECLARE v_schema VARCHAR(32) DEFAULT NULL;
+ DECLARE v_ledger_op CHAR(32) DEFAULT NULL;
  DECLARE v_gate CHAR(32) DEFAULT NULL;
  DECLARE v_fence BIGINT UNSIGNED DEFAULT NULL;
  DECLARE v_columns BIGINT DEFAULT 0;
  DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
  START TRANSACTION;
- SELECT target_id INTO v_target FROM c04_09_control.ledger
- WHERE operation_id=p_op AND fence=p_fence AND state='failed' FOR UPDATE;
+ -- Same lock order as reserve/finalize, never start from the ledger.
+ SELECT target_id INTO v_target FROM c04_09_control.approvals
+ WHERE operation_id=p_op FOR UPDATE;
  IF v_target IS NULL THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No failed migration to recover';
  END IF;
@@ -315,7 +328,10 @@ BEGIN
  WHERE target_id=v_target FOR UPDATE;
  SELECT inflight_operation,fence INTO v_gate,v_fence FROM c04_09_control.gates
  WHERE target_id=v_target FOR UPDATE;
- IF NOT (v_gate <=> p_op) OR v_fence <> p_fence THEN
+ SELECT operation_id INTO v_ledger_op FROM c04_09_control.ledger
+ WHERE operation_id=p_op AND target_id=v_target
+   AND fence=p_fence AND state='failed' FOR UPDATE;
+ IF v_ledger_op IS NULL OR NOT (v_gate <=> p_op) OR v_fence <> p_fence THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Recovery fence changed';
  END IF;
  SELECT COUNT(*) INTO v_columns FROM information_schema.columns
