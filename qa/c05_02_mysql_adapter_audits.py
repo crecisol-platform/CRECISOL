@@ -114,7 +114,7 @@ GUARDS = {
         "--network bridge -p '127.0.0.1::3306'",
         "mysql:8.4@sha256:",
         "openssl rand -hex 24",
-        "GRANT SELECT, INSERT ON",
+        "GRANT SELECT ON",
         "GRANT EXECUTE ON PROCEDURE",
         "CRECISOL_C05_02_TEST_DSN=",
         "CRECISOL_C05_02_TEST_ADMIN_DSN=",
