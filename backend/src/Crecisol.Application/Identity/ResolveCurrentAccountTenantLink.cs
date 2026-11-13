@@ -110,8 +110,9 @@ public sealed class ResolveCurrentAccountTenantLink
         var finalNow = clock.GetUtcNow();
         RequireUtc(finalNow);
         cancellationToken.ThrowIfCancellationRequested();
-        if (finalNow < firstNow || !account.IsActiveAtUtc(finalNow) ||
-            !link.IsActiveAtUtc(finalNow))
+        if (finalNow < firstNow)
+            throw new InvalidOperationException("Identity clock moved backwards.");
+        if (!account.IsActiveAtUtc(finalNow) || !link.IsActiveAtUtc(finalNow))
             throw new UnauthorizedAccessException("Account membership expired.");
 
         // No roles, branch rights, data access, storage choices, password
