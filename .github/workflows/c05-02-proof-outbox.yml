@@ -1,0 +1,80 @@
+name: CRECISOL C05-02 protected delivery outbox A-B-C NET10 MySQL8.4
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableProofDeliveryOutbox.cs'
+      - 'backend/tests/Crecisol.ProofOutbox.MySqlTests/**'
+      - 'database/tests/fixtures/c05_02_delivery_outbox_atomic_fixture.sql'
+      - 'database/tests/c05_02_proof_outbox_mysql_smoke.sh'
+      - 'docs/c05/INTEGRACION_OUTBOX_PROTEGIDO_C05_02.md'
+      - 'qa/c05_02_proof_outbox_audits.py'
+      - '.github/workflows/c05-02-proof-outbox.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableProofDeliveryOutbox.cs'
+      - 'backend/tests/Crecisol.ProofOutbox.MySqlTests/**'
+      - 'database/tests/fixtures/c05_02_delivery_outbox_atomic_fixture.sql'
+      - 'database/tests/c05_02_proof_outbox_mysql_smoke.sh'
+      - 'docs/c05/INTEGRACION_OUTBOX_PROTEGIDO_C05_02.md'
+      - 'qa/c05_02_proof_outbox_audits.py'
+      - '.github/workflows/c05-02-proof-outbox.yml'
+permissions:
+  contents: read
+jobs:
+  protected-delivery-outbox:
+    name: C05-02 scoped AEAD outbox, real leases and no production sender
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - name: Checkout read-only exact PR merge or dev SHA
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Audit A master authority and architecture boundary
+        run: |
+          set -euo pipefail
+          test ! -e .c05-02-delivery-outbox
+          python3 -m py_compile qa/c05_02_proof_outbox_audits.py
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c05_02_proof_outbox_audits.py A
+          mkdir -p .c05-02-delivery-outbox
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-delivery-outbox/A
+      - name: Audit B offensive source mutation barriers
+        run: |
+          set -euo pipefail
+          python3 qa/c05_02_proof_outbox_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-delivery-outbox/B
+      - name: Install pinned .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build API and new and predecessor contract tests with warnings as errors
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.ProofOutbox.MySqlTests/Crecisol.ProofOutbox.MySqlTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.EmailPossession.MySqlTests/Crecisol.EmailPossession.MySqlTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj
+          printf 'PASS dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-delivery-outbox/dotnet
+      - name: REAL MySQL8.4 tenant AEAD outbox issue/lease/cancel and 16-worker race
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_02_proof_outbox_mysql_smoke.sh
+          printf 'PASS mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-delivery-outbox/mysql
+      - name: Audit C precise source SHA, PR scope and same-run evidence
+        run: |
+          set -euo pipefail
+          python3 qa/c05_02_proof_outbox_audits.py C
+          printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-delivery-outbox/C
+      - name: Require A B C NET10 MySQL8.4 success on identical SHA/run
+        run: |
+          set -euo pipefail
+          for stage in A B C dotnet mysql; do
+            grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-02-delivery-outbox/$stage"
+          done
+          echo 'PASS C05-02 TEST-ONLY PROTECTED OUTBOX; NO REAL SMTP, AUTH, MEMBERSHIP, SESSION OR CERTIFICATION'
