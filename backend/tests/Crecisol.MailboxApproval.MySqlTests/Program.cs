@@ -326,7 +326,7 @@ var loginWrong=await LoginResolver(hostA).ExecuteAsync(
     CancellationToken.None);
 Check(loginCorrect.Status==ContextualLoginPreparationStatus.Ready &&
       loginCorrect.Evidence?.TenantId==tenantA &&
-      loginCorrect.Evidence.HostRevision==8 &&
+      loginCorrect.Evidence?.HostRevision==8 &&
       loginWrong.Status==ContextualLoginPreparationStatus.Denied,
     "Real C05-04 Argon2id proof and verified host required for sensitive changes");
 
@@ -603,8 +603,6 @@ Check((await VerifyReq(hostB.Value,verifyEmail))==unverified &&
 var sessionA=await SeedSessionAsync(tenantA,actor);
 var sessionB=await SeedSessionAsync(tenantB,actor);
 var otherSession=await SeedSessionAsync(tenantB,otherActor);
-var authA=await resolver.ResolveAsync(hostA,CancellationToken.None);
-var authB=await resolver.ResolveAsync(hostB,CancellationToken.None);
 Check(await sessionLedger.IsCurrentAsync(tenantA,
         sessionProtector.TryDigest(sessionA)!,CancellationToken.None) &&
       await sessionLedger.IsCurrentAsync(tenantB,
