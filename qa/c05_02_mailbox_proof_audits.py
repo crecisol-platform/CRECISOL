@@ -68,7 +68,7 @@ GUARDS = {
         "CryptographicOperations.ZeroMemory(bytes)",
         "ConfirmProofAsync(",
         "hexadecimalCode.Length != 64",
-        "Convert.TryFromHexString",
+        "Convert.FromHexString",
         "NeutralRegistrationReceipt.Acknowledged",
     ),
     "infrastructure": (
