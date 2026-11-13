@@ -20,7 +20,8 @@ FILES = {
   "smoke": "database/tests/c05_02_mailbox_bound_mysql_smoke.sh",
   "doc": "docs/c05/PRUEBA_UNION_BUZON_IDENTIDAD_INVITACION_C05_02.md",
   "qa": "qa/c05_02_mailbox_bound_audits.py",
-  "workflow": ".github/workflows/c05-02-mailbox-bound.yml"
+  "workflow": ".github/workflows/c05-02-mailbox-bound.yml",
+  "adapter": "backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMailboxBoundRecipientClaimLedger.cs"
 }
 ALLOWED = set(FILES.values())
 MARKERS = {
@@ -159,27 +160,6 @@ MARKERS = {
     "finally { CryptographicOperations.ZeroMemory(digest); }",
     "async Task<bool> Claim(TenantId tenant,InvitationId invitation,",
     "byte[] rawCode,byte[] assertion,Guid? intentOverride=null)",
-    "if(rawCode.Length!=32 || assertion.Length!=125 || assertion[0]!=1)",
-    "var issuedSeconds=BinaryPrimitives.ReadInt64BigEndian(assertion.AsSpan(77,8));",
-    "var expirySeconds=BinaryPrimitives.ReadInt64BigEndian(assertion.AsSpan(85,8));",
-    "var session=MySqlRfc4122Guid.Decode(assertion.AsSpan(53,16).ToArray());",
-    "var actor=MySqlRfc4122Guid.Decode(assertion.AsSpan(21,16).ToArray());",
-    "var channel=MySqlRfc4122Guid.Decode(assertion.AsSpan(37,16).ToArray());",
-    "var recipientDigest=InvitationTokenDigest.FromToken(rawCode)",
-    "await using var db=new MySqlConnection(workerDsn);",
-    "await using var cmd=new MySqlCommand(\"c05_02_claim_mailbox_bound_once\",db)",
-    "cmd.Parameters.Add(name,MySqlDbType.Binary).Value=MySqlRfc4122Guid.Encode(id);",
-    "cmd.Parameters.Add(\"p_digest\",MySqlDbType.Binary).Value=recipientDigest;",
-    "Id(\"p_signed_session\",session);",
-    "cmd.Parameters.Add(\"p_signed_revision\",MySqlDbType.Int64).Value=",
-    "BinaryPrimitives.ReadInt64BigEndian(assertion.AsSpan(69,8));",
-    "cmd.Parameters.Add(\"p_signed_key_epoch\",MySqlDbType.Int32).Value=",
-    "BinaryPrimitives.ReadInt32BigEndian(assertion.AsSpan(1,4));",
-    "cmd.Parameters.Add(\"p_signed_issued\",MySqlDbType.DateTime).Value=",
-    "cmd.Parameters.Add(\"p_signed_expires\",MySqlDbType.DateTime).Value=",
-    "Id(\"p_intent\",intentOverride??intentByInvite[invitation.Value]);",
-    "cmd.Parameters.Add(\"p_signed_assertion\",MySqlDbType.VarBinary).Value=assertion;",
-    "finally { CryptographicOperations.ZeroMemory(recipientDigest); }",
     "var intentA=Guid.NewGuid();",
     "var intentA2=Guid.NewGuid();",
     "var intentB=Guid.NewGuid();",
@@ -227,10 +207,9 @@ MARKERS = {
     "RecipientChannelBindingId.From(Guid.Parse(RA2)),sessionA2,mailboxA2,proofA2);",
     "await BindMailbox(b.Id,tenantB,intentB,",
     "RecipientChannelBindingId.From(Guid.Parse(RB)),sessionB,mailboxB,proofB);",
-    "CryptographicOperations.FixedTimeEquals(",
-    "macExpected=HMACSHA256.HashData(testKey,macMessage);",
-    "CryptographicOperations.ZeroMemory(macMessage);",
-    "CryptographicOperations.ZeroMemory(macExpected);"
+    "using var verifiedClaim = new MySqlDisposableMailboxBoundRecipientClaimLedger(",
+    "verifiedClaim.TryClaimWithVerifiedMailboxAndSignatureOnceAsync(",
+    "intentOverride??intentByInvite[invitation.Value]"
   ],
   "smoke": [
     "IMAGE=\"mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902\"",
@@ -293,6 +272,36 @@ MARKERS = {
     "ÚNICO UPDATE",
     "NO verifica por sí mismo",
     "Bloqueos P0/P1"
+  ],
+  "adapter": [
+    "public sealed class MySqlDisposableMailboxBoundRecipientClaimLedger",
+    "IDisposable",
+    "options.Database != RequiredDatabase",
+    "options.AllowLoadLocalInfile",
+    "Pooling = false",
+    "signingKey = HMACSHA256.HashData(serverHeldSecret",
+    "ObjectDisposedException.ThrowIf(disposed, this)",
+    "trustedMailboxIntentId == Guid.Empty",
+    "rawInvitationCapability.Length != 32",
+    "TryVerify(signedRecipientAssertion.Span, trustedNowUtc, out var proof)",
+    "proof.Tenant != verifiedTenant.Value",
+    "InvitationTokenDigest.FromToken(rawInvitationCapability.Span)",
+    "var signedBytes = signedRecipientAssertion.ToArray();",
+    "new MySqlCommand(\"c05_02_claim_mailbox_bound_once\", db)",
+    "Id(cmd,\"p_tenant\",proof.Tenant)",
+    "Id(cmd,\"p_invitation\",invitationId.Value)",
+    "Id(cmd,\"p_actor\",proof.Actor)",
+    "Id(cmd,\"p_recipient\",proof.Recipient)",
+    "Id(cmd,\"p_signed_session\",proof.Session)",
+    "Id(cmd,\"p_intent\",trustedMailboxIntentId)",
+    "cmd.Parameters.Add(\"p_signed_assertion\",MySqlDbType.VarBinary).Value=signedBytes",
+    "CryptographicOperations.FixedTimeEquals(",
+    "CryptographicOperations.ZeroMemory(protectedDigest)",
+    "CryptographicOperations.ZeroMemory(signedBytes)",
+    "expires<=nowSeconds || expires>nowSeconds+300",
+    "expires<=issued || expires-issued is <30 or >300",
+    "result = new SessionProof(",
+    "CryptographicOperations.ZeroMemory(signingKey)"
   ]
 }
 
@@ -308,6 +317,11 @@ def invariants(data):
     for k, markers in MARKERS.items():
         for marker in markers:
             require(marker in data[k], "Missing security guard: " + k + ":" + marker)
+    adapter=data["adapter"]
+    require("CryptographicOperations.FixedTimeEquals(" in adapter and
+            'new MySqlCommand("c05_02_claim_mailbox_bound_once", db)' in adapter and
+            'Id(cmd,"p_intent",trustedMailboxIntentId)' in adapter,
+            "The trusted backend adapter MUST verify HMAC before a mailbox claim")
     sql=data["sql"]
     require("ROW_COUNT()=2" in sql and
             "mailbox_binding.lifecycle='USED'" in sql and
