@@ -233,6 +233,8 @@ deny "stale fencing cannot finalize shared schema" \
 root_sql "ALTER TABLE c04_09_shared.resources ADD COLUMN migration_tag VARCHAR(20) NULL"
 check "verified shared migration" "VERIFIED" "$(runner_sql "
  CALL c04_09_control.finalize('$O_SHARED',1)")"
+check "global Shared schema revision advanced once" "18" "$(root_sql "
+ SELECT placement_revision FROM c04_09_control.targets WHERE target_id='SHARED0'")"
 check "shared schema covers BOTH valid tenants" "2" "$(root_sql "
  SELECT COUNT(DISTINCT tenant_id) FROM c04_09_shared.resources WHERE resource_id=1")"
 check "shared metadata confirms target column" "1" "$(root_sql "
@@ -247,9 +249,13 @@ deny "verified shared replay detects schema drift" \
  "CALL c04_09_control.reserve('$O_SHARED')"
 root_sql "ALTER TABLE c04_09_shared.resources ADD COLUMN migration_tag VARCHAR(20) NULL"
 O_CONFLICT="$(OP 202)"
-decision "$O_CONFLICT" SHARED0 SHARED NULL NULL 17 4 schema_shared_1 "$HASH_B"
+decision "$O_CONFLICT" SHARED0 SHARED NULL NULL 18 4 schema_shared_1 "$HASH_B"
 deny "global same version different checksum" \
  "CALL c04_09_control.reserve('$O_CONFLICT')"
+O_STALE_SHARED="$(OP 203)"
+decision "$O_STALE_SHARED" SHARED0 SHARED NULL NULL 17 4 schema_shared_2 "$HASH_A"
+deny "new Shared version cannot use old global schema revision" \
+ "CALL c04_09_control.reserve('$O_STALE_SHARED')"
 check "unrelated dedicated A stays unchanged" "0" "$(root_sql "
  SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='c04_09_ded_a'
  AND table_name='resources' AND column_name='migration_tag'")"
