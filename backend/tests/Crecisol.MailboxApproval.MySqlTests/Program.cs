@@ -86,10 +86,6 @@ CryptographicOperations.ZeroMemory(sessionKey);
 var ledger = new MySqlDisposableSensitiveMailboxLedger(runnerDsn);
 var sessionLedger = new MySqlDisposableSessionLedger(runnerDsn);
 var delivery = new FixtureMailboxDelivery();
-var freshReauthentication=new FixtureImmediateReauthentication(
-    hint => LoginResolver(hint.TenantId==tenantA ? hostA : hostB));
-var sensitive = new VerifyAndChangeSensitiveMailbox(
-    approvalProtector,recoveryProtector,ledger,delivery,freshReauthentication);
 var screening = new FixtureCompromisedScreen();
 var hasher = new Argon2idPasswordHasher(PasswordHashingPolicy.Default,screening);
 var currentPassword = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
@@ -97,8 +93,7 @@ var phc = hasher.CreateVerifier(currentPassword).ExportForTrustedCredentialStore
 var dummyPhc = hasher.CreateVerifier(Convert.ToBase64String(
     RandomNumberGenerator.GetBytes(32))).ExportForTrustedCredentialStore();
 
-Check(sensitive.ToString()=="VerifyAndChangeSensitiveMailbox[redacted]" &&
-      approvalProtector.ToString()=="MailboxApprovalTokenProtector[redacted]" &&
+Check(approvalProtector.ToString()=="MailboxApprovalTokenProtector[redacted]" &&
       ledger.ToString()=="MySqlDisposableSensitiveMailboxLedger[redacted]",
     "No HMAC key, DSN or bearer leaks through diagnostics");
 Check(approvalProtector.TryDigest(null) is null &&
@@ -317,6 +312,13 @@ PrepareContextualPasswordLogin LoginResolver(CanonicalTenantHost host) =>
         new FixtureLinkDirectory(actor,links),
         resolver,new FixtureTenantCatalog(tenantA,tenantB,catalogA,catalogB),
         clock);
+
+var freshReauthentication=new FixtureImmediateReauthentication(
+    hint => LoginResolver(hint.TenantId==tenantA ? hostA : hostB));
+var sensitive = new VerifyAndChangeSensitiveMailbox(
+    approvalProtector,recoveryProtector,ledger,delivery,freshReauthentication);
+Check(sensitive.ToString()=="VerifyAndChangeSensitiveMailbox[redacted]",
+    "Sensitive email use case cannot log secrets or credentials");
 
 var loginCorrect=await LoginResolver(hostA).ExecuteAsync(
     CanonicalLoginHandle.Parse(oldEmail),currentPassword.AsMemory(),
