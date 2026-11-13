@@ -15,6 +15,7 @@ ADAPTER = ROOT / "backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableIn
 TEST = ROOT / "backend/tests/Crecisol.InvitationSecurity.MySqlIntegrationTests/Program.cs"
 PROJECT = ROOT / "backend/tests/Crecisol.InvitationSecurity.MySqlIntegrationTests/Crecisol.InvitationSecurity.MySqlIntegrationTests.csproj"
 SCRIPT = ROOT / "database/tests/c05_02_dotnet_mysql_adapter_smoke.sh"
+SCHEMA = ROOT / "database/tests/fixtures/c05_02_invitation_atomic_fixture.sql"
 DOC = ROOT / "docs/c05/IMPLEMENTACION_C05_02_MYSQL_ADAPTER.md"
 WORKFLOW = ROOT / ".github/workflows/c05-02-mysql-ledger.yml"
 API = ROOT / "backend/src/Crecisol.Api/Program.cs"
@@ -30,6 +31,7 @@ ALLOWED = {
     "backend/tests/Crecisol.InvitationSecurity.MySqlIntegrationTests/Program.cs",
     "backend/tests/Crecisol.InvitationSecurity.MySqlIntegrationTests/Crecisol.InvitationSecurity.MySqlIntegrationTests.csproj",
     "database/tests/c05_02_dotnet_mysql_adapter_smoke.sh",
+    "database/tests/fixtures/c05_02_invitation_atomic_fixture.sql",
     "docs/c05/IMPLEMENTACION_C05_02_MYSQL_ADAPTER.md",
     "qa/c05_02_invitations_audits.py",
     "qa/c05_02_mysql_adapter_audits.py",
@@ -48,25 +50,11 @@ GUARDS = {
         "string.Equals(settings.Server, \"127.0.0.1\"",
         "settings.AllowLoadLocalInfile",
         "Pooling = false",
-        "IsolationLevel.ReadCommitted",
-        "FOR UPDATE",
-        "r.tenant_id=@tenant AND r.recipient_id=@recipient",
-        "t.lifecycle='ACTIVE'",
-        "s.enabled=1",
-        "t.terms_version=@terms",
-        "@issued<=UTC_TIMESTAMP(6)",
-        "UTC_TIMESTAMP(6)<@expires",
-        "BETWEEN 60 AND 259200",
-        "r.channel_verified=1",
-        "r.actor_id<>s.actor_id",
-        "s.profile_scope='INVITE_EMPLOYEE'",
-        "s.profile_scope='INVITE_CONSUMER'",
-        "lifecycle='PENDING'",
-        "expires_at_utc>UTC_TIMESTAMP(6)",
-        "LIMIT 1 FOR UPDATE",
-        "INSERT INTO c05_02_invitations",
+        "c05_02_issue_once",
+        "CommandType.StoredProcedure",
         "snapshot.Digest.CopyForProtectedPersistenceAdapter()",
         "CryptographicOperations.ZeroMemory(digest)",
+        "new MySqlConnection(trustedDsn)",
         "tenant_id=@tenant AND invitation_id=@invitation",
         "LIMIT 2",
         "tenant != verifiedTenant || invite != id",
@@ -74,11 +62,36 @@ GUARDS = {
         "MySqlRfc4122Guid.Encode",
         "MySqlRfc4122Guid.Decode",
         "MySqlDbType.Binary",
-        "CommandType.StoredProcedure",
         "c05_02_claim_once",
         "response != \"CLAIMED\" && response != \"DENIED\"",
+        "response != \"ISSUED\" && response != \"DENIED\"",
         "ArgumentNullException.ThrowIfNull(verifiedRecipientActor)",
         "expected.IsPendingAtUtc(nowUtc)",
+    ),
+    "schema": (
+        "CREATE PROCEDURE c05_02_issue_once(",
+        "SQL SECURITY DEFINER",
+        "DECLARE EXIT HANDLER FOR 1062",
+        "DECLARE EXIT HANDLER FOR SQLEXCEPTION",
+        "START TRANSACTION;",
+        "r.tenant_id=p_tenant AND r.recipient_id=p_recipient",
+        "t.lifecycle='ACTIVE'",
+        "s.enabled=1",
+        "t.terms_version=p_terms",
+        "p_issued<=UTC_TIMESTAMP(6)",
+        "UTC_TIMESTAMP(6)<p_expires",
+        "BETWEEN 60 AND 259200",
+        "r.channel_verified=1",
+        "r.actor_id<>s.actor_id",
+        "s.profile_scope='INVITE_EMPLOYEE'",
+        "s.profile_scope='INVITE_CONSUMER'",
+        "lifecycle='PENDING'",
+        "expires_at_utc>UTC_TIMESTAMP(6)",
+        "FOR UPDATE",
+        "SELECT EXISTS(",
+        "INSERT INTO c05_02_invitations",
+        "SELECT 'ISSUED' AS result",
+        "SELECT 'DENIED' AS result",
     ),
     "test": (
         "if (args.Length == 0)",
@@ -146,6 +159,7 @@ def sources() -> dict[str, str]:
         "adapter": read(ADAPTER),
         "test": read(TEST),
         "script": read(SCRIPT),
+        "schema": read(SCHEMA),
         "document": read(DOC),
         "workflow": read(WORKFLOW),
     }
@@ -155,6 +169,8 @@ def guard(data: dict[str, str]) -> None:
         for marker in required:
             need(marker in data[name], f"Fail-closed {name} guard absent: {marker}")
     adapter = data["adapter"]
+    need("INSERT INTO" not in adapter and "FOR UPDATE" not in adapter,
+         "SQL writes and locks require definer procedure, not direct table access")
     need("HttpContext" not in adapter and "DbContext" not in adapter and
          "IConfiguration" not in adapter and "Environment.GetEnvironmentVariable" not in adapter,
          "Infrastructure adapter must only accept a server-trusted explicit DSN")
@@ -173,6 +189,8 @@ def guard(data: dict[str, str]) -> None:
     need("workflow_dispatch:" not in wf and "id-token: write" not in wf and
          "deploy" not in wf.casefold() and "permissions:\n  contents: read" in wf,
          "No production/credential escalation in CI")
+    need("GRANT SELECT, INSERT ON" not in data["script"],
+         "Adapter must not receive direct INSERT rights")
     need("DROP DATABASE" not in data["script"] and "GRANT ALL" not in data["script"],
          "No broad privileges or unsafe DB deletions")
     need("NO CERTIFICADA FUNCIONALMENTE" in data["document"] and
