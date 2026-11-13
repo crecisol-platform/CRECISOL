@@ -182,6 +182,10 @@ Deny<InvalidOperationException>(() =>
 Check(LoginRecord().ToString() == "TrustedLoginCredentialSnapshot[redacted]" &&
       verifier.ToString() == "Argon2idLoginCandidateVerifier[redacted]",
     "PHC and credential identifier never appear in diagnostics");
+Check(typeof(TrustedLoginCredentialSnapshot).GetMethods(
+        BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
+    .All(m => m.Name != "ExportForInternalVerifier"),
+    "PHC export cannot be called from public API adapters");
 
 // Real cryptographic positive cases.
 var a = await Run();
