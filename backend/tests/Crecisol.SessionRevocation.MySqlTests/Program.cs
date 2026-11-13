@@ -165,7 +165,8 @@ var randomString = randomToken.RevealForTrustedTransport();
 Check(randomString.Length == 47 && randomString.StartsWith("cs5_", StringComparison.Ordinal) &&
       randomToken.ToString() == "IssuedSessionToken[redacted]",
     "CSPRNG 256-bit opaque token explicitly transferable and redacted");
-var firstDigest = tokens.TryDigest(randomString);
+var firstDigest = tokens.TryDigest(randomString) ??
+    throw new InvalidOperationException("Fresh valid token must have a digest.");
 Check(firstDigest is not null &&
       firstDigest.CopyForTrustedLedger().Length == 32 &&
       firstDigest.ToString() == "SessionTokenDigest[redacted]",
