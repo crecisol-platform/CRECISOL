@@ -1,0 +1,92 @@
+name: CRECISOL C05-05 session rotation logout A-B-C real NET10 HTTP MySQL8.4
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Application/Identity/SessionLifecycleContracts.cs'
+      - 'backend/src/Crecisol.CredentialSecurity/OpaqueSessionTokenProtector.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableSessionLedger.cs'
+      - 'backend/tests/Crecisol.SessionRevocation.MySqlTests/**'
+      - 'database/tests/fixtures/c05_05_disposable_sessions.sql'
+      - 'database/tests/c05_05_session_http_mysql.sh'
+      - 'docs/c05/C05_05_ESPECIFICACION.md'
+      - 'qa/c05_05_session_audits.py'
+      - '.github/workflows/c05-05-sessions.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Application/Identity/SessionLifecycleContracts.cs'
+      - 'backend/src/Crecisol.CredentialSecurity/OpaqueSessionTokenProtector.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableSessionLedger.cs'
+      - 'backend/tests/Crecisol.SessionRevocation.MySqlTests/**'
+      - 'database/tests/fixtures/c05_05_disposable_sessions.sql'
+      - 'database/tests/c05_05_session_http_mysql.sh'
+      - 'docs/c05/C05_05_ESPECIFICACION.md'
+      - 'qa/c05_05_session_audits.py'
+      - '.github/workflows/c05-05-sessions.yml'
+permissions:
+  contents: read
+jobs:
+  session-lifecycle:
+    name: Real .NET10 loopback HTTP & MySQL8.4 issue rotate revoke A-B-C
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - name: Checkout read-only immutable SHA with PR lineage
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Audit A canonical Word and C05-04 prior certified boundary
+        run: |
+          set -euo pipefail
+          test ! -e .c05-05-proof
+          python3 -m py_compile qa/c05_05_session_audits.py
+          python3 qa/validate_foundation.py
+          python3 qa/c05_05_session_audits.py A
+          mkdir -p .c05-05-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-05-proof/A
+      - name: Audit B adversarial token/SQL/tenant/expiry marker mutations
+        run: |
+          set -euo pipefail
+          python3 qa/c05_05_session_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-05-proof/B
+      - name: Install official .NET10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build actual API and C05-05 HTTP/MySQL integration executable
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.SessionRevocation.MySqlTests/Crecisol.SessionRevocation.MySqlTests.csproj -c Release --nologo -warnaserror
+          printf 'PASS build sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-05-proof/build
+      - name: Test real disposable MySQL 8.4 and actual loopback HTTP API
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_05_session_http_mysql.sh
+          printf 'PASS mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-05-proof/mysql
+      - name: Regress C05-01, 02, 03 and 04 actual NET10 contracts
+        run: |
+          set -euo pipefail
+          for proj in \
+            backend/tests/Crecisol.AccountIdentity.ContractsTests/Crecisol.AccountIdentity.ContractsTests.csproj \
+            backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj \
+            backend/tests/Crecisol.PasswordHash.ContractsTests/Crecisol.PasswordHash.ContractsTests.csproj \
+            backend/tests/Crecisol.ContextualLogin.ContractsTests/Crecisol.ContextualLogin.ContractsTests.csproj; do
+            dotnet build "$proj" -c Release --nologo -warnaserror
+            dotnet run --no-build -c Release --project "$proj"
+          done
+          printf 'PASS regressions sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-05-proof/regressions
+      - name: Audit C exact files SHA run and no production session API
+        run: |
+          set -euo pipefail
+          python3 qa/c05_05_session_audits.py C
+          printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-05-proof/C
+      - name: Require five actual positive and negative proof stages same SHA/run
+        run: |
+          set -euo pipefail
+          for stage in A B C build mysql regressions; do
+            grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-05-proof/$stage"
+          done
+          echo 'PASS C05-05 only actual isolated HTTP and MySQL8.4 session lifecycle; NOT production login'
