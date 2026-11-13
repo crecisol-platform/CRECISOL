@@ -1,0 +1,90 @@
+name: CRECISOL C04-10 tenant artifact isolation A-B-C .NET10 MySQL8.4
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/TrustedTenantArtifactScope.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/ApplyScopedTenantArtifact.cs'
+      - 'backend/tests/Crecisol.TenantArtifacts.ContractsTests/**'
+      - 'database/tests/c04_10_*'
+      - 'qa/c04_10_artifact_audits.py'
+      - 'docs/c04/C04_10_*'
+      - '.github/workflows/c04-10-isolation.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/TrustedTenantArtifactScope.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/ApplyScopedTenantArtifact.cs'
+      - 'backend/tests/Crecisol.TenantArtifacts.ContractsTests/**'
+      - 'database/tests/c04_10_*'
+      - 'qa/c04_10_artifact_audits.py'
+      - 'docs/c04/C04_10_*'
+      - '.github/workflows/c04-10-isolation.yml'
+permissions:
+  contents: read
+jobs:
+  c04-10:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout CRECISOL without write credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: A normative traceability and syntax
+        run: |
+          set -euo pipefail
+          python3 -m py_compile qa/c04_10_artifact_audits.py
+          bash -n database/tests/c04_10_isolation_smoke.sh
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c04_10_artifact_audits.py A
+          mkdir -p .c04-10-ci-proof
+          printf 'A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-10-ci-proof/A
+      - name: B independent multitenant security and negative mutation gate
+        run: |
+          set -euo pipefail
+          python3 qa/c04_10_artifact_audits.py B
+          printf 'B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-10-ci-proof/B
+      - name: Install official .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Real API and C04-10 compilation Release warnaserror
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.TenantArtifacts.ContractsTests/Crecisol.TenantArtifacts.ContractsTests.csproj -c Release --nologo -warnaserror
+      - name: C04-10 real .NET and previous chapter 04 regressions
+        run: |
+          set -euo pipefail
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.TenantArtifacts.ContractsTests/Crecisol.TenantArtifacts.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantMigrations.ContractsTests/Crecisol.TenantMigrations.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantLifecycle.ContractsTests/Crecisol.TenantLifecycle.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantProvisioning.ContractsTests/Crecisol.TenantProvisioning.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.BranchResource.ContractsTests/Crecisol.BranchResource.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantIdentity.ContractsTests/Crecisol.TenantIdentity.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.VerifiedHosts.ContractsTests/Crecisol.VerifiedHosts.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantStorage.ContractsTests/Crecisol.TenantStorage.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantCatalog.ContractsTests/Crecisol.TenantCatalog.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.SharedTenancy.ContractsTests/Crecisol.SharedTenancy.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj
+          printf 'dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-10-ci-proof/dotnet
+      - name: Real disposable MySQL 8.4 tenant isolation and 12-way concurrent job attempts
+        run: |
+          set -euo pipefail
+          bash database/tests/c04_10_isolation_smoke.sh
+          printf 'mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-10-ci-proof/mysql
+      - name: C clean architecture and evidence scope audit
+        run: |
+          set -euo pipefail
+          python3 qa/c04_10_artifact_audits.py C
+          printf 'C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-10-ci-proof/C
+      - name: Strict combined SHA run gate A B C .NET and MySQL
+        run: |
+          set -euo pipefail
+          for phase in A B C dotnet mysql; do
+            test -s ".c04-10-ci-proof/$phase"
+            grep -Fq "sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c04-10-ci-proof/$phase"
+          done
+          echo "C04-10 A/B/C plus actual .NET10 and isolated MySQL8.4 same SHA/run SUCCESS; internal synthetic only, no real Redis/worker/Cloudflare/export"
