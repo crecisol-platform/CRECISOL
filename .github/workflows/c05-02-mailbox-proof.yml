@@ -1,0 +1,84 @@
+name: CRECISOL C05-02 independent mailbox proof A-B-C NET10 MySQL8.4
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Identity/EmailPossessionChallenge.cs'
+      - 'backend/src/Crecisol.Application/Identity/VerifyNeutralRegistrationMailbox.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableEmailPossessionAdapter.cs'
+      - 'backend/tests/Crecisol.EmailPossession.MySqlTests/**'
+      - 'database/tests/fixtures/c05_02_mailbox_proof_atomic_fixture.sql'
+      - 'database/tests/c05_02_mailbox_proof_mysql_smoke.sh'
+      - 'docs/c05/INTEGRACION_PRUEBA_CORREO_C05_02.md'
+      - 'qa/c05_02_mailbox_proof_audits.py'
+      - '.github/workflows/c05-02-mailbox-proof.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Identity/EmailPossessionChallenge.cs'
+      - 'backend/src/Crecisol.Application/Identity/VerifyNeutralRegistrationMailbox.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableEmailPossessionAdapter.cs'
+      - 'backend/tests/Crecisol.EmailPossession.MySqlTests/**'
+      - 'database/tests/fixtures/c05_02_mailbox_proof_atomic_fixture.sql'
+      - 'database/tests/c05_02_mailbox_proof_mysql_smoke.sh'
+      - 'docs/c05/INTEGRACION_PRUEBA_CORREO_C05_02.md'
+      - 'qa/c05_02_mailbox_proof_audits.py'
+      - '.github/workflows/c05-02-mailbox-proof.yml'
+permissions:
+  contents: read
+jobs:
+  c05-02-mailbox-proof:
+    name: C05-02 protected local mailbox proof, A/B/C and real DB CAS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - name: Read-only checkout exact PR merge or dev SHA
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Audit A source SHA, permission boundaries and canonical scope
+        run: |
+          set -euo pipefail
+          test ! -e .c05-02-mail-proof
+          python3 -m py_compile qa/c05_02_mailbox_proof_audits.py
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c05_01_preparation_audits.py source
+          python3 qa/c05_02_mailbox_proof_audits.py A
+          mkdir -p .c05-02-mail-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-mail-proof/A
+      - name: Audit B 95+ offensive guards with immutable baseline
+        run: |
+          set -euo pipefail
+          python3 qa/c05_02_mailbox_proof_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-mail-proof/B
+      - name: Install .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Release compilation with warnings-as-errors and prior contracts
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.EmailPossession.MySqlTests/Crecisol.EmailPossession.MySqlTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj
+          printf 'PASS dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-mail-proof/dotnet
+      - name: REAL MySQL8.4 secure proof, 16-way CAS, AEAD tamper, tenant and SQL ACL
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_02_mailbox_proof_mysql_smoke.sh
+          printf 'PASS mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-mail-proof/mysql
+      - name: Audit C exact SHA/run and no new real-account or email endpoint
+        run: |
+          set -euo pipefail
+          python3 qa/c05_02_mailbox_proof_audits.py C
+          printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-mail-proof/C
+      - name: Final same-SHA A/B/C, NET10, MySQL8.4 evidence
+        run: |
+          set -euo pipefail
+          for stage in A B C dotnet mysql; do
+            grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-02-mail-proof/$stage"
+          done
+          echo 'PASS C05-02 TEST-ONLY MAILBOX PROOF; NO REAL SMTP, IDENTITY, MEMBERSHIP, SESSION OR CERTIFICATION'
