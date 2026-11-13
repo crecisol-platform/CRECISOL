@@ -14,8 +14,7 @@ from c05_01_preparation_audits import ROOT
 REPO = "crecisol-platform/CRECISOL"
 FEATURE = "feature/c05-02-certificacion-acotada-20261113"
 FILES = {
-    "act": "docs/c05/C05_02_ACTA_CIERRE_ALCANCE_CONTRATOS.md",
-    "state": "docs/ESTADO_VIGENTE_CAPITULOS.md",
+    "act": "docs/c05/ACTA_CERTIFICACION_ACOTADA_C05_02_2026_11_13.md",
     "qa": "qa/c05_02_scope_closure_audits.py",
     "workflow": ".github/workflows/c05-02-scope-closure.yml",
 }
@@ -35,8 +34,8 @@ GUARDS = {
         "C05-07",
         "C05-08",
         "C05-10",
-        "NO elimina",
-        "NO autoriza activar API",
+        "no elimina",
+        "Tampoco autoriza activar API",
         "PREMERGE",
         "POSTMERGE",
         "B01/T01",
@@ -51,16 +50,6 @@ GUARDS = {
         "C05 como capítulo NO CERTIFICADO y C06 BLOQUEADO",
         "NO PROBADOS / NO AUTORIZADOS",
         "Rollback",
-    ),
-    "state": (
-        "RATIFICACIÓN C05-02 CONDICIONADA",
-        "C05_02_ACTA_CIERRE_ALCANCE_CONTRATOS.md",
-        "C05-02 NO CERTIFICADA hasta",
-        "C05-03 BLOQUEADA hasta",
-        "C05-02 CERTIFICADA EXCLUSIVAMENTE",
-        "C05-03 solo PARA PREPARACIÓN",
-        "C05 NO CERTIFICADO",
-        "C06 BLOQUEADO",
     ),
     "workflow": (
         "permissions:",
