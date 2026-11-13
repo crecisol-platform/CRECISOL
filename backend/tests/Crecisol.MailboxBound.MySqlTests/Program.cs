@@ -201,6 +201,25 @@ async Task<bool> Claim(TenantId tenant,InvitationId invitation,
 {
     if(rawCode.Length!=32 || assertion.Length!=125 || assertion[0]!=1)
         return false;
+    // This mimics the upstream trusted verifier in the test harness. The
+    // stored assertion fingerprint in MySQL provides a SECOND gate; SQL
+    // itself does not possess or verify the server HMAC secret.
+    var macMessage = new byte[purpose.Length+93];
+    var macExpected = Array.Empty<byte>();
+    try
+    {
+        purpose.CopyTo(macMessage,0);
+        assertion.AsSpan(0,93).CopyTo(macMessage.AsSpan(purpose.Length));
+        macExpected=HMACSHA256.HashData(testKey,macMessage);
+        if(!CryptographicOperations.FixedTimeEquals(
+             macExpected,assertion.AsSpan(93,32)))
+            return false;
+    }
+    finally
+    {
+        CryptographicOperations.ZeroMemory(macMessage);
+        CryptographicOperations.ZeroMemory(macExpected);
+    }
     var now=DateTimeOffset.UtcNow.ToUnixTimeSeconds();
     var issuedSeconds=BinaryPrimitives.ReadInt64BigEndian(assertion.AsSpan(77,8));
     var expirySeconds=BinaryPrimitives.ReadInt64BigEndian(assertion.AsSpan(85,8));
