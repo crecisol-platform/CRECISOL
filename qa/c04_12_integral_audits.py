@@ -231,12 +231,12 @@ def audit_c() -> None:
     sha, run = os.environ.get("GITHUB_SHA", ""), os.environ.get("GITHUB_RUN_ID", "")
     req(bool(re.fullmatch(r"[0-9a-f]{40}", sha)) and run.isdecimal(),
         "C04-12 audit C requires real GitHub Actions identity")
-    for marker in ("A", "B", "dotnet", "mysql"):
+    for marker in ("A", "B", "dotnet", "mysql", "frontend", "chromium"):
         path = ROOT / ".c04-12-proof" / marker
         req(path.exists() and
             path.read_text().strip() == f"PASS {marker} sha={sha} run={run}",
             "missing same-run evidence for " + marker)
-    print("C04-12 C PASS: A/B/.NET/MySQL real same SHA-run, clean layers, "
+    print("C04-12 C PASS: A/B/.NET/MySQL/Angular/Chromium real same SHA-run, clean layers, "
           "all project/SQL regressions, chapter only synthetics; no production")
 
 if __name__ == "__main__":
