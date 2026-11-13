@@ -1,5 +1,4 @@
 using System.Buffers.Binary;
-using System.Data;
 using Crecisol.Application.Identity;
 using System.Security.Cryptography;
 using System.Text;
@@ -196,71 +195,13 @@ async Task<(InvitationId Id,byte[] Code)> AddInvite(
     catch { CryptographicOperations.ZeroMemory(code); throw; }
     finally { CryptographicOperations.ZeroMemory(digest); }
 }
+using var verifiedClaim = new MySqlDisposableMailboxBoundRecipientClaimLedger(
+    workerDsn,master,1);
 async Task<bool> Claim(TenantId tenant,InvitationId invitation,
-    byte[] rawCode,byte[] assertion,Guid? intentOverride=null)
-{
-    if(rawCode.Length!=32 || assertion.Length!=125 || assertion[0]!=1)
-        return false;
-    // This mimics the upstream trusted verifier in the test harness. The
-    // stored assertion fingerprint in MySQL provides a SECOND gate; SQL
-    // itself does not possess or verify the server HMAC secret.
-    var macMessage = new byte[purpose.Length+93];
-    var macExpected = Array.Empty<byte>();
-    try
-    {
-        purpose.CopyTo(macMessage,0);
-        assertion.AsSpan(0,93).CopyTo(macMessage.AsSpan(purpose.Length));
-        macExpected=HMACSHA256.HashData(testKey,macMessage);
-        if(!CryptographicOperations.FixedTimeEquals(
-             macExpected,assertion.AsSpan(93,32)))
-            return false;
-    }
-    finally
-    {
-        CryptographicOperations.ZeroMemory(macMessage);
-        CryptographicOperations.ZeroMemory(macExpected);
-    }
-    var now=DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-    var issuedSeconds=BinaryPrimitives.ReadInt64BigEndian(assertion.AsSpan(77,8));
-    var expirySeconds=BinaryPrimitives.ReadInt64BigEndian(assertion.AsSpan(85,8));
-    if(issuedSeconds>now || issuedSeconds<now-300 ||
-       expirySeconds<=now || expirySeconds>now+300 ||
-       expirySeconds-issuedSeconds is <30 or >300)
-        return false;
-    var session=MySqlRfc4122Guid.Decode(assertion.AsSpan(53,16).ToArray());
-    var actor=MySqlRfc4122Guid.Decode(assertion.AsSpan(21,16).ToArray());
-    var channel=MySqlRfc4122Guid.Decode(assertion.AsSpan(37,16).ToArray());
-    var recipientDigest=InvitationTokenDigest.FromToken(rawCode)
-        .CopyForProtectedPersistenceAdapter();
-    try
-    {
-        await using var db=new MySqlConnection(workerDsn);
-        await db.OpenAsync();
-        await using var cmd=new MySqlCommand("c05_02_claim_mailbox_bound_once",db)
-          { CommandType=CommandType.StoredProcedure };
-        void Id(string name,Guid id)=>
-            cmd.Parameters.Add(name,MySqlDbType.Binary).Value=MySqlRfc4122Guid.Encode(id);
-        Id("p_tenant",tenant.Value);
-        Id("p_invitation",invitation.Value);
-        Id("p_actor",actor);
-        Id("p_recipient",channel);
-        cmd.Parameters.Add("p_digest",MySqlDbType.Binary).Value=recipientDigest;
-        Id("p_signed_session",session);
-        cmd.Parameters.Add("p_signed_revision",MySqlDbType.Int64).Value=
-            BinaryPrimitives.ReadInt64BigEndian(assertion.AsSpan(69,8));
-        cmd.Parameters.Add("p_signed_key_epoch",MySqlDbType.Int32).Value=
-            BinaryPrimitives.ReadInt32BigEndian(assertion.AsSpan(1,4));
-        cmd.Parameters.Add("p_signed_issued",MySqlDbType.DateTime).Value=
-            DateTimeOffset.FromUnixTimeSeconds(issuedSeconds).UtcDateTime;
-        cmd.Parameters.Add("p_signed_expires",MySqlDbType.DateTime).Value=
-            DateTimeOffset.FromUnixTimeSeconds(expirySeconds).UtcDateTime;
-        Id("p_intent",intentOverride??intentByInvite[invitation.Value]);
-        cmd.Parameters.Add("p_signed_assertion",MySqlDbType.VarBinary).Value=assertion;
-        var result=await cmd.ExecuteScalarAsync();
-        return result is "CLAIMED";
-    }
-    finally { CryptographicOperations.ZeroMemory(recipientDigest); }
-}
+    byte[] rawCode,byte[] assertion,Guid? intentOverride=null) =>
+    await verifiedClaim.TryClaimWithVerifiedMailboxAndSignatureOnceAsync(
+        tenant,invitation,intentOverride??intentByInvite[invitation.Value],
+        rawCode,assertion,DateTimeOffset.UtcNow,CancellationToken.None);
 
 var a=await AddInvite(A,IA,RA,"EMPLOYEE",LA,BRA,RESA);
 var a2=await AddInvite(A,IA,RA2,"EMPLOYEE",LA,BRA,RESA);
