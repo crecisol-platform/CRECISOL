@@ -86,8 +86,10 @@ CryptographicOperations.ZeroMemory(sessionKey);
 var ledger = new MySqlDisposableSensitiveMailboxLedger(runnerDsn);
 var sessionLedger = new MySqlDisposableSessionLedger(runnerDsn);
 var delivery = new FixtureMailboxDelivery();
+var freshReauthentication=new FixtureImmediateReauthentication(
+    hint => LoginResolver(hint.TenantId==tenantA ? hostA : hostB));
 var sensitive = new VerifyAndChangeSensitiveMailbox(
-    approvalProtector,recoveryProtector,ledger,delivery);
+    approvalProtector,recoveryProtector,ledger,delivery,freshReauthentication);
 var screening = new FixtureCompromisedScreen();
 var hasher = new Argon2idPasswordHasher(PasswordHashingPolicy.Default,screening);
 var currentPassword = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
@@ -458,10 +460,8 @@ app.MapPost("/__c05_07_test__/change/request",async(HttpContext c)=>
     {
         var previous=CanonicalLoginHandle.Parse(old.GetString());
         var replacement=CanonicalLoginHandle.Parse(next.GetString());
-        var prepared=await LoginResolver(host.Value.Host).ExecuteAsync(
-            previous,(pwd.GetString()??"").AsMemory(),c.RequestAborted);
-        await sensitive.RequestChangeAsync(previous,replacement,prepared,
-            host.Value.Hint,c.RequestAborted);
+        await sensitive.RequestChangeAsync(previous,replacement,
+            (pwd.GetString()??"").AsMemory(),host.Value.Hint,c.RequestAborted);
         return Results.Accepted();
     }
     catch (InvalidOperationException) { return Results.BadRequest(); }
@@ -634,6 +634,8 @@ Check(badPassword==(HttpStatusCode.Accepted,true) &&
       unknownLogin==badPassword &&
       delivery.Count==baselineDelivery,
     "Incorrect Argon2id/unknown account changes yield neutral HTTP and no approval links");
+Check(freshReauthentication.Calls>=2,
+    "Each sensitive request MUST invoke fresh C05-04 Argon2id verification inside use case");
 Check((await ChangeReq(hostA.Value,oldEmail,oldEmail,currentPassword)).Status==
       HttpStatusCode.Accepted && delivery.Count==baselineDelivery,
     "Equal old/new mailbox never starts sensitive change");
@@ -859,6 +861,21 @@ Console.WriteLine($"PASS CRECISOL C05-07 .NET10 real HTTP/MySQL8.4: {checks} ass
 Console.WriteLine("PASS verified mailbox, reauth Argon2id, independent old+new confirmations, five-minute expiry, 16-way one-winner CAS, audit immutability, A/B isolation and durable session revocation");
 Console.WriteLine("LIMIT: local test HTTP, memory mailbox sink and disposable MySQL only. NO real SMTP, account email change, MFA, production identity or deployment.");
 
+sealed class FixtureImmediateReauthentication(
+    Func<VerifiedTenantHostHint,PrepareContextualPasswordLogin> resolver)
+    : ITrustedImmediatePasswordReauthentication
+{
+    private int count;
+    public int Calls=>Volatile.Read(ref count);
+    public Task<ContextualLoginPreparation> VerifyFreshAsync(
+        CanonicalLoginHandle handle,ReadOnlyMemory<char> password,
+        VerifiedTenantHostHint trustedHost,CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        Interlocked.Increment(ref count);
+        return resolver(trustedHost).ExecuteAsync(handle,password,ct);
+    }
+}
 sealed class FixtureCompromisedScreen : ITrustedCompromisedPasswordScreen
 {
     public PasswordCompromiseVerdict Check(ReadOnlySpan<char> _) =>
