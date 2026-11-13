@@ -63,6 +63,28 @@ public sealed class InvitationTokenDigest
         }
     }
 
+    /// <summary>
+    /// Reconstitutes ONLY the 32-byte digest read by a restricted backend
+    /// adapter, never the original invitation bearer. Rejects missing or
+    /// malformed protected persistence data and does not expose the bytes.
+    /// </summary>
+    public static InvitationTokenDigest RestoreFromProtectedPersistence(
+        ReadOnlySpan<byte> storedDigest)
+    {
+        if (storedDigest.Length != 32)
+            throw new InvalidOperationException("Invalid protected invitation digest.");
+        var copy = storedDigest.ToArray();
+        var nonZero = 0;
+        foreach (var item in copy)
+            nonZero |= item;
+        if (nonZero == 0)
+        {
+            CryptographicOperations.ZeroMemory(copy);
+            throw new InvalidOperationException("Invalid protected invitation digest.");
+        }
+        return new InvitationTokenDigest(copy);
+    }
+
     public bool Matches(ReadOnlySpan<byte> candidate)
     {
         if (candidate.Length != 32)
