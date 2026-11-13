@@ -66,7 +66,6 @@ const string newPassword = "Secure-new-credential-2026!alpha#";
 const string secondPassword = "Distinct-new-credential-2026!beta#";
 const string racePassword = "Unique-race-winner-2026!gamma#";
 
-using var rootKey = RandomNumberGenerator.Create();
 var k1 = RandomNumberGenerator.GetBytes(32);
 var k2 = RandomNumberGenerator.GetBytes(32);
 var sessionKey = RandomNumberGenerator.GetBytes(32);
