@@ -141,6 +141,7 @@ GUARDS = {
         "Ingestion role cannot SELECT encrypted email",
         "Ingestion role cannot mutate tenant state",
         "REAL neutral HTTP + MySqlConnector/MySQL8.4",
+        "Forty concurrent real MySQL intake calls admit exactly eight",
     ),
     "script": (
         "--network bridge --name",
