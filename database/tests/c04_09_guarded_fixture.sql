@@ -161,7 +161,6 @@ BEGIN
     NOT (v_kind <=> v_actual_kind) OR
     NOT (v_tenant <=> v_actual_tenant) OR
     NOT (v_slot <=> v_actual_slot) OR
-    NOT (v_rev <=> v_actual_rev) OR
     NOT (v_epoch <=> v_actual_epoch) OR
     (v_actual_kind='SHARED' AND
        (v_actual_schema <> 'c04_09_shared' OR v_actual_tenant IS NOT NULL
@@ -186,6 +185,12 @@ BEGIN
      OR v_existing_state <> 'verified' THEN
    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Version/checksum/operation conflict or incomplete DDL';
   END IF;
+  -- Shared schema revision has advanced after verification. A historical
+  -- exact replay remains idempotent but NEVER bypasses scope/epoch/checksum.
+  IF (v_actual_kind='SHARED' AND v_actual_rev < v_rev+1) OR
+     (v_actual_kind='DEDICATED' AND v_actual_rev <> v_rev) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Stale migration receipt revision';
+  END IF;
   -- Even an immutable historical receipt cannot bless tampered current DDL.
   SELECT COUNT(*) INTO v_verified_columns FROM information_schema.columns
   WHERE table_schema=v_actual_schema AND table_name='resources'
@@ -196,6 +201,11 @@ BEGIN
   COMMIT;
   SELECT 'REPLAY' AS outcome;
  ELSE
+  -- For NEW work the latest protected target revision MUST match.
+  -- Never authorize a fresh global Shared DDL at an old schema revision.
+  IF NOT (v_rev <=> v_actual_rev) THEN
+   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Stale target revision on new migration';
+  END IF;
   IF v_inflight IS NOT NULL THEN
    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Another migration is still in flight';
   END IF;
@@ -221,6 +231,7 @@ SQL SECURITY DEFINER
 BEGIN
  DECLARE v_target VARCHAR(12) DEFAULT NULL;
  DECLARE v_schema VARCHAR(32) DEFAULT NULL;
+ DECLARE v_kind VARCHAR(12) DEFAULT NULL;
  DECLARE v_state VARCHAR(12) DEFAULT NULL;
  DECLARE v_ledger_fence BIGINT UNSIGNED DEFAULT NULL;
  DECLARE v_inflight CHAR(32) DEFAULT NULL;
@@ -242,8 +253,8 @@ BEGIN
  IF v_target IS NULL THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Missing lifecycle operation approval';
  END IF;
- SELECT schema_name,placement_revision,access_epoch
- INTO v_schema,v_current_rev,v_current_epoch
+ SELECT kind,schema_name,placement_revision,access_epoch
+ INTO v_kind,v_schema,v_current_rev,v_current_epoch
  FROM c04_09_control.targets WHERE target_id=v_target FOR UPDATE;
  SELECT inflight_operation,fence INTO v_inflight,v_gate_fence
  FROM c04_09_control.gates WHERE target_id=v_target FOR UPDATE;
@@ -262,6 +273,18 @@ BEGIN
  WHERE table_schema=v_schema AND table_name='resources' AND column_name='migration_tag';
  IF v_columns <> 1 THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='DDL verification failed';
+ END IF;
+ -- SHARED DDL advances a GLOBAL schema revision. Dedicated placement
+ -- revision binds tenant/slot and must NOT be confused with schema version.
+ IF v_kind='SHARED' THEN
+  IF v_current_rev >= 18446744073709551614 THEN
+   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Shared schema revision overflow';
+  END IF;
+  UPDATE c04_09_control.targets SET placement_revision=placement_revision+1
+  WHERE target_id=v_target AND placement_revision=v_expected_rev;
+  IF ROW_COUNT() <> 1 THEN
+   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Shared schema revision CAS lost';
+  END IF;
  END IF;
  UPDATE c04_09_control.ledger SET state='verified'
  WHERE operation_id=p_op AND state='applying';
