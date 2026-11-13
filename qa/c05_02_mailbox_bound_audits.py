@@ -21,7 +21,8 @@ FILES = {
   "doc": "docs/c05/PRUEBA_UNION_BUZON_IDENTIDAD_INVITACION_C05_02.md",
   "qa": "qa/c05_02_mailbox_bound_audits.py",
   "workflow": ".github/workflows/c05-02-mailbox-bound.yml",
-  "adapter": "backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMailboxBoundRecipientClaimLedger.cs"
+  "adapter": "backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMailboxBoundRecipientClaimLedger.cs",
+  "docBoundary": "docs/c05/INTEGRACION_HMAC_BUZON_BACKEND_C05_02.md"
 }
 ALLOWED = set(FILES.values())
 MARKERS = {
@@ -302,6 +303,16 @@ MARKERS = {
     "expires<=issued || expires-issued is <30 or >300",
     "result = new SessionProof(",
     "CryptographicOperations.ZeroMemory(signingKey)"
+  ],
+  "docBoundary": [
+    "MySqlDisposableMailboxBoundRecipientClaimLedger",
+    "HMAC-SHA256",
+    "antes de conectarse a SQL",
+    "consentimiento",
+    "NO un registro funcional completo",
+    "C05-02 NO CERTIFICADA FUNCIONALMENTE",
+    "C05-03 BLOQUEADA",
+    "Rollback:"
   ]
 }
 
