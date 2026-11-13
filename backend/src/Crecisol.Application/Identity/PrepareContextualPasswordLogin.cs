@@ -314,8 +314,11 @@ public sealed class PrepareContextualPasswordLogin
         if (!ValidLinkSet(firstLinks, exact.Account.ActorId))
             return ContextualLoginPreparation.Denied;
 
-        var active = firstLinks!.Where(x => x.IsActiveAtUtc(firstNow)).ToArray();
-        AccountTenantLinkSnapshot? selected;
+        // Snapshot the first read so a mutable adapter-owned collection cannot
+        // mutate both the first and second comparisons in place.
+        var firstFrozen = firstLinks!.ToArray();
+        var active = firstFrozen.Where(x => x.IsActiveAtUtc(firstNow)).ToArray();
+        AccountTenantLinkSnapshot selected;
         if (hostHint is not null)
         {
             var exactLinks = active.Where(x => x.TenantId == hostHint.TenantId).ToArray();
@@ -347,7 +350,7 @@ public sealed class PrepareContextualPasswordLogin
             exact.Account.ActorId, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         if (!ValidLinkSet(againLinks, exact.Account.ActorId) ||
-            !firstLinks.SequenceEqual(againLinks!))
+            !firstFrozen.SequenceEqual(againLinks!))
             return ContextualLoginPreparation.Denied;
 
         var againEntry = await entryReader.ReadServerVerifiedEntryAsync(cancellationToken);
@@ -391,7 +394,20 @@ public sealed class PrepareContextualPasswordLogin
         if (entry.Kind != TrustedLoginEntryKind.VerifiedTenantHost ||
             entry.Host is null)
             return null;
-        return await hostResolver.ResolveAsync(entry.Host, cancellationToken);
+        try
+        {
+            return await hostResolver.ResolveAsync(entry.Host, cancellationToken);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // No host existence, ownership or tenant data in a login outcome.
+            return null;
+        }
+        catch (InvalidOperationException)
+        {
+            // Corrupt or mismatched host metadata never grants context.
+            return null;
+        }
     }
 
     private static bool ValidLinkSet(
