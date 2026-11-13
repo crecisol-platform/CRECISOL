@@ -28,6 +28,11 @@ def audit_a():
     contains_all(DOMAIN, ("TenantPlacementMode", "DedicatedStorageSlotId",
                           "PlacementRevision", "MigrationVersion", "Checksum"),
                  "domain migration scope")
+    shared = (ROOT / "backend/src/Crecisol.Domain/Tenancy/TrustedSharedSchemaMigrationPlan.cs").read_text()
+    contains_all(shared, ("PlatformShared", "ProtectedSharedSchemaFamily",
+                          "ExpectedSchemaRevision", "SchemaFamily"), "platform-wide schema authority")
+    required("TenantId" not in shared.replace("TenantId, DedicatedStorageSlotId", ""),
+             "shared scope cannot carry a per-tenant identifier")
     print("C04-09 AUDIT A: master and scope traced (not runtime proof)")
 
 def audit_b():
@@ -41,9 +46,11 @@ def audit_b():
                        "confirmed != plan", "RequireExactMatch",
                        "cancellationToken.ThrowIfCancellationRequested()"),
                  "application auth gate")
-    contains_all(TEST, ("cross-tenant-receipt", "wrong-dedicated-slot",
-                        "checksum-mismatch", "stale-placement-revision",
-                        "approval-revoked-midflight"), "negative tests")
+    contains_all(TEST, ("tenant-B-receipt-never-valid-for-A", "wrong-dedicated-slot",
+                        "dedicated-checksum-mismatch", "stale-placement-revision",
+                        "dedicated-approval-revoked-during-execution",
+                        "shared-ddl-cannot-use-tenant-plan",
+                        "global-approval-revoked-during-execution"), "negative tests")
     guards = ("receipt.TenantId != plan.TenantId",
               "receipt.Slot != plan.Slot",
               "receipt.PlacementRevision != plan.PlacementRevision",
@@ -59,9 +66,12 @@ def audit_c():
                          "compensating DDL", "fk_c0409_tenant"), "synthetic SQL isolation")
     required("namespace Crecisol.Domain.Tenancy;" in DOMAIN, "domain separation")
     required("namespace Crecisol.Application.Tenancy;" in APP, "application separation")
+    shared_d = (ROOT / "backend/src/Crecisol.Domain/Tenancy/TrustedSharedSchemaMigrationPlan.cs").read_text()
+    shared_a = (ROOT / "backend/src/Crecisol.Application/Tenancy/PlanSharedSchemaMigration.cs").read_text()
     for prohibited in ("Microsoft.AspNetCore", "MySqlConnector", "DbContext",
                        "ConnectionString", "http://", "https://"):
-        required(prohibited not in DOMAIN + APP, "direct coupling: " + prohibited)
+        required(prohibited not in DOMAIN + APP + shared_d + shared_a,
+                 "direct coupling: " + prohibited)
     print("C04-09 AUDIT C: clean domain and isolated DDL harness, no prod runner")
 
 if __name__ == "__main__":
