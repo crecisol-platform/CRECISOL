@@ -155,14 +155,6 @@ public sealed class MySqlDisposableBoundInvitationLedger : ITrustedBoundInvitati
             AddId(command, "p_recipient", verifiedChannel.Value);
             command.Parameters.Add("p_digest", MySqlDbType.Binary).Value = protectedDigest;
 
-            // This is a metadata-provenance witness, NOT a browser-selected
-            // terms version or revision. The procedure obtains both from the
-            // invitation row itself under the atomic UPDATE instead.
-            // A read-only stored routine below returns no tenant data to
-            // the caller; avoid adding a SELECT grant to this worker.
-            command.Parameters.Add("p_terms", MySqlDbType.Int64).Value = 0L;
-            command.Parameters.Add("p_revision", MySqlDbType.Int64).Value = 0L;
-
             var result = await command.ExecuteScalarAsync(cancellationToken);
             return result switch
             {
