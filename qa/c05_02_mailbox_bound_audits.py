@@ -226,7 +226,11 @@ MARKERS = {
     "await BindMailbox(a2.Id,tenantA,intentA2,",
     "RecipientChannelBindingId.From(Guid.Parse(RA2)),sessionA2,mailboxA2,proofA2);",
     "await BindMailbox(b.Id,tenantB,intentB,",
-    "RecipientChannelBindingId.From(Guid.Parse(RB)),sessionB,mailboxB,proofB);"
+    "RecipientChannelBindingId.From(Guid.Parse(RB)),sessionB,mailboxB,proofB);",
+    "CryptographicOperations.FixedTimeEquals(",
+    "macExpected=HMACSHA256.HashData(testKey,macMessage);",
+    "CryptographicOperations.ZeroMemory(macMessage);",
+    "CryptographicOperations.ZeroMemory(macExpected);"
   ],
   "smoke": [
     "IMAGE=\"mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902\"",
