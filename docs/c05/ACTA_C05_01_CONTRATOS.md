@@ -30,7 +30,7 @@
 
 Workflows condicionales ajenos al scope marcados skipped **no cuentan como SUCCESS**.
 
-**Puerta técnica POSTMERGE:** PR #113 fusionado EXCLUSIVAMENTE a dev, squash d4a62cad50c66923dec2c871d844b3b578085896. **Ejecuciones iniciadas, sin presuponer sus conclusiones al redactar**: C05-01 https://github.com/crecisol-platform/CRECISOL/actions/runs/43369571344; C03 integral https://github.com/crecisol-platform/CRECISOL/actions/runs/43369571202; Foundation https://github.com/crecisol-platform/CRECISOL/actions/runs/43369571127. Deben finalizar todas como completed/success antes de hacer eficaz esta acta.
+**Puerta técnica POSTMERGE VERIFICADA (3/3 SUCCESS):** PR #113 fusionado EXCLUSIVAMENTE a `dev`, squash `d4a62cad50c66923dec2c871d844b3b578085896`. Las tres ejecuciones aplicables finalizaron **`completed/success` sobre el mismo SHA**: [C05-01 A/B/C .NET/Angular/Chromium/MySQL #43369571344](https://github.com/crecisol-platform/CRECISOL/actions/runs/43369571344), [C03 integral #43369571202](https://github.com/crecisol-platform/CRECISOL/actions/runs/43369571202) y [Foundation #43369571127](https://github.com/crecisol-platform/CRECISOL/actions/runs/43369571127). Log final C05: **PASS A**, **PASS B (80 mutaciones negativas)**, **100 aserciones .NET C05**, nueve suites MySQL 8.4, Angular22 y Chromium reales, **PASS C** con `GITHUB_SHA=d4a62cad50c66923dec2c871d844b3b578085896` y `GITHUB_RUN_ID=43369571344`; el gate final de siete marcadores del mismo SHA/run fue `success`. Es evidencia sobre **contratos internos/fixtures**, no autenticación HTTP productiva.
 
 **Auditoría A:** hashes maestros y texto C05, puerta C04/C05 de planificación, relación de actores/empresas, pruebas positivas y dos numeraciones distintas. **Auditoría B:** 80 mutaciones adversarias de guardas rechazadas, 100 aserciones ejecutadas de metadatos de credenciales, A/B tenancy, duplicados/revocación/expiración, reloj UTC y carreras, sin material privado en DTOs. No implica pentest HTTP productivo. **Auditoría C:** arquitectura Domain/Application separada, ninguna ruta ni persistencia nueva, .NET10 Release warnaserror + API y suites históricas, Angular22 Node24, Chromium y MySQL8.4 desechable, marcadores del mismo SHA/run en CI.
 
@@ -50,10 +50,10 @@ Los fallos previos **no son PASS** y permanecen en GitHub:
 
 ## 6. Condiciones institucionales NO-GO
 
-1. Comprobar la puerta técnica POSTMERGE sobre d4a62cad50c66923dec2c871d844b3b578085896 con 3/3 CI aplicables completed/success, sin fallas vigentes ni P0/P1 en contratos internos/fixtures.
+1. Puerta técnica POSTMERGE **cumplida** sobre `d4a62cad50c66923dec2c871d844b3b578085896` con 3/3 CI aplicables `completed/success`, sin fallos vigentes en el SHA y sin P0/P1 detectados en contratos internos/fixtures.
 2. Preparar y auditar este documento en un PR independiente, verificar diff exacto y CI PREMERGE sobre su HEAD, con A/B/C + regresiones reales; no insertar texto inverificable de resultados futuros.
 3. Fusionar documento EXCLUSIVAMENTE a dev con expected_head_sha; observar CI POSTMERGE documental del squash exacto, toda en success.
-4. Publicar comentario institucional permanente en PR documental con ambos SHAs finales, IDs de seis gates técnicos/documentales, alcance, riesgos, fallo histórico y estado de main. **Antes de ello, C05-01 NO CERTIFICADA y C05-02 BLOQUEADA.**
+4. Publicar comentario institucional permanente en PR documental con ambos SHAs finales, SHAs y runs de las cuatro puertas técnicas/documentales PREMERGE y POSTMERGE, alcance, riesgos, fallo histórico y estado de main. **Antes de ello, C05-01 NO CERTIFICADA y C05-02 BLOQUEADA.**
 
 **Si cumple todas las puertas, dictamen limitado:** C05-01 CERTIFICADA **SOLO EN CONTRATOS INTERNOS Y FIXTURES SINTÉTICOS**, 1/11 microfases C05, capítulo C05 NO CERTIFICADO, 4/37 capítulos previos completos y C05-02 habilitada SOLO PARA PREPARACIÓN. Ninguna integración productiva queda aprobada por esta acta.
 
