@@ -226,19 +226,25 @@ BEGIN
  DECLARE v_columns BIGINT DEFAULT 0;
  DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
  START TRANSACTION;
- SELECT target_id,state,fence INTO v_target,v_state,v_ledger_fence
- FROM c04_09_control.ledger WHERE operation_id=p_op FOR UPDATE;
- IF v_target IS NULL OR v_state <> 'applying' OR v_ledger_fence <> p_fence THEN
-  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Missing, stale or non-applying migration fence';
+ -- Global lock order is approvals -> target -> gate -> ledger in every
+ -- normal migration path, avoiding reserve/finalize lock inversion.
+ SELECT target_id,approved,approved_until_utc,expected_revision,expected_epoch
+ INTO v_target,v_approved,v_expires,v_expected_rev,v_expected_epoch
+ FROM c04_09_control.approvals WHERE operation_id=p_op FOR UPDATE;
+ IF v_target IS NULL THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Missing lifecycle operation approval';
  END IF;
  SELECT schema_name,placement_revision,access_epoch
  INTO v_schema,v_current_rev,v_current_epoch
  FROM c04_09_control.targets WHERE target_id=v_target FOR UPDATE;
  SELECT inflight_operation,fence INTO v_inflight,v_gate_fence
  FROM c04_09_control.gates WHERE target_id=v_target FOR UPDATE;
- SELECT approved,approved_until_utc,expected_revision,expected_epoch
- INTO v_approved,v_expires,v_expected_rev,v_expected_epoch
- FROM c04_09_control.approvals WHERE operation_id=p_op FOR UPDATE;
+ SELECT state,fence INTO v_state,v_ledger_fence
+ FROM c04_09_control.ledger
+ WHERE operation_id=p_op AND target_id=v_target FOR UPDATE;
+ IF v_state IS NULL OR v_state <> 'applying' OR v_ledger_fence <> p_fence THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Missing, stale or non-applying migration fence';
+ END IF;
  IF NOT (v_inflight <=> p_op) OR v_gate_fence <> p_fence
     OR v_approved <> 1 OR v_expires <= UTC_TIMESTAMP(6)
     OR v_expected_rev <> v_current_rev OR v_expected_epoch <> v_current_epoch THEN
