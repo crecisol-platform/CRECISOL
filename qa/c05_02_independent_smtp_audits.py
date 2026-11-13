@@ -102,7 +102,7 @@ GUARDS = {
         "C05-03 bloqueada",
         "No demuestra entrega a inbox real",
         "SmtpClient",
-        "receptor en otro proceso",
+        "Receptor en otro proceso",
         "127.0.0.1",
         "Rollback:",
         BASE,
