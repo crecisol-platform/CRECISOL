@@ -198,6 +198,8 @@ def audit_f():
             "CONSTRAINT chk_c0409_baseline_hash CHECK" in SQL and
             ("REGEXP_LIKE(baseline_payload_sha256,\x27^[0-9a-f]{64}" + chr(36) + "\x27,\x27c\x27)") in SQL,
             "guarded migration ledger key or complete snapshot digest check missing")
+    require(Path(__file__).read_text().count('if __name__ == "__main__":') == 1,
+            "duplicated Python audit entrypoint or appended tail")
     require(SQL.count("CREATE DATABASE c04_09_control") == 1,
             "duplicate or missing synthetic migration catalog")
     require(SQL.count("DELIMITER //") == 1 and SQL.count("DELIMITER ;") == 1,
