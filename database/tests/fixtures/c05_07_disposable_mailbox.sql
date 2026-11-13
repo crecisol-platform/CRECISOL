@@ -349,6 +349,7 @@ SQL SECURITY DEFINER
 BEGIN
   DECLARE v_missing BOOLEAN DEFAULT FALSE;
   DECLARE v_change BINARY(16);
+  DECLARE v_lookup BINARY(16);
   DECLARE v_actor BINARY(16);
   DECLARE v_link BINARY(16);
   DECLARE v_current_link BINARY(16);
@@ -393,20 +394,35 @@ BEGIN
 
   START TRANSACTION;
   SET v_now=UTC_TIMESTAMP(6);
-  SELECT change_id,actor_id,link_id,previous_mailbox,next_mailbox,
-         old_token_digest,new_token_digest,mailbox_revision,
-         account_revision,credential_revision,membership_revision,
-         tenant_revision,host_revision,subject_revision,
-         expires_utc,state,old_confirmed_utc,new_confirmed_utc
-    INTO v_change,v_actor,v_link,v_old,v_new,v_oldtoken,v_newtoken,v_mailrev,
-         v_accountrev,v_credrev,v_memberrev,v_tenantrev,v_hostrev,v_subrev,
-         v_exp,v_state,v_old_utc,v_new_utc
-    FROM c05_07_changes
-   WHERE tenant_id=p_tenant AND
-        (old_token_digest=p_token OR new_token_digest=p_token)
-   FOR UPDATE;
+  -- Resolve by two indexed, NON-LOCKING lookups. Then lock exactly
+  -- ONE change by primary key. An OR predicate under FOR UPDATE can lock
+  -- ranges of both token indexes and deadlock 16 competing confirmations.
+  -- This lookup is untrusted until the current-read row lock and digest
+  -- equality checks below; it can never authorize a stale state.
+  SELECT change_id INTO v_lookup
+    FROM (
+      SELECT change_id FROM c05_07_changes
+       WHERE tenant_id=p_tenant AND new_token_digest=p_token
+      UNION ALL
+      SELECT change_id FROM c05_07_changes
+       WHERE tenant_id=p_tenant AND old_token_digest=p_token
+    ) AS token_candidates LIMIT 1;
 
-  IF NOT v_missing AND v_state='PENDING' AND v_exp>v_now THEN
+  IF NOT v_missing THEN
+    SELECT change_id,actor_id,link_id,previous_mailbox,next_mailbox,
+           old_token_digest,new_token_digest,mailbox_revision,
+           account_revision,credential_revision,membership_revision,
+           tenant_revision,host_revision,subject_revision,
+           expires_utc,state,old_confirmed_utc,new_confirmed_utc
+      INTO v_change,v_actor,v_link,v_old,v_new,v_oldtoken,v_newtoken,v_mailrev,
+           v_accountrev,v_credrev,v_memberrev,v_tenantrev,v_hostrev,v_subrev,
+           v_exp,v_state,v_old_utc,v_new_utc
+      FROM c05_07_changes
+     WHERE change_id=v_lookup AND tenant_id=p_tenant FOR UPDATE;
+  END IF;
+
+  IF NOT v_missing AND v_state='PENDING' AND v_exp>v_now AND
+     (p_token=v_oldtoken OR p_token=v_newtoken) THEN
     SELECT mailbox_digest,mailbox_revision,verified
       INTO v_mailbox,v_current_mailrev,v_verified
       FROM c05_06_mailboxes
