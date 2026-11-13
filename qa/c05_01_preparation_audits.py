@@ -95,7 +95,7 @@ def spec_contract(value: str) -> None:
     plain = value.replace(chr(96), "")
     for item in REQUIRED:
         require(item in plain, "Missing fail-closed source requirement: " + item)
-    ids = re.findall(r"^\\| T(\\d{2}) \\|", value, flags=re.MULTILINE)
+    ids = re.findall(r"^\| T(\d{2}) \|", value, flags=re.MULTILINE)
     require(ids == [f"{i:02d}" for i in range(1, 25)],
             "Threat matrix must have T01..T24 ordered, with no gaps or duplicates")
     for term in ("TenantMembership", "PlatformOperator", "ProfileScope", "Credential",
@@ -109,7 +109,7 @@ def audit_a() -> None:
     require(digest == EXPECTED_C05_SHA, "C05 Word source changed or hash misrecorded")
     require((start, stop, len(lines)) == (1807, 1900, 93),
             "C05 canonical paragraph span drift")
-    folded = fold("\\n".join(lines))
+    folded = fold("\n".join(lines))
     for term in ("identidad", "autenticacion", "recuperacion", "invitaciones",
                  "passkeys", "mfa", "preguntas de seguridad", "sesiones", "selector",
                  "tenant", "revocacion"):
@@ -121,7 +121,7 @@ def audit_a() -> None:
                  "479cce19a27a1c947df615a01284f2de60f1168f",
                  "6843638186"):
         require(term in prep or term in acta, "Missing C04/C05 source gate: " + term)
-    rows = re.findall(r"^\\| (C05-\\d{2}) \\|", read(PLAN), flags=re.MULTILINE)
+    rows = re.findall(r"^\| (C05-\d{2}) \|", read(PLAN), flags=re.MULTILINE)
     require(rows == [f"C05-{i:02d}" for i in range(1, 12)],
             "C05 11-phase proposed plan is not intact")
     require("C05-01 NO IMPLEMENTADA Y NO CERTIFICADA" in acta,
@@ -147,7 +147,7 @@ def audit_b() -> None:
     require("workflow_dispatch:" not in wf and "pull_request:" in wf,
             "Preparation workflow must not start privileged manual jobs")
     api = read(API)
-    routes = re.findall(r"app\\.Map(?:Get|Post|Put|Patch|Delete)\\(\\s*\\\"([^\\\"]+)\\\"", api)
+    routes = re.findall(r'app\.Map(?:Get|Post|Put|Patch|Delete)\(\s*"([^"]+)"', api)
     require(routes == ["/api/v1/public/branding/platform"],
             "Unexpected private auth/tenant API in preparation")
     print(f"PASS C05-01 B: {len(REQUIRED)} adversarial text mutations rejected; no private API")
