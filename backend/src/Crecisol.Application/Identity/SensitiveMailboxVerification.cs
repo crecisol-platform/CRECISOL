@@ -70,6 +70,18 @@ public interface ITrustedMailboxApprovalDelivery
 /// locator, email verifier or reauthentication verdict is accepted.
 /// All mutations MUST lock and compare latest identity revisions in SQL.
 /// </summary>
+/// <summary>
+ /// ALWAYS performs a fresh C05-04 Argon2id validation within the current
+ /// sensitive-change operation. Never accept cached login evidence supplied
+ /// by a controller, browser, session or previous request.
+ /// </summary>
+public interface ITrustedImmediatePasswordReauthentication
+{
+    Task<ContextualLoginPreparation> VerifyFreshAsync(
+        CanonicalLoginHandle previousMailbox, ReadOnlyMemory<char> password,
+        VerifiedTenantHostHint verifiedHost, CancellationToken cancellationToken);
+}
+
 public interface ITrustedSensitiveMailboxLedger
 {
     Task<bool> TryBeginVerificationAsync(
@@ -104,18 +116,22 @@ public sealed class VerifyAndChangeSensitiveMailbox
     private readonly ITrustedPasswordRecoveryProtector mailboxDigest;
     private readonly ITrustedSensitiveMailboxLedger ledger;
     private readonly ITrustedMailboxApprovalDelivery delivery;
+    private readonly ITrustedImmediatePasswordReauthentication freshPassword;
 
     public VerifyAndChangeSensitiveMailbox(
         ITrustedMailboxApprovalProtector tokens,
         ITrustedPasswordRecoveryProtector mailboxDigest,
         ITrustedSensitiveMailboxLedger ledger,
-        ITrustedMailboxApprovalDelivery delivery)
+        ITrustedMailboxApprovalDelivery delivery,
+        ITrustedImmediatePasswordReauthentication freshPassword)
     {
         this.tokens = tokens ?? throw new ArgumentNullException(nameof(tokens));
         this.mailboxDigest = mailboxDigest ??
             throw new ArgumentNullException(nameof(mailboxDigest));
         this.ledger = ledger ?? throw new ArgumentNullException(nameof(ledger));
         this.delivery = delivery ?? throw new ArgumentNullException(nameof(delivery));
+        this.freshPassword = freshPassword ??
+            throw new ArgumentNullException(nameof(freshPassword));
     }
 
     /// <summary>
@@ -165,13 +181,18 @@ public sealed class VerifyAndChangeSensitiveMailbox
     /// </summary>
     public async Task RequestChangeAsync(
         CanonicalLoginHandle previousMailbox, CanonicalLoginHandle nextMailbox,
-        ContextualLoginPreparation? passwordReauthentication,
+        ReadOnlyMemory<char> currentPassword,
         VerifiedTenantHostHint verifiedHost, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(previousMailbox);
         ArgumentNullException.ThrowIfNull(nextMailbox);
         ArgumentNullException.ThrowIfNull(verifiedHost);
         cancellationToken.ThrowIfCancellationRequested();
+
+        // REQUIRED: do an Argon2id password verification now, never re-use a
+        // caller-supplied cached C05-04 preparation from a previous request.
+        var passwordReauthentication = await freshPassword.VerifyFreshAsync(
+            previousMailbox, currentPassword, verifiedHost, cancellationToken);
 
         if (passwordReauthentication?.Status != ContextualLoginPreparationStatus.Ready ||
             passwordReauthentication.Evidence is not { } proof ||
