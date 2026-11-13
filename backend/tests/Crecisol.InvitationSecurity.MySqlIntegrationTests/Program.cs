@@ -234,6 +234,71 @@ Pass(!await ledger.TryInsertUniqueAsync(stale, CancellationToken.None),
 Pass((await ledger.ReadExactAsync(tenantA, idWrong, CancellationToken.None)) is { Count: 0 },
     "Forbidden invitations are not written to the database");
 
+// Hostile privileges: the app role must NOT write tenant/recipient/issuer
+// state nor bypass SQL SECURITY DEFINER for invitation metadata.
+async Task RequirePermissionDenied(string sql, string description)
+{
+    await using var restricted = new MySqlConnection(testDsn);
+    await restricted.OpenAsync();
+    await using var cmd = new MySqlCommand(sql, restricted);
+    try
+    {
+        await cmd.ExecuteNonQueryAsync();
+    }
+    catch (MySqlException error) when (error.Number is 1142 or 1143)
+    {
+        Pass(true, description);
+        return;
+    }
+    throw new InvalidOperationException("FAIL C05-02 MySQL application role had direct privilege: " + description);
+}
+await RequirePermissionDenied(
+    "UPDATE c05_02_tenants SET lifecycle='SUSPENDED' WHERE 1=0",
+    "Adapter cannot UPDATE tenant lifecycle directly");
+await RequirePermissionDenied(
+    "UPDATE c05_02_recipients SET channel_verified=0 WHERE 1=0",
+    "Adapter cannot UPDATE recipient verification directly");
+await RequirePermissionDenied(
+    "UPDATE c05_02_invitations SET lifecycle='CLAIMED' WHERE 1=0",
+    "Adapter cannot UPDATE invitation lifecycle directly");
+await RequirePermissionDenied(
+    "INSERT INTO c05_02_invitations (tenant_id) VALUES (X'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')",
+    "Adapter cannot INSERT invitation metadata outside definer procedure");
+await RequirePermissionDenied(
+    "DELETE FROM c05_02_invitations WHERE 1=0",
+    "Adapter cannot DELETE invitation rows");
+
+// Simulate 16 genuinely concurrent distinct invitation ISSUANCES for one
+// recipient, not just 16 token claims. The SQL recipient lock must allow
+// exactly ONE live pending invitation even if all GUIDs and digests differ.
+Pass(await ledger.TryClaimOnceAtomicallyAsync(
+    third, actorA, DateTimeOffset.UtcNow, CancellationToken.None),
+    "Close previous A pending invitation before concurrent new issuance");
+var capabilities = Enumerable.Range(0, 16)
+    .Select(_ => EphemeralInvitationCode.Generate()).ToArray();
+try
+{
+    var contenders = capabilities.Select(capability => NewInvite(
+        InvitationId.From(Guid.NewGuid()), tenantA, issuerA, recA,
+        AccountTenantProfileKind.Employee, capability.CreateDigest())).ToArray();
+    var issuedResults = await Task.WhenAll(contenders.Select(row =>
+        Task.Run(() => ledger.TryInsertUniqueAsync(row, CancellationToken.None))));
+    Pass(issuedResults.Count(x => x) == 1,
+        "Sixteen concurrent real SQL ISSUANCES exactly ONE pending invitation");
+    await using var query = new MySqlCommand($"""
+        SELECT COUNT(*) FROM c05_02_invitations
+         WHERE tenant_id=X'{A}' AND recipient_id=X'{RA}'
+           AND lifecycle='PENDING' AND expires_at_utc>UTC_TIMESTAMP(6)
+        """, setup);
+    var count = Convert.ToInt32(await query.ExecuteScalarAsync());
+    Pass(count == 1, "SQL has exactly one active pending A recipient after issuance race");
+}
+finally
+{
+    foreach (var capability in capabilities)
+        capability.Dispose();
+}
+
 // The canonical public API has no registration route, no session and no grant.
 // This integration test proves only the trusted local storage port, not signup.
 Console.WriteLine($"PASS C05-02 actual .NET10 + MySQL8.4 adapter: {checks} verified checks");
