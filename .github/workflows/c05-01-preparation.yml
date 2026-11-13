@@ -1,0 +1,33 @@
+name: CRECISOL C05-01 lectura canonica Word preparacion
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'qa/c05_01_preparation_audits.py'
+      - '.github/workflows/c05-01-preparation.yml'
+      - 'docs/C05_PREPARACION.md'
+      - 'docs/c05/C05_01_*'
+  push:
+    branches: [dev]
+    paths:
+      - 'qa/c05_01_preparation_audits.py'
+      - '.github/workflows/c05-01-preparation.yml'
+      - 'docs/C05_PREPARACION.md'
+      - 'docs/c05/C05_01_*'
+permissions:
+  contents: read
+jobs:
+  c05-01-source:
+    name: C05-01 Word source discovery only
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout read-only without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify Word/PDF master identity and extract C05 chapter
+        run: |
+          python3 -m py_compile qa/c05_01_preparation_audits.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c05_01_preparation_audits.py source
