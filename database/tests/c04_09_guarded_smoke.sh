@@ -121,7 +121,7 @@ CREATE TABLE c04_09_ded_a.resources (
  resource_id INT PRIMARY KEY, payload VARCHAR(30) NOT NULL
 ) ENGINE=InnoDB;
 CREATE TABLE c04_09_ded_b.resources LIKE c04_09_ded_a.resources;
-INSERT INTO c04_09_shared.resources VALUES('A',1,'ALPHA'),('B',1,'BETA');
+INSERT INTO c04_09_shared.resources VALUES('A',1,'ALPHA'),('A',2,'ALPHA-SECOND'),('B',1,'BETA');
 INSERT INTO c04_09_ded_a.resources VALUES(1,'DED-ALPHA');
 INSERT INTO c04_09_ded_b.resources VALUES(1,'DED-BETA');"
 docker exec -i "$CONTAINER" mysql -uroot \
@@ -150,6 +150,9 @@ deny "runner cannot alter another dedicated schema" \
  "ALTER TABLE c04_09_ded_b.resources ADD COLUMN malicious INT"
 deny "runner cannot choose scope via update" \
  "UPDATE c04_09_control.targets SET slot_id='slot_a' WHERE target_id='DED_B'"
+deny_root "valid tenant B cannot steal noncolliding tenant A resource" \
+ "UPDATE c04_09_shared.resources SET tenant_id='B'
+ WHERE tenant_id='A' AND resource_id=2"
 deny_root "dedicated slot cannot be transferred to another valid tenant" \
  "UPDATE c04_09_control.targets SET tenant_id='A',slot_id='slot_a' WHERE target_id='DED_B'"
 deny_root "different valid tenant cannot claim same dedicated slot" \
@@ -207,7 +210,7 @@ root_sql "ALTER TABLE c04_09_shared.resources ADD COLUMN migration_tag VARCHAR(2
 check "verified shared migration" "VERIFIED" "$(runner_sql "
  CALL c04_09_control.finalize('$O_SHARED',1)")"
 check "shared schema covers BOTH valid tenants" "2" "$(root_sql "
- SELECT COUNT(DISTINCT tenant_id) FROM c04_09_shared.resources")"
+ SELECT COUNT(DISTINCT tenant_id) FROM c04_09_shared.resources WHERE resource_id=1")"
 check "shared metadata confirms target column" "1" "$(root_sql "
  SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='c04_09_shared'
  AND table_name='resources' AND column_name='migration_tag'")"
@@ -234,7 +237,7 @@ check "dedicated B not touched" "0" "$(root_sql "
  AND table_name='resources' AND column_name='migration_tag'")"
 check "dedicated A receipt replay" "REPLAY" "$(runner_sql "
  CALL c04_09_control.reserve('$O_DED_A')")"
-check "all original Shared/Dedicated payloads retained" "4" "$(root_sql "
+check "all original Shared/Dedicated payloads retained" "5" "$(root_sql "
  SELECT (SELECT COUNT(*) FROM c04_09_shared.resources) +
   (SELECT COUNT(*) FROM c04_09_ded_a.resources) +
   (SELECT COUNT(*) FROM c04_09_ded_b.resources)")"
