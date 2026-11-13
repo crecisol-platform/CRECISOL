@@ -83,7 +83,7 @@ public sealed record TrustedLoginCredentialSnapshot
             account, credential, realm, encodedVerifier);
     }
 
-    public string ExportForInternalVerifier() => EncodedVerifier;
+    internal string ExportForInternalVerifier() => EncodedVerifier;
 
     public bool SameVersionAs(TrustedLoginCredentialSnapshot? other) =>
         other is not null && Realm == other.Realm &&
