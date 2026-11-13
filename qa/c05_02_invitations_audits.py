@@ -24,10 +24,20 @@ SQL_TEST = ROOT / "database/tests/c05_02_invitation_atomic_smoke.sh"
 PROOF = ROOT / ".c05-02-invitations-proof"
 SHA_C05 = "bf7036849d6f1aad36a3a111b62121947aa12fae8c2a0551e63b0cc788d4a0aa"
 PRIOR_SHA = "8468a448b3164944fb75fb17270e1d3dc2186c79"
-FEATURE = "feature/c05-02-invitations-core-20261112"
+FEATURES = {
+    "feature/c05-02-invitations-core-20261112",
+    "feature/c05-02-mysql-ledger-integration-20261113",
+}
 REPO = "crecisol-platform/CRECISOL"
 ALLOWED = {
     "backend/src/Crecisol.Domain/Identity/InvitationSecurityContracts.cs",
+    "backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableInvitationLedger.cs",
+    "backend/tests/Crecisol.InvitationSecurity.MySqlIntegrationTests/Program.cs",
+    "backend/tests/Crecisol.InvitationSecurity.MySqlIntegrationTests/Crecisol.InvitationSecurity.MySqlIntegrationTests.csproj",
+    "database/tests/c05_02_dotnet_mysql_adapter_smoke.sh",
+    "qa/c05_02_mysql_adapter_audits.py",
+    "docs/c05/IMPLEMENTACION_C05_02_MYSQL_ADAPTER.md",
+    ".github/workflows/c05-02-mysql-ledger.yml",
     "backend/src/Crecisol.Application/Identity/InvitationUseCases.cs",
     "backend/tests/Crecisol.InvitationSecurity.ContractsTests/Program.cs",
     "backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj",
@@ -285,7 +295,7 @@ def audit_c() -> None:
         need(event_path.is_file(), "PR event missing")
         pr = json.loads(event_path.read_text(encoding="utf-8"))["pull_request"]
         b, h = pr["base"], pr["head"]
-        need(b["ref"] == "dev" and h["ref"] == FEATURE and
+        need(b["ref"] == "dev" and h["ref"] in FEATURES and
              b["repo"]["full_name"] == REPO and h["repo"]["full_name"] == REPO,
              "Unexpected PR base/head/fork")
         parents = git("rev-list", "--parents", "-n", "1", "HEAD").split()
