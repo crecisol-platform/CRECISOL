@@ -141,10 +141,21 @@ public sealed class MySqlDisposableProofDeliveryOutbox : IDisposable
 
             // This port resolves and authenticates the recipient from the
             // stored AES-GCM intent. It NEVER accepts a client mailbox.
+            if (await FinishAsync("c05_02_outbox_can_dispatch",
+                    trustedTenant, storedIntentId, lease, cancellationToken) != "ALLOW")
+            {
+                await BestEffortRevokeAsync(trustedTenant, storedIntentId, lease);
+                return false;
+            }
             await trustedDelivery.DeliverToRecordedMailboxAsync(
                 trustedTenant, storedIntentId, raw, cancellationToken);
-            return await FinishAsync("c05_02_outbox_mark_sent",
-                trustedTenant, storedIntentId, lease, cancellationToken) == "SENT";
+            if (await FinishAsync("c05_02_outbox_mark_sent",
+                    trustedTenant, storedIntentId, lease, cancellationToken) != "SENT")
+            {
+                await BestEffortRevokeAsync(trustedTenant, storedIntentId, lease);
+                return false;
+            }
+            return true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
