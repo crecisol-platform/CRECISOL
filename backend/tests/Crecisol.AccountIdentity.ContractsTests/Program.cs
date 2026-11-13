@@ -114,7 +114,9 @@ ResolveCurrentAccountTenantLink NewResolver(
         sessions ?? new FakeSessions(_ => Session()),
         directHost ?? new FakeDirectHost(_ => hostA),
         new ResolveVerifiedTenantHost(
-            hosts ?? new FakeHosts((_, _) => new[] { HostBinding() }), utcClock),
+            hosts ?? new FakeHosts((host, _) => host == hostA
+                ? new[] { HostBinding() }
+                : Array.Empty<VerifiedTenantHostBinding>()), utcClock),
         memberships ?? new FakeMemberships((_, _, _) => new[] { Membership() }),
         tenants ?? new FakeTenants((_, _) => Tenant()),
         utcClock);
@@ -372,7 +374,7 @@ await Reject<UnauthorizedAccessException>("Session revision switch detected on r
     sessions: new FakeSessions(call => Session(rev: call == 1 ? 4 : 6)));
 await Reject<UnauthorizedAccessException>("Revoked C04 session cannot be a source of identity",
     sessions: new FakeSessions(_ => Session(state: ActorSessionState.Revoked)));
-await Reject<UnauthorizedAccessException>("Actor from another account cannot match C04 membership",
+await Reject<InvalidOperationException>("Actor from another account cannot match C04 membership",
     sessions: new FakeSessions(_ => Session(actor: actorB)));
 await Reject<UnauthorizedAccessException>("Membership of tenant B cannot be used for host A",
     memberships: new FakeMemberships((_, _, _) => new[] { Membership(tenant: tenantB) }));
