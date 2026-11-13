@@ -61,7 +61,7 @@ TrustedTenantArtifactScope Scope(TenantArtifactKind kind,
     long membershipRevision = 2, long branchRevision = 4,
     long resourceRevision = 5, long placementRevision = 9,
     string? requiredAction = null, DateTimeOffset? verifiedAt = null,
-    DateTimeOffset? expiresAt = null) =>
+    DateTimeOffset? expiresAt = null, string serverVariant = "detail.v1") =>
     TrustedTenantArtifactScope.FromVerifiedBackendDecision(
         operation ?? operationA, kind, environment,
         tenant ?? tenantA, branch ?? branchA, resource ?? resourceA, actor ?? actorA,
@@ -70,7 +70,7 @@ TrustedTenantArtifactScope Scope(TenantArtifactKind kind,
         branchState, resourceState,
         tenantEpoch, sessionRevision, membershipRevision, branchRevision,
         resourceRevision, placementRevision, verifiedAt ?? now.AddMinutes(-1),
-        expiresAt ?? now.AddMinutes(10));
+        expiresAt ?? now.AddMinutes(10), serverVariant);
 
 TrustedTenantArtifactReceipt Receipt(TrustedTenantArtifactScope scope,
     string? key = null, Guid? operation = null, string? fingerprint = null,
@@ -121,6 +121,8 @@ foreach (var kind in Enum.GetValues<TenantArtifactKind>())
         kind + " branch revision isolates");
     Check(TenantPrivateArtifactKey.Derive(Scope(kind, resourceRevision: 6), keySecret) != key,
         kind + " resource revision isolates");
+    Check(TenantPrivateArtifactKey.Derive(Scope(kind, serverVariant: "summary.v1"),
+        keySecret) != key, kind + " distinct server-side projection cannot alias key");
     Check(TenantPrivateArtifactKey.Derive(Scope(kind, placementRevision: 10), keySecret) != key,
         kind + " placement revision isolates");
     Check(TenantPrivateArtifactKey.Derive(Scope(kind,
@@ -170,6 +172,16 @@ foreach (var kind in Enum.GetValues<TenantArtifactKind>())
         placementRevision: 0), kind + " invalid placement revision");
     Reject<UnauthorizedAccessException>(() => Scope(kind,
         requiredAction: "tenant.invalid.action"), kind + " forged action/purpose");
+    Reject<UnauthorizedAccessException>(() => Scope(kind,
+        serverVariant: ""), kind + " variant must be explicitly server-owned");
+    Reject<UnauthorizedAccessException>(() => Scope(kind,
+        serverVariant: "../private"), kind + " traversal-like cache projection forbidden");
+    Reject<UnauthorizedAccessException>(() => Scope(kind,
+        serverVariant: "Detail.v1"), kind + " noncanonical variant case forbidden");
+    Reject<UnauthorizedAccessException>(() => Scope(kind,
+        serverVariant: new string('x', 49)), kind + " oversized variant forbidden");
+    Reject<UnauthorizedAccessException>(() => Scope(kind,
+        serverVariant: "detail/v1"), kind + " raw path cannot be used as variant");
     Reject<UnauthorizedAccessException>(() => Scope(kind,
         operation: Guid.Empty), kind + " empty operation");
     Reject<UnauthorizedAccessException>(() => Scope(kind,
