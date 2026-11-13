@@ -68,6 +68,7 @@ def audit_d():
         "runner cannot choose scope via update",
         "globally shared schema has no tenant selector",
         "runner cannot alter another dedicated schema",
+        "runner cannot perform destructive DDL downgrade",
     ), "executable cross-scope negative tests")
     expect_all(NET_TEST, (
         "shared-ddl-cannot-use-tenant-plan",
@@ -119,7 +120,10 @@ def audit_e():
         "failed migration can never replay as success",
         "historical failed-recovered operation cannot blindly replay",
         "new operation increments immutable fence",
-        "stale first fence fails after recovery"
+        "stale first fence fails after recovery",
+        "restore_checked",
+        "wrong dedicated restore destination accepted",
+        "rejected wrong restoration did not modify A"
     ), "executable concurrency/recovery tests")
     require("ALTER TABLE c04_09_ded_b.resources ADD COLUMN migration_tag" in SMOKE,
             "DDL fixture must actually mutate dedicated schema")
