@@ -178,6 +178,225 @@ foreach (var kind in Enum.GetValues<TenantArtifactKind>())
         placement: TenantPlacementMode.Dedicated), kind + " Dedicated missing slot");
     Reject<UnauthorizedAccessException>(() => Scope(kind,
         placement: TenantPlacementMode.Shared, slot: slotA), kind + " Shared forbidden slot");
+    Check(!Scope(kind, verifiedAt: now.AddMinutes(2)).IsFreshAtUtc(now),
+        kind + " future approval never usable now");
     Reject<UnauthorizedAccessException>(() => Scope(kind,
-        verifiedAt: now.AddMinutes(2)), kind + " future approval window"); // receipt path below checks
+        expiresAt: now.AddMinutes(20)), kind + " oversize approval lifetime");
+    Reject<UnauthorizedAccessException>(() => Scope(kind,
+        verifiedAt: now.ToOffset(TimeSpan.FromHours(-6))), kind + " non-UTC approval");
+    Reject<UnauthorizedAccessException>(() => Scope(kind,
+        expiresAt: now.AddMinutes(-3)), kind + " inverted approval interval");
+}
+
+Check(TenantPrivateArtifactKey.Derive(Scope(TenantArtifactKind.Cache), keySecret) !=
+    TenantPrivateArtifactKey.Derive(Scope(TenantArtifactKind.Job), keySecret),
+    "cache cannot alias job type");
+Check(TenantPrivateArtifactKey.Derive(Scope(TenantArtifactKind.Media), keySecret) !=
+    TenantPrivateArtifactKey.Derive(Scope(TenantArtifactKind.Export), keySecret),
+    "media cannot alias export type");
+
+Reject<UnauthorizedAccessException>(() =>
+    TenantPrivateArtifactKey.Derive(Scope(TenantArtifactKind.Cache), new byte[31]),
+    "weak key must not derive protected entry");
+Reject<UnauthorizedAccessException>(() =>
+    TenantPrivateArtifactKey.Derive(Scope(TenantArtifactKind.Cache), []),
+    "empty key must not derive protected entry");
+Check(!TenantPrivateArtifactKey.IsCanonicalForKind(
+    "c10:v1:cache:" + new string('g', 64), TenantArtifactKind.Cache),
+    "invalid nonhex HMAC rejected");
+Check(!TenantPrivateArtifactKey.IsCanonicalForKind(
+    "c10:v1:cache:" + new string('A', 64), TenantArtifactKind.Cache),
+    "uppercase HMAC rejected");
+Check(!TenantPrivateArtifactKey.IsCanonicalForKind(
+    "c10:v1:cache:" + new string('0', 63), TenantArtifactKind.Cache),
+    "truncated HMAC rejected");
+Check(!TenantPrivateArtifactKey.IsCanonicalForKind(
+    "c10:v1:job:" + new string('a', 64), TenantArtifactKind.Cache),
+    "cross-purpose HMAC rejected");
+Check(!TenantPrivateArtifactKey.IsCanonicalForKind(
+    null, TenantArtifactKind.Cache), "null HMAC rejected");
+Check(!TenantPrivateArtifactKey.IsCanonicalForKind(
+    "c10:v1:cache:" + new string('0', 64), (TenantArtifactKind)999),
+    "unknown purpose HMAC rejected");
+
+var scopeCache = Scope(TenantArtifactKind.Cache);
+var cacheKey = TenantPrivateArtifactKey.Derive(scopeCache, keySecret);
+var cleanReceipt = Receipt(scopeCache);
+TrustedTenantArtifactReceipt.RequireExactMatch(scopeCache, cacheKey, cleanReceipt, now);
+Check(true, "synthetic cache receipt exact scope verified");
+Reject<UnauthorizedAccessException>(() => TrustedTenantArtifactReceipt.RequireExactMatch(
+    scopeCache, cacheKey, Receipt(scopeCache, operation: operationB), now),
+    "replay receipt may not use another operation");
+Reject<UnauthorizedAccessException>(() => TrustedTenantArtifactReceipt.RequireExactMatch(
+    scopeCache, cacheKey, Receipt(scopeCache,
+        fingerprint: Scope(TenantArtifactKind.Cache, tenant: tenantB).IntentFingerprint), now),
+    "valid tenant B fingerprint forbidden for A");
+Reject<UnauthorizedAccessException>(() => TrustedTenantArtifactReceipt.RequireExactMatch(
+    scopeCache, cacheKey, Receipt(scopeCache,
+        key: TenantPrivateArtifactKey.Derive(
+            Scope(TenantArtifactKind.Cache, tenant: tenantB), keySecret)), now),
+    "valid tenant B key forbidden for A");
+Reject<UnauthorizedAccessException>(() => TrustedTenantArtifactReceipt.RequireExactMatch(
+    scopeCache, cacheKey, Receipt(scopeCache, tenantEpoch: 8), now),
+    "stale epoch receipt cannot authorize replay");
+Reject<UnauthorizedAccessException>(() => TrustedTenantArtifactReceipt.RequireExactMatch(
+    scopeCache, cacheKey, Receipt(scopeCache, confirmedAt: now.AddSeconds(1)), now),
+    "future signed operation receipt forbidden");
+Reject<UnauthorizedAccessException>(() => TrustedTenantArtifactReceipt.RequireExactMatch(
+    scopeCache, cacheKey, Receipt(scopeCache), now.AddMinutes(12)),
+    "expired scope cannot validate old receipt");
+Reject<UnauthorizedAccessException>(() => TrustedTenantArtifactReceipt.RequireExactMatch(
+    Scope(TenantArtifactKind.Cache, operation: operationB), cacheKey, cleanReceipt, now),
+    "different operation receipt must not replay under same cache key");
+
+Reject<InvalidOperationException>(() => Receipt(scopeCache, generation: 0),
+    "missing job/cache fencing");
+Reject<InvalidOperationException>(() => Receipt(scopeCache,
+    state: (TenantArtifactReceiptState)999), "undefined receipt state");
+Reject<InvalidOperationException>(() => Receipt(scopeCache,
+    confirmedAt: now.ToOffset(TimeSpan.FromHours(-6))),
+    "non-UTC receipt");
+Reject<InvalidOperationException>(() => Receipt(scopeCache,
+    key: "example-private-url"), "unscoped direct URL cannot be a receipt");
+Reject<InvalidOperationException>(() => Receipt(scopeCache,
+    kind: TenantArtifactKind.Job), "cache key cannot impersonate job receipt");
+Reject<InvalidOperationException>(() => Receipt(scopeCache,
+    fingerprint: new string('A', 64)), "noncanonical fingerprint receipt");
+
+foreach (var kind in Enum.GetValues<TenantArtifactKind>())
+{
+    var plan = Scope(kind);
+    var reader = new FakeDecisionReader(plan);
+    var deriver = new FakeKeyDeriver(keySecret);
+    var gateway = new FakeArtifactGateway(now);
+    var useCase = new ApplyScopedTenantArtifact(
+        reader, deriver, gateway, new FixedClock(now));
+    var receipt = await useCase.ExecuteAsync(operationA, CancellationToken.None);
+    Check(receipt.OperationId == operationA && receipt.Kind == kind,
+        kind + " apply valid future gateway receipt");
+    Check(reader.Reads == 3 && gateway.Calls == 1,
+        kind + " current permission read at prepare, pre-effect and post-effect");
+
+    reader.Reads = 0;
+    gateway.ResultState = TenantArtifactReceiptState.Replayed;
+    Check((await useCase.ExecuteAsync(operationA, CancellationToken.None)).State ==
+        TenantArtifactReceiptState.Replayed, kind + " replay receipt exact");
+    gateway.ResultState = TenantArtifactReceiptState.Applied;
+    reader.Current = null;
+    await RejectAsync<UnauthorizedAccessException>(
+        async () => { await useCase.ExecuteAsync(operationA, CancellationToken.None); },
+        kind + " missing verified catalog approval");
+    reader.Current = plan;
+    reader.OverrideRead = count => count % 3 == 2 ? null : plan;
+    reader.Reads = 0;
+    var previousCalls = gateway.Calls;
+    await RejectAsync<UnauthorizedAccessException>(
+        async () => { await useCase.ExecuteAsync(operationA, CancellationToken.None); },
+        kind + " approval revoked before gateway");
+    Check(gateway.Calls == previousCalls, kind + " no effects after early revocation");
+    reader.OverrideRead = count => count % 3 == 3 ? null : plan;
+    // Explicit third-read revocation: the gateway is a fake, NOT a real write.
+    reader.OverrideRead = count => count == 3 ? null : plan;
+    reader.Reads = 0;
+    await RejectAsync<UnauthorizedAccessException>(
+        async () => { await useCase.ExecuteAsync(operationA, CancellationToken.None); },
+        kind + " revoked while gateway was handling operation");
+    reader.OverrideRead = null;
+    reader.Reads = 0;
+
+    reader.Current = Scope(kind, tenant: tenantB);
+    await RejectAsync<UnauthorizedAccessException>(
+        async () => { await useCase.ExecuteAsync(operationA, CancellationToken.None); },
+        kind + " same operation id cannot be reused for valid B");
+    reader.Current = plan;
+    await RejectAsync<UnauthorizedAccessException>(
+        async () => { await useCase.ExecuteAsync(operationB, CancellationToken.None); },
+        kind + " operation selector mismatch");
+
+    gateway.ForgeReceipt = (p, key) => Receipt(p,
+        fingerprint: Scope(kind, tenant: tenantB).IntentFingerprint);
+    await RejectAsync<UnauthorizedAccessException>(
+        async () => { await useCase.ExecuteAsync(operationA, CancellationToken.None); },
+        kind + " malicious gateway returns cross-tenant fingerprint");
+    gateway.ForgeReceipt = (p, key) => Receipt(p,
+        key: TenantPrivateArtifactKey.Derive(Scope(kind, tenant: tenantB), keySecret));
+    await RejectAsync<UnauthorizedAccessException>(
+        async () => { await useCase.ExecuteAsync(operationA, CancellationToken.None); },
+        kind + " malicious gateway returns cross-tenant key");
+    gateway.ForgeReceipt = null;
+
+    deriver.ReturnInvalid = true;
+    previousCalls = gateway.Calls;
+    await RejectAsync<UnauthorizedAccessException>(
+        async () => { await useCase.ExecuteAsync(operationA, CancellationToken.None); },
+        kind + " malformed HMAC denied before gateway");
+    Check(gateway.Calls == previousCalls, kind + " no effect when key is malformed");
+    deriver.ReturnInvalid = false;
+
+    using var cancelled = new CancellationTokenSource();
+    cancelled.Cancel();
+    await RejectAsync<OperationCanceledException>(
+        async () => { await useCase.ExecuteAsync(operationA, cancelled.Token); },
+        kind + " cancellation fails closed");
+}
+
+Console.WriteLine($"C04-10 .NET10 private artifact tests: {positive} positive; {negative} negative; " +
+    "4 types cache/job/media/export; no adapter, worker, URL, Redis, R2 or production connection.");
+
+sealed class FixedClock(DateTimeOffset now) : ITrustedHostUtcClock
+{
+    public DateTimeOffset GetUtcNow() => now;
+}
+
+sealed class FakeDecisionReader(TrustedTenantArtifactScope initial)
+    : ITrustedTenantArtifactDecisionReader
+{
+    public TrustedTenantArtifactScope? Current { get; set; } = initial;
+    public Func<int, TrustedTenantArtifactScope?>? OverrideRead { get; set; }
+    public int Reads { get; set; }
+
+    public Task<TrustedTenantArtifactScope?> ReadCurrentApprovedScopeAsync(
+        Guid operationId, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        Reads++;
+        return Task.FromResult(OverrideRead is null ? Current : OverrideRead(Reads));
+    }
+}
+
+sealed class FakeKeyDeriver(byte[] protectedSyntheticKey)
+    : IProtectedTenantArtifactKeyDeriver
+{
+    public bool ReturnInvalid { get; set; }
+
+    public Task<string> DeriveOpaqueKeyAsync(
+        TrustedTenantArtifactScope scope, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(ReturnInvalid ? "NOT_A_SCOPED_KEY" :
+            TenantPrivateArtifactKey.Derive(scope, protectedSyntheticKey));
+    }
+}
+
+sealed class FakeArtifactGateway(DateTimeOffset now)
+    : IProtectedTenantArtifactGateway
+{
+    public int Calls { get; private set; }
+    public TenantArtifactReceiptState ResultState { get; set; } =
+        TenantArtifactReceiptState.Applied;
+    public Func<TrustedTenantArtifactScope, string, TrustedTenantArtifactReceipt>?
+        ForgeReceipt { get; set; }
+
+    public Task<TrustedTenantArtifactReceipt> ApplyOrReplayAsync(
+        TrustedTenantArtifactScope scope, string opaqueKey,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        Calls++;
+        return Task.FromResult(ForgeReceipt is not null
+            ? ForgeReceipt(scope, opaqueKey)
+            : TrustedTenantArtifactReceipt.FromVerifiedProtectedGateway(
+                scope.OperationId, scope.Kind, scope.IntentFingerprint,
+                opaqueKey, scope.TenantAccessEpoch, 1, ResultState, now));
+    }
 }
