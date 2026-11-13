@@ -102,7 +102,7 @@ try
 
     using var ingester = new MySqlDisposableNeutralRegistrationRecorder(
         ingestDsn, master, 1);
-    using var sink = new LoopbackOnlySmtpProofSink(port);
+    var sink = new LoopbackOnlySmtpProofSink(port);
     using var ledgerAndDelivery = new MySqlDisposableEmailPossessionAdapter(
         workerDsn, master, 1, sink);
     using var outbox = new MySqlDisposableProofDeliveryOutbox(
@@ -154,7 +154,7 @@ try
 
     try
     {
-        using var _ = new LoopbackOnlySmtpProofSink(25);
+        _ = new LoopbackOnlySmtpProofSink(25);
         throw new InvalidOperationException("Privileged SMTP port accepted.");
     }
     catch (InvalidOperationException e) when
