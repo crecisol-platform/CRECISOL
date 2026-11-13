@@ -1,0 +1,33 @@
+# CRECISOL — C05-02 · Prueba independiente de posesión de correo (integración aislada)
+
+**Fecha:** 13-11-2026. **Estado:** COMPONENTE TÉCNICO EN PRUEBAS, C05-02 COMPLETA NO CERTIFICADA. Trabajo exclusivamente en CRECISOL, repositorio vigente `crecisol-platform/CRECISOL` (ID 1450414592), branch `feature/c05-02-independent-email-proof-20261113`, desde `dev` SHA `be90d670efa2a281e37bddbe7bce00f44563aa86`. Sin producción, SMTP externo, DNS, VPS, cobros, cambios a `main` ni escritura en SOLQARYN.
+
+**Documento Maestro Único:** Word `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx` SHA-256 `ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c`; PDF derivado SHA-256 `0dfd3217439760540390707ea8196d6252464a501a7fe3e6eafdc49eda39da77`; texto canónico C05 SHA-256 `bf7036849d6f1aad36a3a111b62121947aa12fae8c2a0551e63b0cc788d4a0aa`. Requisitos B02–B05, B09, B10, B13 y amenazas T02–T05/T09/T10/T12/T16/T19 de `C05_02_ESPECIFICACION.md`. Sigue microfase única C05-02: C05-03 bloqueada.
+
+## Antecedentes y riesgo
+
+Los [PR #116](https://github.com/crecisol-platform/CRECISOL/pull/116#issuecomment-6845872668) (capacidad de invitación), [#118](https://github.com/crecisol-platform/CRECISOL/pull/118#issuecomment-6846442604) (CAS MySQL local) y [#119](https://github.com/crecisol-platform/CRECISOL/pull/119#issuecomment-6847042244) (ingesta neutral HTTP/MySQL8.4) probaron componentes **aislados**. Ninguno prueba posesión independiente de inbox, proveedor real de correo ni usuario autenticado. **Una invitación jamás acredita canal, cuenta, rol o sesión.**
+
+Este PR agrega una capacidad separada de comprobación de correo para preparar la integración futura. **No habilita alta de usuarios, entrega externa ni membresía**. No toca `backend/src/Crecisol.Api/Program.cs` ni registra nuevos servicios en DI productiva. El destinatario solo se obtiene del envelope AES-GCM del intent almacenado por el backend; no del body, cabecera ni query del navegador.
+
+## Diseño por capa
+
+- **Domain:** `EmailPossessionDigest` usa SHA-256 con propósito distinto de invitación: tag canónico + tenant UUID RFC4122 + intent UUID RFC4122 + 32 bytes CSPRNG. No aplica a passwords/JWT. `EphemeralEmailPossessionCode` transfiere los bytes una sola vez y borra el secreto; `ToString` no expone digest/token.
+- **Application:** `VerifyNeutralRegistrationMailbox` deriva tenant desde host verificado C04 + catálogo ACTIVE, revalida antes de enviar, exige ID de intención almacenada; solicita prueba mediante `ITrustedEmailPossessionLedger` y `ITrustedEmailPossessionDelivery`. No permite al navegador elegir destinatario, tenant, ruta de BD ni rol. Ambas operaciones de solicitud y confirmación solo devuelven `NeutralRegistrationReceipt.Acknowledged`, sin resultado booleano de estado. El flujo no registra sesión, membresía ni credencial.
+- **Infrastructure:** `MySqlDisposableEmailPossessionAdapter` exige servidor local y `c05_02_disposable`, clave de cifrado interna derivada de la clave de pruebas y versión. La entrega descifra el destino almacenado con AES-256-GCM y AAD exacta (tenant, version, huella) y lo pasa a `ITrustedLocalProofMailboxSink`, **solo un transporte en memoria dentro de pruebas**. No existe SMTP externo. El usuario SQL restringido solo puede SELECT a envelope cifrado y EXECUTE tres stored procedures, no UPDATE/INSERT/DELETE ni SELECT de la tabla privada de pruebas.
+- **Database:** `c05_02_mailbox_proofs` tiene PK compuesta tenant+intent, FK compuesta, digest opaco 32B, límite de tres emisiones, estados PENDING/VERIFIED/REVOKED, timestamps UTC. `c05_02_mailbox_proof_issue` bloquea tenant e intención, rechaza intent ausente/expirado, tenant suspendido, segunda emisión mientras PENDING y emisión posterior a VERIFIED. `c05_02_mailbox_proof_verify` usa UPDATE CAS en InnoDB para una sola victoria, igualando tenant, intent, digest, vigencia y estado; replay no hace nada. `c05_02_mailbox_proof_revoke` invalida el digest de un envío fallido, sin cambiar pruebas ya confirmadas. Todos los SQL son SOLO fixture descartable.
+- **Tests:** .NET10 compilado Release warnaserror + MySQL 8.4 real loopback, dos tenants, cuatro intents cifrados, canal local controlado, token de 32 bytes, 16 confirmaciones en paralelo (1 ganador), negativa de tenant B/intento distinto/digest falso/expiración, revocación por fallo de entrega, reintento acotado, manipulación AES-GCM, tenant suspendido, host no verificado, roles de SQL de mínimo privilegio. Ni un correo se envía fuera del proceso; los mensajes y direcciones son `@example.test`.
+
+## Auditorías obligatorias A/B/C
+
+- **A funcional y autoridad:** Word/PDF/C05 SHA exactos, contratos de propósito y vínculo tenant+intent, no sesión, compilación real y procedimiento SQL con resultado no enumerador.
+- **B ofensiva:** mutaciones negativas A/B/C; token no persistido, 16 hilos con un ganador, revocación, caducidad, tenant A/B cruzado, destinatario cifrado ligado por AAD y errores de entrega. Lectura y escritura directa sobre proofs denegadas al rol restringido.
+- **C arquitectura/operación:** diff solo C05-02, mismas pruebas A+B+.NET10+MySQL8.4 en SHA/run exacto, PR contra `dev`, no código productivo habilitado, credenciales aleatorias en runner eliminadas junto con Docker, workflows sin write/deploy; regresiones C03/C04 aplicables en verde. PREMERGE y POSTMERGE solo certificarán este **contrato aislado**, no C05-02 funcional.
+
+## Riesgos todavía bloqueantes para C05-02 funcional
+
+**P0 no resueltos:** no hay operador autenticado real para emisión de invitaciones; ni proveedor de SMTP y confirmación de posesión de inbox *real*; falta identidad transaccional shared/dedicated y pertenencia real; faltan sesiones/JWT/cookies con revocación, credenciales MFA y autorización tenant/sucursal/recurso. El token local sintético no prueba a un usuario real. Un intent anónimo no crea grant; un proof verificado tampoco.
+
+**P1:** outbox durable cifrado, consistencia entre persistencia y entrega externa, recuperación tras caídas, validación de políticas y limpieza PII, rotación operativa de claves, límites dinámicos multi-IP y no enumeración temporal con cuentas existentes reales. La cuota de 8/15 minutos es solo ensayo previo y debe ser parametrizable por backend/admin, nunca constante comercial final. Los capítulos posteriores cubren contraseñas y sesiones, pero **no se salta C05-02** ni se declara certificación completa por una batería de fixture.
+
+**Rollback:** revertir solo el squash específico en `dev` tras revisar dependencias. Se eliminan de forma automática contenedor local, roles de SQL, clave aleatoria y datos sintéticos. El fallo de entrega revoca el desafío pendiente, y ningún estado de prueba genera credenciales o membresías.
