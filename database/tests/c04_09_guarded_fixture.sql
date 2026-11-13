@@ -59,7 +59,8 @@ CREATE TABLE c04_09_control.ledger (
  baseline_payload_sha256 CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
  CONSTRAINT chk_c0409_baseline_hash CHECK
    (baseline_payload_sha256 IS NULL OR
-     REGEXP_LIKE(baseline_payload_sha256,'^[0-9a-f]{64} (target_id,migration_version),
+     REGEXP_LIKE(baseline_payload_sha256,'^[0-9a-f]{64}$','c')),
+ PRIMARY KEY (target_id,migration_version),
  UNIQUE KEY uq_c0409_ledger_op(operation_id),
  CONSTRAINT fk_c0409_ledger_approval FOREIGN KEY(operation_id)
    REFERENCES c04_09_control.approvals(operation_id) ON DELETE RESTRICT ON UPDATE RESTRICT,
