@@ -175,14 +175,14 @@ var nextRandom = tokens.GenerateFresh().RevealForTrustedTransport();
 Check(nextRandom != randomString &&
       !CryptographicOperations.FixedTimeEquals(
           tokens.TryDigest(nextRandom)!.CopyForTrustedLedger(),
-          firstDigest.CopyForTrustedLedger()),
+          firstDigest!.CopyForTrustedLedger()),
     "Fresh tokens generate different keyed digests");
 var differentKey = RandomNumberGenerator.GetBytes(32);
 using (var otherProtector = new OpaqueSessionTokenProtector(differentKey))
 {
     Check(!CryptographicOperations.FixedTimeEquals(
             otherProtector.TryDigest(randomString)!.CopyForTrustedLedger(),
-            firstDigest.CopyForTrustedLedger()),
+            firstDigest!.CopyForTrustedLedger()),
         "Wrong server HMAC key cannot validate persisted session digest");
 }
 CryptographicOperations.ZeroMemory(differentKey);
