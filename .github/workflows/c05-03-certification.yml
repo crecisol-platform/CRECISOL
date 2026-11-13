@@ -1,0 +1,72 @@
+name: CRECISOL C05-03 institutional scoped closure A-B-C NET10
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c05/ACTA_CERTIFICACION_ACOTADA_C05_03_2026_11_13.md'
+      - 'qa/c05_03_closure_gate.py'
+      - '.github/workflows/c05-03-certification.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c05/ACTA_CERTIFICACION_ACOTADA_C05_03_2026_11_13.md'
+      - 'qa/c05_03_closure_gate.py'
+      - '.github/workflows/c05-03-certification.yml'
+permissions:
+  contents: read
+jobs:
+  c05-03-certify-internal-contracts:
+    name: Immutable source and real Argon2id A-B-C; no login
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout SHA with PR parent evidence read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Audit A canonical Word C05-02 and C05-03 traced contract
+        run: |
+          set -euo pipefail
+          test ! -e .c05-03-cert-proof
+          python3 -m py_compile qa/c05_03_closure_gate.py
+          python3 qa/validate_foundation.py
+          python3 qa/c05_03_closure_gate.py A
+          mkdir -p .c05-03-cert-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-03-cert-proof/A
+      - name: Audit B security/credential nonexposure and adversarial mutations
+        run: |
+          set -euo pipefail
+          python3 qa/c05_03_closure_gate.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-03-cert-proof/B
+      - name: Install NET10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Real Argon2id 1.3.1 and fail-closed NET10 security suite
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.PasswordHash.ContractsTests/Crecisol.PasswordHash.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.PasswordHash.ContractsTests/Crecisol.PasswordHash.ContractsTests.csproj
+          printf 'PASS crypto sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-03-cert-proof/crypto
+      - name: Actual C05-01 account and C05-02 invitation regressions
+        run: |
+          set -euo pipefail
+          dotnet build backend/tests/Crecisol.AccountIdentity.ContractsTests/Crecisol.AccountIdentity.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.AccountIdentity.ContractsTests/Crecisol.AccountIdentity.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj
+          printf 'PASS regression sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-03-cert-proof/regression
+      - name: Audit C exact SHAs, scope, source evidence and real test proofs
+        run: |
+          set -euo pipefail
+          python3 qa/c05_03_closure_gate.py C
+          printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-03-cert-proof/C
+      - name: All A-B-C NET10 proofs in same SHA and run
+        run: |
+          set -euo pipefail
+          for step in A B C crypto regression; do
+            grep -Fqx "PASS $step sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-03-cert-proof/$step"
+          done
+          echo 'PASS C05-03 ONLY credential policy and Argon2id tests, NOT real identity/login/session'
