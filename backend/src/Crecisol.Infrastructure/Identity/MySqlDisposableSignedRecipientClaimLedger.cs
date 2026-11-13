@@ -149,11 +149,14 @@ public sealed class MySqlDisposableSignedRecipientClaimLedger :
 
         // Audience and format are fixed by a purpose-separated MAC. SQL also
         // rechecks its own UTC clock and exact session issued/expires/revision.
+        // Bound both timestamps before subtraction/conversion: even an
+        // HMAC-valid test assertion with Int64 extremes must fail CLOSED,
+        // not overflow or throw an out-of-range conversion exception.
         if (tenant==Guid.Empty || actor==Guid.Empty || recipient==Guid.Empty ||
             session==Guid.Empty || revision<1 ||
-            expires<=issued || expires-issued is <30 or >300 ||
             issued>nowSeconds || issued<nowSeconds-300 ||
-            expires<=nowSeconds)
+            expires<=nowSeconds || expires>nowSeconds+300 ||
+            expires<=issued || expires-issued is <30 or >300)
             return false;
 
         result = new SessionProof(
