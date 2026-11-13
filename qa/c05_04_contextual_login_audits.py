@@ -273,7 +273,7 @@ def audit_c() -> None:
         require(event == "push" and os.getenv("GITHUB_REF") == "refs/heads/dev",
                 "Only dev may attest postmerge")
         changed = git("show", "--format=", "--name-only", sha).splitlines()
-    require(set(changed) == ALLOWED and len(changed) == len(ALLOWED,
+    require(set(changed) == ALLOWED and len(changed) == len(ALLOWED),
             "Unauthorized or missing files: " + repr(changed))
     invariant(read())
     print(f"PASS CRECISOL C05-04 C: exact A/B .NET10 real hash + tenant regressions sha={sha} run={run}")
