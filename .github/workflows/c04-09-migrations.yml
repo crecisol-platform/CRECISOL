@@ -1,0 +1,79 @@
+name: CRECISOL C04-09 shared dedicated migration contracts A-B-C
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/TrustedTenantMigrationPlan.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/PlanTenantMigration.cs'
+      - 'backend/tests/Crecisol.TenantMigrations.ContractsTests/**'
+      - 'database/tests/c04_09_*'
+      - 'qa/c04_09_migration_audits.py'
+      - 'docs/c04/C04_09_*'
+      - '.github/workflows/c04-09-migrations.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/TrustedTenantMigrationPlan.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/PlanTenantMigration.cs'
+      - 'backend/tests/Crecisol.TenantMigrations.ContractsTests/**'
+      - 'database/tests/c04_09_*'
+      - 'qa/c04_09_migration_audits.py'
+      - 'docs/c04/C04_09_*'
+      - '.github/workflows/c04-09-migrations.yml'
+permissions:
+  contents: read
+jobs:
+  c04-09:
+    name: C04-09 A-B-C dotnet10 plus disposable MySQL8.4
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - name: Checkout read only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: A verify canonical Word and migration scope
+        run: |
+          set -euo pipefail
+          python3 -m py_compile qa/c04_09_migration_audits.py
+          bash -n database/tests/c04_09_migration_smoke.sh
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c04_09_migration_audits.py A
+          mkdir -p .c04-09-ci-proof
+          printf 'A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-09-ci-proof/A
+      - name: B negative security guard review
+        run: |
+          set -euo pipefail
+          python3 qa/c04_09_migration_audits.py B
+          printf 'B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-09-ci-proof/B
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build with warnings as errors
+        run: |
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.TenantMigrations.ContractsTests/Crecisol.TenantMigrations.ContractsTests.csproj -c Release --nologo -warnaserror
+      - name: Run migration contracts and prior tenant regressions
+        run: |
+          set -euo pipefail
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.TenantMigrations.ContractsTests/Crecisol.TenantMigrations.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantLifecycle.ContractsTests/Crecisol.TenantLifecycle.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantProvisioning.ContractsTests/Crecisol.TenantProvisioning.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantStorage.ContractsTests/Crecisol.TenantStorage.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.SharedTenancy.ContractsTests/Crecisol.SharedTenancy.ContractsTests.csproj
+          printf 'dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-09-ci-proof/dotnet
+      - name: Real disposable MySQL8.4 compatibility and compensation
+        run: |
+          set -euo pipefail
+          bash database/tests/c04_09_migration_smoke.sh
+          printf 'mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-09-ci-proof/mysql
+      - name: C architecture and same-run evidence
+        run: |
+          set -euo pipefail
+          python3 qa/c04_09_migration_audits.py C
+          for name in A B dotnet mysql; do
+            grep -Fq "sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c04-09-ci-proof/$name"
+          done
+          echo 'C04-09 synthetic contracts and compatibility completed; no production migration authorized'
