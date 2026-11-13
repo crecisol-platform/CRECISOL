@@ -121,3 +121,80 @@ BEGIN
     SELECT IF(ROW_COUNT() = 1, 'CLAIMED', 'DENIED') AS result;
 END//
 DELIMITER ;
+
+
+-- TEST-ONLY issue transaction, SQL SECURITY DEFINER. The .NET user only
+-- executes this routine and has no UPDATE/INSERT on tenant/issuer/recipient.
+-- The recipient row is the per-tenant serialization lock for issuance.
+-- This procedure is NOT installed in any production environment.
+DELIMITER //
+CREATE PROCEDURE c05_02_issue_once(
+    IN p_tenant BINARY(16), IN p_invitation BINARY(16),
+    IN p_issuer BINARY(16), IN p_recipient BINARY(16),
+    IN p_profile VARCHAR(16), IN p_digest BINARY(32),
+    IN p_terms BIGINT UNSIGNED,
+    IN p_issued DATETIME(6), IN p_expires DATETIME(6)
+)
+SQL SECURITY DEFINER
+BEGIN
+    DECLARE v_recipient BINARY(16) DEFAULT NULL;
+    DECLARE v_pending INT DEFAULT 0;
+    DECLARE EXIT HANDLER FOR 1062
+    BEGIN
+        ROLLBACK;
+        SELECT 'DENIED' AS result;
+    END;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    SELECT r.recipient_id INTO v_recipient
+      FROM c05_02_recipients r
+      JOIN c05_02_tenants t ON t.tenant_id=r.tenant_id
+      JOIN c05_02_issuers s
+        ON s.tenant_id=r.tenant_id AND s.actor_id=p_issuer
+     WHERE r.tenant_id=p_tenant AND r.recipient_id=p_recipient
+       AND t.lifecycle='ACTIVE' AND t.terms_version=p_terms
+       AND s.enabled=1
+       AND r.actor_id<>s.actor_id
+       AND r.channel_verified=1
+       AND UTC_TIMESTAMP(6)<r.verified_until_utc
+       AND p_issued<=UTC_TIMESTAMP(6)
+       AND p_issued>=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 5 MINUTE)
+       AND UTC_TIMESTAMP(6)<p_expires
+       AND TIMESTAMPDIFF(SECOND,p_issued,p_expires) BETWEEN 60 AND 259200
+       AND ((p_profile='EMPLOYEE' AND s.profile_scope='INVITE_EMPLOYEE')
+         OR (p_profile='CONSUMER' AND s.profile_scope='INVITE_CONSUMER'))
+     FOR UPDATE;
+
+    IF v_recipient IS NULL THEN
+        ROLLBACK;
+        SELECT 'DENIED' AS result;
+    ELSE
+        SELECT EXISTS(
+            SELECT 1 FROM c05_02_invitations
+             WHERE tenant_id=p_tenant AND recipient_id=p_recipient
+               AND lifecycle='PENDING'
+               AND expires_at_utc>UTC_TIMESTAMP(6)
+        ) INTO v_pending;
+        IF v_pending<>0 THEN
+            ROLLBACK;
+            SELECT 'DENIED' AS result;
+        ELSE
+            INSERT INTO c05_02_invitations
+              (tenant_id,invitation_id,issuer_id,recipient_id,profile_scope,
+               token_digest,lifecycle,revision,terms_version,
+               issued_at_utc,expires_at_utc,claimed_at_utc)
+            VALUES
+              (p_tenant,p_invitation,p_issuer,p_recipient,p_profile,
+               p_digest,'PENDING',1,p_terms,p_issued,p_expires,NULL);
+            COMMIT;
+            SELECT 'ISSUED' AS result;
+        END IF;
+    END IF;
+END//
+DELIMITER ;
