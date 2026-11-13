@@ -1,0 +1,132 @@
+name: CRECISOL C05-01 account model A-B-C dotnet10 Angular22 Chromium MySQL8.4
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Identity/**'
+      - 'backend/src/Crecisol.Application/Identity/**'
+      - 'backend/tests/Crecisol.AccountIdentity.ContractsTests/**'
+      - 'qa/c05_01_identity_audits.py'
+      - 'docs/c05/C05_01_*'
+      - '.github/workflows/c05-01-account-model.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Identity/**'
+      - 'backend/src/Crecisol.Application/Identity/**'
+      - 'backend/tests/Crecisol.AccountIdentity.ContractsTests/**'
+      - 'qa/c05_01_identity_audits.py'
+      - 'docs/c05/C05_01_*'
+      - '.github/workflows/c05-01-account-model.yml'
+permissions:
+  contents: read
+jobs:
+  c05-01-contracts:
+    name: C05-01 A-B-C and full internal security regressions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - name: Checkout read-only and fetch PR merge parents
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Audit A canonical source, chapter gate and model
+        run: |
+          set -euo pipefail
+          test ! -e .c05-01-account-proof
+          python3 -m py_compile qa/c05_01_identity_audits.py
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c05_01_preparation_audits.py source
+          python3 qa/c05_01_identity_audits.py A
+          python3 qa/c04_05_identity_audits.py A
+          python3 qa/c04_06_scope_audits.py A
+          python3 qa/c04_11_offensive_audits.py A
+          mkdir -p .c05-01-account-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-01-account-proof/A
+      - name: Audit B security guards and adversarial mutations
+        run: |
+          set -euo pipefail
+          python3 qa/c05_01_identity_audits.py B
+          python3 qa/c04_05_identity_audits.py B
+          python3 qa/c04_06_scope_audits.py B
+          python3 qa/c04_11_offensive_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-01-account-proof/B
+      - name: Install official .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install Node 24 for Angular 22 public regressions
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Build API and all original plus new .NET10 contracts Release warnaserror
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          for project in backend/tests/*/*.csproj; do
+            dotnet build "$project" -c Release --nologo -warnaserror
+          done
+      - name: Execute new identity contracts and every existing C04/C03 .NET10 regression
+        run: |
+          set -euo pipefail
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.AccountIdentity.ContractsTests/Crecisol.AccountIdentity.ContractsTests.csproj
+          for project in backend/tests/*/*.csproj; do
+            case "$project" in
+              *Crecisol.AccountIdentity.ContractsTests/*) continue ;;
+              *Crecisol.Infrastructure.ContractsTests/*|*Crecisol.Outbox.ContractsTests/*)
+                dotnet run --no-build -c Release --project "$project" -- contracts ;;
+              *) dotnet run --no-build -c Release --project "$project" ;;
+            esac
+          done
+          printf 'PASS dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-01-account-proof/dotnet
+      - name: Angular22 TypeScript and public assets build plus dependency audit
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
+          npm audit --prefix frontend --omit=dev --audit-level=high
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+          npm run test:assets --prefix frontend
+          printf 'PASS frontend sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-01-account-proof/frontend
+      - name: Chromium UI privacy and accessibility journey regression
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright install --with-deps chromium
+          npx playwright test tests/c01-05.public-brand.spec.ts tests/c01-06.official-integration.spec.ts tests/c01-08.brand-revision.spec.ts tests/c02-03.public-information.spec.ts tests/c02-04.private-paths.spec.ts tests/c02-05.interaction-states.spec.ts tests/c02-07.mobile-accessibility.spec.ts tests/c02-08.journeys-public.spec.ts --reporter=line
+          npm run test:c02-06
+          npx playwright test --config=playwright.patterns-a11y.config.ts --reporter=line
+          npx playwright test --config=playwright.journeys-patterns.config.ts --reporter=line
+          cd ..
+          printf 'PASS chromium sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-01-account-proof/chromium
+      - name: Nine MySQL 8.4 disposable tenancy regressions and C03 outbox
+        run: |
+          set -euo pipefail
+          bash database/tests/c04_02_shared_integrity_smoke.sh
+          bash database/tests/c04_02_application_schema_smoke.sh
+          bash database/tests/c04_02_backend_reader_smoke.sh
+          bash database/tests/c04_07_idempotency_smoke.sh
+          bash database/tests/c04_08_lifecycle_smoke.sh
+          bash database/tests/c04_09_migration_smoke.sh
+          bash database/tests/c04_09_guarded_smoke.sh
+          bash database/tests/c04_10_isolation_smoke.sh
+          bash database/tests/c04_11_offensive_sql.sh
+          bash database/tests/c03_07_outbox_mysql_smoke.sh
+          CRECISOL_C03_05_CONTRACT_SMOKE=1 CRECISOL_C03_08_LOCAL_PROFILE_SMOKE=1 bash database/tests/c01_04_api_mysql_smoke.sh
+          printf 'PASS mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-01-account-proof/mysql
+      - name: Audit C exact SHA and complete real regression evidence
+        run: |
+          set -euo pipefail
+          python3 qa/c05_01_identity_audits.py C
+          printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-01-account-proof/C
+      - name: Final same SHA gate without false production certification
+        run: |
+          set -euo pipefail
+          for stage in A B C dotnet frontend chromium mysql; do
+            test -s ".c05-01-account-proof/$stage"
+            grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-01-account-proof/$stage"
+          done
+          echo 'C05-01 internal account/credential models A/B/C .NET10 Angular22 Chromium MySQL8.4 PASS for this SHA/run ONLY; no production login or MFA.'
