@@ -1,5 +1,8 @@
 # CRECISOL — C04-12 · Acta integral A/B/C CONDICIONADA
 
+**Nota institucional posterior de precedencia:** este documento conserva el estado histórico de preparación y prueba C04-12; no constituye el estado actual después de las puertas originales. La [ratificación institucional propuesta](C04_12_CERTIFICACION_INSTITUCIONAL.md) registra la auditoría del capítulo y sus SHA/run IDs verificados, además de las pruebas aún pendientes de aprobación. Su eficacia se limita al momento en que su PR tenga CI PREMERGE y POSTMERGE todas SUCCESS, fusión solo en dev y comentario institucional permanente. Las afirmaciones «pendiente» o «no certificado» del cuerpo siguiente corresponden a su fecha histórica y **no anulan una ratificación futura efectivamente aprobada**. Hasta esa eficacia, C04 completo y C05 siguen bloqueados.
+
+
 **Estado inicial:** C04-12 **EN AUDITORÍA / NO CERTIFICADA**. **El capítulo C04 NO está certificado** hasta completar todas las puertas. **Fecha:** 12-11-2026 (Honduras). **Repo:** `crecisol-platform/CRECISOL` (ID 1450414592). **Rama:** `dev`, base de entrada `90c63108f5d9b38dd57399395b88af215e08b6ec`.
 
 ## 1. Autoridad, precedencia y requisitos exactos
