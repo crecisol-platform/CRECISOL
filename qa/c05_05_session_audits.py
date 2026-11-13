@@ -64,7 +64,7 @@ GUARDS = {
         "CryptographicOperations.ZeroMemory(decoded)",
         "encoded.ToString().All",
         "decoded.Length != TokenBytes",
-        "IssuedSessionToken(Prefix + ToBase64Url(random))",
+        "IssuedSessionToken.FromTrustedProtector(Prefix + ToBase64Url(random))",
         "OpaqueSessionTokenProtector[redacted]",
     ),
     "adapter": (
