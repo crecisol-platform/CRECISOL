@@ -14,6 +14,8 @@
 | QA | `qa/c05_02_invitations_audits.py` | Auditorías A/B/C con huellas maestras, negativos, mutaciones de barreras, SHA exacto y regresión real |
 | CI | `.github/workflows/c05-02-invitations.yml` | .NET10 Release warnaserror, regresiones C03/C04/C05, Angular22, Chromium y MySQL8.4 desechable |
 
+**Pruebas productivas NO EJECUTADAS:** HTTP y envío de invitaciones, inscripción real, verificación de email, almacenamiento/MySQL transaccional de tokens y protección de tiempos contra enumeración. Estos requisitos permanecen fuera del alcance certificado de los contratos internos.
+
 **Estado real de integración:** los nuevos casos de uso no se registran en API, middleware ni DI. `ITrustedInvitationLedger`, `ITrustedCurrentRecipientChannel`, `ITrustedInvitationConsentLedger`, `ITrustedInvitationIssuerPolicy` y directorio destinatario son **puertos con adaptadores sintéticos solamente**. No existe persistencia real de invitación, entrega de correo, registro de usuario, sesión JWT/cookie, verificador de contraseña, confirmación de canal real ni transacción SQL del token. Los ensayos MySQL existentes protegen regresiones históricas de tenant, **NO prueba una transacción de invitación MySQL en esta fase**.
 
 ## 2. Invariantes del núcleo y riesgos
