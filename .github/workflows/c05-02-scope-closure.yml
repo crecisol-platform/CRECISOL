@@ -1,0 +1,83 @@
+name: CRECISOL C05-02 scoped certification A-B-C real NET10 HTTP MySQL8.4
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c05/C05_02_ACTA_CIERRE_ALCANCE_CONTRATOS.md'
+      - 'docs/ESTADO_VIGENTE_CAPITULOS.md'
+      - 'qa/c05_02_scope_closure_audits.py'
+      - '.github/workflows/c05-02-scope-closure.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c05/C05_02_ACTA_CIERRE_ALCANCE_CONTRATOS.md'
+      - 'docs/ESTADO_VIGENTE_CAPITULOS.md'
+      - 'qa/c05_02_scope_closure_audits.py'
+      - '.github/workflows/c05-02-scope-closure.yml'
+permissions:
+  contents: read
+jobs:
+  certify-contracts-not-production:
+    name: C05-02 three audits and replay real C05-02 integration regressions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 85
+    steps:
+      - name: Checkout exact PR merge or dev SHA (read only)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: A canonical source, scope and predecessor provenance
+        run: |
+          set -euo pipefail
+          test ! -e .c05-02-scope-closure-proof
+          python3 -m py_compile qa/c05_02_scope_closure_audits.py
+          python3 qa/validate_foundation.py
+          python3 qa/c05_02_scope_closure_audits.py A
+          mkdir -p .c05-02-scope-closure-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-scope-closure-proof/A
+      - name: B negative mutants and no authorization bypass
+        run: |
+          set -euo pipefail
+          python3 qa/c05_02_scope_closure_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-scope-closure-proof/B
+      - name: Install pinned .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Strict .NET10 and C05-02 contracts/integration test projects
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.NeutralRegistration.IntegrationTests/Crecisol.NeutralRegistration.IntegrationTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.MailboxBound.MySqlTests/Crecisol.MailboxBound.MySqlTests.csproj -c Release --nologo -warnaserror
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj
+          printf 'PASS dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-scope-closure-proof/dotnet
+      - name: Real neutral Kestrel HTTP and MySQL8.4, no account enumeration
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_02_neutral_registration_http_mysql.sh
+          printf 'PASS neutral sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-scope-closure-proof/neutral
+      - name: Real signed recipient HMAC, mailbox possession, issuer-scope CAS MySQL8.4
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_02_mailbox_bound_mysql_smoke.sh
+          printf 'PASS mailbox sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-scope-closure-proof/mailbox
+      - name: Real expired-only neutral PII logical erasure MySQL8.4
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_02_privacy_retention_mysql.sh
+          printf 'PASS retention sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-scope-closure-proof/retention
+      - name: C same-run SHA, allowed diff, architecture and no product activation
+        run: |
+          set -euo pipefail
+          python3 qa/c05_02_scope_closure_audits.py C
+          printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-scope-closure-proof/C
+      - name: Require same-run A-B-C plus real .NET10 HTTP/MySQL and mailbox/retention
+        run: |
+          set -euo pipefail
+          for stage in A B C dotnet neutral mailbox retention; do
+            grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-02-scope-closure-proof/$stage"
+          done
+          echo 'PASS C05-02 CONTRACT/TEST ONLY; no actual users, external inbox, tenant grants or production authentication'
