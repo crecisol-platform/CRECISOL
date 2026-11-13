@@ -55,6 +55,16 @@ public interface ITrustedCurrentRecipientChannel
     Task<VerifiedRecipientChannel?> ReadVerifiedAsync(CancellationToken cancellationToken);
 }
 
+/// <summary>
+ /// Published current terms version, resolved only from tenant-scoped backend
+ /// policy. A valid old invitation must never bypass a new mandatory version.
+ /// </summary>
+public interface ITrustedCurrentInvitationTermsPolicy
+{
+    Task<long?> ReadCurrentTermsVersionAsync(
+        TenantId verifiedTenant, CancellationToken cancellationToken);
+}
+
 /// <summary>Terms acceptance comes from tenant-scoped backend ledger only.</summary>
 public interface ITrustedInvitationConsentLedger
 {
@@ -192,6 +202,7 @@ public sealed class ClaimInternalInvitation
     private readonly ITrustedTenantCatalogReader tenants;
     private readonly ITrustedCurrentRecipientChannel recipients;
     private readonly ITrustedInvitationConsentLedger terms;
+    private readonly ITrustedCurrentInvitationTermsPolicy currentTerms;
     private readonly ITrustedInvitationLedger ledger;
     private readonly ITrustedHostUtcClock clock;
 
@@ -201,6 +212,7 @@ public sealed class ClaimInternalInvitation
         ITrustedTenantCatalogReader tenants,
         ITrustedCurrentRecipientChannel recipients,
         ITrustedInvitationConsentLedger terms,
+        ITrustedCurrentInvitationTermsPolicy currentTerms,
         ITrustedInvitationLedger ledger,
         ITrustedHostUtcClock clock)
     {
@@ -209,6 +221,7 @@ public sealed class ClaimInternalInvitation
         this.tenants = tenants ?? throw new ArgumentNullException(nameof(tenants));
         this.recipients = recipients ?? throw new ArgumentNullException(nameof(recipients));
         this.terms = terms ?? throw new ArgumentNullException(nameof(terms));
+        this.currentTerms = currentTerms ?? throw new ArgumentNullException(nameof(currentTerms));
         this.ledger = ledger ?? throw new ArgumentNullException(nameof(ledger));
         this.clock = clock ?? throw new ArgumentNullException(nameof(clock));
     }
@@ -244,6 +257,8 @@ public sealed class ClaimInternalInvitation
 
         var accepted = await terms.ReadAcceptedAsync(
             verifiedHost.TenantId, recipient.Recipient, cancellationToken);
+        var currentTermsVersion = await currentTerms.ReadCurrentTermsVersionAsync(
+            verifiedHost.TenantId, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         var matches = await ledger.ReadExactAsync(
             verifiedHost.TenantId, invitationId, cancellationToken);
@@ -259,6 +274,7 @@ public sealed class ClaimInternalInvitation
             accepted is null || accepted.TenantId != verifiedHost.TenantId ||
             accepted.Recipient != recipient.Recipient ||
             accepted.TermsVersion != invitation.TermsVersion ||
+            currentTermsVersion is null || currentTermsVersion.Value != invitation.TermsVersion ||
             accepted.AcceptedUtc > firstNow ||
             !invitation.Digest.Matches(rawCode.Span))
             throw new UnauthorizedAccessException("Invitation claim unavailable.");
@@ -270,11 +286,14 @@ public sealed class ClaimInternalInvitation
         var refreshedRecipient = await recipients.ReadVerifiedAsync(cancellationToken);
         var refreshedTerms = await terms.ReadAcceptedAsync(
             verifiedHost.TenantId, recipient.Recipient, cancellationToken);
+        var refreshedTermsVersion = await currentTerms.ReadCurrentTermsVersionAsync(
+            verifiedHost.TenantId, cancellationToken);
         var refreshedMatches = await ledger.ReadExactAsync(
             verifiedHost.TenantId, invitationId, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         if (refreshedHost != verifiedHost || refreshedTenant != tenant ||
             refreshedRecipient != recipient || refreshedTerms != accepted ||
+            refreshedTermsVersion != currentTermsVersion ||
             refreshedMatches is null || refreshedMatches.Count != 1 ||
             refreshedMatches[0] is null ||
             refreshedMatches[0].Revision != invitation.Revision ||
