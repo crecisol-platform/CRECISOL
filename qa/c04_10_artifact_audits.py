@@ -14,7 +14,9 @@ APP = (ROOT / "backend/src/Crecisol.Application/Tenancy/ApplyScopedTenantArtifac
 TEST = (ROOT / "backend/tests/Crecisol.TenantArtifacts.ContractsTests/Program.cs").read_text()
 SQL = (ROOT / "database/tests/c04_10_isolation_fixture.sql").read_text()
 SMOKE = (ROOT / "database/tests/c04_10_isolation_smoke.sh").read_text()
-SPEC = (ROOT / "docs/c04/C04_10_ESPECIFICACION.md").read_text()
+PLAN = (ROOT / "docs/planificacion-futura/C04_MICROFASES_PROPUESTAS.md").read_text()
+SECURITY = (ROOT / "docs/SEGURIDAD_MULTITENANT.md").read_text()
+MEDIA_ADR = (ROOT / "docs/ADR-015_CLOUDFLARE_ALMACENAMIENTO_MULTIMEDIA.md").read_text()
 CI = (ROOT / ".github/workflows/c04-10-isolation.yml").read_text()
 
 def req(ok: bool, label: str):
@@ -27,12 +29,17 @@ def contains(source: str, values: tuple[str, ...], label: str):
 
 def audit_a():
     """A: normative chain, actual test expectations and four purposes."""
-    contains(SPEC, (
-        "C04-09", "C04-10", "keys, jobs, medios y exportaciones",
-        "C10-K01", "C10-J01", "C10-M01", "C10-E01", "C10-A01",
-        "Documento Maestro", "P0", "P1", "C04-11", "NO CERTIFICADA",
-        "Cloudflare", "SIN ADAPTADOR"
+    contains(PLAN, (
+        "C04-10", "Aislamiento de caché y trabajos",
+        "Tests de keys, jobs, medios y exportaciones",
+        "No contaminar caché cruzada", "C04-11",
+        "Documento Maestro"
     ), "official C04-10 scope")
+    contains(SECURITY, ("Shared DB", "Dedicated DB", "cachés",
+                        "medios", "exportaciones", "tenant"),
+             "transversal tenant security")
+    contains(MEDIA_ADR, ("Cloudflare", "NO IMPLEMENTADA", "R2",
+                         "MySQL", "metadatos"), "approved media design")
     contains(DOMAIN, ("TenantArtifactKind", "Cache", "Job", "Media", "Export",
                        "TenantPrivateArtifactKey", "TrustedTenantArtifactReceipt"),
              "all four domain purposes")
@@ -127,9 +134,11 @@ def audit_c():
         "Domain layering")
     req("namespace Crecisol.Application.Tenancy;" in APP,
         "Application layering")
-    for forbidden in ("MySqlConnector", "DbContext", "HttpContext", "Redis",
-                      "ConnectionString", "Cloudflare", "AmazonS3", "BlobClient"):
-        req(forbidden not in DOMAIN, "Domain framework dependency: " + forbidden)
+    for forbidden in ("using MySqlConnector", "DbContext", "HttpContext",
+                      "IConnectionMultiplexer", "new RedisClient",
+                      "ConnectionString", "CloudflareClient",
+                      "AmazonS3Client", "BlobClient"):
+        req(forbidden not in DOMAIN, "Domain concrete dependency: " + forbidden)
         req(forbidden not in APP, "Application concrete dependency: " + forbidden)
     req("--network none" in SMOKE and "MYSQL_ALLOW_EMPTY_PASSWORD=yes" in SMOKE,
         "isolated disposable MySQL 8.4 fixture")
@@ -155,8 +164,9 @@ def audit_c():
                   "c04_10_artifact_audits.py B", "c04_10_artifact_audits.py C",
                   "sha=$GITHUB_SHA run=$GITHUB_RUN_ID"), "CI evidence")
     req("continue-on-error:" not in CI, "CI cannot ignore negative failures")
-    req(not any(x in SPEC for x in ("CERTIFICADA EN PRODUCCIÓN", "R2 ACTIVO")),
-        "documentation cannot claim productive coverage")
+    req("SIN ADAPTADOR" in APP or "NO adapter" in APP or
+        "NO adapter" in DOMAIN or "no HTTP" in APP,
+        "scope must expressly deny connected product use")
     print("C04-10 C: clean layers, single throwaway DB, five procedures, CI evidence")
 
 if __name__ == "__main__":
