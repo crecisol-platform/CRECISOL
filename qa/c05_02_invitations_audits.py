@@ -19,6 +19,8 @@ PROJ = ROOT / "backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol
 DOC = ROOT / "docs/c05/IMPLEMENTACION_C05_02_CONTRATOS.md"
 WORKFLOW = ROOT / ".github/workflows/c05-02-invitations.yml"
 API = ROOT / "backend/src/Crecisol.Api/Program.cs"
+SQL_SCHEMA = ROOT / "database/tests/fixtures/c05_02_invitation_atomic_fixture.sql"
+SQL_TEST = ROOT / "database/tests/c05_02_invitation_atomic_smoke.sh"
 PROOF = ROOT / ".c05-02-invitations-proof"
 SHA_C05 = "bf7036849d6f1aad36a3a111b62121947aa12fae8c2a0551e63b0cc788d4a0aa"
 PRIOR_SHA = "8468a448b3164944fb75fb17270e1d3dc2186c79"
@@ -31,6 +33,8 @@ ALLOWED = {
     "backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj",
     "docs/c05/IMPLEMENTACION_C05_02_CONTRATOS.md",
     "docs/c05/ACTA_C05_02_CONTRATOS.md",
+    "database/tests/fixtures/c05_02_invitation_atomic_fixture.sql",
+    "database/tests/c05_02_invitation_atomic_smoke.sh",
     "qa/c05_02_invitations_audits.py",
     ".github/workflows/c05-02-invitations.yml",
 }
@@ -66,6 +70,9 @@ GUARDS = {
         "ITrustedInvitationLedger",
         "ITrustedCurrentRecipientChannel",
         "ITrustedInvitationConsentLedger",
+        "ITrustedCurrentInvitationTermsPolicy",
+        "currentTermsVersion.Value != invitation.TermsVersion",
+        "refreshedTermsVersion != currentTermsVersion",
         "ITrustedCurrentDirectHostReader directHost",
         "ResolveVerifiedTenantHost hostResolver",
         "TryInsertUniqueAsync(snapshot, cancellationToken)",
@@ -103,6 +110,8 @@ GUARDS = {
         "Invitation revoked denied",
         "Duplicate catalog rows denied",
         "Stale terms policy denied",
+        "Published tenant policy changed denied",
+        "Published tenant terms drift mid-flight denied",
         "Consent from tenant B denied",
         "Suspended tenant denied",
         "Tenant suspended only at atomic port denied",
@@ -127,6 +136,30 @@ GUARDS = {
         CURRENT_WORD_SHA,
         CURRENT_PDF_SHA,
     ),
+    "sql": (
+        "CREATE TABLE c05_02_invitations",
+        "PRIMARY KEY (tenant_id, invitation_id)",
+        "UNIQUE KEY uq_c05_02_digest_tenant",
+        "SQL SECURITY DEFINER",
+        "UPDATE c05_02_invitations i",
+        "t.lifecycle = 'ACTIVE'",
+        "t.terms_version = i.terms_version",
+        "i.lifecycle = 'PENDING'",
+        "i.revision = p_revision",
+        "UTC_TIMESTAMP(6) < i.expires_at_utc",
+        "r.channel_verified = 1",
+        "s.enabled = 1",
+        "ROW_COUNT() = 1",
+    ),
+    "sqltest": (
+        "docker run --rm -d --network none",
+        "16 real MySQL clients exactly ONE winner",
+        "A invitation ID with B tenant and A digest",
+        "replay of claimed A token",
+        "revoked issuer",
+        "terms upgraded without consent",
+        "no membership grants created",
+    ),
     "workflow": (
         "contents: read",
         "persist-credentials: false",
@@ -136,6 +169,7 @@ GUARDS = {
         "qa/c05_02_invitations_audits.py B",
         "qa/c05_02_invitations_audits.py C",
         "Crecisol.InvitationSecurity.ContractsTests.csproj",
+        "bash database/tests/c05_02_invitation_atomic_smoke.sh",
     ),
 }
 
@@ -154,6 +188,8 @@ def files() -> dict[str, str]:
         "test": read(TEST),
         "doc": read(DOC),
         "workflow": read(WORKFLOW),
+        "sql": read(SQL_SCHEMA),
+        "sqltest": read(SQL_TEST),
     }
 
 def guard(data: dict[str, str]) -> None:
@@ -189,6 +225,8 @@ def guard(data: dict[str, str]) -> None:
     need("<TargetFramework>net10.0</TargetFramework>" in read(PROJ) and
          "<TreatWarningsAsErrors>true</TreatWarningsAsErrors>" in read(PROJ),
          ".NET 10 test project must build with strict warnings")
+    need("GRANT ALL" not in data["sql"] and "DROP DATABASE" not in data["sqltest"],
+         "SQL fixture may not grant broad privileges or touch production databases")
     need("Async" in app and "Task" in app and "CancellationToken" in app,
          "Asynchronous cancellation and typed ports required")
 
@@ -236,7 +274,7 @@ def audit_c() -> None:
          re.fullmatch(r"\d+", run) is not None and
          os.environ.get("GITHUB_REPOSITORY") == REPO and
          git("rev-parse", "HEAD") == sha, "Missing exact verified SHA/run provenance")
-    for stage in ("A", "B", "dotnet", "frontend", "chromium", "mysql"):
+    for stage in ("A", "B", "dotnet", "frontend", "chromium", "mysql", "mysql_invites"):
         marker = PROOF / stage
         need(marker.is_file() and
              marker.read_text(encoding="utf-8").strip() ==
@@ -263,7 +301,7 @@ def audit_c() -> None:
     need(bool(changed) and set(changed).issubset(ALLOWED),
          "C05-02 touches out-of-scope files: " + repr(changed))
     guard(files())
-    print(f"PASS C05-02 C: A/B real .NET/Angular/Chromium/MySQL same SHA={sha} run={run}")
+    print(f"PASS C05-02 C: A/B .NET/Angular/Chromium/MySQL + 16-session InnoDB fixture SHA={sha} run={run}")
     print("LIMIT: internal invitation contracts and synthetic fakes only; no production signup")
 
 if __name__ == "__main__":
