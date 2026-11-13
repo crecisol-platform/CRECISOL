@@ -3,15 +3,13 @@ on:
   pull_request:
     branches: [dev]
     paths:
-      - 'docs/c05/C05_02_ACTA_CIERRE_ALCANCE_CONTRATOS.md'
-      - 'docs/ESTADO_VIGENTE_CAPITULOS.md'
+      - 'docs/c05/ACTA_CERTIFICACION_ACOTADA_C05_02_2026_11_13.md'
       - 'qa/c05_02_scope_closure_audits.py'
       - '.github/workflows/c05-02-scope-closure.yml'
   push:
     branches: [dev]
     paths:
-      - 'docs/c05/C05_02_ACTA_CIERRE_ALCANCE_CONTRATOS.md'
-      - 'docs/ESTADO_VIGENTE_CAPITULOS.md'
+      - 'docs/c05/ACTA_CERTIFICACION_ACOTADA_C05_02_2026_11_13.md'
       - 'qa/c05_02_scope_closure_audits.py'
       - '.github/workflows/c05-02-scope-closure.yml'
 permissions:
