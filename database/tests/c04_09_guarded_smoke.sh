@@ -15,6 +15,28 @@ runner_sql() {
   docker exec -e MYSQL_PWD="$PASSWORD" "$CONTAINER" \
     mysql -uc0409_ci_runner -N -B -e "$1"
 }
+# Synthetic operator-only restoration: scope comes from protected ledger
+# and is checked BEFORE any DROP/CREATE or backup import. Not a production
+# restoration authorization or a DB-routing implementation.
+restore_checked() {
+  local op="$1" target_schema="$2" backup="$3" expected binding
+  binding="$(root_sql "SELECT CONCAT(t.kind,':',t.tenant_id,':',t.slot_id,':',
+      t.schema_name,':',l.fence)
+    FROM c04_09_control.ledger l
+    JOIN c04_09_control.targets t ON t.target_id=l.target_id
+    JOIN c04_09_control.gates g ON g.target_id=l.target_id
+    WHERE l.operation_id='$op' AND l.state='failed'
+      AND g.inflight_operation=l.operation_id AND g.fence=l.fence")"
+  expected="DEDICATED:B:slot_b:c04_09_ded_b:1"
+  if [ "$binding" != "$expected" ] ||
+     [ "$target_schema" != "c04_09_ded_b" ] ||
+     [ ! -s "$backup" ]; then
+    echo 'DENIED checked backup target or fencing mismatch' >&2
+    return 1
+  fi
+  root_sql "DROP DATABASE c04_09_ded_b; CREATE DATABASE c04_09_ded_b"
+  docker exec -i "$CONTAINER" mysql -uroot -D c04_09_ded_b < "$backup"
+}
 check() {
   local label="$1" expected="$2" actual="$3"
   if [ "$expected" != "$actual" ]; then
@@ -148,6 +170,8 @@ fi
 PASS=$((PASS+1))
 deny "runner cannot alter another dedicated schema" \
  "ALTER TABLE c04_09_ded_b.resources ADD COLUMN malicious INT"
+deny "runner cannot perform destructive DDL downgrade" \
+ "ALTER TABLE c04_09_ded_b.resources DROP COLUMN payload"
 deny "runner cannot choose scope via update" \
  "UPDATE c04_09_control.targets SET slot_id='slot_a' WHERE target_id='DED_B'"
 deny_root "valid tenant B cannot steal noncolliding tenant A resource" \
@@ -313,9 +337,14 @@ DENIED=$((DENIED+1))
 check "failed gate remains locked" "$winning_op" "$(root_sql "
  SELECT inflight_operation FROM c04_09_control.gates WHERE target_id='DED_B'")"
 
-root_sql "DROP DATABASE c04_09_ded_b; CREATE DATABASE c04_09_ded_b"
-docker exec -i "$CONTAINER" mysql -uroot -D c04_09_ded_b \
-  < "$TMP/ded_b_backup.sql"
+if restore_checked "$winning_op" "c04_09_ded_a" "$TMP/ded_b_backup.sql" \
+ > "$TMP/wrong-restore" 2>&1; then
+  echo 'FAIL wrong dedicated restore destination accepted' >&2; exit 1
+fi
+DENIED=$((DENIED+1))
+check "rejected wrong restoration did not modify A" "DED-ALPHA" "$(root_sql "
+ SELECT payload FROM c04_09_ded_a.resources WHERE resource_id=1")"
+restore_checked "$winning_op" "c04_09_ded_b" "$TMP/ded_b_backup.sql"
 restored_hash="$(root_sql "SELECT SHA2(CONCAT(resource_id,':',payload),256)
  FROM c04_09_ded_b.resources WHERE resource_id=1")"
 check "physical backup restoration data hash" "$backup_hash" "$restored_hash"
