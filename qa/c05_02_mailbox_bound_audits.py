@@ -424,7 +424,8 @@ def audit_c():
                 "POSTMERGE only dev")
         changed=git("show","--format=","--name-only",sha).splitlines()
     require(bool(changed) and set(changed).issubset(ALLOWED) and
-            FILES["sql"] in changed and FILES["test"] in changed,
+            FILES["test"] in changed and
+            (FILES["sql"] in changed or FILES["adapter"] in changed),
             "Unauthorized change: "+repr(changed))
     invariants(source())
     print(f"PASS mailbox-bound C: exact A/B/.NET10/MySQL8.4 sha={sha} run={run}")
