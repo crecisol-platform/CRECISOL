@@ -1,0 +1,75 @@
+name: CRECISOL C05-04 institutional scoped pre-session closure A-B-C NET10
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c05/ACTA_CERTIFICACION_ACOTADA_C05_04_2026_11_13.md'
+      - 'qa/c05_04_closure_gate.py'
+      - '.github/workflows/c05-04-certification.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c05/ACTA_CERTIFICACION_ACOTADA_C05_04_2026_11_13.md'
+      - 'qa/c05_04_closure_gate.py'
+      - '.github/workflows/c05-04-certification.yml'
+permissions:
+  contents: read
+jobs:
+  certify-context-contract-only:
+    name: C05-04 no-selector Argon2id two-tenant contracts A-B-C
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout PR merge or dev exact SHA with read-only token
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Audit A canonical Word, prior C05 and C05-04 required scope
+        run: |
+          set -euo pipefail
+          test ! -e .c05-04-closure-proof
+          python3 -m py_compile qa/c05_04_closure_gate.py
+          python3 qa/validate_foundation.py
+          python3 qa/c05_04_closure_gate.py A
+          mkdir -p .c05-04-closure-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-04-closure-proof/A
+      - name: Audit B adversarial no-selector/no-cookie scoped invariants
+        run: |
+          set -euo pipefail
+          python3 qa/c05_04_closure_gate.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-04-closure-proof/B
+      - name: Install real .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build and execute real Argon2id contextual A/B synthetic tenants
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.ContextualLogin.ContractsTests/Crecisol.ContextualLogin.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.ContextualLogin.ContractsTests/Crecisol.ContextualLogin.ContractsTests.csproj
+          printf 'PASS context sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-04-closure-proof/context
+      - name: Rerun C05-01, C05-02, C05-03 previous hard security gates
+        run: |
+          set -euo pipefail
+          for proj in \
+            backend/tests/Crecisol.AccountIdentity.ContractsTests/Crecisol.AccountIdentity.ContractsTests.csproj \
+            backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj \
+            backend/tests/Crecisol.PasswordHash.ContractsTests/Crecisol.PasswordHash.ContractsTests.csproj; do
+            dotnet build "$proj" -c Release --nologo -warnaserror
+            dotnet run --no-build -c Release --project "$proj"
+          done
+          printf 'PASS predecessors sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-04-closure-proof/predecessors
+      - name: Audit C exact SHA/run PR lineage and three-file certification diff
+        run: |
+          set -euo pipefail
+          python3 qa/c05_04_closure_gate.py C
+          printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-04-closure-proof/C
+      - name: Gate same-run A-B-C plus real .NET10 context and earlier contracts
+        run: |
+          set -euo pipefail
+          for stage in A B C context predecessors; do
+            grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-04-closure-proof/$stage"
+          done
+          echo 'PASS C05-04 only pre-session contextual login contract and synthetic tenants; NOT product login or real sessions'
