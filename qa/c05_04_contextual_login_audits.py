@@ -38,6 +38,7 @@ GUARDS = {
         "credential.Kind != AccountCredentialKind.PasswordVerifier",
         "account.ActorId != credential.ActorId",
         "private string EncodedVerifier",
+        "internal string ExportForInternalVerifier()",
         "public bool SameVersionAs",
         "TrustedLoginCredentialSnapshot[redacted]",
         "public interface ITrustedLoginCredentialDirectory",
