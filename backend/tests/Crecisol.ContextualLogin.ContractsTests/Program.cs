@@ -223,7 +223,7 @@ var hostBContext = await Run(NewLogin(
         new[] { Link(), Link(tenantB, linkB) })));
 Check(hostBContext.Status == ContextualLoginPreparationStatus.Ready &&
       hostBContext.Evidence?.TenantId == tenantB &&
-      hostBContext.Evidence.LinkId == linkB &&
+      hostBContext.Evidence?.LinkId == linkB &&
       hostAContext.Evidence?.TenantId != hostBContext.Evidence.TenantId,
     "On host B, exact actor resolves only B and never inherits A grants");
 await Reject("Host B cannot get A-only membership", NewLogin(
@@ -393,10 +393,11 @@ await Reject("Final account expired before preparation", NewLogin(
     clock: new FakeUtcClock(n => n >= 4 ? expires : now)));
 await Reject("Backend clock rollback denied", NewLogin(
     clock: new FakeUtcClock(n => n >= 4 ? now.AddHours(-1) : now)));
-await Reject("Invalid backend timezone rejected", NewLogin(
-    clock: new FakeUtcClock(n => n == 1
-        ? now.ToOffset(TimeSpan.FromHours(-6)) : now)),
-    expectedException: false);
+await DenyAsync<InvalidOperationException>(
+    async () => { _ = await Run(NewLogin(
+        clock: new FakeUtcClock(n => n == 1
+            ? now.ToOffset(TimeSpan.FromHours(-6)) : now))); },
+    "Non-UTC server clock must be rejected");
 
 // Cancellation must never produce a Ready result.
 using (var cancelled = new CancellationTokenSource())
