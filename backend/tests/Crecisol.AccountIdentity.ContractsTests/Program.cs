@@ -376,7 +376,7 @@ await Reject<UnauthorizedAccessException>("Revoked C04 session cannot be a sourc
     sessions: new FakeSessions(_ => Session(state: ActorSessionState.Revoked)));
 await Reject<InvalidOperationException>("Actor from another account cannot match C04 membership",
     sessions: new FakeSessions(_ => Session(actor: actorB)));
-await Reject<UnauthorizedAccessException>("Membership of tenant B cannot be used for host A",
+await Reject<InvalidOperationException>("Membership of tenant B cannot be used for host A",
     memberships: new FakeMemberships((_, _, _) => new[] { Membership(tenant: tenantB) }));
 await Reject<UnauthorizedAccessException>("Suspended tenant cannot authorize account",
     tenants: new FakeTenants((_, _) => Tenant(state: TenantLifecycleState.Suspended)));
