@@ -64,16 +64,23 @@ public sealed class ApplyScopedTenantArtifact
     }
 
     public async Task<TrustedTenantArtifactReceipt> ExecuteAsync(
-        Guid operationId, CancellationToken cancellationToken)
+        Guid operationId, TrustedTenantArtifactScope serverAuthorizedScope,
+        CancellationToken cancellationToken)
     {
-        if (operationId == Guid.Empty)
-            throw new UnauthorizedAccessException("Protected artifact decision required.");
+        ArgumentNullException.ThrowIfNull(serverAuthorizedScope);
+        // This is the expected identity/resource scope from a FUTURE verified
+        // caller; an operation ID or a trusted reader's lookup cannot silently
+        // replace the tenant/actor/branch/resource already authorized.
+        if (operationId == Guid.Empty ||
+            serverAuthorizedScope.OperationId != operationId ||
+            !serverAuthorizedScope.IsFreshAtUtc(clock.GetUtcNow()))
+            throw new UnauthorizedAccessException("Protected artifact scope required.");
 
         cancellationToken.ThrowIfCancellationRequested();
         var approved = await decisions.ReadCurrentApprovedScopeAsync(
             operationId, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
-        if (approved is null || approved.OperationId != operationId ||
+        if (approved is null || approved != serverAuthorizedScope ||
             !approved.IsFreshAtUtc(clock.GetUtcNow()))
             throw new UnauthorizedAccessException("Artifact scope unavailable.");
 
