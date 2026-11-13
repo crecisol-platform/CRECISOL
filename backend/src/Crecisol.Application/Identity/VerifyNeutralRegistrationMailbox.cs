@@ -147,12 +147,18 @@ public sealed class VerifyNeutralRegistrationMailbox
             hexadecimalCode.Length != 64)
             return NeutralRegistrationReceipt.Acknowledged;
 
-        var secret = new byte[32];
+        byte[] secret;
         try
         {
-            if (!Convert.TryFromHexString(hexadecimalCode, secret, out var written) ||
-                written != 32)
-                return NeutralRegistrationReceipt.Acknowledged;
+            secret = Convert.FromHexString(hexadecimalCode);
+        }
+        catch (FormatException)
+        {
+            return NeutralRegistrationReceipt.Acknowledged;
+        }
+
+        try
+        {
             var digest = EmailPossessionDigest.FromToken(tenant, intentId, secret);
             _ = await ledger.TryVerifyOnceAsync(
                 tenant, intentId, digest, clock.GetUtcNow(), cancellationToken);
