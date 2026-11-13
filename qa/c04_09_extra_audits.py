@@ -66,7 +66,7 @@ def audit_d():
         "cross-slot valid-slot-B approval",
         "different valid tenant cannot claim same dedicated slot",
         "runner cannot choose scope via update",
-        "global shared schema has no tenant selector",
+        "globally shared schema has no tenant selector",
         "runner cannot alter another dedicated schema",
     ), "executable cross-scope negative tests")
     expect_all(NET_TEST, (
