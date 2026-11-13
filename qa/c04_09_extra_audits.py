@@ -131,6 +131,19 @@ def audit_e():
             "must restore actual disposable physical database")
     require("SQL SECURITY DEFINER" in SQL,
             "protected synthetic procedures must use definition owner")
+    # Concurrent reservation, finalization and crash recovery MUST lock rows
+    # in one deterministic order to avoid a preventable inversion/deadlock.
+    for procedure in ("reserve", "finalize", "mark_failed",
+                      "verify_restored_and_release"):
+        prefix = "CREATE PROCEDURE c04_09_control." + procedure + "("
+        require(prefix in SQL, "missing SQL procedure: " + procedure)
+        body = SQL.split(prefix, 1)[1].split("END$", 1)[0]
+        order = [body.find("FROM c04_09_control." + table)
+                 for table in ("approvals", "targets", "gates", "ledger")]
+        require(all(position >= 0 for position in order) and
+                order == sorted(order),
+                "SQL row lock inversion in " + procedure)
+    print("E: four SQL procedures share strict approval-target-gate-ledger lock order")
     print("E: reservation/fencing/crash/recovery test gates verified; real MySQL required")
 
 def audit_f():
