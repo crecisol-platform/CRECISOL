@@ -50,7 +50,8 @@ root_sql "CREATE USER 'c05_02_adapter'@'%' IDENTIFIED BY '$ADAPTER_PASSWORD';
  GRANT SELECT ON \`$DATABASE\`.c05_02_tenants TO 'c05_02_adapter'@'%';
  GRANT SELECT ON \`$DATABASE\`.c05_02_issuers TO 'c05_02_adapter'@'%';
  GRANT SELECT ON \`$DATABASE\`.c05_02_recipients TO 'c05_02_adapter'@'%';
- GRANT SELECT, INSERT ON \`$DATABASE\`.c05_02_invitations TO 'c05_02_adapter'@'%';
+ GRANT SELECT ON \`$DATABASE\`.c05_02_invitations TO 'c05_02_adapter'@'%';
+ GRANT EXECUTE ON PROCEDURE \`$DATABASE\`.c05_02_issue_once TO 'c05_02_adapter'@'%';
  GRANT EXECUTE ON PROCEDURE \`$DATABASE\`.c05_02_claim_once TO 'c05_02_adapter'@'%';
  GRANT SELECT, INSERT, UPDATE, DELETE ON \`$DATABASE\`.* TO 'c05_02_fixture_setup'@'%';"
 
