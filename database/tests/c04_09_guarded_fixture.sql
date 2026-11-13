@@ -56,6 +56,363 @@ CREATE TABLE c04_09_control.ledger (
  checksum CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
  state ENUM('applying','verified','failed','recovered') NOT NULL,
  fence BIGINT UNSIGNED NOT NULL,
+ baseline_payload_sha256 CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+ CONSTRAINT chk_c0409_baseline_hash CHECK
+   (baseline_payload_sha256 IS NULL OR
+     REGEXP_LIKE(baseline_payload_sha256,'^[0-9a-f]{64} (target_id,migration_version),
+ UNIQUE KEY uq_c0409_ledger_op(operation_id),
+ CONSTRAINT fk_c0409_ledger_approval FOREIGN KEY(operation_id)
+   REFERENCES c04_09_control.approvals(operation_id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+ CONSTRAINT fk_c0409_ledger_target FOREIGN KEY(target_id)
+   REFERENCES c04_09_control.targets(target_id) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB;
+
+DELIMITER $
+-- Valid-target ownership attacks must fail even when the new tenant exists
+-- and no PK/unique collision would prevent the reparenting.
+CREATE TRIGGER c04_09_shared.c0409_shared_owner_immutable
+BEFORE UPDATE ON c04_09_shared.resources FOR EACH ROW
+BEGIN
+ IF NOT (OLD.tenant_id <=> NEW.tenant_id) OR
+    NOT (OLD.resource_id <=> NEW.resource_id) THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Shared resource ownership immutable';
+ END IF;
+END$
+CREATE TRIGGER c04_09_control.c0409_target_binding_immutable
+BEFORE UPDATE ON c04_09_control.targets FOR EACH ROW
+BEGIN
+ IF NOT (OLD.tenant_id <=> NEW.tenant_id) OR
+    NOT (OLD.slot_id <=> NEW.slot_id) OR
+    NOT (OLD.kind <=> NEW.kind) OR
+    NOT (OLD.schema_name <=> NEW.schema_name) THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration target ownership immutable';
+ END IF;
+END$$
+CREATE TRIGGER c04_09_control.c0409_ledger_identity_immutable
+BEFORE UPDATE ON c04_09_control.ledger FOR EACH ROW
+BEGIN
+ IF NOT (OLD.target_id <=> NEW.target_id) OR
+    NOT (OLD.operation_id <=> NEW.operation_id) OR
+    NOT (OLD.migration_version <=> NEW.migration_version) OR
+    NOT (OLD.checksum <=> NEW.checksum) OR
+    NOT (OLD.fence <=> NEW.fence) OR
+    NOT (OLD.baseline_payload_sha256 <=> NEW.baseline_payload_sha256) OR
+    NOT (
+       OLD.state <=> NEW.state
+       OR (OLD.state='applying' AND NEW.state IN ('verified','failed'))
+       OR (OLD.state='failed' AND NEW.state='recovered')
+    ) THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration ledger identity immutable';
+ END IF;
+END$$
+CREATE TRIGGER c04_09_control.c0409_ledger_delete_immutable
+BEFORE DELETE ON c04_09_control.ledger FOR EACH ROW
+BEGIN
+ SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration ledger cannot be erased';
+END$$
+
+-- The caller supplies ONLY an operation ID. Scope, mode, tenant and schema
+-- are loaded from protected server-side approval and catalog tables.
+-- This fixture does not implement real authenticated backoffice approval.
+CREATE PROCEDURE c04_09_control.reserve(IN p_op CHAR(32))
+SQL SECURITY DEFINER
+BEGIN
+ DECLARE v_target VARCHAR(12) DEFAULT NULL;
+ DECLARE v_version VARCHAR(36) DEFAULT NULL;
+ DECLARE v_hash CHAR(64) DEFAULT NULL;
+ DECLARE v_kind VARCHAR(12) DEFAULT NULL;
+ DECLARE v_tenant CHAR(1) DEFAULT NULL;
+ DECLARE v_slot VARCHAR(12) DEFAULT NULL;
+ DECLARE v_rev BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_epoch BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_approved TINYINT DEFAULT NULL;
+ DECLARE v_expires DATETIME(6) DEFAULT NULL;
+ DECLARE v_actual_kind VARCHAR(12) DEFAULT NULL;
+ DECLARE v_actual_tenant CHAR(1) DEFAULT NULL;
+ DECLARE v_actual_slot VARCHAR(12) DEFAULT NULL;
+ DECLARE v_actual_schema VARCHAR(32) DEFAULT NULL;
+ DECLARE v_actual_rev BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_actual_epoch BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_inflight CHAR(32) DEFAULT NULL;
+ DECLARE v_fence BIGINT UNSIGNED DEFAULT 0;
+ DECLARE v_existing_op CHAR(32) DEFAULT NULL;
+ DECLARE v_existing_hash CHAR(64) DEFAULT NULL;
+ DECLARE v_existing_state VARCHAR(12) DEFAULT NULL;
+ DECLARE v_verified_columns BIGINT DEFAULT 0;
+ DECLARE v_baseline_hash CHAR(64) DEFAULT NULL;
+ DECLARE EXIT HANDLER FOR SQLEXCEPTION
+ BEGIN
+   ROLLBACK;
+   RESIGNAL;
+ END;
+
+ IF p_op IS NULL OR NOT REGEXP_LIKE(p_op,'^[0-9a-f]{32}$','c') THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Invalid migration operation selector';
+ END IF;
+ START TRANSACTION;
+ SELECT target_id,migration_version,checksum,expected_kind,expected_tenant,
+        expected_slot,expected_revision,expected_epoch,approved,approved_until_utc
+ INTO v_target,v_version,v_hash,v_kind,v_tenant,v_slot,
+      v_rev,v_epoch,v_approved,v_expires
+ FROM c04_09_control.approvals WHERE operation_id=p_op FOR UPDATE;
+ IF v_target IS NULL OR v_approved <> 1 OR v_expires <= UTC_TIMESTAMP(6) THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Missing or inactive approval';
+ END IF;
+ SELECT kind,tenant_id,slot_id,schema_name,placement_revision,access_epoch
+ INTO v_actual_kind,v_actual_tenant,v_actual_slot,v_actual_schema,
+      v_actual_rev,v_actual_epoch
+ FROM c04_09_control.targets WHERE target_id=v_target FOR UPDATE;
+ IF v_actual_kind IS NULL OR
+    NOT (v_kind <=> v_actual_kind) OR
+    NOT (v_tenant <=> v_actual_tenant) OR
+    NOT (v_slot <=> v_actual_slot) OR
+    NOT (v_epoch <=> v_actual_epoch) OR
+    (v_actual_kind='SHARED' AND
+       (v_actual_schema <> 'c04_09_shared' OR v_actual_tenant IS NOT NULL
+        OR v_actual_slot IS NOT NULL)) OR
+    (v_actual_kind='DEDICATED' AND
+       (v_actual_tenant IS NULL OR v_actual_slot IS NULL OR
+        v_actual_schema NOT IN ('c04_09_ded_a','c04_09_ded_b'))) THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration target binding mismatch';
+ END IF;
+ SELECT inflight_operation,fence INTO v_inflight,v_fence
+ FROM c04_09_control.gates WHERE target_id=v_target FOR UPDATE;
+ IF v_fence IS NULL OR v_fence >= 18446744073709551614 THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration fence invalid';
+ END IF;
+
+ SELECT operation_id,checksum,state INTO
+   v_existing_op,v_existing_hash,v_existing_state
+ FROM c04_09_control.ledger
+ WHERE target_id=v_target AND migration_version=v_version FOR UPDATE;
+ IF v_existing_op IS NOT NULL THEN
+  IF v_existing_op <> p_op OR v_existing_hash <> v_hash
+     OR v_existing_state <> 'verified' THEN
+   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Version/checksum/operation conflict or incomplete DDL';
+  END IF;
+  -- Shared schema revision has advanced after verification. A historical
+  -- exact replay remains idempotent but NEVER bypasses scope/epoch/checksum.
+  IF (v_actual_kind='SHARED' AND v_actual_rev < v_rev+1) OR
+     (v_actual_kind='DEDICATED' AND v_actual_rev <> v_rev) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Stale migration receipt revision';
+  END IF;
+  -- Even an immutable historical receipt cannot bless tampered current DDL.
+  SELECT COUNT(*) INTO v_verified_columns FROM information_schema.columns
+  WHERE table_schema=v_actual_schema AND table_name='resources'
+    AND column_name='migration_tag';
+  IF v_verified_columns <> 1 THEN
+   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Verified migration schema drift';
+  END IF;
+  COMMIT;
+  SELECT 'REPLAY' AS outcome;
+ ELSE
+  -- For NEW work the latest protected target revision MUST match.
+  -- Never authorize a fresh global Shared DDL at an old schema revision.
+  IF NOT (v_rev <=> v_actual_rev) THEN
+   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Stale target revision on new migration';
+  END IF;
+  IF v_inflight IS NOT NULL THEN
+   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Another migration is still in flight';
+  END IF;
+  SET v_fence=v_fence+1;
+  UPDATE c04_09_control.gates
+   SET inflight_operation=p_op,fence=v_fence
+   WHERE target_id=v_target AND inflight_operation IS NULL;
+  IF ROW_COUNT() <> 1 THEN
+   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration reservation CAS lost';
+  END IF;
+  -- Bind a real disposable backup snapshot digest BEFORE any DDL is run.
+  -- Only the B restoration fixture is supported; no production backup logic.
+  IF v_actual_schema='c04_09_ded_b' THEN
+   SELECT SHA2(CONCAT(resource_id,':',payload),256) INTO v_baseline_hash
+   FROM c04_09_ded_b.resources WHERE resource_id=1 FOR SHARE;
+   IF v_baseline_hash IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Missing dedicated B baseline payload';
+   END IF;
+  END IF;
+  INSERT INTO c04_09_control.ledger
+   (target_id,migration_version,operation_id,checksum,state,fence,
+    baseline_payload_sha256)
+  VALUES(v_target,v_version,p_op,v_hash,'applying',v_fence,v_baseline_hash);
+  COMMIT;
+  SELECT CONCAT('RESERVED:',v_fence) AS outcome;
+ END IF;
+END$$
+
+-- Post-DDL finalization checks the exact protected target and fencing token;
+-- no automatic DDL rollback is ever asserted.
+CREATE PROCEDURE c04_09_control.finalize(IN p_op CHAR(32), IN p_fence BIGINT UNSIGNED)
+SQL SECURITY DEFINER
+BEGIN
+ DECLARE v_target VARCHAR(12) DEFAULT NULL;
+ DECLARE v_schema VARCHAR(32) DEFAULT NULL;
+ DECLARE v_kind VARCHAR(12) DEFAULT NULL;
+ DECLARE v_state VARCHAR(12) DEFAULT NULL;
+ DECLARE v_ledger_fence BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_inflight CHAR(32) DEFAULT NULL;
+ DECLARE v_gate_fence BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_approved TINYINT DEFAULT NULL;
+ DECLARE v_expires DATETIME(6) DEFAULT NULL;
+ DECLARE v_expected_rev BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_expected_epoch BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_current_rev BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_current_epoch BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_columns BIGINT DEFAULT 0;
+ DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
+ START TRANSACTION;
+ -- Global lock order is approvals -> target -> gate -> ledger in every
+ -- normal migration path, avoiding reserve/finalize lock inversion.
+ SELECT target_id,approved,approved_until_utc,expected_revision,expected_epoch
+ INTO v_target,v_approved,v_expires,v_expected_rev,v_expected_epoch
+ FROM c04_09_control.approvals WHERE operation_id=p_op FOR UPDATE;
+ IF v_target IS NULL THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Missing lifecycle operation approval';
+ END IF;
+ SELECT kind,schema_name,placement_revision,access_epoch
+ INTO v_kind,v_schema,v_current_rev,v_current_epoch
+ FROM c04_09_control.targets WHERE target_id=v_target FOR UPDATE;
+ SELECT inflight_operation,fence INTO v_inflight,v_gate_fence
+ FROM c04_09_control.gates WHERE target_id=v_target FOR UPDATE;
+ SELECT state,fence INTO v_state,v_ledger_fence
+ FROM c04_09_control.ledger
+ WHERE operation_id=p_op AND target_id=v_target FOR UPDATE;
+ IF v_state IS NULL OR v_state <> 'applying' OR v_ledger_fence <> p_fence THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Missing, stale or non-applying migration fence';
+ END IF;
+ IF NOT (v_inflight <=> p_op) OR v_gate_fence <> p_fence
+    OR v_approved <> 1 OR v_expires <= UTC_TIMESTAMP(6)
+    OR v_expected_rev <> v_current_rev OR v_expected_epoch <> v_current_epoch THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration approval/revision/fence revoked';
+ END IF;
+ SELECT COUNT(*) INTO v_columns FROM information_schema.columns
+ WHERE table_schema=v_schema AND table_name='resources' AND column_name='migration_tag';
+ IF v_columns <> 1 THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='DDL verification failed';
+ END IF;
+ -- SHARED DDL advances a GLOBAL schema revision. Dedicated placement
+ -- revision binds tenant/slot and must NOT be confused with schema version.
+ IF v_kind='SHARED' THEN
+  IF v_current_rev >= 18446744073709551614 THEN
+   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Shared schema revision overflow';
+  END IF;
+  UPDATE c04_09_control.targets SET placement_revision=placement_revision+1
+  WHERE target_id=v_target AND placement_revision=v_expected_rev;
+  IF ROW_COUNT() <> 1 THEN
+   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Shared schema revision CAS lost';
+  END IF;
+ END IF;
+ UPDATE c04_09_control.ledger SET state='verified'
+ WHERE operation_id=p_op AND state='applying';
+ IF ROW_COUNT() <> 1 THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Ledger CAS lost';
+ END IF;
+ UPDATE c04_09_control.gates SET inflight_operation=NULL
+ WHERE target_id=v_target AND inflight_operation=p_op AND fence=p_fence;
+ IF ROW_COUNT() <> 1 THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Gate CAS lost';
+ END IF;
+ COMMIT;
+ SELECT 'VERIFIED' AS outcome;
+END$$
+
+-- Operator-only recovery functions. The unprivileged CI caller is NOT
+-- granted these capabilities. Failed DDL must first be restored explicitly.
+CREATE PROCEDURE c04_09_control.mark_failed(
+ IN p_op CHAR(32), IN p_fence BIGINT UNSIGNED)
+SQL SECURITY DEFINER
+BEGIN
+ DECLARE v_target VARCHAR(12) DEFAULT NULL;
+ DECLARE v_locked_target VARCHAR(12) DEFAULT NULL;
+ DECLARE v_ledger_op CHAR(32) DEFAULT NULL;
+ DECLARE v_gate CHAR(32) DEFAULT NULL;
+ DECLARE v_fence BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
+ START TRANSACTION;
+ -- Preserve approvals -> target -> gate -> ledger lock order also on recovery.
+ SELECT target_id INTO v_target FROM c04_09_control.approvals
+ WHERE operation_id=p_op FOR UPDATE;
+ IF v_target IS NULL THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Unknown operation for failure recovery';
+ END IF;
+ SELECT target_id INTO v_locked_target FROM c04_09_control.targets
+ WHERE target_id=v_target FOR UPDATE;
+ SELECT inflight_operation,fence INTO v_gate,v_fence FROM c04_09_control.gates
+ WHERE target_id=v_target FOR UPDATE;
+ SELECT operation_id INTO v_ledger_op FROM c04_09_control.ledger
+ WHERE operation_id=p_op AND target_id=v_target
+   AND fence=p_fence AND state='applying' FOR UPDATE;
+ IF v_ledger_op IS NULL OR v_locked_target IS NULL THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Cannot mark non-applying operation failed';
+ END IF;
+ IF NOT (v_gate <=> p_op) OR v_fence <> p_fence THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Failure recovery fencing mismatch';
+ END IF;
+ UPDATE c04_09_control.ledger SET state='failed' WHERE operation_id=p_op;
+ COMMIT;
+ SELECT 'FAILED_LOCKED' AS outcome;
+END$$
+
+CREATE PROCEDURE c04_09_control.verify_restored_and_release(
+ IN p_op CHAR(32), IN p_fence BIGINT UNSIGNED)
+SQL SECURITY DEFINER
+BEGIN
+ DECLARE v_target VARCHAR(12) DEFAULT NULL;
+ DECLARE v_schema VARCHAR(32) DEFAULT NULL;
+ DECLARE v_ledger_op CHAR(32) DEFAULT NULL;
+ DECLARE v_gate CHAR(32) DEFAULT NULL;
+ DECLARE v_fence BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_columns BIGINT DEFAULT 0;
+ DECLARE v_expected_digest CHAR(64) DEFAULT NULL;
+ DECLARE v_restored_digest CHAR(64) DEFAULT NULL;
+ DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
+ START TRANSACTION;
+ -- Same lock order as reserve/finalize, never start from the ledger.
+ SELECT target_id INTO v_target FROM c04_09_control.approvals
+ WHERE operation_id=p_op FOR UPDATE;
+ IF v_target IS NULL THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No failed migration to recover';
+ END IF;
+ SELECT schema_name INTO v_schema FROM c04_09_control.targets
+ WHERE target_id=v_target FOR UPDATE;
+ SELECT inflight_operation,fence INTO v_gate,v_fence FROM c04_09_control.gates
+ WHERE target_id=v_target FOR UPDATE;
+ SELECT operation_id,baseline_payload_sha256 INTO v_ledger_op,v_expected_digest
+ FROM c04_09_control.ledger
+ WHERE operation_id=p_op AND target_id=v_target
+   AND fence=p_fence AND state='failed' FOR UPDATE;
+ IF v_ledger_op IS NULL OR NOT (v_gate <=> p_op) OR v_fence <> p_fence THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Recovery fence changed';
+ END IF;
+ SELECT COUNT(*) INTO v_columns FROM information_schema.columns
+ WHERE table_schema=v_schema AND table_name='resources'
+ AND column_name='migration_tag';
+ IF v_columns <> 0 THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='DDL is still applied: verify backup restoration';
+ END IF;
+ -- Snapshot digest is validated INSIDE the protected recovery transaction,
+ -- not only in a shell check vulnerable to restore/verify TOCTOU.
+ IF v_schema <> 'c04_09_ded_b' OR v_expected_digest IS NULL THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No protected recovery baseline';
+ END IF;
+ SELECT SHA2(CONCAT(resource_id,':',payload),256)
+ INTO v_restored_digest FROM c04_09_ded_b.resources
+ WHERE resource_id=1 FOR SHARE;
+ IF v_restored_digest IS NULL OR
+    NOT (v_restored_digest <=> v_expected_digest) THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Restored data snapshot digest mismatch';
+ END IF;
+ UPDATE c04_09_control.ledger SET state='recovered'
+ WHERE operation_id=p_op AND state='failed';
+ UPDATE c04_09_control.gates SET inflight_operation=NULL
+ WHERE target_id=v_target AND inflight_operation=p_op AND fence=p_fence;
+ IF ROW_COUNT() <> 1 THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Recovery CAS lost';
+ END IF;
+ COMMIT;
+ SELECT 'RESTORED' AS outcome;
+END$$
+DELIMITER ;
+,'c')),
  PRIMARY KEY (target_id,migration_version),
  UNIQUE KEY uq_c0409_ledger_op(operation_id),
  CONSTRAINT fk_c0409_ledger_approval FOREIGN KEY(operation_id)
