@@ -1,0 +1,194 @@
+name: CRECISOL C04-12 integral chapter A-B-C .NET10 Angular22 MySQL8.4 Chromium
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'qa/c04_12_integral_audits.py'
+      - '.github/workflows/c04-12-integral.yml'
+      - 'docs/c04/C04_12_*'
+      - 'docs/ESTADO_VIGENTE_CAPITULOS.md'
+      - 'backend/src/Crecisol.Domain/Tenancy/**'
+      - 'backend/src/Crecisol.Application/Tenancy/**'
+      - 'backend/tests/Crecisol.Tenant*/**'
+      - 'database/tests/c04_*'
+  push:
+    branches: [dev]
+    paths:
+      - 'qa/c04_12_integral_audits.py'
+      - '.github/workflows/c04-12-integral.yml'
+      - 'docs/c04/C04_12_*'
+      - 'docs/ESTADO_VIGENTE_CAPITULOS.md'
+      - 'backend/src/Crecisol.Domain/Tenancy/**'
+      - 'backend/src/Crecisol.Application/Tenancy/**'
+      - 'backend/tests/Crecisol.Tenant*/**'
+      - 'database/tests/c04_*'
+permissions:
+  contents: read
+jobs:
+  chapter-c04-12:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - name: Read-only CRECISOL checkout with no write credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Audit A normative authority, exact Word/PDF SHA and 11 certified boundaries
+        run: |
+          set -euo pipefail
+          test ! -e .c04-12-proof
+          mkdir -p .c04-12-proof
+          python3 -m py_compile qa/c04_12_integral_audits.py
+          bash -n database/tests/c04_02_shared_integrity_smoke.sh
+          bash -n database/tests/c04_02_application_schema_smoke.sh
+          bash -n database/tests/c04_02_backend_reader_smoke.sh
+          bash -n database/tests/c04_07_idempotency_smoke.sh
+          bash -n database/tests/c04_08_lifecycle_smoke.sh
+          bash -n database/tests/c04_09_migration_smoke.sh
+          bash -n database/tests/c04_09_guarded_smoke.sh
+          bash -n database/tests/c04_10_isolation_smoke.sh
+          bash -n database/tests/c04_11_offensive_sql.sh
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c04_01_normative_inventory.py verify
+          python3 qa/c04_12_integral_audits.py A
+          python3 qa/c04_01_contracts_audits.py A
+          python3 qa/c04_02_implementation_audits.py A
+          python3 qa/c04_03_contracts_audits.py A
+          python3 qa/c04_04_hosts_audits.py A
+          python3 qa/c04_05_identity_audits.py A
+          python3 qa/c04_06_scope_audits.py A
+          python3 qa/c04_07_idempotency_audits.py A
+          python3 qa/c04_08_lifecycle_audits.py A
+          python3 qa/c04_09_migration_audits.py A
+          python3 qa/c04_10_artifact_audits.py A
+          python3 qa/c04_11_offensive_audits.py A
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-12-proof/A
+      - name: Audit B tenant boundary P0/P1, adversarial guards and historic negative suites
+        run: |
+          set -euo pipefail
+          python3 qa/c04_12_integral_audits.py B
+          python3 qa/c04_01_contracts_audits.py B
+          python3 qa/c04_02_implementation_audits.py B
+          python3 qa/c04_03_contracts_audits.py B
+          python3 qa/c04_04_hosts_audits.py B
+          python3 qa/c04_05_identity_audits.py B
+          python3 qa/c04_06_scope_audits.py B
+          python3 qa/c04_07_idempotency_audits.py B
+          python3 qa/c04_08_lifecycle_audits.py B
+          python3 qa/c04_09_migration_audits.py B
+          python3 qa/c04_10_artifact_audits.py B
+          python3 qa/c04_11_offensive_audits.py B
+          python3 qa/c04_09_extra_audits.py D
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-12-proof/B
+      - name: Install official .NET 10 family
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install Node 24 for Angular 22 regressions
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Build real API and every C04 and C03 contract suite Release warnaserror
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.TenantCatalog.ContractsTests/Crecisol.TenantCatalog.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.SharedTenancy.ContractsTests/Crecisol.SharedTenancy.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.TenantStorage.ContractsTests/Crecisol.TenantStorage.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.VerifiedHosts.ContractsTests/Crecisol.VerifiedHosts.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.TenantIdentity.ContractsTests/Crecisol.TenantIdentity.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.BranchResource.ContractsTests/Crecisol.BranchResource.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.TenantProvisioning.ContractsTests/Crecisol.TenantProvisioning.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.TenantLifecycle.ContractsTests/Crecisol.TenantLifecycle.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.TenantMigrations.ContractsTests/Crecisol.TenantMigrations.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.TenantArtifacts.ContractsTests/Crecisol.TenantArtifacts.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.TenantOffensive.ContractsTests/Crecisol.TenantOffensive.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.Domain.ContractsTests/Crecisol.Domain.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.Application.ContractsTests/Crecisol.Application.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.Infrastructure.ContractsTests/Crecisol.Infrastructure.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.Api.ModuleTests/Crecisol.Api.ModuleTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.Outbox.ContractsTests/Crecisol.Outbox.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.LocalConfig.ContractsTests/Crecisol.LocalConfig.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.Branding.ContractsTests/Crecisol.Branding.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.Branding.ApplicationTests/Crecisol.Branding.ApplicationTests.csproj -c Release --nologo -warnaserror
+      - name: Run all C04 01-11 and critical C03 .NET10 positives/negatives
+        run: |
+          set -euo pipefail
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.TenantCatalog.ContractsTests/Crecisol.TenantCatalog.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.SharedTenancy.ContractsTests/Crecisol.SharedTenancy.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.TenantStorage.ContractsTests/Crecisol.TenantStorage.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.VerifiedHosts.ContractsTests/Crecisol.VerifiedHosts.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.TenantIdentity.ContractsTests/Crecisol.TenantIdentity.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.BranchResource.ContractsTests/Crecisol.BranchResource.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.TenantProvisioning.ContractsTests/Crecisol.TenantProvisioning.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.TenantLifecycle.ContractsTests/Crecisol.TenantLifecycle.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.TenantMigrations.ContractsTests/Crecisol.TenantMigrations.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.TenantArtifacts.ContractsTests/Crecisol.TenantArtifacts.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.TenantOffensive.ContractsTests/Crecisol.TenantOffensive.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.Domain.ContractsTests/Crecisol.Domain.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.Application.ContractsTests/Crecisol.Application.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.Infrastructure.ContractsTests/Crecisol.Infrastructure.ContractsTests.csproj -- contracts
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.Api.ModuleTests/Crecisol.Api.ModuleTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.Outbox.ContractsTests/Crecisol.Outbox.ContractsTests.csproj -- contracts
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.LocalConfig.ContractsTests/Crecisol.LocalConfig.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.Branding.ContractsTests/Crecisol.Branding.ContractsTests.csproj
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.Branding.ApplicationTests/Crecisol.Branding.ApplicationTests.csproj
+          printf 'PASS dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-12-proof/dotnet
+      - name: Build Angular 22 public assets TypeScript and audit runtime dependencies
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
+          npm audit --prefix frontend --omit=dev --audit-level=high
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+          npm run test:assets --prefix frontend
+          printf 'PASS frontend sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-12-proof/frontend
+      - name: Chromium real C01 C02 privacy/public journeys and accessibility patterns
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright install --with-deps chromium
+          npx playwright test tests/c01-05.public-brand.spec.ts tests/c01-06.official-integration.spec.ts tests/c01-08.brand-revision.spec.ts tests/c02-03.public-information.spec.ts tests/c02-04.private-paths.spec.ts tests/c02-05.interaction-states.spec.ts tests/c02-07.mobile-accessibility.spec.ts tests/c02-08.journeys-public.spec.ts --reporter=line
+          npm run test:c02-06
+          npx playwright test --config=playwright.patterns-a11y.config.ts --reporter=line
+          npx playwright test --config=playwright.journeys-patterns.config.ts --reporter=line
+          cd ..
+          printf 'PASS chromium sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-12-proof/chromium
+      - name: Nine real C04 MySQL8.4 isolated tests and C03 PLATFORM outbox regression
+        run: |
+          set -euo pipefail
+          bash database/tests/c04_02_shared_integrity_smoke.sh
+          bash database/tests/c04_02_application_schema_smoke.sh
+          bash database/tests/c04_02_backend_reader_smoke.sh
+          bash database/tests/c04_07_idempotency_smoke.sh
+          bash database/tests/c04_08_lifecycle_smoke.sh
+          bash database/tests/c04_09_migration_smoke.sh
+          bash database/tests/c04_09_guarded_smoke.sh
+          bash database/tests/c04_10_isolation_smoke.sh
+          bash database/tests/c04_11_offensive_sql.sh
+          bash database/tests/c03_07_outbox_mysql_smoke.sh
+          CRECISOL_C03_05_CONTRACT_SMOKE=1 CRECISOL_C03_08_LOCAL_PROFILE_SMOKE=1 bash database/tests/c01_04_api_mysql_smoke.sh
+          printf 'PASS mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-12-proof/mysql
+      - name: Audit C architecture, revisions, reliability and full regression evidence
+        run: |
+          set -euo pipefail
+          python3 qa/c04_08_lifecycle_audits.py C
+          python3 qa/c04_09_migration_audits.py C
+          python3 qa/c04_09_extra_audits.py E
+          python3 qa/c04_09_extra_audits.py F
+          python3 qa/c04_10_artifact_audits.py C
+          python3 qa/c04_11_offensive_audits.py C
+          python3 qa/c04_12_integral_audits.py C
+          printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-12-proof/C
+      - name: Final same SHA run A B C dotnet MySQL frontend Chromium NO-GO on missing proof
+        run: |
+          set -euo pipefail
+          for stage in A B C dotnet mysql frontend chromium; do
+            test -s ".c04-12-proof/$stage"
+            grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c04-12-proof/$stage"
+          done
+          echo "C04-12 INTEGRAL A/B/C .NET10 MySQL8.4 Angular22 Chromium SAME SHA/run SUCCESS; ONLY INTERNAL/SYNTHETIC CHAPTER, no private production capabilities"
