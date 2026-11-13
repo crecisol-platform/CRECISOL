@@ -10,7 +10,7 @@ from c05_01_preparation_audits import ROOT
 from c05_02_signed_recipient_audits import audit_a as predecessor_a
 
 REPO = "crecisol-platform/CRECISOL"
-FEATURE = "feature/c05-02-mailbox-proof-claim-gate-20261113"
+FEATURE = "feature/c05-02-integrated-verified-mailbox-claim-20261113"
 BASE = "4616484e0a238f7accdeda803b5341d080d81c12"
 EVIDENCE = ROOT / ".c05-02-mailbox-bound"
 FILES = {
