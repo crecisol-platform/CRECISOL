@@ -64,8 +64,8 @@ def source() -> None:
     print(f"C05_SOURCE_SHA256={digest}")
     print(f"C05_SOURCE_RANGE={start}:{stop}")
     print(f"C05_SOURCE_PARAGRAPHS={len(segments)} CHARS={len(body)}")
-    for index, line in enumerate(segments[:60]):
-        print(f"C05_SOURCE_LINE_{index+1:02d}: {line[:250]}")
+    for index, line in enumerate(segments):
+        print(f"C05_SOURCE_LINE_{index+1:02d}: {line[:500]}")
     print("LIMIT: this prints source evidence, not authentication implementation or certification")
 
 
