@@ -54,97 +54,28 @@ public sealed class MySqlDisposableInvitationLedger : ITrustedInvitationLedger
         {
             await using var db = new MySqlConnection(trustedDsn);
             await db.OpenAsync(cancellationToken);
-            await using var tx = await db.BeginTransactionAsync(
-                IsolationLevel.ReadCommitted, cancellationToken);
-
-            // Lock verified recipient row to serialize ALL pending issuances
-            // for this tenant/recipient across concurrent backend connections.
-            // Recheck lifecycle, action scope and current version inside SQL,
-            // not only via the caller's previously approved in-memory policy.
-            await using (var auth = new MySqlCommand("""
-                SELECT r.recipient_id
-                  FROM c05_02_recipients r
-                  JOIN c05_02_tenants t ON t.tenant_id=r.tenant_id
-                  JOIN c05_02_issuers s ON s.tenant_id=r.tenant_id
-                 WHERE r.tenant_id=@tenant AND r.recipient_id=@recipient
-                   AND s.actor_id=@issuer AND s.enabled=1
-                   AND t.lifecycle='ACTIVE'
-                   AND t.terms_version=@terms
-                   AND @issued<=UTC_TIMESTAMP(6)
-                   AND UTC_TIMESTAMP(6)<@expires
-                   AND TIMESTAMPDIFF(SECOND,@issued,@expires) BETWEEN 60 AND 259200
-                   AND r.actor_id<>s.actor_id
-                   AND r.channel_verified=1
-                   AND UTC_TIMESTAMP(6)<r.verified_until_utc
-                   AND ((@profile='EMPLOYEE' AND s.profile_scope='INVITE_EMPLOYEE')
-                     OR (@profile='CONSUMER' AND s.profile_scope='INVITE_CONSUMER'))
-                 FOR UPDATE
-                """, db, tx))
-            {
-                AddId(auth, "@tenant", snapshot.TenantId.Value);
-                AddId(auth, "@recipient", snapshot.Recipient.Value);
-                AddId(auth, "@issuer", snapshot.IssuedBy.Value);
-                auth.Parameters.Add("@terms", MySqlDbType.Int64).Value = snapshot.TermsVersion;
-                auth.Parameters.Add("@profile", MySqlDbType.VarChar).Value =
-                    ProfileSql(snapshot.Profile);
-                auth.Parameters.Add("@issued", MySqlDbType.DateTime).Value =
-                    snapshot.IssuedUtc.UtcDateTime;
-                auth.Parameters.Add("@expires", MySqlDbType.DateTime).Value =
-                    snapshot.ExpiresUtc.UtcDateTime;
-                if (await auth.ExecuteScalarAsync(cancellationToken) is not byte[])
-                    return false;
-            }
-
-            // No second live unexpired invitation is allowed for a recipient
-            // (regardless of Employee/Consumer): lock row held above provides
-            // the serialization point for distinct invitation IDs/tokens.
-            await using (var duplicate = new MySqlCommand("""
-                SELECT invitation_id FROM c05_02_invitations
-                 WHERE tenant_id=@tenant AND recipient_id=@recipient
-                   AND lifecycle='PENDING'
-                   AND expires_at_utc>UTC_TIMESTAMP(6)
-                 LIMIT 1 FOR UPDATE
-                """, db, tx))
-            {
-                AddId(duplicate, "@tenant", snapshot.TenantId.Value);
-                AddId(duplicate, "@recipient", snapshot.Recipient.Value);
-                if (await duplicate.ExecuteScalarAsync(cancellationToken) is not null)
-                    return false;
-            }
-
-            // No clear bearer can be persisted: only domain-separated digest.
-            await using var insert = new MySqlCommand("""
-                INSERT INTO c05_02_invitations
-                  (tenant_id,invitation_id,issuer_id,recipient_id,profile_scope,
-                   token_digest,lifecycle,revision,terms_version,issued_at_utc,
-                   expires_at_utc,claimed_at_utc)
-                VALUES (@tenant,@invitation,@issuer,@recipient,@profile,
-                        @digest,'PENDING',1,@terms,@issued,@expires,NULL)
-                """, db, tx);
-            AddId(insert, "@tenant", snapshot.TenantId.Value);
-            AddId(insert, "@invitation", snapshot.Id.Value);
-            AddId(insert, "@issuer", snapshot.IssuedBy.Value);
-            AddId(insert, "@recipient", snapshot.Recipient.Value);
-            insert.Parameters.Add("@profile", MySqlDbType.VarChar).Value =
+            // Least-privilege adapter has ONLY EXECUTE on a DB-owned atomic
+            // issuance routine. This routine locks the recipient row, rechecks
+            // policy and rejects duplicate active invitations in one transaction.
+            await using var command = new MySqlCommand(
+                "c05_02_issue_once", db) { CommandType = CommandType.StoredProcedure };
+            AddId(command, "p_tenant", snapshot.TenantId.Value);
+            AddId(command, "p_invitation", snapshot.Id.Value);
+            AddId(command, "p_issuer", snapshot.IssuedBy.Value);
+            AddId(command, "p_recipient", snapshot.Recipient.Value);
+            command.Parameters.Add("p_profile", MySqlDbType.VarChar).Value =
                 ProfileSql(snapshot.Profile);
-            insert.Parameters.Add("@digest", MySqlDbType.Binary).Value = digest;
-            insert.Parameters.Add("@terms", MySqlDbType.Int64).Value = snapshot.TermsVersion;
-            insert.Parameters.Add("@issued", MySqlDbType.DateTime).Value =
+            command.Parameters.Add("p_digest", MySqlDbType.Binary).Value = digest;
+            command.Parameters.Add("p_terms", MySqlDbType.Int64).Value = snapshot.TermsVersion;
+            command.Parameters.Add("p_issued", MySqlDbType.DateTime).Value =
                 snapshot.IssuedUtc.UtcDateTime;
-            insert.Parameters.Add("@expires", MySqlDbType.DateTime).Value =
+            command.Parameters.Add("p_expires", MySqlDbType.DateTime).Value =
                 snapshot.ExpiresUtc.UtcDateTime;
-
-            try
-            {
-                if (await insert.ExecuteNonQueryAsync(cancellationToken) != 1)
-                    return false;
-                await tx.CommitAsync(cancellationToken);
-                return true;
-            }
-            catch (MySqlException ex) when (ex.Number is 1062 or 1452)
-            {
-                return false;
-            }
+            var result = await command.ExecuteScalarAsync(cancellationToken);
+            if (result is not string response ||
+                (response != "ISSUED" && response != "DENIED"))
+                throw new InvalidOperationException("Unexpected protected invitation issuance result.");
+            return response == "ISSUED";
         }
         finally
         {
