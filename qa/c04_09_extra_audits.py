@@ -194,6 +194,15 @@ def audit_f():
             "checkout does not persist write credentials")
     require("continue-on-error:" not in CI,
             "mandatory failing checks cannot be ignored")
+    require(SQL.count("CREATE DATABASE c04_09_control") == 1,
+            "duplicate or missing synthetic migration catalog")
+    require(SQL.count("DELIMITER //") == 1 and SQL.count("DELIMITER ;") == 1,
+            "migration fixture must have one uniform SQL delimiter region")
+    for proc in ("reserve","finalize","mark_failed","verify_restored_and_release"):
+        require(SQL.count("CREATE PROCEDURE c04_09_control." + proc + "(") == 1,
+                "duplicate or missing migration gate procedure: " + proc)
+    require(SQL.count("END//") == 8,
+            "four triggers and four procedures must terminate once each")
     require(not re.search(r"(?:CREATE|ALTER|DROP)\s+DATABASE\s+crecisol", SQL, re.I),
             "no production database target")
     print("F: no production adapter or secret inputs; exhaustive same-run gates specified")
