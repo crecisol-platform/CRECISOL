@@ -1,0 +1,55 @@
+name: CRECISOL C05-02 preparation A-B-C Word and threat model
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c05/C05_02_*'
+      - 'qa/c05_02_preparation_audits.py'
+      - '.github/workflows/c05-02-preparation.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c05/C05_02_*'
+      - 'qa/c05_02_preparation_audits.py'
+      - '.github/workflows/c05-02-preparation.yml'
+permissions:
+  contents: read
+jobs:
+  c05-02-preparation:
+    name: C05-02 Word authority and read-only A-B-C preparation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact source read-only with PR parents
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Audit A canonical Word, 11 technical phases and C05-01 institutional gate
+        run: |
+          set -euo pipefail
+          test ! -e .c05-02-prep-proof
+          python3 -m py_compile qa/c05_02_preparation_audits.py
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c05_01_preparation_audits.py source
+          python3 qa/c05_02_preparation_audits.py A
+          mkdir -p .c05-02-prep-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-prep-proof/A
+      - name: Audit B eighteen invitation/registration adversarial documentary mutations
+        run: |
+          set -euo pipefail
+          python3 qa/c05_02_preparation_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-prep-proof/B
+      - name: Audit C same-run PR provenance and documentation-only scope
+        run: |
+          set -euo pipefail
+          python3 qa/c05_02_preparation_audits.py C
+          printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-prep-proof/C
+      - name: Final same-SHA three-audit gate without runtime certification
+        run: |
+          set -euo pipefail
+          for stage in A B C; do
+            grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-02-prep-proof/$stage"
+          done
+          echo 'C05-02 PREPARATION A/B/C complete; NOT IMPLEMENTED, NOT CERTIFIED'
