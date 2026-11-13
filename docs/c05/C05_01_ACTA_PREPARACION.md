@@ -34,3 +34,7 @@ La fuente del Word define ocho pasos de ejecución/acta; el plan técnico deriva
 **Rollback:** revertir exclusivamente la integración del PR #112 a `dev`, previa revisión de dependencias; no alterar certificaciones C01–04, Documento Maestro, `main`, ni recursos productivos.
 
 **Dictamen en este archivo:** **CI FINAL / FUSIÓN / POSTMERGE PENDIENTES**. Prohibido transformar esta acta en certificación de autenticación real sin evidencias de ejecución.
+
+## 5. Registro inmutable del hallazgo de procedencia en CI
+
+La [ejecución intermedia #43364764884](https://github.com/crecisol-platform/CRECISOL/actions/runs/43364764884), HEAD `e3e8419ec682e68ff953f0dd4802ada190b04628`, terminó **FAILURE en auditoría C** porque el checkout superficial no permitía demostrar ambos padres del merge sintético; sus auditorías A y B sí pasaron. **No se cuenta esa ejecución como PASS ni se elimina su historial.** Se corrigió la causa con `fetch-depth: 2` y se volvió a ejecutar en nuevo SHA `3df4d1d69b00179474fe3e78a58d8ca957ced5fa`: [auditoría preparatoria #43364776431](https://github.com/crecisol-platform/CRECISOL/actions/runs/43364776431) y [Foundation #43364776559](https://github.com/crecisol-platform/CRECISOL/actions/runs/43364776559) concluyeron `completed/success`, incluido el chequeo de `PR HEAD` + base `dev` + SHA de merge probado. **Estos resultados son PREMERGE intermedios:** la posterior edición de esta acta cambia el HEAD; exigir un nuevo gate final antes de fusionar. El fallo fue de trazabilidad del checkout, no una prueba de seguridad productiva.
