@@ -1,0 +1,73 @@
+name: CRECISOL C05-02 privacy retention A-B-C real MySQL8.4 and NET10
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'database/tests/fixtures/c05_02_privacy_retention_fixture.sql'
+      - 'database/tests/c05_02_privacy_retention_mysql.sh'
+      - 'docs/c05/RETENCION_PRIVACIDAD_C05_02.md'
+      - 'qa/c05_02_privacy_retention_audits.py'
+      - '.github/workflows/c05-02-privacy-retention.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'database/tests/fixtures/c05_02_privacy_retention_fixture.sql'
+      - 'database/tests/c05_02_privacy_retention_mysql.sh'
+      - 'docs/c05/RETENCION_PRIVACIDAD_C05_02.md'
+      - 'qa/c05_02_privacy_retention_audits.py'
+      - '.github/workflows/c05-02-privacy-retention.yml'
+permissions:
+  contents: read
+jobs:
+  retention:
+    name: Bound, privacy-preserving batch erasure with A-B-C and real runtime
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - name: Checkout exact SHA with read-only GitHub token
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: A canonical scope and retention prerequisites
+        run: |
+          set -euo pipefail
+          test ! -e .c05-02-retention-proof
+          python3 -m py_compile qa/c05_02_privacy_retention_audits.py
+          python3 qa/validate_foundation.py
+          python3 qa/c05_02_privacy_retention_audits.py A
+          mkdir -p .c05-02-retention-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-retention-proof/A
+      - name: B adversarial guard-removal mutations and minimum privileges
+        run: |
+          set -euo pipefail
+          python3 qa/c05_02_privacy_retention_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-retention-proof/B
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build unchanged API plus predecessor identity contract regression
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj
+          printf 'PASS dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-retention-proof/dotnet
+      - name: Real MySQL8.4 expired-only anonymous PII cleanup and SQL ACL
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_02_privacy_retention_mysql.sh
+          printf 'PASS mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-retention-proof/mysql
+      - name: C exact SHA/run, branch and allowed five-file change
+        run: |
+          set -euo pipefail
+          python3 qa/c05_02_privacy_retention_audits.py C
+          printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-retention-proof/C
+      - name: Require same-run A-B-C .NET10 MySQL8.4 evidence
+        run: |
+          set -euo pipefail
+          for stage in A B C dotnet mysql; do
+            grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-02-retention-proof/$stage"
+          done
+          echo 'PASS C05-02 only disposable privacy retention; NOT functional certification'
