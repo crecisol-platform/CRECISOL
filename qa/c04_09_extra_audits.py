@@ -127,6 +127,10 @@ def audit_e():
         "historical failed-recovered operation cannot blindly replay",
         "new operation increments immutable fence",
         "stale first fence fails after recovery",
+        "approval revoked midflight cannot finalize committed DDL",
+        "verified ledger may not rewrite checksum",
+        "verified ledger may not be downgraded to applying",
+        "verified ledger may not be deleted",
         "restore_checked",
         "wrong dedicated restore destination accepted",
         "rejected wrong restoration did not modify A"
