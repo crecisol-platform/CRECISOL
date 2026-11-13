@@ -1,5 +1,8 @@
 # CRECISOL — C04-11 · Acta de auditoría ofensiva CONDICIONADA
 
+**Nota de precedencia documental posterior:** esta acta registra el estado histórico PREMERGE y sus pendientes de entonces; no revoca el cierre posterior. La [ratificación institucional C04-11](C04_11_CERTIFICACION_INSTITUCIONAL.md) verifica las cuatro puertas originales **14/14 SUCCESS** y define las puertas adicionales de su PR. Hasta que su propia CI PREMERGE/POSTMERGE y comentario institucional permanente aprueben, la microfase sigue NO CERTIFICADA. Cuando ese dictamen final sea eficaz, prevalece sobre las expresiones históricas «en ejecución», «sin fusionar» o «pendiente» registradas más abajo, sin reescribir evidencias pasadas.
+
+
 **Estado formal:** EN VALIDACIÓN / NO CERTIFICADA. **Fecha:** 12-11-2026 (Honduras). **Repo:** crecisol-platform/CRECISOL ID 1450414592, rama dev. **No es un acta de certificación todavía.**
 
 ## 1. Precondición
