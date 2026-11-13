@@ -119,8 +119,8 @@ def audit_a() -> None:
         phases = list((DOCS / "c04").glob(f"C04_{num}_*"))
         req(phases and any("ACTA" in p.name or "CERTIFICACION" in p.name for p in phases),
             "C04-" + num + " does not have institutional historical evidence")
-        req((ROOT / ".github/workflows" / f"c04-{num}-" +
-             Path("dummy")).exists() if False else True, "noop")
+        workflow_matches = tuple((ROOT / ".github/workflows").glob(f"c04-{num}-*.yml"))
+        req(workflow_matches, "C04-" + num + " has no certified workflow")
     for name in CONTRACTS:
         req((ROOT / f"backend/tests/{name}/{name}.csproj").is_file(),
             "missing executable real .NET10 project: " + name)
