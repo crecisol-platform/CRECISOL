@@ -284,9 +284,9 @@ MARKERS = {
     "c05_02_mailbox_claim_bindings",
     "c05_02_claim_mailbox_bound_once",
     "SHA256",
-    "UNIQUE",
+    "unique tenant+intent",
     "SQL worker",
-    "único UPDATE",
+    "ÚNICO UPDATE",
     "NO verifica por sí mismo",
     "Bloqueos P0/P1"
   ]
