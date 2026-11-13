@@ -36,7 +36,7 @@ ALLOWED = {
     "backend/tests/Crecisol.InvitationSecurity.MySqlIntegrationTests/Crecisol.InvitationSecurity.MySqlIntegrationTests.csproj",
     "database/tests/c05_02_dotnet_mysql_adapter_smoke.sh",
     "qa/c05_02_mysql_adapter_audits.py",
-    "docs/c05/C05_02_MYSQL_ADAPTER_EVIDENCIAS.md",
+    "docs/c05/IMPLEMENTACION_C05_02_MYSQL_ADAPTER.md",
     ".github/workflows/c05-02-mysql-ledger.yml",
     "backend/src/Crecisol.Application/Identity/InvitationUseCases.cs",
     "backend/tests/Crecisol.InvitationSecurity.ContractsTests/Program.cs",
