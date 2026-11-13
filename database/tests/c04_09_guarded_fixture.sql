@@ -134,6 +134,7 @@ BEGIN
  DECLARE v_existing_op CHAR(32) DEFAULT NULL;
  DECLARE v_existing_hash CHAR(64) DEFAULT NULL;
  DECLARE v_existing_state VARCHAR(12) DEFAULT NULL;
+ DECLARE v_verified_columns BIGINT DEFAULT 0;
  DECLARE EXIT HANDLER FOR SQLEXCEPTION
  BEGIN
    ROLLBACK;
@@ -184,6 +185,13 @@ BEGIN
   IF v_existing_op <> p_op OR v_existing_hash <> v_hash
      OR v_existing_state <> 'verified' THEN
    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Version/checksum/operation conflict or incomplete DDL';
+  END IF;
+  -- Even an immutable historical receipt cannot bless tampered current DDL.
+  SELECT COUNT(*) INTO v_verified_columns FROM information_schema.columns
+  WHERE table_schema=v_actual_schema AND table_name='resources'
+    AND column_name='migration_tag';
+  IF v_verified_columns <> 1 THEN
+   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Verified migration schema drift';
   END IF;
   COMMIT;
   SELECT 'REPLAY' AS outcome;
