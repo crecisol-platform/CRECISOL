@@ -121,7 +121,7 @@ public sealed class RequestNeutralRegistrationIntent
     /// Never expose the normalized mailbox through error messages or logs.
     /// This is input validation only and does not prove email ownership.
     /// </summary>
-    internal static string? CanonicalMailboxOrNull(string? email)
+    public static string? CanonicalMailboxOrNull(string? email)
     {
         if (email is null || email.Length is < 6 or > 254 ||
             !string.Equals(email, email.Trim(), StringComparison.Ordinal) ||
