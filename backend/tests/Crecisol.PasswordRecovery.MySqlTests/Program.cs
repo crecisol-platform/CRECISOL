@@ -117,7 +117,7 @@ using (var wrong = new PasswordRecoveryTokenProtector(wrongK1, wrongK2))
 {
     Check(!CryptographicOperations.FixedTimeEquals(
         wrong.TryDigest(sampleRaw)!.CopyForTrustedLedger(),
-        sampleDigest.CopyForTrustedLedger()),
+        sampleDigest!.CopyForTrustedLedger()),
         "Independent server keys cannot read another recovery HMAC");
 }
 CryptographicOperations.ZeroMemory(wrongK1);
@@ -481,8 +481,9 @@ Check(await HttpRedeemAsync(hostB.Value,originalB,newPassword) ==
 Check(await HttpRedeemAsync(hostB.Value,originalB,newPassword) ==
       HttpStatusCode.Unauthorized,
     "Once-consumed password reset token can NEVER be reused");
-Check(!hasher.Verify(oldPassword,await StoredPhcAsync()).Matched &&
-      hasher.Verify(newPassword,await StoredPhcAsync()).Matched,
+var afterFirstResetPhc = await StoredPhcAsync();
+Check(!hasher.Verify(oldPassword,afterFirstResetPhc).Matched &&
+      hasher.Verify(newPassword,afterFirstResetPhc).Matched,
     "New Argon2id PHC replaces old password and old password is rejected");
 Check(!await sessions.IsCurrentAsync(tenantA,sessionA,CancellationToken.None) &&
       !await sessions.IsCurrentAsync(tenantB,sessionB,CancellationToken.None) &&
@@ -518,8 +519,9 @@ Check(await HttpRedeemAsync(hostA.Value,weakToken,"short") ==
       await HttpRedeemAsync(hostA.Value,weakToken,secondPassword) ==
       HttpStatusCode.NoContent,
     "Weak passwords refused, valid policy Argon2id reset still succeeds");
-Check(!hasher.Verify(newPassword,await StoredPhcAsync()).Matched &&
-      hasher.Verify(secondPassword,await StoredPhcAsync()).Matched,
+var afterSecondResetPhc = await StoredPhcAsync();
+Check(!hasher.Verify(newPassword,afterSecondResetPhc).Matched &&
+      hasher.Verify(secondPassword,afterSecondResetPhc).Matched,
     "Second reset truly replaces verifier rather than reusing previous PHC");
 
 await HttpRequestAsync(hostB.Value,email);
@@ -607,9 +609,10 @@ var results=await Task.WhenAll(Enumerable.Range(0,16).Select(_ =>
 Check(results.Count(s=>s==HttpStatusCode.NoContent)==1 &&
       results.Count(s=>s==HttpStatusCode.Unauthorized)==15,
     "16 concurrent REAL HTTP/MySQL reset attempts: exactly ONE winner, 15 denied");
+var raceStoredPhc = await StoredPhcAsync();
 Check(await HttpRedeemAsync(hostA.Value,raceToken,racePassword) ==
       HttpStatusCode.Unauthorized &&
-      hasher.Verify(racePassword,await StoredPhcAsync()).Matched,
+      hasher.Verify(racePassword,raceStoredPhc).Matched,
     "Same token cannot be replayed after winning the atomic race");
 
 Check(await CountAsync("""
