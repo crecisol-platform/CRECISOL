@@ -118,7 +118,7 @@ GUARDS = {
         BASE,
         SOURCE_SHA,
         "16 conexiones",
-        "rollback",
+        "**Rollback:**",
     ),
     "workflow": (
         "contents: read",
