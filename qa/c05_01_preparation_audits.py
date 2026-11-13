@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import subprocess
 import os
 import re
 import sys
@@ -161,6 +163,36 @@ def audit_c() -> None:
     run_id = os.environ.get("GITHUB_RUN_ID", "")
     require(bool(re.fullmatch(r"[a-f0-9]{40}", sha) and re.fullmatch(r"[0-9]+", run_id)),
             "Missing exact SHA/run identity")
+    require(os.environ.get("GITHUB_REPOSITORY") == "crecisol-platform/CRECISOL",
+            "Wrong repository actor or identity")
+    tested = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    require(tested == sha, "Checkout commit and GitHub run SHA differ")
+    event_name = os.environ.get("GITHUB_EVENT_NAME", "")
+    if event_name == "pull_request":
+        event_path = Path(os.environ.get("GITHUB_EVENT_PATH", ""))
+        require(event_path.is_file(), "Pull request event evidence missing")
+        event = json.loads(event_path.read_text(encoding="utf-8"))
+        pr = event.get("pull_request") or {}
+        base, head = pr.get("base") or {}, pr.get("head") or {}
+        require(base.get("ref") == "dev" and
+                head.get("ref") == "feature/c05-01-preparacion-identidad-20261112",
+                "Unexpected PR base/head refs")
+        require((base.get("repo") or {}).get("full_name") == "crecisol-platform/CRECISOL" and
+                (head.get("repo") or {}).get("full_name") == "crecisol-platform/CRECISOL",
+                "Unexpected PR fork or repository")
+        require(re.fullmatch(r"[a-f0-9]{40}", base.get("sha", "")) and
+                re.fullmatch(r"[a-f0-9]{40}", head.get("sha", "")),
+                "Invalid immutable PR parent SHA")
+        parents = subprocess.check_output(
+            ["git", "rev-list", "--parents", "-n", "1", "HEAD"], text=True).split()
+        require(len(parents) == 3 and parents[0] == sha and
+                parents[1] == base["sha"] and parents[2] == head["sha"],
+                "Pull request synthetic merge is not exact dev base + PR HEAD")
+        print(f"C05 provenance: PR HEAD={head['sha']} BASE={base['sha']} TESTED_MERGE={sha}")
+    else:
+        require(event_name == "push" and os.environ.get("GITHUB_REF") == "refs/heads/dev",
+                "Unsupported or privileged trigger; only dev push and PR allowed")
+        print(f"C05 provenance: dev push SHA={sha}")
     for gate in ("A", "B"):
         marker = PROOF / gate
         require(marker.is_file() and
