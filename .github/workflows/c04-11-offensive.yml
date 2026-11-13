@@ -1,0 +1,92 @@
+name: CRECISOL C04-11 offensive multitenant A-B-C .NET10 MySQL8.4
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/tests/Crecisol.TenantOffensive.ContractsTests/**'
+      - 'database/tests/c04_11_*'
+      - 'qa/c04_11_offensive_audits.py'
+      - '.github/workflows/c04-11-offensive.yml'
+      - 'docs/c04/C04_11_*'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/tests/Crecisol.TenantOffensive.ContractsTests/**'
+      - 'database/tests/c04_11_*'
+      - 'qa/c04_11_offensive_audits.py'
+      - '.github/workflows/c04-11-offensive.yml'
+      - 'docs/c04/C04_11_*'
+permissions:
+  contents: read
+jobs:
+  c04-11-offensive:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    steps:
+      - name: Read only checkout without credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: A canonical requirements and syntax gate
+        run: |
+          set -euo pipefail
+          test ! -e .c04-11-proof
+          mkdir -p .c04-11-proof
+          python3 -m py_compile qa/c04_11_offensive_audits.py
+          bash -n database/tests/c04_11_offensive_sql.sh
+          bash -n database/tests/c04_10_isolation_smoke.sh
+          bash -n database/tests/c04_09_guarded_smoke.sh
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c04_11_offensive_audits.py A
+          printf 'A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-11-proof/A
+      - name: B security offensive negative and guard mutation gate
+        run: |
+          set -euo pipefail
+          python3 qa/c04_11_offensive_audits.py B
+          printf 'B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-11-proof/B
+      - name: Install official .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build API and offensive suite Release warnaserror
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.TenantOffensive.ContractsTests/Crecisol.TenantOffensive.ContractsTests.csproj -c Release --nologo -warnaserror
+      - name: Execute C04-11 offensive .NET and C04-01 to C04-10 regressions
+        run: |
+          set -euo pipefail
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.TenantOffensive.ContractsTests/Crecisol.TenantOffensive.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantArtifacts.ContractsTests/Crecisol.TenantArtifacts.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantMigrations.ContractsTests/Crecisol.TenantMigrations.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantLifecycle.ContractsTests/Crecisol.TenantLifecycle.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantProvisioning.ContractsTests/Crecisol.TenantProvisioning.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.BranchResource.ContractsTests/Crecisol.BranchResource.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantIdentity.ContractsTests/Crecisol.TenantIdentity.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.VerifiedHosts.ContractsTests/Crecisol.VerifiedHosts.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantStorage.ContractsTests/Crecisol.TenantStorage.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantCatalog.ContractsTests/Crecisol.TenantCatalog.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.SharedTenancy.ContractsTests/Crecisol.SharedTenancy.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj
+          printf 'dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-11-proof/dotnet
+      - name: Real MySQL8.4 adversarial IDOR BOLA read write and prior C04-10 C04-09
+        run: |
+          set -euo pipefail
+          bash database/tests/c04_11_offensive_sql.sh
+          bash database/tests/c04_10_isolation_smoke.sh
+          bash database/tests/c04_09_guarded_smoke.sh
+          printf 'mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-11-proof/mysql
+      - name: C clean architecture performance and exact scope
+        run: |
+          set -euo pipefail
+          python3 qa/c04_11_offensive_audits.py C
+          printf 'C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-11-proof/C
+      - name: Combined exact SHA run evidence mandatory
+        run: |
+          set -euo pipefail
+          for phase in A B C dotnet mysql; do
+            test -s ".c04-11-proof/$phase"
+            grep -Fq "sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c04-11-proof/$phase"
+          done
+          echo "C04-11 A B C with real negative .NET10 and MySQL8.4 same SHA/run SUCCESS — only synthetic internal boundaries, no actual private production API"
