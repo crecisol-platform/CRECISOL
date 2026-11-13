@@ -57,10 +57,12 @@ def audit_d():
         "NOT (v_epoch <=> v_actual_epoch)",
         "v_actual_schema <> 'c04_09_shared'",
         "v_actual_schema NOT IN ('c04_09_ded_a','c04_09_ded_b')",
-        "c0409_target_binding_immutable"
+        "c0409_target_binding_immutable",
+        "c0409_shared_owner_immutable"
     ), "real SQL target binding")
     expect_all(SMOKE, (
         "cross-tenant valid-B approval",
+        "valid tenant B cannot steal noncolliding tenant A resource",
         "cross-slot valid-slot-B approval",
         "different valid tenant cannot claim same dedicated slot",
         "runner cannot choose scope via update",
