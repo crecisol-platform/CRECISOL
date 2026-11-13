@@ -8,7 +8,7 @@ on:
       - 'database/tests/c05_02_mailbox_bound_mysql_smoke.sh'
       - 'docs/c05/PRUEBA_UNION_BUZON_IDENTIDAD_INVITACION_C05_02.md'
       - 'qa/c05_02_mailbox_bound_audits.py'
-      - '.github/workflows/c05-02-signed-recipient.yml'
+      - '.github/workflows/c05-02-mailbox-bound.yml'
   push:
     branches: [dev]
     paths:
@@ -17,7 +17,7 @@ on:
       - 'database/tests/c05_02_mailbox_bound_mysql_smoke.sh'
       - 'docs/c05/PRUEBA_UNION_BUZON_IDENTIDAD_INVITACION_C05_02.md'
       - 'qa/c05_02_mailbox_bound_audits.py'
-      - '.github/workflows/c05-02-signed-recipient.yml'
+      - '.github/workflows/c05-02-mailbox-bound.yml'
 permissions:
   contents: read
 jobs:
