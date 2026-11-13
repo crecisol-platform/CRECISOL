@@ -151,7 +151,7 @@ def audit_e():
                       "verify_restored_and_release"):
         prefix = "CREATE PROCEDURE c04_09_control." + procedure + "("
         require(prefix in SQL, "missing SQL procedure: " + procedure)
-        body = SQL.split(prefix, 1)[1].split("END$", 1)[0]
+        body = SQL.split(prefix, 1)[1].split("END//", 1)[0]
         order = [body.find("FROM c04_09_control." + table)
                  for table in ("approvals", "targets", "gates", "ledger")]
         require(all(position >= 0 for position in order) and
