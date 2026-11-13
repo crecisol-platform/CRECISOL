@@ -32,7 +32,7 @@ public sealed class OpaqueSessionTokenProtector : ITrustedOpaqueSessionTokenProt
         var random = RandomNumberGenerator.GetBytes(TokenBytes);
         try
         {
-            return new IssuedSessionToken(Prefix + ToBase64Url(random));
+            return IssuedSessionToken.FromTrustedProtector(Prefix + ToBase64Url(random));
         }
         finally
         {
