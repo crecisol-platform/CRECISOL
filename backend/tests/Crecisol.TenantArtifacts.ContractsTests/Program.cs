@@ -271,7 +271,7 @@ foreach (var kind in Enum.GetValues<TenantArtifactKind>())
     var gateway = new FakeArtifactGateway(now);
     var useCase = new ApplyScopedTenantArtifact(
         reader, deriver, gateway, new FixedClock(now));
-    var receipt = await useCase.ExecuteAsync(operationA, CancellationToken.None);
+    var receipt = await useCase.ExecuteAsync(operationA, plan, CancellationToken.None);
     Check(receipt.OperationId == operationA && receipt.Kind == kind,
         kind + " apply valid future gateway receipt");
     Check(reader.Reads == 3 && gateway.Calls == 1,
@@ -279,56 +279,55 @@ foreach (var kind in Enum.GetValues<TenantArtifactKind>())
 
     reader.Reads = 0;
     gateway.ResultState = TenantArtifactReceiptState.Replayed;
-    Check((await useCase.ExecuteAsync(operationA, CancellationToken.None)).State ==
+    Check((await useCase.ExecuteAsync(operationA, plan, CancellationToken.None)).State ==
         TenantArtifactReceiptState.Replayed, kind + " replay receipt exact");
     gateway.ResultState = TenantArtifactReceiptState.Applied;
     reader.Current = null;
     await RejectAsync<UnauthorizedAccessException>(
-        async () => { await useCase.ExecuteAsync(operationA, CancellationToken.None); },
+        async () => { await useCase.ExecuteAsync(operationA, plan, CancellationToken.None); },
         kind + " missing verified catalog approval");
     reader.Current = plan;
     reader.OverrideRead = count => count % 3 == 2 ? null : plan;
     reader.Reads = 0;
     var previousCalls = gateway.Calls;
     await RejectAsync<UnauthorizedAccessException>(
-        async () => { await useCase.ExecuteAsync(operationA, CancellationToken.None); },
+        async () => { await useCase.ExecuteAsync(operationA, plan, CancellationToken.None); },
         kind + " approval revoked before gateway");
     Check(gateway.Calls == previousCalls, kind + " no effects after early revocation");
-    reader.OverrideRead = count => count % 3 == 3 ? null : plan;
     // Explicit third-read revocation: the gateway is a fake, NOT a real write.
     reader.OverrideRead = count => count == 3 ? null : plan;
     reader.Reads = 0;
     await RejectAsync<UnauthorizedAccessException>(
-        async () => { await useCase.ExecuteAsync(operationA, CancellationToken.None); },
+        async () => { await useCase.ExecuteAsync(operationA, plan, CancellationToken.None); },
         kind + " revoked while gateway was handling operation");
     reader.OverrideRead = null;
     reader.Reads = 0;
 
     reader.Current = Scope(kind, tenant: tenantB);
     await RejectAsync<UnauthorizedAccessException>(
-        async () => { await useCase.ExecuteAsync(operationA, CancellationToken.None); },
+        async () => { await useCase.ExecuteAsync(operationA, plan, CancellationToken.None); },
         kind + " same operation id cannot be reused for valid B");
     reader.Current = plan;
     await RejectAsync<UnauthorizedAccessException>(
-        async () => { await useCase.ExecuteAsync(operationB, CancellationToken.None); },
+        async () => { await useCase.ExecuteAsync(operationB, plan, CancellationToken.None); },
         kind + " operation selector mismatch");
 
     gateway.ForgeReceipt = (p, key) => Receipt(p,
         fingerprint: Scope(kind, tenant: tenantB).IntentFingerprint);
     await RejectAsync<UnauthorizedAccessException>(
-        async () => { await useCase.ExecuteAsync(operationA, CancellationToken.None); },
+        async () => { await useCase.ExecuteAsync(operationA, plan, CancellationToken.None); },
         kind + " malicious gateway returns cross-tenant fingerprint");
     gateway.ForgeReceipt = (p, key) => Receipt(p,
         key: TenantPrivateArtifactKey.Derive(Scope(kind, tenant: tenantB), keySecret));
     await RejectAsync<UnauthorizedAccessException>(
-        async () => { await useCase.ExecuteAsync(operationA, CancellationToken.None); },
+        async () => { await useCase.ExecuteAsync(operationA, plan, CancellationToken.None); },
         kind + " malicious gateway returns cross-tenant key");
     gateway.ForgeReceipt = null;
 
     deriver.ReturnInvalid = true;
     previousCalls = gateway.Calls;
     await RejectAsync<UnauthorizedAccessException>(
-        async () => { await useCase.ExecuteAsync(operationA, CancellationToken.None); },
+        async () => { await useCase.ExecuteAsync(operationA, plan, CancellationToken.None); },
         kind + " malformed HMAC denied before gateway");
     Check(gateway.Calls == previousCalls, kind + " no effect when key is malformed");
     deriver.ReturnInvalid = false;
@@ -336,7 +335,7 @@ foreach (var kind in Enum.GetValues<TenantArtifactKind>())
     using var cancelled = new CancellationTokenSource();
     cancelled.Cancel();
     await RejectAsync<OperationCanceledException>(
-        async () => { await useCase.ExecuteAsync(operationA, cancelled.Token); },
+        async () => { await useCase.ExecuteAsync(operationA, plan, cancelled.Token); },
         kind + " cancellation fails closed");
 }
 
