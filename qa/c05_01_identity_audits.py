@@ -202,7 +202,8 @@ def audit_a() -> None:
          "No cuentas compartidas entre negocios" in plan,
          "C05-01 purpose or negative contract changed")
     prep = read(ROOT / "docs/C05_PREPARACION.md")
-    need(PRIOR_DEV in prep and "C05-01" in prep, "C04 prior certification missing")
+    need(PRIOR_DEV in read(SPEC) and "C05-01" in prep and "C04" in prep,
+         "C05-01 implementation must bind to certified preparation and C04 gate")
     for item in (C05_SHA, CURRENT_WORD_SHA, CURRENT_PDF_SHA,
                  "6843853811", "CONTRATOS INTERNOS", "NO CERTIFICADA"):
         source = read(SPEC) + prep
