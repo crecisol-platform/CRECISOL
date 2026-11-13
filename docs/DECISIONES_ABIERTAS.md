@@ -1,5 +1,9 @@
 # Decisiones documentales y arquitectónicas abiertas
 
+**ESTADO OPERATIVO ACTUAL (12-11-2026):** C01, C02 y C03 están certificados en sus alcances documentados; C03 está cerrado en 10/10 microfases y el total es 3/37. C04 está en desarrollo: C04-01 certificado solo como contratos internos, C04-02..08 condicionados por sus puertas propias y C04-09 en preparación separada. Las instantáneas antiguas de C03 pendiente/C04 bloqueado se conservan como historial y no autorizan ni bloquean el trabajo vigente.
+
+**HISTORIAL CONSERVADO DESDE AQUÍ:** las decisiones y estados posteriores que describen puertas anteriores se mantienen para trazabilidad y no sustituyen el estado operativo anterior.
+
 **DECISIÓN POSTERIOR DE CERTIFICACIÓN C03 (11-11-2026):** El propietario dio aceptación expresa CONDICIONADA a verificaciones reales del capítulo C03; consultar [acta integral C03](c03/C03_CERTIFICACION_INTEGRAL_2026_11_11.md) y [registro prospectivo](ESTADO_VIGENTE_CAPITULOS.md). C03=10/10, 3/37 efectivo solo al completar CI de la propia acta; C04 habilitado únicamente para preparación C04-01. Las decisiones ADR pendientes y las instantáneas históricas no se eliminan.
 
 - **ADR-001 — ABIERTA:** monolito modular inicial; extraer microservicios solo con mediciones y ADR aprobado.

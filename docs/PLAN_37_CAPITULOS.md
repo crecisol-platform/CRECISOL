@@ -1,5 +1,9 @@
 # Orden de implementación obligatorio de CRECISOL
 
+**ESTADO ACTUAL CONSOLIDADO (12-11-2026):** C01, C02 y C03 están certificados en sus alcances documentados; C03 está cerrado en 10/10 microfases y el total es 3/37. C04 está en desarrollo; C04-01 tiene alcance certificado limitado a contratos internos, C04-02..08 conservan puertas condicionadas y C04-09 se prepara en una rama separada sin estar integrada ni certificada. Las notas antiguas de este encabezado se conservan como historial.
+
+**HISTORIAL CONSERVADO DESDE AQUÍ:** las notas de estado anteriores y la tabla de cortes de microfases que siguen documentan fechas previas; no sustituyen el resumen actual ni autorizan/bloquean trabajo.
+
 **NOTA VIGENTE C03-10 (11-11-2026):** C03-09 está certificada en su alcance según docs/c03/C03_09_CERTIFICACION_AUTONOMA.md. C03-10 CERRADA TÉCNICAMENTE (acta y 16/16 CI PRE/POSTMERGE verificada), C03 NO CERTIFICADO, C04 BLOQUEADO. El propietario autorizó validar C03-10 mediante GitHub Actions con CRECISOL público. Véase docs/DECISION_OPERATIVA_2026-11-11_RETORNO_CI_C03.md. Las líneas históricas de abajo no se reescriben hasta certificación y acta verificable.
 
 **AVISO OPERATIVO VIGENTE DESDE 11-11-2026 (posterior a los registros históricos):** [Decisión del propietario: autonomía técnica sin dependencia de GitHub Actions](DECISION_OPERATIVA_2026-11-11_AUTONOMIA_SIN_GITHUB_ACTIONS.md). GitHub solo aloja y versiona código; **CI PREMERGE/POSTMERGE deja de ser requisito prospectivo**, sin alterar sus resultados históricos. El asistente ejecuta tres auditorías A/B/C rigurosas y pruebas reales aplicables; las pruebas no ejecutables por falta de herramientas se declaran como tales. **C03-09 CERTIFICADA EN SU ALCANCE (9/10)** mediante [acta autónoma](c03/C03_09_CERTIFICACION_AUTONOMA.md) y pruebas reales previas de Codex. C03-10 queda habilitada para auditar el capítulo completo; **C03 aún no está certificado y C04 permanece bloqueado**. Esta nota prevalece solo en el proceso operativo, **no modifica** el contenido funcional ni huellas del Documento Maestro Único.
@@ -12,6 +16,17 @@ Fuente de nombres: Documento Maestro Único. **ESTADO VIGENTE: 2/37 capítulos c
 **ESTADO OPERATIVO POSTERIOR — C03 CAPÍTULO (11-11-2026):** [Registro prospectivo de certificaciones](ESTADO_VIGENTE_CAPITULOS.md) y [acta integral](c03/C03_CERTIFICACION_INTEGRAL_2026_11_11.md). El propietario dio aceptación expresa condicionada; tras aprobar PREMERGE, fusionar a dev y aprobar POSTMERGE de ese acta, el estado pasa a **C03 CERTIFICADO (10/10), 3/37 capítulos (C01, C02, C03)**. **C04-01 HABILITADA SOLO PARA PREPARACIÓN, C04 NO CERTIFICADO, C05 BLOQUEADO**. El registro posterior prevalece; las filas C03/C04 que siguen permanecen literalmente como inventario histórico verificable por los gates C01/C02/C03 de su fecha, **no son el estado vigente para abrir código nuevo**.
 
 **Antecedente histórico preservado para las auditorías anteriores (NO estado vigente):** 1/37 capítulos certificados; al terminar C02-08, C02 **NO CERTIFICADO**, C03 bloqueado, 8/9 técnicas completadas. La última acta C02-09 cerró 9/9 y la aceptación humana posterior «APROBADO» sustituyó esa situación.
+
+## Estado vigente resumido
+
+| Capítulo | Estado actual |
+|---|---|
+| C01 | CERTIFICADO, 8/8 microfases, alcance documentado |
+| C02 | CERTIFICADO, 9/9 microfases, alcance público/sintético |
+| C03 | CERTIFICADO, 10/10 microfases, alcance técnico |
+| C04 | EN DESARROLLO, no certificado; C04-09 en preparación separada |
+
+## Tabla histórica de planificación
 
 C01 | CRECISOL: identidad, visión, alcance y principios | **CERTIFICADO** (C01-01 a C01-08, 8/8; A/B/C integrales PASS; aprobación expresa 2026-11-09; alcance únicamente C01)
 C02 | Personas, experiencias y arquitectura de producto | **CERTIFICADO C02, alcance público/sintético delimitado y aceptado expresamente por el propietario el 9-11-2026 («APROBADO»)**. 9/9 microfases, auditorías integrales A/B/C PASS, 58/58 Chromium C02 + 25/25 C01, Domain/Application, MySQL8.4/API/Angular públicos desechables; PR técnico [#46](https://github.com/solqaryn-platform/CRECISOL/pull/46) SHA `cb450690a8b7a9d0660c39baa52d483abf164168`, acta [#47](https://github.com/solqaryn-platform/CRECISOL/pull/47) SHA `d8ba77dd65f87325ca8dbf2f38455943af2f8d8e`, 12/12 CI POSTMERGE SUCCESS incluido [#42678910536](https://github.com/solqaryn-platform/CRECISOL/actions/runs/42678910536). [Acta de certificación](c02/C02_09_AUDITORIA_Y_ACTA.md). Formalización definitiva condicionada a CI POSTMERGE del PR de aceptación. Sin auth privada, BOLA/IDOR/MFA, panel integral, WCAG manual ni cobros reales

@@ -1,5 +1,9 @@
 # CRECISOL — Capítulo 03 · Arquitectura técnica limpia y dependencias
 
+**ESTADO ACTUAL:** C03 está cerrado y certificado en 10/10 microfases dentro de su alcance técnico; el total institucional es 3/37 capítulos. C04 está en desarrollo y C04-09 se prepara en una rama separada, sin integración a `dev` ni certificación. Los estados anteriores que siguen se conservan como historial de auditoría.
+
+**HISTORIAL CONSERVADO DESDE AQUÍ:** las notas de estado que siguen documentan cortes anteriores de C03 y no sustituyen el estado actual anterior.
+
 **REGISTRO POSTERIOR AL CIERRE TÉCNICO C03 (11-11-2026):** [Acta de certificación integral](c03/C03_CERTIFICACION_INTEGRAL_2026_11_11.md) y [estado vigente de capítulos](ESTADO_VIGENTE_CAPITULOS.md). La aceptación expresa del propietario se formaliza aquí: C03 se certifica 10/10 y el total pasa a 3/37 **únicamente al superar la CI PREMERGE y POSTMERGE de su propio acta**. Entonces C04-01 se habilita solo para preparación; no hay implementación C04 ni producción. Todos los párrafos anteriores de C03 «NO CERTIFICADO» y «2/37» son instantáneas históricas conservadas para validadores previos.
 
 **ACTUALIZACIÓN VIGENTE (11-11-2026):** C03-09 CERTIFICADA EN SU ALCANCE (9/10), C03-10 CERRADA TÉCNICAMENTE tras las auditorías A/B/C y 16/16 CI POSTMERGE sobre `a8726d3ffd0ee08aae8bd25405b318ef262dea6c`; [acta del cierre C03-10](c03/C03_10_ACTA_CIERRE_TECNICO_CI.md). **C03 NO CERTIFICADO; C04 BLOQUEADO** hasta aceptación expresa y formalización. Los estados posteriores de esta sección anteriores a esta nota se conservan como historial.

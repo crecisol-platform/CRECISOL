@@ -5,9 +5,9 @@ description: "Gobernanza técnica exclusiva del repositorio CRECISOL. Aplicar an
 
 # CRECISOL · Gobierno técnico propio
 
-**PRECEDENCIA PROSPECTIVA ACTUAL (11-11-2026):** `docs/c03/C03_RATIFICACION_INSTITUCIONAL_POSTMIGRACION_2026_11_11.md` y `docs/ESTADO_VIGENTE_CAPITULOS.md` gobiernan el intento de cierre institucional de C03 tras la transferencia a `crecisol-platform/CRECISOL`. PR #80 aportó 17/17 CI SUCCESS y 10/10 microfases trazables; PR #79 conserva runs antiguos `queued`, no PASS. Solo declarar C03 CERTIFICADO (3/37) cuando el nuevo PR de ratificación supere CI PREMERGE/POSTMERGE con SHA exacto, auditorías A/B/C y sin P0/P1. Antes: C03 PENDIENTE, C04 BLOQUEADO. Después: preparar solo C04-01. Mantener histórico sin reescritura, sin desplegar ni escribir en SOLQARYN.
+**PRECEDENCIA PROSPECTIVA ACTUAL (12-11-2026):** `docs/ESTADO_VIGENTE_CAPITULOS.md` gobierna el estado operativo de `crecisol-platform/CRECISOL`. C01, C02 y C03 están certificados en sus alcances documentados; C03 está cerrado en 10/10 microfases y el total es 3/37. C04 está en desarrollo: C04-01 tiene certificación limitada a contratos internos, C04-02..08 están condicionadas por sus puertas propias y C04-09 está en preparación separada, sin integración a `dev` ni certificación. Mantener actas históricas sin reescritura, sin desplegar ni escribir en SOLQARYN.
 
-**Ubicación vigente verificada (11-11-2026):** `crecisol-platform/CRECISOL`, ID `1450414592`, rama `dev`. Las rutas antiguas en decisiones históricas no autorizan nuevas escrituras. Ver `docs/MIGRACION_ORGANIZACION_GITHUB_2026_11_11.md`. PR #79 fusionado; CI POSTMERGE en cola, por lo que C03 no está certificado efectivamente y C04 sigue bloqueado. Sin alteraciones a SOLQARYN ni producción.
+**Ubicación vigente verificada:** `crecisol-platform/CRECISOL`, ID `1450414592`, rama `dev`. Las referencias antiguas a PR #79 y a C03 pendiente son históricas y no sustituyen el estado operativo consolidado. Sin alteraciones a SOLQARYN ni producción.
 
 ## Precedencia posterior autorizada — C03-10, 11-11-2026
 
