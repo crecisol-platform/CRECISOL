@@ -237,7 +237,10 @@ async Task<string> SeedSessionAsync(TenantId tenant,TenantActorId who)
           INSERT INTO c05_05_sessions
            (session_id,tenant_id,actor_id,token_digest,generation,
             subject_revision,issued_utc,expires_utc,absolute_expires_utc,revoked_utc)
-          VALUES (@id,@tenant,@actor,@digest,1,1,UTC_TIMESTAMP(6),
+          VALUES (@id,@tenant,@actor,@digest,1,
+                  (SELECT subject_revision FROM c05_05_subjects
+                    WHERE tenant_id=@tenant AND actor_id=@actor),
+                  UTC_TIMESTAMP(6),
                   DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 15 MINUTE),
                   DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 8 HOUR),NULL)
           """,setup);
