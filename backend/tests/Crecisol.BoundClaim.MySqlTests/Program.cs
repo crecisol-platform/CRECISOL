@@ -53,17 +53,6 @@ void Pass(bool ok, string description)
     ++checks;
     Console.WriteLine("PASS C05-02 issuer: " + description);
 }
-async Task DenyAsync(Func<Task> operation, string description)
-{
-    try { await operation(); }
-    catch (UnauthorizedAccessException)
-    {
-        Pass(true, description);
-        return;
-    }
-    throw new InvalidOperationException("FAIL expected authorization denial: " + description);
-}
-
 await using var admin = new MySqlConnection(adminDsn);
 await admin.OpenAsync();
 async Task SetupAsync(string sql)
