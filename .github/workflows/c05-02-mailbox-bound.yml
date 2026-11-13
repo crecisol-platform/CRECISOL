@@ -1,0 +1,77 @@
+name: CRECISOL C05-02 mailbox and signed recipient atomic conjunction A-B-C NET10 MySQL8.4
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/tests/Crecisol.MailboxBound.MySqlTests/**'
+      - 'database/tests/fixtures/c05_02_mailbox_bound_claim_fixture.sql'
+      - 'database/tests/c05_02_mailbox_bound_mysql_smoke.sh'
+      - 'docs/c05/PRUEBA_UNION_BUZON_IDENTIDAD_INVITACION_C05_02.md'
+      - 'qa/c05_02_mailbox_bound_audits.py'
+      - '.github/workflows/c05-02-signed-recipient.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/tests/Crecisol.MailboxBound.MySqlTests/**'
+      - 'database/tests/fixtures/c05_02_mailbox_bound_claim_fixture.sql'
+      - 'database/tests/c05_02_mailbox_bound_mysql_smoke.sh'
+      - 'docs/c05/PRUEBA_UNION_BUZON_IDENTIDAD_INVITACION_C05_02.md'
+      - 'qa/c05_02_mailbox_bound_audits.py'
+      - '.github/workflows/c05-02-signed-recipient.yml'
+permissions:
+  contents: read
+jobs:
+  issuer-scope:
+    name: Mailbox proof + signed session + issuer scope bound to one use
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - name: Checkout exact PR synthetic merge or dev SHA read only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Audit A canonical master source and scope
+        run: |
+          set -euo pipefail
+          test ! -e .c05-02-mailbox-bound
+          python3 -m py_compile qa/c05_02_mailbox_bound_audits.py
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c05_02_mailbox_bound_audits.py A
+          mkdir -p .c05-02-mailbox-bound
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-mailbox-bound/A
+      - name: Audit B offensive guard removal mutations
+        run: |
+          set -euo pipefail
+          python3 qa/c05_02_mailbox_bound_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-mailbox-bound/B
+      - name: Install pinned .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile API, scope use case, MySQL adapter and predecessor regression
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.MailboxBound.MySqlTests/Crecisol.MailboxBound.MySqlTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj
+          printf 'PASS dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-mailbox-bound/dotnet
+      - name: REAL MySQL8.4 independent mailbox verification plus signed scoped claim, 16-way CAS
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_02_mailbox_bound_mysql_smoke.sh
+          printf 'PASS mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-mailbox-bound/mysql
+      - name: Audit C provenance exact run and allowed diff
+        run: |
+          set -euo pipefail
+          python3 qa/c05_02_mailbox_bound_audits.py C
+          printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-mailbox-bound/C
+      - name: Require A B C .NET10 MySQL8.4 same SHA and run
+        run: |
+          set -euo pipefail
+          for stage in A B C dotnet mysql; do
+            grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-02-mailbox-bound/$stage"
+          done
+          echo 'PASS C05-02 Mailbox proof and signed session are TEST ONLY; NO REAL EXTERNAL INBOX OR C05-02 CERTIFICATION'
