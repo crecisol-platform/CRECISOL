@@ -28,6 +28,12 @@ C04-10 está certificada exclusivamente en contratos y fixtures sintéticos por 
 - La primera ejecución C04-11 del SHA c21a33e7133c1e2d747a12d4443e4d70837a4e8f, run [43351248766](https://github.com/crecisol-platform/CRECISOL/actions/runs/43351248766), quedó FAILURE: MySQL 8.4 rechazó la expresión booleana hostil con ERROR 1292 (conversión numérica) antes del SIGNAL SQL; el test solo contemplaba otros códigos. Se corrigió estrictamente en nuevo commit eb457652... para aceptar 1292 **únicamente para esa petición**, conservando el fallo histórico. Ningún dato cruzado se leyó o escribió en dicha ejecución, pero **esa ejecución no es PASS**.
 - **Regresión integral C03-10 PREMERGE del SHA final: PENDIENTE** al redactar este acta. Ningún resultado pendiente/skipped cuenta como aprobado.
 
+## 3.1 Fusión técnica permitida tras PREMERGE 3/3 SUCCESS
+
+En el SHA técnico `eb457652f7a8b0aa479a7e397989b19dc190fb25`, **3/3 workflows aplicables completed/success, 0 pendientes/fallidos**: [C04-11 ofensiva 43351613194](https://github.com/crecisol-platform/CRECISOL/actions/runs/43351613194), [C03-10 integral 43351613276](https://github.com/crecisol-platform/CRECISOL/actions/runs/43351613276), [Foundation 43351613212](https://github.com/crecisol-platform/CRECISOL/actions/runs/43351613212). GitHub confirmó fusión `squash` del PR #107 **exclusivamente en dev**, commit técnico `3c9fbb7c2cf35584d379b94309c0c83fc4d9b32a`. No se modificaron componentes del producto, main ni bases productivas.
+
+**Workflows técnicos POSTMERGE iniciados, NO presupuestos SUCCESS:** C04-11 [43352339752](https://github.com/crecisol-platform/CRECISOL/actions/runs/43352339752), C03-10 integral [43352339950](https://github.com/crecisol-platform/CRECISOL/actions/runs/43352339950) y Foundation [43352339794](https://github.com/crecisol-platform/CRECISOL/actions/runs/43352339794). Se exige completed/success 3/3 en ese SHA antes de fusionar el PR documental.
+
 ## 4. Puertas que deben quedar 100% SUCCESS ANTES de certificar
 
 1. PREMERGE técnico completo de PR #107 sobre HEAD exacto, incluyendo C03-10 integral y Foundation, 0 fallos/pendientes aplicables; diff limitado a C04-11.
