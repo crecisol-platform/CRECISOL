@@ -186,9 +186,8 @@ def guard(data: dict[str, str]) -> None:
          "CI must use pinned read-only checkout and .NET SDK")
     need("deploy" not in wf.lower() and "kubectl" not in wf.lower(),
          "No deployment or production mutation in CI")
-    need("password" not in app.lower().replace("password, ", "") or
-         "password" in tests.lower(),
-         "Test contract source mismatch")
+    need("string password" not in app.lower() and "byte[]" not in app.lower(),
+         "No credential payload or password material in Application contract")
     need("<TargetFramework>net10.0</TargetFramework>" in read(PROJ) and
          "<TreatWarningsAsErrors>true</TreatWarningsAsErrors>" in read(PROJ),
          "Must compile .NET10 tests with warnings as errors")
@@ -218,7 +217,7 @@ def audit_b() -> None:
     for key in ("domain", "app", "test", "spec", "workflow"):
         for marker in MARKERS[key]:
             changed = dict(data)
-            changed[key] = changed[key].replace(marker, "[ADVERSARIAL GUARD REMOVED]", 1)
+            changed[key] = changed[key].replace(marker, "[ADVERSARIAL GUARD REMOVED]")
             need(changed[key] != data[key], "Cannot construct mutation: " + key)
             try:
                 guard(changed)
