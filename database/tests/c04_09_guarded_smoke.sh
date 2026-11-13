@@ -240,6 +240,12 @@ check "shared metadata confirms target column" "1" "$(root_sql "
  AND table_name='resources' AND column_name='migration_tag'")"
 check "global shared exact operation replay" "REPLAY" "$(runner_sql "
  CALL c04_09_control.reserve('$O_SHARED')")"
+# Synthetic metadata tampering must invalidate an old VERIFIED receipt;
+# do not authorize replay merely because the ledger still says verified.
+root_sql "ALTER TABLE c04_09_shared.resources DROP COLUMN migration_tag"
+deny "verified shared replay detects schema drift" \
+ "CALL c04_09_control.reserve('$O_SHARED')"
+root_sql "ALTER TABLE c04_09_shared.resources ADD COLUMN migration_tag VARCHAR(20) NULL"
 O_CONFLICT="$(OP 202)"
 decision "$O_CONFLICT" SHARED0 SHARED NULL NULL 17 4 schema_shared_1 "$HASH_B"
 deny "global same version different checksum" \
