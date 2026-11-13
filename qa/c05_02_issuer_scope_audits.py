@@ -40,7 +40,7 @@ GUARDS = {
         "scope.HostRevision != issuer.HostRevision",
         "scope.TenantCatalogRevision != issuer.TenantCatalogRevision",
         "scope.RequiredAction != RequiredAction",
-        "refreshedIssuer != issuer",
+        "issuer != refreshedIssuer",
         "scope != refreshedScope",
         "refreshedDecision != decision",
         "targets.IsEligibleAsync(",
