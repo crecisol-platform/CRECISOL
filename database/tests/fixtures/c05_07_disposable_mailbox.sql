@@ -5,6 +5,7 @@ CREATE TABLE c05_07_verifications (
   verification_id BINARY(16) NOT NULL PRIMARY KEY,
   tenant_id BINARY(16) NOT NULL,
   actor_id BINARY(16) NOT NULL,
+  link_id BINARY(16) NOT NULL,
   mailbox_digest BINARY(32) NOT NULL,
   mailbox_revision BIGINT UNSIGNED NOT NULL,
   subject_revision BIGINT UNSIGNED NOT NULL,
@@ -26,6 +27,7 @@ CREATE TABLE c05_07_changes (
   change_id BINARY(16) NOT NULL PRIMARY KEY,
   tenant_id BINARY(16) NOT NULL,
   actor_id BINARY(16) NOT NULL,
+  link_id BINARY(16) NOT NULL,
   previous_mailbox BINARY(32) NOT NULL,
   next_mailbox BINARY(32) NOT NULL,
   old_token_digest BINARY(32) NOT NULL,
@@ -98,6 +100,7 @@ BEGIN
   DECLARE v_mail_rev BIGINT UNSIGNED;
   DECLARE v_verified TINYINT;
   DECLARE v_subject_rev BIGINT UNSIGNED;
+  DECLARE v_link BINARY(16);
   DECLARE v_account TINYINT;
   DECLARE v_credential TINYINT;
   DECLARE v_membership TINYINT;
@@ -119,10 +122,10 @@ BEGIN
     INTO v_actor,v_mail_rev,v_verified FROM c05_06_mailboxes
    WHERE tenant_id=p_tenant AND mailbox_digest=p_mailbox FOR UPDATE;
   IF NOT v_missing AND v_verified=0 THEN
-    SELECT subject_revision,credential_revision,account_active,
+    SELECT link_id,subject_revision,credential_revision,account_active,
            credential_active,membership_active,host_active,tenant_active,
            member_expires_utc
-      INTO v_subject_rev,v_credential_rev,v_account,
+      INTO v_link,v_subject_rev,v_credential_rev,v_account,
            v_credential,v_membership,v_host,v_tenant,v_until
       FROM c05_05_subjects
      WHERE tenant_id=p_tenant AND actor_id=v_actor FOR UPDATE;
@@ -137,10 +140,10 @@ BEGIN
         UPDATE c05_07_verifications SET state='REVOKED'
          WHERE tenant_id=p_tenant AND actor_id=v_actor AND state='PENDING';
         INSERT INTO c05_07_verifications
-          (verification_id,tenant_id,actor_id,mailbox_digest,mailbox_revision,
+          (verification_id,tenant_id,actor_id,link_id,mailbox_digest,mailbox_revision,
            subject_revision,token_digest,issued_utc,expires_utc,state)
         VALUES
-          (p_verification,p_tenant,v_actor,p_mailbox,v_mail_rev,
+          (p_verification,p_tenant,v_actor,v_link,p_mailbox,v_mail_rev,
            v_subject_rev,p_digest,v_now,DATE_ADD(v_now,INTERVAL 10 MINUTE),'PENDING');
         INSERT INTO c05_07_security_audit
           (tenant_id,actor_id,operation_id,event_type,occurred_utc)
@@ -161,6 +164,8 @@ BEGIN
   DECLARE v_missing BOOLEAN DEFAULT FALSE;
   DECLARE v_verification BINARY(16);
   DECLARE v_actor BINARY(16);
+  DECLARE v_link BINARY(16);
+  DECLARE v_current_link BINARY(16);
   DECLARE v_mailbox BINARY(32);
   DECLARE v_mailrev BIGINT UNSIGNED;
   DECLARE v_subrev BIGINT UNSIGNED;
@@ -187,9 +192,9 @@ BEGIN
 
   START TRANSACTION;
   SET v_now=UTC_TIMESTAMP(6);
-  SELECT verification_id,actor_id,mailbox_digest,mailbox_revision,
+  SELECT verification_id,actor_id,link_id,mailbox_digest,mailbox_revision,
          subject_revision,expires_utc,state
-    INTO v_verification,v_actor,v_mailbox,v_mailrev,v_subrev,v_exp,v_state
+    INTO v_verification,v_actor,v_link,v_mailbox,v_mailrev,v_subrev,v_exp,v_state
     FROM c05_07_verifications
    WHERE tenant_id=p_tenant AND token_digest=p_digest FOR UPDATE;
 
@@ -200,14 +205,15 @@ BEGIN
      WHERE tenant_id=p_tenant AND actor_id=v_actor FOR UPDATE;
     IF NOT v_missing AND v_verified=0 AND
        v_mailbox=v_real_mailbox AND v_mailrev=v_real_mailrev THEN
-      SELECT subject_revision,credential_revision,account_active,
+      SELECT link_id,subject_revision,credential_revision,account_active,
              credential_active,membership_active,host_active,tenant_active,
              member_expires_utc
-        INTO v_real_subrev,v_credential_rev,v_account,v_credential,
+        INTO v_current_link,v_real_subrev,v_credential_rev,v_account,v_credential,
              v_membership,v_host,v_tenant,v_until
         FROM c05_05_subjects
        WHERE tenant_id=p_tenant AND actor_id=v_actor FOR UPDATE;
-      IF NOT v_missing AND v_subrev=v_real_subrev AND v_account=1 AND
+      IF NOT v_missing AND v_link=v_current_link AND
+         v_subrev=v_real_subrev AND v_account=1 AND
          v_credential=1 AND v_membership=1 AND v_host=1 AND v_tenant=1 AND
          v_until>v_now THEN
         SELECT credential_revision,credential_active,realm
@@ -305,20 +311,19 @@ BEGIN
         INTO v_global_rev,v_global_active,v_realm
         FROM c05_06_credentials WHERE actor_id=p_actor FOR UPDATE;
       SELECT COUNT(*) INTO v_collisions FROM c05_06_mailboxes
-       WHERE tenant_id=p_tenant AND mailbox_digest=p_new
-         AND actor_id<>p_actor;
+       WHERE mailbox_digest=p_new AND actor_id<>p_actor;
       IF NOT v_missing AND v_global_active=1 AND v_realm='TENANT' AND
          v_global_rev=v_credential_rev AND v_collisions=0 THEN
         UPDATE c05_07_changes SET state='REVOKED'
          WHERE tenant_id=p_tenant AND actor_id=p_actor AND state='PENDING';
         INSERT INTO c05_07_changes
-          (change_id,tenant_id,actor_id,previous_mailbox,next_mailbox,
+          (change_id,tenant_id,actor_id,link_id,previous_mailbox,next_mailbox,
            old_token_digest,new_token_digest,mailbox_revision,
            account_revision,credential_revision,membership_revision,
            tenant_revision,host_revision,subject_revision,
            issued_utc,expires_utc,state)
         VALUES
-          (p_change,p_tenant,p_actor,p_old,p_new,p_old_token,p_new_token,v_mailrev,
+          (p_change,p_tenant,p_actor,p_link,p_old,p_new,p_old_token,p_new_token,v_mailrev,
            v_account_rev,v_credential_rev,v_membership_rev,
            v_tenant_rev,v_host_rev,v_subrev,
            v_now,DATE_ADD(v_now,INTERVAL 5 MINUTE),'PENDING');
@@ -345,6 +350,8 @@ BEGIN
   DECLARE v_missing BOOLEAN DEFAULT FALSE;
   DECLARE v_change BINARY(16);
   DECLARE v_actor BINARY(16);
+  DECLARE v_link BINARY(16);
+  DECLARE v_current_link BINARY(16);
   DECLARE v_old BINARY(32);
   DECLARE v_new BINARY(32);
   DECLARE v_oldtoken BINARY(32);
@@ -386,12 +393,12 @@ BEGIN
 
   START TRANSACTION;
   SET v_now=UTC_TIMESTAMP(6);
-  SELECT change_id,actor_id,previous_mailbox,next_mailbox,
+  SELECT change_id,actor_id,link_id,previous_mailbox,next_mailbox,
          old_token_digest,new_token_digest,mailbox_revision,
          account_revision,credential_revision,membership_revision,
          tenant_revision,host_revision,subject_revision,
          expires_utc,state,old_confirmed_utc,new_confirmed_utc
-    INTO v_change,v_actor,v_old,v_new,v_oldtoken,v_newtoken,v_mailrev,
+    INTO v_change,v_actor,v_link,v_old,v_new,v_oldtoken,v_newtoken,v_mailrev,
          v_accountrev,v_credrev,v_memberrev,v_tenantrev,v_hostrev,v_subrev,
          v_exp,v_state,v_old_utc,v_new_utc
     FROM c05_07_changes
@@ -407,16 +414,17 @@ BEGIN
 
     IF NOT v_missing AND v_verified=1 AND v_mailbox=v_old AND
        v_current_mailrev=v_mailrev THEN
-      SELECT account_revision,credential_revision,membership_revision,
+      SELECT link_id,account_revision,credential_revision,membership_revision,
              tenant_revision,host_revision,subject_revision,account_active,
              credential_active,membership_active,host_active,tenant_active,
              member_expires_utc
-        INTO v_a,v_c,v_m,v_t,v_h,v_s,v_account,
+        INTO v_current_link,v_a,v_c,v_m,v_t,v_h,v_s,v_account,
              v_credential,v_member,v_host,v_tenant,v_until
         FROM c05_05_subjects
        WHERE tenant_id=p_tenant AND actor_id=v_actor FOR UPDATE;
 
-      IF NOT v_missing AND v_a=v_accountrev AND v_c=v_credrev AND
+      IF NOT v_missing AND v_link=v_current_link AND
+         v_a=v_accountrev AND v_c=v_credrev AND
          v_m=v_memberrev AND v_t=v_tenantrev AND v_h=v_hostrev AND
          v_s=v_subrev AND v_account=1 AND v_credential=1 AND
          v_member=1 AND v_host=1 AND v_tenant=1 AND v_until>v_now THEN
@@ -447,8 +455,7 @@ BEGIN
           IF v_result='RECORDED' AND v_old_utc IS NOT NULL AND
              v_new_utc IS NOT NULL THEN
             SELECT COUNT(*) INTO v_collision FROM c05_06_mailboxes
-             WHERE tenant_id=p_tenant AND mailbox_digest=v_new
-               AND actor_id<>v_actor;
+             WHERE mailbox_digest=v_new AND actor_id<>v_actor;
             IF v_collision=0 THEN
               UPDATE c05_06_mailboxes SET mailbox_digest=v_new
                WHERE tenant_id=p_tenant AND actor_id=v_actor
