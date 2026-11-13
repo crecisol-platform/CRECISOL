@@ -72,7 +72,7 @@ MARKERS = {
     "var expires = BinaryPrimitives.ReadInt64BigEndian(input.Slice(85,8));",
     "if (tenant==Guid.Empty || actor==Guid.Empty || recipient==Guid.Empty ||",
     "session==Guid.Empty || revision<1 ||",
-    "expires<=issued || expires-issued is <30 or >300 ||",
+    "expires<=issued || expires-issued is <30 or >300)",
     "issued>nowSeconds || issued<nowSeconds-300 ||",
     "tenant,actor,recipient,session,revision,keyEpoch,",
     "private static void Id(MySqlCommand cmd,string name,Guid id) =>",
