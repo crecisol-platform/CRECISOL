@@ -4,7 +4,7 @@ using System.Text;
 namespace Crecisol.Domain.Tenancy;
 
 /// <summary>
-/// Migration target comes ONLY from a protected backend catalog. A tenant or
+/// DEDICATED migration target comes ONLY from a protected backend catalog. A tenant or
 /// slot GUID is never authorization; this model does not expose any DSN.
 /// </summary>
 public sealed record TrustedTenantMigrationPlan
@@ -41,9 +41,7 @@ public sealed record TrustedTenantMigrationPlan
     {
         ArgumentNullException.ThrowIfNull(placement);
         if (operationId == Guid.Empty || placement.Revision <= 0 ||
-            !Enum.IsDefined(placement.Mode) ||
-            placement.Mode == TenantPlacementMode.Shared && placement.DedicatedSlot is not null ||
-            placement.Mode == TenantPlacementMode.Dedicated && placement.DedicatedSlot is null ||
+            placement.Mode != TenantPlacementMode.Dedicated || placement.DedicatedSlot is null ||
             approvedUntilUtc == default || approvedUntilUtc.Offset != TimeSpan.Zero ||
             string.IsNullOrEmpty(migrationVersion) ||
             migrationVersion.Length is < 3 or > 48 ||
@@ -55,7 +53,7 @@ public sealed record TrustedTenantMigrationPlan
         var canonical = string.Join("|", "crecisol.c04-09.v1",
             operationId.ToString("N"), placement.TenantId.Value.ToString("N"),
             ((int)placement.Mode).ToString(System.Globalization.CultureInfo.InvariantCulture),
-            placement.DedicatedSlot?.Value.ToString("N") ?? "shared",
+            placement.DedicatedSlot.Value.ToString("N"),
             placement.Revision.ToString(System.Globalization.CultureInfo.InvariantCulture),
             migrationVersion, checksum, approvedUntilUtc.UtcTicks.ToString(
                 System.Globalization.CultureInfo.InvariantCulture));
@@ -79,7 +77,7 @@ public enum TenantMigrationReceiptStatus
 }
 
 /// <summary>
-/// Future durable gate receipt, NOT a database migration or authorization.
+/// Future DEDICATED durable gate receipt, NOT a database migration or authorization.
 /// Migration DDL may implicitly commit in MySQL: a receipt alone cannot prove
 /// physical rollback or successful restoration.
 /// </summary>
@@ -120,12 +118,12 @@ public sealed record TrustedTenantMigrationReceipt
         DateTimeOffset verifiedAtUtc)
     {
         ArgumentNullException.ThrowIfNull(tenantId);
-        if (operationId == Guid.Empty || !Enum.IsDefined(mode) ||
-            mode == TenantPlacementMode.Shared && slot is not null ||
-            mode == TenantPlacementMode.Dedicated && slot is null ||
+        if (operationId == Guid.Empty || mode != TenantPlacementMode.Dedicated || slot is null ||
             placementRevision <= 0 || string.IsNullOrWhiteSpace(version) ||
             checksum is null || checksum.Length != 64 ||
+            !checksum.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f') ||
             fingerprint is null || fingerprint.Length != 64 ||
+            !fingerprint.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f') ||
             !Enum.IsDefined(status) || verifiedAtUtc == default ||
             verifiedAtUtc.Offset != TimeSpan.Zero)
             throw new InvalidOperationException("Invalid migration ledger receipt.");
