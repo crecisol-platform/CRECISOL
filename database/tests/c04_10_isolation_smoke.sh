@@ -269,20 +269,65 @@ deny_runner "double ack B cannot execute twice" c0410_b "CALL ack_job('$B_JOB',1
 check "replayed B claim is busy, not execution" "BUSY" "$(runner_sql c0410_b "
  CALL claim_job('$B_JOB')")"
 
+# Isolate revocation and expiry negatives while branch/resource revisions
+# still match, so these tests cannot pass accidentally via a stale revision.
+root_sql "UPDATE test_account_binding SET enabled=0 WHERE sql_login='c0410_b'"
+deny_runner "current B identity revoked before cache read" c0410_b "
+ CALL read_private_cache('$B_KEY')"
+root_sql "UPDATE test_account_binding SET enabled=1 WHERE sql_login='c0410_b'"
+check "B regained own cache only after identity enabled" "BETA" "$(runner_sql c0410_b "
+ CALL read_private_cache('$B_KEY')")"
+root_sql "UPDATE decisions SET approved=0 WHERE operation_id='$B_MEDIA'"
+deny_runner "B media permission revoked while tenant active" c0410_b "
+ CALL read_private_media('$B_MEDIA')"
+root_sql "UPDATE decisions SET approved=1 WHERE operation_id='$B_MEDIA'"
+check "B media permission approval restored" "$B_MEDIA_KEY" "$(runner_sql c0410_b "
+ CALL read_private_media('$B_MEDIA')")"
+root_sql "UPDATE decisions SET expires_at_utc=DATE_SUB(UTC_TIMESTAMP(6), INTERVAL 1 SECOND)
+ WHERE operation_id='$B_EXPORT'"
+deny_runner "expired B export cannot be reused" c0410_b "
+ CALL read_private_export('$B_EXPORT')"
+root_sql "UPDATE decisions SET expires_at_utc=DATE_ADD(UTC_TIMESTAMP(6), INTERVAL 1 DAY)
+ WHERE operation_id='$B_EXPORT'"
+
 # Identity changes and resource/branch suspension revoke reads independently
 # of tenant lifecycle, and ownership remains checked at each read.
-root_sql "UPDATE resources SET owner_actor='$A_ACTOR'
+root_sql "UPDATE resources SET owner_actor='$A_ACTOR', revision=2
  WHERE tenant_id='$B' AND branch_id='$BB' AND resource_id='$RESOURCE'"
 deny_runner "resource ownership changed B cache invalid" c0410_b "
  CALL read_private_cache('$B_KEY')"
 deny_runner "resource ownership changed B media invalid" c0410_b "
  CALL read_private_media('$B_MEDIA')"
-root_sql "UPDATE resources SET owner_actor='$B_ACTOR'
+root_sql "UPDATE resources SET owner_actor='$B_ACTOR', revision=3
  WHERE tenant_id='$B' AND branch_id='$BB' AND resource_id='$RESOURCE'"
-root_sql "UPDATE branches SET state='suspended' WHERE tenant_id='$B' AND branch_id='$BB'"
+deny_runner "restored resource owner cannot replay old revision cache" c0410_b "
+ CALL read_private_cache('$B_KEY')"
+deny_runner "restored resource owner cannot replay old revision media" c0410_b "
+ CALL read_private_media('$B_MEDIA')"
+# Independently test a job already claimed against a change to the branch
+# revision BEFORE acknowledgement. Returning branch to active never revives it.
+root_sql "INSERT INTO decisions
+ (operation_id,kind,tenant_id,branch_id,resource_id,actor_id,tenant_epoch,
+  branch_revision,resource_revision,approved,expires_at_utc)
+ VALUES('$B_SECOND_JOB','JOB','$B','$BB','$RESOURCE','$B_ACTOR',1,1,3,1,
+ DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 1 DAY));
+INSERT INTO job_records
+ (operation_id,tenant_id,branch_id,resource_id,actor_id,tenant_epoch,
+  branch_revision,resource_revision)
+ VALUES('$B_SECOND_JOB','$B','$BB','$RESOURCE','$B_ACTOR',1,1,3);"
+check "new B job with fresh resource revision can claim" "CLAIMED:1" "$(runner_sql c0410_b "
+ CALL claim_job('$B_SECOND_JOB')")"
+root_sql "UPDATE branches SET state='suspended',revision=2
+ WHERE tenant_id='$B' AND branch_id='$BB'"
+deny_runner "suspended B branch blocks already leased job ack" c0410_b "
+ CALL ack_job('$B_SECOND_JOB',1)"
 deny_runner "suspended B branch cannot read cache" c0410_b "CALL read_private_cache('$B_KEY')"
 deny_runner "suspended B branch cannot read export" c0410_b "CALL read_private_export('$B_EXPORT')"
 root_sql "UPDATE branches SET state='active' WHERE tenant_id='$B' AND branch_id='$BB'"
+deny_runner "B reactivated branch cannot ack old lease revision" c0410_b "
+ CALL ack_job('$B_SECOND_JOB',1)"
+deny_runner "B reactivated branch cannot read stale export" c0410_b "
+ CALL read_private_export('$B_EXPORT')"
 root_sql "UPDATE test_account_binding SET enabled=0 WHERE sql_login='c0410_b'"
 deny_runner "revoked DB runner cannot read B cache" c0410_b "CALL read_private_cache('$B_KEY')"
 deny_runner "revoked DB runner cannot claim B job" c0410_b "CALL claim_job('$B_JOB')"
