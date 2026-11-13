@@ -55,7 +55,51 @@ CREATE TABLE c05_06_challenges (
     CHECK (expires_utc > issued_utc)
 ) ENGINE=InnoDB;
 
-DELIMITER $$
+DELIMITER $
+
+-- Security revisions MUST advance on protected state changes even when a
+-- fixture operator mistakenly supplies the previous revision. Off+on is not
+-- equivalent to uninterrupted verified ownership.
+CREATE TRIGGER c05_06_mailbox_revision_bu BEFORE UPDATE ON c05_06_mailboxes
+FOR EACH ROW
+BEGIN
+  IF NEW.verified<>OLD.verified OR NEW.mailbox_digest<>OLD.mailbox_digest THEN
+    IF NEW.mailbox_revision<=OLD.mailbox_revision THEN
+      SET NEW.mailbox_revision=OLD.mailbox_revision+1;
+    END IF;
+  END IF;
+END$
+
+CREATE TRIGGER c05_06_subject_revision_bu BEFORE UPDATE ON c05_05_subjects
+FOR EACH ROW
+BEGIN
+  IF NEW.account_active<>OLD.account_active OR
+     NEW.credential_active<>OLD.credential_active OR
+     NEW.membership_active<>OLD.membership_active OR
+     NEW.host_active<>OLD.host_active OR
+     NEW.tenant_active<>OLD.tenant_active OR
+     NEW.member_expires_utc<>OLD.member_expires_utc OR
+     NEW.account_revision<>OLD.account_revision OR
+     NEW.credential_revision<>OLD.credential_revision OR
+     NEW.membership_revision<>OLD.membership_revision OR
+     NEW.host_revision<>OLD.host_revision OR
+     NEW.tenant_revision<>OLD.tenant_revision THEN
+    IF NEW.subject_revision<=OLD.subject_revision THEN
+      SET NEW.subject_revision=OLD.subject_revision+1;
+    END IF;
+  END IF;
+END$
+
+CREATE TRIGGER c05_06_credential_revision_bu BEFORE UPDATE ON c05_06_credentials
+FOR EACH ROW
+BEGIN
+  IF NEW.credential_active<>OLD.credential_active OR
+     NEW.realm<>OLD.realm OR NEW.verifier_phc<>OLD.verifier_phc THEN
+    IF NEW.credential_revision<=OLD.credential_revision THEN
+      SET NEW.credential_revision=OLD.credential_revision+1;
+    END IF;
+  END IF;
+END$
 
 -- Host/tenant is resolved by the backend; mailbox is a separately keyed HMAC
 -- of the canonical registered email. No caller-supplied actor/membership or
