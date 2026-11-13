@@ -56,6 +56,7 @@ root_sql "CREATE USER 'c05_02_outbox_ingest'@'%' IDENTIFIED BY '$INGEST_PASSWORD
  GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_mailbox_proof_verify TO 'c05_02_outbox_worker'@'%';
  GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_outbox_issue TO 'c05_02_outbox_worker'@'%';
  GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_outbox_claim TO 'c05_02_outbox_worker'@'%';
+ GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_outbox_can_dispatch TO 'c05_02_outbox_worker'@'%';
  GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_outbox_mark_sent TO 'c05_02_outbox_worker'@'%';
  GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_outbox_mark_failed TO 'c05_02_outbox_worker'@'%';
  GRANT SELECT ON \`$DB\`.* TO 'c05_02_outbox_setup'@'%';
