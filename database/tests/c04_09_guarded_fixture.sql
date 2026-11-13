@@ -67,7 +67,7 @@ CREATE TABLE c04_09_control.ledger (
 DELIMITER $
 -- Valid-target ownership attacks must fail even when the new tenant exists
 -- and no PK/unique collision would prevent the reparenting.
-CREATE TRIGGER c0409_shared_owner_immutable
+CREATE TRIGGER c04_09_shared.c0409_shared_owner_immutable
 BEFORE UPDATE ON c04_09_shared.resources FOR EACH ROW
 BEGIN
  IF NOT (OLD.tenant_id <=> NEW.tenant_id) OR
@@ -75,7 +75,7 @@ BEGIN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Shared resource ownership immutable';
  END IF;
 END$
-CREATE TRIGGER c0409_target_binding_immutable
+CREATE TRIGGER c04_09_control.c0409_target_binding_immutable
 BEFORE UPDATE ON c04_09_control.targets FOR EACH ROW
 BEGIN
  IF NOT (OLD.tenant_id <=> NEW.tenant_id) OR
@@ -85,7 +85,7 @@ BEGIN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration target ownership immutable';
  END IF;
 END$$
-CREATE TRIGGER c0409_ledger_identity_immutable
+CREATE TRIGGER c04_09_control.c0409_ledger_identity_immutable
 BEFORE UPDATE ON c04_09_control.ledger FOR EACH ROW
 BEGIN
  IF NOT (OLD.target_id <=> NEW.target_id) OR
@@ -101,7 +101,7 @@ BEGIN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration ledger identity immutable';
  END IF;
 END$$
-CREATE TRIGGER c0409_ledger_delete_immutable
+CREATE TRIGGER c04_09_control.c0409_ledger_delete_immutable
 BEFORE DELETE ON c04_09_control.ledger FOR EACH ROW
 BEGIN
  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration ledger cannot be erased';
