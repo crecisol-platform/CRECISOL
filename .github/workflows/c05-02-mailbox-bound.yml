@@ -3,6 +3,7 @@ on:
   pull_request:
     branches: [dev]
     paths:
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMailboxBoundRecipientClaimLedger.cs'
       - 'backend/tests/Crecisol.MailboxBound.MySqlTests/**'
       - 'database/tests/fixtures/c05_02_mailbox_bound_claim_fixture.sql'
       - 'database/tests/c05_02_mailbox_bound_mysql_smoke.sh'
@@ -12,6 +13,7 @@ on:
   push:
     branches: [dev]
     paths:
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMailboxBoundRecipientClaimLedger.cs'
       - 'backend/tests/Crecisol.MailboxBound.MySqlTests/**'
       - 'database/tests/fixtures/c05_02_mailbox_bound_claim_fixture.sql'
       - 'database/tests/c05_02_mailbox_bound_mysql_smoke.sh'
@@ -50,7 +52,7 @@ jobs:
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
         with:
           dotnet-version: '10.0.x'
-      - name: Compile API, scope use case, MySQL adapter and predecessor regression
+      - name: Compile API and integrated HMAC plus verified mailbox MySQL adapter and regressions
         run: |
           set -euo pipefail
           dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
