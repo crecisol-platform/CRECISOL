@@ -1,0 +1,113 @@
+name: CRECISOL C04-09 Shared Dedicated SIX audits .NET10 MySQL8.4
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/TrustedTenantMigrationPlan.cs'
+      - 'backend/src/Crecisol.Domain/Tenancy/TrustedSharedSchemaMigrationPlan.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/PlanTenantMigration.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/PlanSharedSchemaMigration.cs'
+      - 'backend/tests/Crecisol.TenantMigrations.ContractsTests/**'
+      - 'database/tests/c04_09_*'
+      - 'qa/c04_09_migration_audits.py'
+      - 'qa/c04_09_extra_audits.py'
+      - 'docs/c04/C04_09_*'
+      - '.github/workflows/c04-09-migrations.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/TrustedTenantMigrationPlan.cs'
+      - 'backend/src/Crecisol.Domain/Tenancy/TrustedSharedSchemaMigrationPlan.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/PlanTenantMigration.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/PlanSharedSchemaMigration.cs'
+      - 'backend/tests/Crecisol.TenantMigrations.ContractsTests/**'
+      - 'database/tests/c04_09_*'
+      - 'qa/c04_09_migration_audits.py'
+      - 'qa/c04_09_extra_audits.py'
+      - 'docs/c04/C04_09_*'
+      - '.github/workflows/c04-09-migrations.yml'
+permissions:
+  contents: read
+jobs:
+  c04-09:
+    name: C04-09 A-B-C D-E-F dotnet10 plus two isolated MySQL8.4 suites
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    steps:
+      - name: Checkout read only no retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: A normative source and format gate
+        run: |
+          set -euo pipefail
+          python3 -m py_compile qa/c04_09_migration_audits.py qa/c04_09_extra_audits.py
+          bash -n database/tests/c04_09_migration_smoke.sh
+          bash -n database/tests/c04_09_guarded_smoke.sh
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c04_09_migration_audits.py A
+          mkdir -p .c04-09-ci-proof
+          printf 'A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-09-ci-proof/A
+      - name: B core migration security guard audit
+        run: |
+          set -euo pipefail
+          python3 qa/c04_09_migration_audits.py B
+          printf 'B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-09-ci-proof/B
+      - name: D independent multitenant cross-target audit
+        run: |
+          set -euo pipefail
+          python3 qa/c04_09_extra_audits.py D
+          printf 'D sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-09-ci-proof/D
+      - name: Install .NET 10 pinned SDK action
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile real API and contract suite Release warnaserror
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.TenantMigrations.ContractsTests/Crecisol.TenantMigrations.ContractsTests.csproj -c Release --nologo -warnaserror
+      - name: Run C04-09 plus prior tenant .NET regressions
+        run: |
+          set -euo pipefail
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.TenantMigrations.ContractsTests/Crecisol.TenantMigrations.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantLifecycle.ContractsTests/Crecisol.TenantLifecycle.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantProvisioning.ContractsTests/Crecisol.TenantProvisioning.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.BranchResource.ContractsTests/Crecisol.BranchResource.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantIdentity.ContractsTests/Crecisol.TenantIdentity.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.VerifiedHosts.ContractsTests/Crecisol.VerifiedHosts.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantStorage.ContractsTests/Crecisol.TenantStorage.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.TenantCatalog.ContractsTests/Crecisol.TenantCatalog.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.SharedTenancy.ContractsTests/Crecisol.SharedTenancy.ContractsTests.csproj
+          dotnet run -c Release --project backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj
+          printf 'dotnet sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-09-ci-proof/dotnet
+      - name: MySQL8.4 baseline schema compatibility and compensation
+        run: |
+          set -euo pipefail
+          bash database/tests/c04_09_migration_smoke.sh
+          printf 'mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-09-ci-proof/mysql
+      - name: MySQL8.4 hardened scope concurrency and true dump restoration
+        run: |
+          set -euo pipefail
+          bash database/tests/c04_09_guarded_smoke.sh
+          printf 'guarded sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-09-ci-proof/guarded
+      - name: E independent concurrency crash and recovery audit
+        run: |
+          set -euo pipefail
+          python3 qa/c04_09_extra_audits.py E
+          printf 'E sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-09-ci-proof/E
+      - name: C clean layering scope and schema test source audit
+        run: |
+          set -euo pipefail
+          python3 qa/c04_09_migration_audits.py C
+          printf 'C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-09-ci-proof/C
+      - name: F independent regression and same SHA combined gate
+        run: |
+          set -euo pipefail
+          python3 qa/c04_09_extra_audits.py F
+          for stage in A B C D E dotnet mysql guarded; do
+            test -s ".c04-09-ci-proof/$stage"
+            grep -Fq "sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c04-09-ci-proof/$stage"
+          done
+          echo "F: all six A/B/C/D/E/F + .NET10 + both real MySQL8.4 suites same SHA/run completed; still disposable and no production executor"
