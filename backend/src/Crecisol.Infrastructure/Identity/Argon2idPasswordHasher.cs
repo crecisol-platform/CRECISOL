@@ -157,15 +157,19 @@ public sealed class Argon2idPasswordHasher
 
         try
         {
-            password = StrictUtf8.GetBytes(candidate);
-            if (password.Length <= PasswordHashingPolicy.MaxUtf8Bytes)
-                return true;
-            CryptographicOperations.ZeroMemory(password);
-            password = Array.Empty<byte>();
-            return false;
+            var byteCount = StrictUtf8.GetByteCount(candidate);
+            if (byteCount > PasswordHashingPolicy.MaxUtf8Bytes)
+                return false;
+            password = new byte[byteCount];
+            _ = StrictUtf8.GetBytes(candidate, password);
+            return true;
         }
         catch (EncoderFallbackException)
         {
+            // If the input is malformed UTF-16, never retain a partial
+            // encoding of the private candidate in a managed buffer.
+            CryptographicOperations.ZeroMemory(password);
+            password = Array.Empty<byte>();
             return false;
         }
     }
