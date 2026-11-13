@@ -42,7 +42,7 @@ public sealed record TrustedTenantArtifactScope
         long tenantAccessEpoch, long sessionRevision, long membershipRevision,
         long branchRevision, long resourceRevision, long placementRevision,
         DateTimeOffset verifiedAtUtc, DateTimeOffset expiresAtUtc,
-        string isolationFingerprint, string intentFingerprint)
+        string serverVariant, string isolationFingerprint, string intentFingerprint)
     {
         OperationId = operationId;
         Kind = kind;
@@ -62,6 +62,7 @@ public sealed record TrustedTenantArtifactScope
         PlacementRevision = placementRevision;
         VerifiedAtUtc = verifiedAtUtc;
         ExpiresAtUtc = expiresAtUtc;
+        ServerVariant = serverVariant;
         IsolationFingerprint = isolationFingerprint;
         IntentFingerprint = intentFingerprint;
     }
@@ -84,6 +85,12 @@ public sealed record TrustedTenantArtifactScope
     public long PlacementRevision { get; }
     public DateTimeOffset VerifiedAtUtc { get; }
     public DateTimeOffset ExpiresAtUtc { get; }
+    /// <summary>
+    /// Canonical variant/format/filter policy built by backend from approved
+    /// server-side inputs; no URL, raw query, path or client-provided key.
+    /// Every different response representation must use a different variant.
+    /// </summary>
+    public string ServerVariant { get; }
     // SHA-256 is for binding/invalidation, NOT a secret or access capability.
     public string IsolationFingerprint { get; }
     public string IntentFingerprint { get; }
@@ -103,7 +110,8 @@ public sealed record TrustedTenantArtifactScope
         TrustedResourceState resourceState,
         long tenantAccessEpoch, long sessionRevision, long membershipRevision,
         long branchRevision, long resourceRevision, long placementRevision,
-        DateTimeOffset verifiedAtUtc, DateTimeOffset expiresAtUtc)
+        DateTimeOffset verifiedAtUtc, DateTimeOffset expiresAtUtc,
+        string serverVariant)
     {
         ArgumentNullException.ThrowIfNull(tenantId);
         ArgumentNullException.ThrowIfNull(branchId);
@@ -130,7 +138,13 @@ public sealed record TrustedTenantArtifactScope
             verifiedAtUtc == default || verifiedAtUtc.Offset != TimeSpan.Zero ||
             expiresAtUtc == default || expiresAtUtc.Offset != TimeSpan.Zero ||
             expiresAtUtc <= verifiedAtUtc ||
-            expiresAtUtc - verifiedAtUtc > TimeSpan.FromMinutes(15))
+            expiresAtUtc - verifiedAtUtc > TimeSpan.FromMinutes(15) ||
+            string.IsNullOrEmpty(serverVariant) ||
+            serverVariant.Length is < 3 or > 48 ||
+            serverVariant[0] is < 'a' or > 'z' ||
+            serverVariant.Contains("..", StringComparison.Ordinal) ||
+            !serverVariant.All(c => c is >= 'a' and <= 'z' or
+                >= '0' and <= '9' or '.' or '_' or '-'))
             throw new UnauthorizedAccessException("Invalid or inactive private artifact scope.");
 
         var expectedAction = kind switch
@@ -150,7 +164,7 @@ public sealed record TrustedTenantArtifactScope
             N((int)environment), N((int)kind),
             tenantId.Value.ToString("N"), branchId.Value.ToString("N"),
             resourceId.Value.ToString("N"), actorId.Value.ToString("N"),
-            requiredAction.Value, N((int)placementMode),
+            requiredAction.Value, serverVariant, N((int)placementMode),
             dedicatedSlot?.Value.ToString("N") ?? "shared",
             N(tenantAccessEpoch), N(sessionRevision), N(membershipRevision),
             N(branchRevision), N(resourceRevision), N(placementRevision));
@@ -168,7 +182,8 @@ public sealed record TrustedTenantArtifactScope
             actorId, requiredAction, placementMode, dedicatedSlot,
             tenantAccessEpoch, sessionRevision, membershipRevision,
             branchRevision, resourceRevision, placementRevision,
-            verifiedAtUtc, expiresAtUtc, isolationFingerprint, intentFingerprint);
+            verifiedAtUtc, expiresAtUtc, serverVariant,
+            isolationFingerprint, intentFingerprint);
     }
 
     public bool IsFreshAtUtc(DateTimeOffset nowUtc) =>
