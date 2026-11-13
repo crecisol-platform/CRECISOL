@@ -67,7 +67,12 @@ while (true)
                     candidate.Length is < 13 or > 254 ||
                     candidate.Any(ch => ch is < '!' or > '~') ||
                     !candidate.EndsWith("@example.test", StringComparison.Ordinal) ||
-                    candidate.Contains(' ') || candidate.Count(ch => ch == '@') != 1)
+                    candidate.Contains(' ') || candidate.Count(ch => ch == '@') != 1 ||
+                    !Regex.IsMatch(candidate,
+                        @"\A[A-Za-z0-9][A-Za-z0-9._+%-]{0,63}@example\.test\z",
+                        RegexOptions.CultureInvariant) ||
+                    candidate.Contains("..", StringComparison.Ordinal) ||
+                    candidate.Contains(".@", StringComparison.Ordinal))
                 {
                     await writer.WriteLineAsync("550 invalid synthetic recipient");
                     continue;
