@@ -21,7 +21,7 @@ DOMAIN = ROOT / "backend/src/Crecisol.Domain/Identity/IdentityAccountModels.cs"
 APP = ROOT / "backend/src/Crecisol.Application/Identity/ResolveCurrentAccountTenantLink.cs"
 TEST = ROOT / "backend/tests/Crecisol.AccountIdentity.ContractsTests/Program.cs"
 PROJ = ROOT / "backend/tests/Crecisol.AccountIdentity.ContractsTests/Crecisol.AccountIdentity.ContractsTests.csproj"
-SPEC = ROOT / "docs/c05/C05_01_IMPLEMENTACION_CONTRATOS.md"
+SPEC = ROOT / "docs/c05/IMPLEMENTACION_C05_01_CONTRATOS.md"
 WORKFLOW = ROOT / ".github/workflows/c05-01-account-model.yml"
 API = ROOT / "backend/src/Crecisol.Api/Program.cs"
 PROOF = ROOT / ".c05-01-account-proof"
@@ -123,8 +123,8 @@ MARKERS = {
 ALLOWED = {
     ".github/workflows/c05-01-account-model.yml",
     "qa/c05_01_identity_audits.py",
-    "docs/c05/C05_01_IMPLEMENTACION_CONTRATOS.md",
-    "docs/c05/C05_01_ACTA_CONTRATOS.md",
+    "docs/c05/IMPLEMENTACION_C05_01_CONTRATOS.md",
+    "docs/c05/ACTA_C05_01_CONTRATOS.md",
     "backend/src/Crecisol.Domain/Identity/IdentityAccountModels.cs",
     "backend/src/Crecisol.Application/Identity/ResolveCurrentAccountTenantLink.cs",
     "backend/tests/Crecisol.AccountIdentity.ContractsTests/Crecisol.AccountIdentity.ContractsTests.csproj",
