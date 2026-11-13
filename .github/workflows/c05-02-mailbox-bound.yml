@@ -8,6 +8,7 @@ on:
       - 'database/tests/fixtures/c05_02_mailbox_bound_claim_fixture.sql'
       - 'database/tests/c05_02_mailbox_bound_mysql_smoke.sh'
       - 'docs/c05/PRUEBA_UNION_BUZON_IDENTIDAD_INVITACION_C05_02.md'
+      - 'docs/c05/INTEGRACION_HMAC_BUZON_BACKEND_C05_02.md'
       - 'qa/c05_02_mailbox_bound_audits.py'
       - '.github/workflows/c05-02-mailbox-bound.yml'
   push:
@@ -18,6 +19,7 @@ on:
       - 'database/tests/fixtures/c05_02_mailbox_bound_claim_fixture.sql'
       - 'database/tests/c05_02_mailbox_bound_mysql_smoke.sh'
       - 'docs/c05/PRUEBA_UNION_BUZON_IDENTIDAD_INVITACION_C05_02.md'
+      - 'docs/c05/INTEGRACION_HMAC_BUZON_BACKEND_C05_02.md'
       - 'qa/c05_02_mailbox_bound_audits.py'
       - '.github/workflows/c05-02-mailbox-bound.yml'
 permissions:
