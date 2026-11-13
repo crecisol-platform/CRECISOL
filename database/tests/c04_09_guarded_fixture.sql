@@ -67,7 +67,7 @@ CREATE TABLE c04_09_control.ledger (
    REFERENCES c04_09_control.targets(target_id) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB;
 
-DELIMITER $
+DELIMITER //
 -- Valid-target ownership attacks must fail even when the new tenant exists
 -- and no PK/unique collision would prevent the reparenting.
 CREATE TRIGGER c04_09_shared.c0409_shared_owner_immutable
@@ -77,7 +77,7 @@ BEGIN
     NOT (OLD.resource_id <=> NEW.resource_id) THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Shared resource ownership immutable';
  END IF;
-END$
+END//
 CREATE TRIGGER c04_09_control.c0409_target_binding_immutable
 BEFORE UPDATE ON c04_09_control.targets FOR EACH ROW
 BEGIN
@@ -87,7 +87,7 @@ BEGIN
     NOT (OLD.schema_name <=> NEW.schema_name) THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration target ownership immutable';
  END IF;
-END$$
+END//
 CREATE TRIGGER c04_09_control.c0409_ledger_identity_immutable
 BEFORE UPDATE ON c04_09_control.ledger FOR EACH ROW
 BEGIN
@@ -104,12 +104,12 @@ BEGIN
     ) THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration ledger identity immutable';
  END IF;
-END$$
+END//
 CREATE TRIGGER c04_09_control.c0409_ledger_delete_immutable
 BEFORE DELETE ON c04_09_control.ledger FOR EACH ROW
 BEGIN
  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration ledger cannot be erased';
-END$$
+END//
 
 -- The caller supplies ONLY an operation ID. Scope, mode, tenant and schema
 -- are loaded from protected server-side approval and catalog tables.
@@ -237,7 +237,7 @@ BEGIN
   COMMIT;
   SELECT CONCAT('RESERVED:',v_fence) AS outcome;
  END IF;
-END$$
+END//
 
 -- Post-DDL finalization checks the exact protected target and fencing token;
 -- no automatic DDL rollback is ever asserted.
@@ -313,7 +313,7 @@ BEGIN
  END IF;
  COMMIT;
  SELECT 'VERIFIED' AS outcome;
-END$$
+END//
 
 -- Operator-only recovery functions. The unprivileged CI caller is NOT
 -- granted these capabilities. Failed DDL must first be restored explicitly.
@@ -350,7 +350,7 @@ BEGIN
  UPDATE c04_09_control.ledger SET state='failed' WHERE operation_id=p_op;
  COMMIT;
  SELECT 'FAILED_LOCKED' AS outcome;
-END$$
+END//
 
 CREATE PROCEDURE c04_09_control.verify_restored_and_release(
  IN p_op CHAR(32), IN p_fence BIGINT UNSIGNED)
@@ -410,7 +410,7 @@ BEGIN
  END IF;
  COMMIT;
  SELECT 'RESTORED' AS outcome;
-END$$
+END//
 DELIMITER ;
 ,'c')),
  PRIMARY KEY (target_id,migration_version),
@@ -421,7 +421,7 @@ DELIMITER ;
    REFERENCES c04_09_control.targets(target_id) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB;
 
-DELIMITER $
+DELIMITER //
 -- Valid-target ownership attacks must fail even when the new tenant exists
 -- and no PK/unique collision would prevent the reparenting.
 CREATE TRIGGER c04_09_shared.c0409_shared_owner_immutable
@@ -431,7 +431,7 @@ BEGIN
     NOT (OLD.resource_id <=> NEW.resource_id) THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Shared resource ownership immutable';
  END IF;
-END$
+END//
 CREATE TRIGGER c04_09_control.c0409_target_binding_immutable
 BEFORE UPDATE ON c04_09_control.targets FOR EACH ROW
 BEGIN
@@ -441,7 +441,7 @@ BEGIN
     NOT (OLD.schema_name <=> NEW.schema_name) THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration target ownership immutable';
  END IF;
-END$$
+END//
 CREATE TRIGGER c04_09_control.c0409_ledger_identity_immutable
 BEFORE UPDATE ON c04_09_control.ledger FOR EACH ROW
 BEGIN
@@ -457,12 +457,12 @@ BEGIN
     ) THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration ledger identity immutable';
  END IF;
-END$$
+END//
 CREATE TRIGGER c04_09_control.c0409_ledger_delete_immutable
 BEFORE DELETE ON c04_09_control.ledger FOR EACH ROW
 BEGIN
  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Migration ledger cannot be erased';
-END$$
+END//
 
 -- The caller supplies ONLY an operation ID. Scope, mode, tenant and schema
 -- are loaded from protected server-side approval and catalog tables.
@@ -579,7 +579,7 @@ BEGIN
   COMMIT;
   SELECT CONCAT('RESERVED:',v_fence) AS outcome;
  END IF;
-END$$
+END//
 
 -- Post-DDL finalization checks the exact protected target and fencing token;
 -- no automatic DDL rollback is ever asserted.
@@ -655,7 +655,7 @@ BEGIN
  END IF;
  COMMIT;
  SELECT 'VERIFIED' AS outcome;
-END$$
+END//
 
 -- Operator-only recovery functions. The unprivileged CI caller is NOT
 -- granted these capabilities. Failed DDL must first be restored explicitly.
@@ -692,7 +692,7 @@ BEGIN
  UPDATE c04_09_control.ledger SET state='failed' WHERE operation_id=p_op;
  COMMIT;
  SELECT 'FAILED_LOCKED' AS outcome;
-END$$
+END//
 
 CREATE PROCEDURE c04_09_control.verify_restored_and_release(
  IN p_op CHAR(32), IN p_fence BIGINT UNSIGNED)
@@ -737,5 +737,5 @@ BEGIN
  END IF;
  COMMIT;
  SELECT 'RESTORED' AS outcome;
-END$$
+END//
 DELIMITER ;
