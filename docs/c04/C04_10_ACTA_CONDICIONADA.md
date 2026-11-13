@@ -30,6 +30,22 @@ La ejecución de SHA anterior `8a1e8fea89ca324a131cf6b3710e885f3745e74f`, run 43
 
 **Al redactar esta actualización, la regresión integral C03-10 sobre el HEAD final continúa `in_progress`**; no se presume PASS. Permanecen pendientes completar todos los workflows PREMERGE aplicables, la fusión técnica a `dev`, CI POSTMERGE técnica, las puertas documentales y el comentario institucional definitivo. Los tres workflows condicionales `skipped` se excluyen de los conteos.
 
+## 2.2 Integración técnica autorizada y POSTMERGE en curso
+
+El SHA PREMERGE técnico `8b8763c85ff3bef6a47393e488bd6dfd993c50e4` superó **5/5 workflows aplicables completed/success**, en concreto: [A/B/C y .NET/MySQL C04-10 — 43345769770](https://github.com/crecisol-platform/CRECISOL/actions/runs/43345769770), [C03-10 integral — 43345769841](https://github.com/crecisol-platform/CRECISOL/actions/runs/43345769841), [C04-02 MySQL — 43345769864](https://github.com/crecisol-platform/CRECISOL/actions/runs/43345769864), [C04-01 — 43345769731](https://github.com/crecisol-platform/CRECISOL/actions/runs/43345769731) y [Foundation — 43345769732](https://github.com/crecisol-platform/CRECISOL/actions/runs/43345769732); 3 condicionales `skipped` no contabilizados.
+
+GitHub confirmó que el PR #104 se fusionó por `squash` **únicamente a `dev`**, SHA **`8e63c8974d57dff083a61df2c07e5c9965bb1eae`**, sin modificar `main`. Siete validaciones técnicas POSTMERGE se iniciaron sobre ese SHA, con los identificadores:
+
+- C04-10 [43346310053](https://github.com/crecisol-platform/CRECISOL/actions/runs/43346310053).
+- C03-10 integral [43346310075](https://github.com/crecisol-platform/CRECISOL/actions/runs/43346310075).
+- C04-02 MySQL [43346309967](https://github.com/crecisol-platform/CRECISOL/actions/runs/43346309967).
+- C04-01 catálogo [43346310079](https://github.com/crecisol-platform/CRECISOL/actions/runs/43346310079).
+- C03-02 Domain [43346309987](https://github.com/crecisol-platform/CRECISOL/actions/runs/43346309987).
+- C03-03 Application [43346310049](https://github.com/crecisol-platform/CRECISOL/actions/runs/43346310049).
+- Foundation [43346310123](https://github.com/crecisol-platform/CRECISOL/actions/runs/43346310123).
+
+**Estado de estos runs al redactar: EN EJECUCIÓN, no se presumen 7/7 PASS.** La certificación sigue NO EFICAZ mientras falten sus resultados, la puerta documental PREMERGE/POSTMERGE y el comentario institucional.
+
 ## 3. Condiciones de fusión y certificado
 
 1. Confirmar SHA técnico final del PR #104 y que su diff contiene únicamente los contratos, las pruebas y los gates C04-10 sin conexión a producción.
