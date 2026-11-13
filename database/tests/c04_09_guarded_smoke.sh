@@ -242,6 +242,12 @@ check "shared metadata confirms target column" "1" "$(root_sql "
  AND table_name='resources' AND column_name='migration_tag'")"
 check "global shared exact operation replay" "REPLAY" "$(runner_sql "
  CALL c04_09_control.reserve('$O_SHARED')")"
+deny_root "verified ledger may not rewrite checksum" \
+ "UPDATE c04_09_control.ledger SET checksum='$HASH_B' WHERE operation_id='$O_SHARED'"
+deny_root "verified ledger may not be downgraded to applying" \
+ "UPDATE c04_09_control.ledger SET state='applying' WHERE operation_id='$O_SHARED'"
+deny_root "verified ledger may not be deleted" \
+ "DELETE FROM c04_09_control.ledger WHERE operation_id='$O_SHARED'"
 # Synthetic metadata tampering must invalidate an old VERIFIED receipt;
 # do not authorize replay merely because the ledger still says verified.
 root_sql "ALTER TABLE c04_09_shared.resources DROP COLUMN migration_tag"
@@ -337,8 +343,14 @@ root_sql "START TRANSACTION;
 check "DDL persists after ROLLBACK (implicit commit)" "1" "$(root_sql "
  SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='c04_09_ded_b'
  AND table_name='resources' AND column_name='migration_tag'")"
+root_sql "UPDATE c04_09_control.approvals SET approved=0 WHERE operation_id='$winning_op'"
+deny "approval revoked midflight cannot finalize committed DDL" \
+ "CALL c04_09_control.finalize('$winning_op',1)"
 check "mark interrupted migration failed" "FAILED_LOCKED" "$(root_sql "
  CALL c04_09_control.mark_failed('$winning_op',1)")"
+# A failed ledger must still deny replay even after approval is restored;
+# otherwise the negative would test only the revoked approval guard.
+root_sql "UPDATE c04_09_control.approvals SET approved=1 WHERE operation_id='$winning_op'"
 deny "failed migration can never replay as success" \
  "CALL c04_09_control.reserve('$winning_op')"
 if root_sql "CALL c04_09_control.verify_restored_and_release('$winning_op',1)" \
