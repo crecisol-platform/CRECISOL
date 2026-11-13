@@ -214,7 +214,6 @@ public static class TenantPrivateArtifactKey
         var prefix = "c10:v1:" + ScopeTag(kind) + ":";
         return key.Length == prefix.Length + 64 &&
             key.StartsWith(prefix, StringComparison.Ordinal) &&
-            key.AsSpan(prefix.Length).IndexOfAnyExceptInRange('0', 'f') == -1 &&
             key.AsSpan(prefix.Length).ToArray().All(c =>
                 c is >= '0' and <= '9' or >= 'a' and <= 'f');
     }
