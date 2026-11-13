@@ -32,8 +32,20 @@ public sealed class SessionTokenDigest
 /// </summary>
 public sealed class IssuedSessionToken
 {
-    internal IssuedSessionToken(string raw) => rawToken = raw;
+    private IssuedSessionToken(string raw) => rawToken = raw;
     private readonly string rawToken;
+
+    // A wrapper for transport only, NOT evidence of identity or permission.
+    // The protector validates and keys the token before storage or use.
+    public static IssuedSessionToken FromTrustedProtector(string raw)
+    {
+        if (string.IsNullOrEmpty(raw) || raw.Length != 47 ||
+            !raw.StartsWith("cs5_", StringComparison.Ordinal) ||
+            !raw.AsSpan(4).ToString().All(c => c is >= 'A' and <= 'Z'
+                or >= 'a' and <= 'z' or >= '0' and <= '9' or '-' or '_'))
+            throw new InvalidOperationException("Noncanonical session token envelope.");
+        return new IssuedSessionToken(raw);
+    }
 
     public string RevealForTrustedTransport() => rawToken;
 
