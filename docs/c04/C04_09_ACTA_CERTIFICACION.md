@@ -18,6 +18,12 @@ Fuente canónica: `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx`, huella SHA-256 `
 
 **Evidencia HISTÓRICA PARCIAL, NO FINAL:** en el PR técnico un SHA anterior `ba51775bcabbb88d505281bc2ff969dc62a7ccf4` tuvo una ejecución con seis auditorías A/B/C/D/E/F SUCCESS, 64 aserciones .NET10 y dos suites MySQL8.4: 15 positivas + 3 negativas en compatibilidad y 36 positivas + 26 negativas en pruebas endurecidas, entre ellas doce solicitantes (1 ganador, 11 rechazos) y restauración desechable con hash. **Esta evidencia NO permite certificar el HEAD posterior**, porque luego se agregaron correcciones de lock order, checks de drift, CAS de revisión global Shared y nuevas pruebas negativas. Las ejecuciones históricas con fallos de preparación permanecen inalteradas.
 
+## 2.1 Evidencia PREMERGE real del SHA técnico final
+
+**HEAD técnico verificado:** `572dd4c92de34674245d10005e2cfa84f1d750e0`; **run específico** [43340890924](https://github.com/crecisol-platform/CRECISOL/actions/runs/43340890924) `completed/success`, con auditorías A/B/C/D/E/F, compilación ASP.NET Core 10 Release `-warnaserror` y diez regresiones .NET. El log consigna **64 aserciones C04-09**, suite MySQL 8.4 de compatibilidad **15 positivas/3 negativas**, suite MySQL 8.4 de seguridad reforzada **38 positivas/33 negativas**. Doce decisiones concurrentes sobre Dedicated B: **1 RESERVED y 11 DENY**, ledger con fencing; Shared DDL global aislado de Dedicated; migración ajena A→B denegada incluso para tenants existentes; comprobación de checksum, CAS de revisión, aprobación revocada, borrado de metadatos detectado antes de replay, y restauración real `mysqldump` que falla al adulterar la carga. **Todo esto es fixture desechable, no autorización de producción.**
+
+En el SHA técnico mencionado, Foundation, C04-01, C04-02 y la CI específica C04-09 fueron consultadas en `SUCCESS`. La regresión integral C03-10 estaba todavía `in_progress` al redactar este registro y **NO se presume exitosa**. La lista de workflows `skipped` condicionales no constituye evidencias de PASS. Se exige cierre del gate integral antes de fusionar #101. Las ejecuciones fallidas en SHAs anteriores por SQL y sintaxis Python siguen conservadas históricamente y se corrigieron mediante commits nuevos, no alterando los resultados anteriores.
+
 ## 3. Seis auditorías finales independientes obligatorias
 
 | Auditoría | Requisito para dictamen final |
