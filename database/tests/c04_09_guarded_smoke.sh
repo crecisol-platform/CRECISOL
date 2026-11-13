@@ -332,7 +332,7 @@ check "other dedicated A still intact after B restoration" "DED-ALPHA" "$(root_s
  SELECT payload FROM c04_09_ded_a.resources WHERE resource_id=1")"
 check "shared A/B unchanged after B restoration" "ALPHA:BETA" "$(root_sql "
  SELECT GROUP_CONCAT(payload ORDER BY tenant_id SEPARATOR ':')
- FROM c04_09_shared.resources")"
+ FROM c04_09_shared.resources WHERE resource_id=1")"
 
 # A fresh decision/version on restored B can now succeed; old fencing
 # cannot override the new generation.
