@@ -15,8 +15,8 @@ REPO = "crecisol-platform/CRECISOL"
 FEATURE = "feature/c05-03-argon2id-password-policy-20261113"
 FILES = {
     "policy": "backend/src/Crecisol.Application/Identity/PasswordHashingPolicy.cs",
-    "hash": "backend/src/Crecisol.Infrastructure/Identity/Argon2idPasswordHasher.cs",
-    "infra": "backend/src/Crecisol.Infrastructure/Crecisol.Infrastructure.csproj",
+    "hash": "backend/src/Crecisol.CredentialSecurity/Argon2idPasswordHasher.cs",
+    "crypto": "backend/src/Crecisol.CredentialSecurity/Crecisol.CredentialSecurity.csproj",
     "test": "backend/tests/Crecisol.PasswordHash.ContractsTests/Program.cs",
     "testproj": "backend/tests/Crecisol.PasswordHash.ContractsTests/Crecisol.PasswordHash.ContractsTests.csproj",
     "document": "docs/c05/C05_03_ESPECIFICACION.md",
@@ -102,10 +102,14 @@ GUARDS = {
         "Hasher exposes no identity/session/tenant authorization API",
         "NO login, actual user, database",
     ),
-    "infra": (
+    "crypto": (
         '<TargetFramework>net10.0</TargetFramework>',
         '<TreatWarningsAsErrors>true</TreatWarningsAsErrors>',
         'PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1"',
+    ),
+    "testproj": (
+        "Crecisol.CredentialSecurity/Crecisol.CredentialSecurity.csproj",
+        '<TargetFramework>net10.0</TargetFramework>',
     ),
     "document": (
         "C05-03",
@@ -153,8 +157,14 @@ def invariants(data: dict[str, str]) -> None:
         for marker in guards:
             need(marker in data[kind], f"Missing fail-closed {kind} guard: {marker}")
 
-    need(data["infra"].count('PackageReference Include="Konscious.Security.Cryptography.Argon2"') == 1,
+    need(data["crypto"].count('PackageReference Include="Konscious.Security.Cryptography.Argon2"') == 1,
          "Argon2 NuGet version must be pinned exactly once")
+    legacy = (ROOT / "backend/src/Crecisol.Infrastructure/Crecisol.Infrastructure.csproj").read_text(encoding="utf-8")
+    need('PackageReference Include="MySqlConnector" Version="2.6.2"' in legacy and
+         'Konscious.Security.Cryptography.Argon2' not in legacy,
+         "C03 Infrastructure pinned dependency baseline must stay unchanged")
+    need('ProjectReference Include="../Crecisol.Application/Crecisol.Application.csproj"' in data["crypto"],
+         "Crypto adapter must depend only on Application and pinned Argon2id")
     need("Environment.GetEnvironmentVariable" not in data["hash"] and
          "IConfiguration" not in data["hash"] and
          "HttpContext" not in data["hash"] and
