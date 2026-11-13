@@ -42,6 +42,14 @@ No se reabren ni se editan actas históricas para convertir estados fallidos o `
 - **Trazabilidad de errores:** los fallos previos a la corrección no se borran ni reinterpretan. Cada remediación deberá comprobarse con nuevo commit y nueva ejecución.
 - **PR institucional posterior:** solo se abrirá cuando las cuatro puertas anteriores estén completas, con aceptación de alcance y estado nuevo de C04; precisará su propia CI PREMERGE/POSTMERGE y comentario permanente antes de habilitar C05. No declarar `4/37` antes de la ratificación eficaz.
 
+## 4.1 Evidencia PREMERGE técnica completa y POSTMERGE técnico iniciado
+
+El PR técnico [#109](https://github.com/crecisol-platform/CRECISOL/pull/109) cerró HEAD `8d5cff2c04da59e2f1494d7ab2f45700ca6c32ef` con **2/2 workflows aplicables completed/success**: [C04-12 integral A/B/C .NET10/Angular22/Chromium/MySQL8.4 — 43359338930](https://github.com/crecisol-platform/CRECISOL/actions/runs/43359338930) y [Foundation — 43359338915](https://github.com/crecisol-platform/CRECISOL/actions/runs/43359338915). El fallo histórico [43359223379](https://github.com/crecisol-platform/CRECISOL/actions/runs/43359223379) detectó una aserción de texto de estado (`22/22` frente al historial escrito `14/14`), NO una fuga; se corrigió en nuevo SHA sin reescribir el historial. El gate final verificó también Word/PDF SHA-256 exactos, plan C04 12/12, once suites de auditoría, veinte proyectos .NET10 Release, Angular22/Chromium y nueve runners MySQL8.4 reales en entorno sintético. Los resultados no certifican operaciones productivas.
+
+Tras revisar diff exacto (solamente `qa/c04_12_integral_audits.py` y `.github/workflows/c04-12-integral.yml`, sin cambios en frontend/backend/product database), GitHub fusionó #109 por squash **solo a `dev`**, SHA **`6ec93e516c32ce3aa23c641eb6f36423ec21049c`**; `main` no se tocó.
+
+**POSTMERGE técnico iniciado, todavía NO considerado PASS al registrar:** [C04-12 integral — 43360186955](https://github.com/crecisol-platform/CRECISOL/actions/runs/43360186955) y [Foundation — 43360186941](https://github.com/crecisol-platform/CRECISOL/actions/runs/43360186941). Exigir `completed/success` de ambos en este mismo SHA antes de fusionar documentación. El acta permanece **CONDICIONADA / NO EFICAZ**. No se presume ninguna futura certificación ni habilitación de C05.
+
 ## 5. Límites y condiciones de NO-GO
 
 **Prohibido extrapolar** la certificación a login/MFA/JWT, permisos productivos de SuperAdmin, DSN router físico, Cloudflare, R2/Stream, Redis, workers tenant, exportadores, backups productivos, activaciones de pagos ni DNS. La integración real de C05/C06/C07 y posteriores deberá validar estos sistemas cuando existan y repetir ofensiva. Las pruebas COM-T06/T07/T09/T17 siguen **DEFINIDAS / NO EJECUTADAS**.
