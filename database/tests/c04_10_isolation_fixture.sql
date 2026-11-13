@@ -161,6 +161,13 @@ BEGIN
  DECLARE v_dtenant CHAR(32) DEFAULT NULL;
  DECLARE v_dactor CHAR(32) DEFAULT NULL;
  DECLARE v_depoch BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_dbranchrev BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_dresourcerev BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_actualbranchrev BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_actualresourcerev BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_jobbranchrev BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_jobresourcerev BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_jobepoch BIGINT UNSIGNED DEFAULT NULL;
  DECLARE v_approved TINYINT DEFAULT NULL;
  DECLARE v_expires DATETIME(6) DEFAULT NULL;
  DECLARE v_branch_state VARCHAR(16) DEFAULT NULL;
@@ -178,10 +185,14 @@ BEGIN
  END IF;
  SELECT state,access_epoch INTO v_tstate,v_epoch
  FROM tenants WHERE tenant_id=v_tenant FOR UPDATE;
- SELECT d.tenant_id,d.actor_id,d.tenant_epoch,d.approved,d.expires_at_utc,
-        b.state,r.state,r.owner_actor,j.status,j.fence
- INTO v_dtenant,v_dactor,v_depoch,v_approved,v_expires,
-      v_branch_state,v_resource_state,v_owner,v_status,v_fence
+ SELECT d.tenant_id,d.actor_id,d.tenant_epoch,d.branch_revision,
+        d.resource_revision,d.approved,d.expires_at_utc,
+        b.state,b.revision,r.state,r.revision,r.owner_actor,
+        j.tenant_epoch,j.branch_revision,j.resource_revision,j.status,j.fence
+ INTO v_dtenant,v_dactor,v_depoch,v_dbranchrev,v_dresourcerev,
+      v_approved,v_expires,v_branch_state,v_actualbranchrev,
+      v_resource_state,v_actualresourcerev,v_owner,
+      v_jobepoch,v_jobbranchrev,v_jobresourcerev,v_status,v_fence
  FROM decisions d
  JOIN job_records j ON j.operation_id=d.operation_id
  JOIN branches b ON b.tenant_id=d.tenant_id AND b.branch_id=d.branch_id
@@ -193,7 +204,10 @@ BEGIN
     v_depoch <> v_epoch OR v_tstate <> 'active' OR
     v_approved <> 1 OR v_expires <= UTC_TIMESTAMP(6) OR
     v_branch_state <> 'active' OR v_resource_state <> 'active' OR
-    v_owner <> v_actor OR v_fence >= 18446744073709551614 THEN
+    v_dbranchrev <> v_actualbranchrev OR v_dresourcerev <> v_actualresourcerev OR
+    v_jobbranchrev <> v_dbranchrev OR v_jobresourcerev <> v_dresourcerev OR
+    v_jobepoch <> v_depoch OR v_owner <> v_actor OR
+    v_fence >= 18446744073709551614 THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Tenant job scope revoked or mismatched';
  END IF;
  IF v_status='pending' THEN
@@ -222,8 +236,18 @@ BEGIN
  DECLARE v_dtenant CHAR(32) DEFAULT NULL;
  DECLARE v_dactor CHAR(32) DEFAULT NULL;
  DECLARE v_depoch BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_dbranchrev BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_dresourcerev BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_actualbranchrev BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_actualresourcerev BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_jobbranchrev BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_jobresourcerev BIGINT UNSIGNED DEFAULT NULL;
+ DECLARE v_jobepoch BIGINT UNSIGNED DEFAULT NULL;
  DECLARE v_approved TINYINT DEFAULT NULL;
  DECLARE v_expires DATETIME(6) DEFAULT NULL;
+ DECLARE v_branch_state VARCHAR(16) DEFAULT NULL;
+ DECLARE v_resource_state VARCHAR(16) DEFAULT NULL;
+ DECLARE v_owner CHAR(32) DEFAULT NULL;
  DECLARE v_status VARCHAR(16) DEFAULT NULL;
  DECLARE v_fence BIGINT UNSIGNED DEFAULT NULL;
  DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
@@ -236,15 +260,26 @@ BEGIN
  END IF;
  SELECT state,access_epoch INTO v_tstate,v_epoch
  FROM tenants WHERE tenant_id=v_tenant FOR UPDATE;
- SELECT d.tenant_id,d.actor_id,d.tenant_epoch,d.approved,d.expires_at_utc,
-        j.status,j.fence
- INTO v_dtenant,v_dactor,v_depoch,v_approved,v_expires,
-      v_status,v_fence
+ SELECT d.tenant_id,d.actor_id,d.tenant_epoch,d.branch_revision,
+        d.resource_revision,d.approved,d.expires_at_utc,
+        b.state,b.revision,r.state,r.revision,r.owner_actor,
+        j.tenant_epoch,j.branch_revision,j.resource_revision,j.status,j.fence
+ INTO v_dtenant,v_dactor,v_depoch,v_dbranchrev,v_dresourcerev,
+      v_approved,v_expires,v_branch_state,v_actualbranchrev,
+      v_resource_state,v_actualresourcerev,v_owner,
+      v_jobepoch,v_jobbranchrev,v_jobresourcerev,v_status,v_fence
  FROM decisions d JOIN job_records j ON j.operation_id=d.operation_id
+ JOIN branches b ON b.tenant_id=d.tenant_id AND b.branch_id=d.branch_id
+ JOIN resources r ON r.tenant_id=d.tenant_id AND r.branch_id=d.branch_id
+   AND r.resource_id=d.resource_id
  WHERE d.operation_id=p_operation AND d.kind='JOB' FOR UPDATE;
  IF v_dtenant IS NULL OR v_dtenant <> v_tenant OR v_dactor <> v_actor OR
     v_tstate <> 'active' OR v_depoch <> v_epoch OR
     v_approved <> 1 OR v_expires <= UTC_TIMESTAMP(6) OR
+    v_branch_state <> 'active' OR v_resource_state <> 'active' OR
+    v_dbranchrev <> v_actualbranchrev OR v_dresourcerev <> v_actualresourcerev OR
+    v_jobbranchrev <> v_dbranchrev OR v_jobresourcerev <> v_dresourcerev OR
+    v_jobepoch <> v_depoch OR v_owner <> v_actor OR
     v_status <> 'running' OR v_fence <> p_fence THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Stale or untrusted tenant job acknowledgement';
  END IF;
@@ -276,7 +311,8 @@ BEGIN
     AND r.resource_id=c.resource_id
  WHERE c.cache_key=p_key AND c.tenant_id=v_tenant AND c.actor_id=v_actor
    AND t.state='active' AND t.access_epoch=c.tenant_epoch
-   AND b.state='active' AND r.state='active' AND r.owner_actor=v_actor;
+   AND b.state='active' AND r.state='active' AND r.owner_actor=v_actor
+   AND b.revision=c.branch_revision AND r.revision=c.resource_revision;
  IF v_marker IS NULL THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Private cache miss or denied';
  END IF;
@@ -304,7 +340,9 @@ BEGIN
  WHERE m.operation_id=p_operation AND m.tenant_id=v_tenant AND m.actor_id=v_actor
    AND d.approved=1 AND d.expires_at_utc>UTC_TIMESTAMP(6)
    AND t.state='active' AND t.access_epoch=m.tenant_epoch
-   AND b.state='active' AND r.state='active' AND r.owner_actor=v_actor;
+   AND b.state='active' AND r.state='active' AND r.owner_actor=v_actor
+   AND b.revision=m.branch_revision AND r.revision=m.resource_revision
+   AND d.branch_revision=m.branch_revision AND d.resource_revision=m.resource_revision;
  IF v_reference IS NULL THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Private media denied';
  END IF;
@@ -332,7 +370,9 @@ BEGIN
  WHERE e.operation_id=p_operation AND e.tenant_id=v_tenant AND e.actor_id=v_actor
    AND d.approved=1 AND d.expires_at_utc>UTC_TIMESTAMP(6)
    AND t.state='active' AND t.access_epoch=e.tenant_epoch
-   AND b.state='active' AND r.state='active' AND r.owner_actor=v_actor;
+   AND b.state='active' AND r.state='active' AND r.owner_actor=v_actor
+   AND b.revision=e.branch_revision AND r.revision=e.resource_revision
+   AND d.branch_revision=e.branch_revision AND d.resource_revision=e.resource_revision;
  IF v_reference IS NULL THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Private export denied';
  END IF;
