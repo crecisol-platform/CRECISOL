@@ -70,6 +70,9 @@ public sealed class MySqlDisposableInvitationLedger : ITrustedInvitationLedger
                    AND s.actor_id=@issuer AND s.enabled=1
                    AND t.lifecycle='ACTIVE'
                    AND t.terms_version=@terms
+                   AND @issued<=UTC_TIMESTAMP(6)
+                   AND UTC_TIMESTAMP(6)<@expires
+                   AND TIMESTAMPDIFF(SECOND,@issued,@expires) BETWEEN 60 AND 259200
                    AND r.actor_id<>s.actor_id
                    AND r.channel_verified=1
                    AND UTC_TIMESTAMP(6)<r.verified_until_utc
@@ -84,6 +87,10 @@ public sealed class MySqlDisposableInvitationLedger : ITrustedInvitationLedger
                 auth.Parameters.Add("@terms", MySqlDbType.Int64).Value = snapshot.TermsVersion;
                 auth.Parameters.Add("@profile", MySqlDbType.VarChar).Value =
                     ProfileSql(snapshot.Profile);
+                auth.Parameters.Add("@issued", MySqlDbType.DateTime).Value =
+                    snapshot.IssuedUtc.UtcDateTime;
+                auth.Parameters.Add("@expires", MySqlDbType.DateTime).Value =
+                    snapshot.ExpiresUtc.UtcDateTime;
                 if (await auth.ExecuteScalarAsync(cancellationToken) is not byte[])
                     return false;
             }
