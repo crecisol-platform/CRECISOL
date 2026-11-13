@@ -53,7 +53,7 @@ deny_root() {
  echo "PASS C04-10 integrity rejected $label"
 }
 g32() { printf '%032x' "$1"; }
-hex64() { printf '%s%.0s' "$1" {1..64}; }
+hex64() { printf '%064d' 0 | tr '0' "$1"; }
 A="$(hex64 a)"; A="${A:0:32}"
 B="$(hex64 b)"; B="${B:0:32}"
 BA="$(hex64 c)"; BA="${BA:0:32}"
@@ -73,6 +73,9 @@ A_MEDIA="$(g32 201)"
 B_MEDIA="$(g32 202)"
 A_EXPORT="$(g32 301)"
 B_EXPORT="$(g32 302)"
+A_UNUSED_MEDIA="$(g32 203)"
+B_UNUSED_EXPORT="$(g32 303)"
+B_SECOND_JOB="$(g32 103)"
 
 if [ -n "${GITHUB_ACTIONS:-}" ]; then printf '::add-mask::%s\n' "$PASSWORD"; fi
 docker run --rm -d --network none --name "$NAME" \
@@ -121,8 +124,8 @@ decision() {
  local op="$1" kind="$2" tenant="$3" branch="$4" actor="$5"
  root_sql "INSERT INTO decisions
  (operation_id,kind,tenant_id,branch_id,resource_id,actor_id,
- tenant_epoch,approved,expires_at_utc)
- VALUES('$op','$kind','$tenant','$branch','$RESOURCE','$actor',1,1,
+ tenant_epoch,branch_revision,resource_revision,approved,expires_at_utc)
+ VALUES('$op','$kind','$tenant','$branch','$RESOURCE','$actor',1,1,1,1,
  DATE_ADD(UTC_TIMESTAMP(6), INTERVAL 1 DAY));"
 }
 decision "$A_JOB" JOB "$A" "$BA" "$A_ACTOR"
@@ -131,22 +134,24 @@ decision "$A_MEDIA" MEDIA "$A" "$BA" "$A_ACTOR"
 decision "$B_MEDIA" MEDIA "$B" "$BB" "$B_ACTOR"
 decision "$A_EXPORT" EXPORT "$A" "$BA" "$A_ACTOR"
 decision "$B_EXPORT" EXPORT "$B" "$BB" "$B_ACTOR"
+decision "$A_UNUSED_MEDIA" MEDIA "$A" "$BA" "$A_ACTOR"
+decision "$B_UNUSED_EXPORT" EXPORT "$B" "$BB" "$B_ACTOR"
 root_sql "INSERT INTO job_records
- (operation_id,tenant_id,branch_id,resource_id,actor_id,tenant_epoch)
- VALUES('$A_JOB','$A','$BA','$RESOURCE','$A_ACTOR',1),
-       ('$B_JOB','$B','$BB','$RESOURCE','$B_ACTOR',1);
+ (operation_id,tenant_id,branch_id,resource_id,actor_id,tenant_epoch,branch_revision,resource_revision)
+ VALUES('$A_JOB','$A','$BA','$RESOURCE','$A_ACTOR',1,1,1),
+       ('$B_JOB','$B','$BB','$RESOURCE','$B_ACTOR',1,1,1);
 INSERT INTO media_refs
- (operation_id,tenant_id,branch_id,resource_id,actor_id,tenant_epoch,object_reference,version)
- VALUES('$A_MEDIA','$A','$BA','$RESOURCE','$A_ACTOR',1,'$A_MEDIA_KEY',1),
-       ('$B_MEDIA','$B','$BB','$RESOURCE','$B_ACTOR',1,'$B_MEDIA_KEY',1);
+ (operation_id,tenant_id,branch_id,resource_id,actor_id,tenant_epoch,branch_revision,resource_revision,object_reference,version)
+ VALUES('$A_MEDIA','$A','$BA','$RESOURCE','$A_ACTOR',1,1,1,'$A_MEDIA_KEY',1),
+       ('$B_MEDIA','$B','$BB','$RESOURCE','$B_ACTOR',1,1,1,'$B_MEDIA_KEY',1);
 INSERT INTO export_manifests
- (operation_id,tenant_id,branch_id,resource_id,actor_id,tenant_epoch,manifest_reference,version)
- VALUES('$A_EXPORT','$A','$BA','$RESOURCE','$A_ACTOR',1,'$A_EXPORT_KEY',1),
-       ('$B_EXPORT','$B','$BB','$RESOURCE','$B_ACTOR',1,'$B_EXPORT_KEY',1);
+ (operation_id,tenant_id,branch_id,resource_id,actor_id,tenant_epoch,branch_revision,resource_revision,manifest_reference,version)
+ VALUES('$A_EXPORT','$A','$BA','$RESOURCE','$A_ACTOR',1,1,1,'$A_EXPORT_KEY',1),
+       ('$B_EXPORT','$B','$BB','$RESOURCE','$B_ACTOR',1,1,1,'$B_EXPORT_KEY',1);
 INSERT INTO cache_entries
- (tenant_id,branch_id,resource_id,actor_id,tenant_epoch,cache_key,marker)
- VALUES('$A','$BA','$RESOURCE','$A_ACTOR',1,'$A_KEY','ALPHA'),
-       ('$B','$BB','$RESOURCE','$B_ACTOR',1,'$B_KEY','BETA');"
+ (tenant_id,branch_id,resource_id,actor_id,tenant_epoch,branch_revision,resource_revision,cache_key,marker)
+ VALUES('$A','$BA','$RESOURCE','$A_ACTOR',1,1,1,'$A_KEY','ALPHA'),
+       ('$B','$BB','$RESOURCE','$B_ACTOR',1,1,1,'$B_KEY','BETA');"
 check "A cache read own marker" "ALPHA" "$(runner_sql c0410_a "
  CALL read_private_cache('$A_KEY')")"
 check "B cache read own marker" "BETA" "$(runner_sql c0410_b "
@@ -177,20 +182,20 @@ deny_runner "runner cannot execute DDL" c0410_a "DROP TABLE job_records"
 
 deny_root "valid B tenant with A branch is forbidden FK" "
  INSERT INTO cache_entries
- (tenant_id,branch_id,resource_id,actor_id,tenant_epoch,cache_key,marker)
- VALUES('$B','$BA','$RESOURCE','$B_ACTOR',1,'$(hex64 2)','INJECT')"
+ (tenant_id,branch_id,resource_id,actor_id,tenant_epoch,branch_revision,resource_revision,cache_key,marker)
+ VALUES('$B','$BA','$RESOURCE','$B_ACTOR',1,1,1,'$(hex64 2)','INJECT')"
 deny_root "A reuses globally unique B cache key" "
  INSERT INTO cache_entries
- (tenant_id,branch_id,resource_id,actor_id,tenant_epoch,cache_key,marker)
- VALUES('$A','$BA','$RESOURCE','$A_ACTOR',1,'$B_KEY','ALIAS')"
+ (tenant_id,branch_id,resource_id,actor_id,tenant_epoch,branch_revision,resource_revision,cache_key,marker)
+ VALUES('$A','$BA','$RESOURCE','$A_ACTOR',1,1,1,'$B_KEY','ALIAS')"
 deny_root "B media mapped to valid A operation forbidden" "
  INSERT INTO media_refs
- (operation_id,tenant_id,branch_id,resource_id,actor_id,tenant_epoch,object_reference,version)
- VALUES('$A_MEDIA','$B','$BB','$RESOURCE','$B_ACTOR',1,'$(hex64 3)',1)"
+ (operation_id,tenant_id,branch_id,resource_id,actor_id,tenant_epoch,branch_revision,resource_revision,object_reference,version)
+ VALUES('$A_UNUSED_MEDIA','$B','$BB','$RESOURCE','$B_ACTOR',1,1,1,'$(hex64 3)',1)"
 deny_root "A export mapped to valid B operation forbidden" "
  INSERT INTO export_manifests
- (operation_id,tenant_id,branch_id,resource_id,actor_id,tenant_epoch,manifest_reference,version)
- VALUES('$B_EXPORT','$A','$BA','$RESOURCE','$A_ACTOR',1,'$(hex64 4)',1)"
+ (operation_id,tenant_id,branch_id,resource_id,actor_id,tenant_epoch,branch_revision,resource_revision,manifest_reference,version)
+ VALUES('$B_UNUSED_EXPORT','$A','$BA','$RESOURCE','$A_ACTOR',1,1,1,'$(hex64 4)',1)"
 deny_root "media reference cannot be a fake URL" "
  UPDATE media_refs SET object_reference='https://bad.host/a' WHERE operation_id='$A_MEDIA'"
 
