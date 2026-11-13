@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Security.Cryptography;
 using Crecisol.Application.Identity;
-using Crecisol.Infrastructure.Identity;
+using Crecisol.CredentialSecurity;
 
 // C05-03: REAL Argon2id .NET10 crypto with disposable synthetic candidates.
 // NO login, actual user, database, email delivery, session, owner or tenant grant.
