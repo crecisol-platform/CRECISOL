@@ -50,10 +50,10 @@ Panel SuperAdmin: políticas globales parametrizables, catálogo de tipos, lími
 
 ## Secuencia y no activación anticipada
 
-- C03: únicamente registra esta arquitectura transversal; no implementa el módulo de archivos.
+- C03: únicamente registra esta arquitectura transversal; no implementa el módulo de archivos. C03 está cerrado y certificado en su alcance técnico; la ausencia de archivos R2 sigue siendo intencional.
 - C04 en adelante: conservar aislamiento multitenant y permisos al introducir entidades/rutas.
 - C21 y C32: capítulos previstos por el Documento Maestro para ejecutar Cloudflare R2 y seguridad integral de archivos. Su diseño detallado reconcilia esta directriz con versiones vigentes de R2, Images/Stream, tarifas y reglas aplicables.
-- NO se modifican frontend, backend, database ni DOCX/PDF; NO se crean servicios de Cloudflare. Sin despliegue, VPS o cobros. C03 sigue NO CERTIFICADO y C04 BLOQUEADO hasta aceptación formal del capítulo.
+- NO se modifican frontend, backend, database ni DOCX/PDF; NO se crean servicios de Cloudflare. Sin despliegue, VPS o cobros. C03 está certificado en su alcance; C04 está en desarrollo y todavía no es un capítulo certificado.
 
 ## Referencias oficiales consultadas (versión vigente a noviembre 2026)
 

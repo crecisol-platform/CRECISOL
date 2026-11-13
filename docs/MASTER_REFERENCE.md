@@ -1,8 +1,12 @@
 # Documento Maestro Único — referencia canónica CRECISOL
 
+**ESTADO OPERATIVO VIGENTE (12-11-2026):** C01, C02 y C03 están certificados en sus alcances documentados; C03 está cerrado en 10/10 microfases y el total es 3/37 capítulos. C04 está en desarrollo: C04-01 tiene certificación limitada a contratos internos, C04-02..08 conservan puertas condicionadas propias y C04-09 se prepara en una rama separada, todavía no integrada ni certificada. Para el estado actual prevalecen `docs/ESTADO_VIGENTE_CAPITULOS.md` y este encabezado.
+
+**HISTORIAL CONSERVADO:** los bloques de estado que siguen se mantienen sin reescritura para preservar auditorías, hashes y decisiones de cada fecha. Las frases históricas «C03 NO CERTIFICADO», «2/37» y «C04 BLOQUEADO» no sustituyen el estado operativo vigente.
+
 **REGISTRO POSTERIOR DE ESTADO INSTITUCIONAL (11-11-2026):** [Ratificación nueva de capítulo 03](c03/C03_RATIFICACION_INSTITUCIONAL_POSTMIGRACION_2026_11_11.md) y [registro operativo](ESTADO_VIGENTE_CAPITULOS.md), tras verificar 17/17 workflows del SHA `bac3c58dc4bdab7f098f86ed249b249636c11d88`. Las CI del PR #79 quedaron bloqueadas y **no** se reinterpretan como PASS. La nueva certificación C03 será eficaz exclusivamente tras comprobar PREMERGE/POSTMERGE del PR de ratificación en su SHA exacto. C04-01 solo se habilita para **preparación** después de ese gate. El Word/PDF del Documento Maestro Único y sus huellas permanecen intactos.
 
-**Identidad operativa (11-11-2026):** `crecisol-platform/CRECISOL` (repositorio original ID `1450414592`, rama `dev`). [Registro de migración](MIGRACION_ORGANIZACION_GITHUB_2026_11_11.md). La documentación y enlaces del propietario anterior solo preservan el historial. El CI del PR #79 no ha terminado; C03 sigue pendiente y C04 bloqueado. Word y PDF maestros y huellas intactos.
+**Identidad operativa:** `crecisol-platform/CRECISOL` (ID `1450414592`, rama `dev`). [Registro de migración](MIGRACION_ORGANIZACION_GITHUB_2026_11_11.md). Las referencias a PR #79 y a C03 pendiente son históricas y no sustituyen el estado vigente consolidado.
 
 **REGISTRO POSTERIOR AL CIERRE TÉCNICO C03 (11-11-2026):** [Acta de certificación integral](c03/C03_CERTIFICACION_INTEGRAL_2026_11_11.md) y [estado vigente de capítulos](ESTADO_VIGENTE_CAPITULOS.md). La aceptación expresa del propietario se formaliza aquí: C03 se certifica 10/10 y el total pasa a 3/37 **únicamente al superar la CI PREMERGE y POSTMERGE de su propio acta**. Entonces C04-01 se habilita solo para preparación; no hay implementación C04 ni producción. Todos los párrafos anteriores de C03 «NO CERTIFICADO» y «2/37» son instantáneas históricas conservadas para validadores previos.
 

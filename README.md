@@ -1,17 +1,18 @@
 # CRECISOL
 
-**Repositorio vigente (transferencia 11-11-2026):** [`crecisol-platform/CRECISOL`](https://github.com/crecisol-platform/CRECISOL), ID `1450414592`, rama `dev`. [Registro de migración](docs/MIGRACION_ORGANIZACION_GITHUB_2026_11_11.md). Los enlaces al propietario previo en evidencias de PR/CI son históricos. C03 condicionado a CI posterior al PR #79, todavía `queued`; **C04 bloqueado**.
+**Repositorio vigente:** [`crecisol-platform/CRECISOL`](https://github.com/crecisol-platform/CRECISOL), ID `1450414592`, rama `dev`. [Registro de migración](docs/MIGRACION_ORGANIZACION_GITHUB_2026_11_11.md). Estado actual: C01, C02 y C03 certificados en sus alcances; C03 cerrado 10/10 y 3/37 capítulos certificados. C04 está en desarrollo.
 
-**TRANSICIÓN INSTITUCIONAL C03 (11-11-2026, POSTERIOR A ESTADOS HISTÓRICOS):** El propietario autorizó expresamente certificar C03 después de comprobar A/B/C y CI. [Acta de certificación integral](docs/c03/C03_CERTIFICACION_INTEGRAL_2026_11_11.md) y [registro de estado prospectivo](docs/ESTADO_VIGENTE_CAPITULOS.md). Al aprobar CI PREMERGE y POSTMERGE del acta, **C03 CERTIFICADO (10/10), 3/37 capítulos (C01, C02 y C03)**; solo entonces C04-01 queda habilitada PARA PREPARACIÓN, nunca certificada ni desplegada. Las leyendas anteriores «2/37», «C03 NO CERTIFICADO» y «C04 BLOQUEADO» permanecen como capturas históricas de sus auditorías, no son el estado actual tras las puertas. No tocar Word/PDF, producción ni SOLQARYN.
+**ESTADO OPERATIVO CONSOLIDADO:** [Acta integral C03](docs/c03/C03_CERTIFICACION_INTEGRAL_2026_11_11.md) y [registro vigente](docs/ESTADO_VIGENTE_CAPITULOS.md) registran C03 certificado 10/10 y 3/37 capítulos. C04-01 está certificado solo como contratos internos; C04-02..08 tienen estados condicionados y C04-09 se prepara en rama separada. Las leyendas antiguas «2/37», «C03 NO CERTIFICADO» y «C04 BLOQUEADO» son históricas. No tocar Word/PDF, producción ni SOLQARYN.
 
 **Tu negocio, a tu manera.** — SaaS multitenant en desarrollo para comercio, servicios y membresías.
 
 ## Estado vigente (GitHub, noviembre de 2026)
 
-**ACTUALIZACIÓN PREVALENTE (11-11-2026):** C01/C02 certificados (2/37). C03-01..09 certificadas en sus alcances; C03-10 **CERRADA TÉCNICAMENTE** por [PR #75](https://github.com/solqaryn-platform/CRECISOL/pull/75) y [acta](docs/c03/C03_10_ACTA_CIERRE_TECNICO_CI.md), con auditorías A/B/C y 16/16 CI POSTMERGE `SUCCESS` en dev `a8726d3ffd0ee08aae8bd25405b318ef262dea6c`. **C03 NO CERTIFICADO; C04 BLOQUEADO** hasta aceptación expresa. Los párrafos siguientes preservan el estado histórico de microfases anteriores.
+**ACTUALIZACIÓN PREVALENTE:** C01/C02/C03 certificados en sus alcances; C03-01..10 cerradas/certificadas en 10/10. C04 continúa en desarrollo y no está certificado como capítulo. Los párrafos que conservan estados anteriores se consideran historial de auditoría.
 
-**C01 CERTIFICADO (8/8); C02 CERTIFICADO (9/9, alcance público/sintético); C03-05 CERTIFICADA (5/10), C03-06 CERTIFICADA (6/10), C03-07 CERTIFICADA (7/10) y C03-08 CERTIFICADA (8/10)**. [Evidencia C03-07](docs/c03/C03_07_CERTIFICACION_POSTMERGE.md).
-**2/37 capítulos certificados (C01 y C02); C03-01 a C03-08 CERTIFICADAS (8/10), C03-05 CERTIFICADA (5/10), C03-06 CERTIFICADA (6/10), C03-07 CERTIFICADA (7/10) mediante PR #63 (8/8 CI POSTMERGE SUCCESS en a256885afa5ee2f639bd4ed6f7d8595b709e6409) y PR #64 (5/5 CI POSTMERGE SUCCESS en b1e019afabfb44f05076024b8d34cde74a340acc); C03-08 CERTIFICADA (8/10) por PR #70 (6/6 CI POSTMERGE SUCCESS, SHA 221afb6cc515fc79a3b6ca6e010af11f2e20b0a2) y PR #71 (5/5 CI POSTMERGE SUCCESS, SHA b333e58378b6a5ea0438f1ee6b11de85d9ce04df); C03-09 NO INICIADA; C03 NO CERTIFICADO; C04 BLOQUEADO.**
+**HISTORIAL CONSERVADO DESDE AQUÍ:** los resúmenes de microfases y capítulos que siguen reflejan cortes anteriores y no sustituyen el estado vigente anterior.
+
+**C01 CERTIFICADO (8/8); C02 CERTIFICADO (9/9, alcance público/sintético); C03 CERTIFICADO (10/10, alcance técnico delimitado).** [Registro de C03](docs/ESTADO_VIGENTE_CAPITULOS.md). **C04 está en desarrollo y no certificado.**
 
 C03-06 quedó certificada exclusivamente para el módulo público Branding/DI después del [PR #61](https://github.com/solqaryn-platform/CRECISOL/pull/61), **5/5 CI PREMERGE y 5/5 CI POSTMERGE SUCCESS** sobre `a1923d117febc5fd4e5a544b558c0f85ad517b44`. [Constancia definitiva C03-06](docs/c03/C03_06_CERTIFICACION_POSTMERGE.md). El cierre anterior de C03-05 se verificó en el [PR documental #58](https://github.com/solqaryn-platform/CRECISOL/pull/58) y sus **11/11 CI POSTMERGE SUCCESS**, sobre el commit 12fb19b0c35038c297939e17b27770c4fd63f77e. [Acta y evidencia definitiva C03-05](docs/c03/C03_05_CERTIFICACION_POSTMERGE.md).
 
