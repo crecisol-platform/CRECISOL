@@ -126,9 +126,12 @@ def audit_a() -> None:
             "missing executable real .NET10 project: " + name)
     for script in SQL_TESTS:
         req((DB / script).is_file(), "missing MySQL8.4 regression " + script)
-    all_in(CURRENT, ("C04-11", "C04-12", "22/22",
-                     "90c63108f5d9b38dd57399395b88af215e08b6ec"),
-           "last institutional phase status/sha")
+    # The status registry preserves 14/14 ORIGINAL gates before PR #108.
+    # The additional 8/8 ratification gates and final SHA are verified live
+    # from GitHub separately; never rewrite historical text to make it PASS.
+    all_in(CURRENT, ("C04-11", "C04-12", "14/14",
+                     "99156521cd08a9a43cccaa62d95eea12da791f28"),
+           "historical C04-11 state and the documented original gates")
     all_in((DOCS / "c04/C04_11_CERTIFICACION_INSTITUCIONAL.md").read_text(),
            ("BOLA", "IDOR", "14/14", "MySQL"),
            "C04-11 actual negative evidence")
