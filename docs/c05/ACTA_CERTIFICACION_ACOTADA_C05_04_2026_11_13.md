@@ -10,7 +10,7 @@ C05-03 certificada únicamente en hash/política Argon2id y pruebas sintéticas 
 
 ## 2. Código técnico que se ratifica (PR #133)
 
-[PR técnico #133](https://github.com/crecisol-platform/CRECISOL/pull/133), HEAD final `568ab1a43bf1473284623ed89fb06abb9221ab65`, squash DEV `be0a0fcee656ee849430a87f85ce6842afaa0261`. Diff revisado EXACTAMENTE **7 archivos**: `Application/Identity/PrepareContextualPasswordLogin.cs`, `CredentialSecurity/Argon2idLoginCandidateVerifier.cs`, ejecutable/CSProj `Crecisol.ContextualLogin.ContractsTests`, `docs/c05/C05_04_ESPECIFICACION.md`, QA y workflow.
+[PR técnico #133](https://github.com/crecisol-platform/CRECISOL/pull/133), HEAD final `568ab1a43bf1473284623ed89fb06abb9221ab65`, squash DEV `be0a0fcee656ee849430a87f85ce6842afaa0261`. Diff revisado EXACTAMENTE **7 archivos**: `Application/Identity/PrepareContextualPasswordLogin.cs`, `backend/src/Crecisol.CredentialSecurity/Argon2idLoginCandidateVerifier.cs`, ejecutable/CSProj `Crecisol.ContextualLogin.ContractsTests`, `docs/c05/C05_04_ESPECIFICACION.md`, QA y workflow.
 
 - Identificador global canónico email ASCII de prueba, sin tenant, slug, host, branch, perfil ni ID de empresa en la firma pública del caso de uso; se requiere directorio confiable de registros 0/1/N y credencial exacta `PasswordVerifier` activa, de actor y realm tenant, no plataforma privilegiada. No hay login administrativo.
 - Verificación **real Argon2id C05-03** mediante adaptador independiente, PHC almacenado no exportable por interfaz pública de Application; usuario ausente consulta PHC señuelo backend y devuelve Denied genérico. El ensayo **no mide** equivalencia temporal del login E2E ni configura limitador distribuido.
