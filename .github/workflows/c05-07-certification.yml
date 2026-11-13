@@ -1,0 +1,84 @@
+name: CRECISOL C05-07 institutional verified mailbox A-B-C real HTTP MySQL8.4
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c05/ACTA_CERTIFICACION_ACOTADA_C05_07_2026_11_13.md'
+      - 'qa/c05_07_closure_gate.py'
+      - '.github/workflows/c05-07-certification.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c05/ACTA_CERTIFICACION_ACOTADA_C05_07_2026_11_13.md'
+      - 'qa/c05_07_closure_gate.py'
+      - '.github/workflows/c05-07-certification.yml'
+permissions:
+  contents: read
+jobs:
+  institutional-synthetic-mailbox:
+    name: Word A/B/C, real .NET10 HTTP MySQL8.4 dual proof and C05 regressions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout exact PR synthetic merge or dev SHA read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Audit A canonical source, preceding certification and requirement
+        run: |
+          set -euo pipefail
+          test ! -e .c05-07-closure-proof
+          python3 -m py_compile qa/c05_07_closure_gate.py
+          python3 qa/validate_foundation.py
+          python3 qa/c05_07_closure_gate.py A
+          mkdir -p .c05-07-closure-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-07-closure-proof/A
+      - name: Audit B reject documentary and security guard deletion mutations
+        run: |
+          set -euo pipefail
+          python3 qa/c05_07_closure_gate.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-07-closure-proof/B
+      - name: Install official .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Strictly compile public product API plus isolated sensitive-mailbox HTTP test
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.MailboxApproval.MySqlTests/Crecisol.MailboxApproval.MySqlTests.csproj -c Release --nologo -warnaserror
+          printf 'PASS build sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-07-closure-proof/build
+      - name: REAL MySQL8.4 and HTTP Argon2id fresh reauth two proofs 16-way CAS
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_07_mailbox_http_mysql.sh
+          printf 'PASS mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-07-closure-proof/mysql
+      - name: Rerun real C05-01..04 and C05-05 sessions plus C05-06 recovery HTTP MySQL
+        run: |
+          set -euo pipefail
+          for proj in \
+            backend/tests/Crecisol.AccountIdentity.ContractsTests/Crecisol.AccountIdentity.ContractsTests.csproj \
+            backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj \
+            backend/tests/Crecisol.PasswordHash.ContractsTests/Crecisol.PasswordHash.ContractsTests.csproj \
+            backend/tests/Crecisol.ContextualLogin.ContractsTests/Crecisol.ContextualLogin.ContractsTests.csproj; do
+            dotnet build "$proj" -c Release --nologo -warnaserror
+            dotnet run --no-build -c Release --project "$proj"
+          done
+          dotnet build backend/tests/Crecisol.SessionRevocation.MySqlTests/Crecisol.SessionRevocation.MySqlTests.csproj -c Release --nologo -warnaserror
+          bash database/tests/c05_05_session_http_mysql.sh
+          dotnet build backend/tests/Crecisol.PasswordRecovery.MySqlTests/Crecisol.PasswordRecovery.MySqlTests.csproj -c Release --nologo -warnaserror
+          bash database/tests/c05_06_recovery_http_mysql.sh
+          printf 'PASS regressions sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-07-closure-proof/regressions
+      - name: Audit C SHA-bound exact three-file institutional scope and real evidence
+        run: |
+          set -euo pipefail
+          python3 qa/c05_07_closure_gate.py C
+          printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-07-closure-proof/C
+      - name: Verify A B C compiled real MySQL and regressions on same SHA and run
+        run: |
+          set -euo pipefail
+          for stage in A B C build mysql regressions; do
+            grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-07-closure-proof/$stage"
+          done
+          echo 'PASS C05-07 ONLY synthetic mailbox proof in isolated localhost/MySQL8.4; no production'
