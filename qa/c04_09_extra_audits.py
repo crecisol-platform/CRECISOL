@@ -196,7 +196,10 @@ def audit_f():
             "mandatory failing checks cannot be ignored")
     require("PRIMARY KEY (target_id,migration_version)" in SQL and
             "CONSTRAINT chk_c0409_baseline_hash CHECK" in SQL and
-            "REGEXP_LIKE(baseline_payload_sha256,'^[0-9a-f]{64}
+            ("REGEXP_LIKE(baseline_payload_sha256,\x27^[0-9a-f]{64}" + chr(36) + "\x27,\x27c\x27)") in SQL,
+            "guarded migration ledger key or complete snapshot digest check missing")
+    require(SQL.count("CREATE DATABASE c04_09_control") == 1,
+            "duplicate or missing synthetic migration catalog")
     require(SQL.count("DELIMITER //") == 1 and SQL.count("DELIMITER ;") == 1,
             "migration fixture must have one uniform SQL delimiter region")
     for proc in ("reserve","finalize","mark_failed","verify_restored_and_release"):
