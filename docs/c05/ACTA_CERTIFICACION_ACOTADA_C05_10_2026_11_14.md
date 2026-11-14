@@ -33,6 +33,8 @@ Se establece la sesión **UTC** y se renueva `v_now=SYSDATE(6)` **después de ca
 
 **POSTMERGE #146 — todavía condicionado al redactar:** sobre squash `8a387d2ebc17a166fb5ed0ae20e116cfbd008276`, deben finalizar 3/3 `completed/success`: [C05-10 #43645885180](https://github.com/crecisol-platform/CRECISOL/actions/runs/43645885180), [Foundation #43645885132](https://github.com/crecisol-platform/CRECISOL/actions/runs/43645885132), [C03 integral #43645885139](https://github.com/crecisol-platform/CRECISOL/actions/runs/43645885139). Si falla una sola, detener la ratificación, remediar y repetir desde nuevo SHA; no aprobar por resultados de ramas antiguas.
 
+**Inventario exacto y regresiones:** PR #145: EXACTAMENTE 11 archivos; PR #146: cuatro archivos de remediación; acta: tres archivos sin API productiva. Se mantienen las suites de regresión por identidad completa: C05-01, C05-02, C05-03, C05-04, C05-05, C05-06, C05-07, C05-08 y C05-09. Las tablas de acceso privadas `c05_10_access_traces` y `c05_10_access_outcomes` no contienen correo, contraseña, token, IP ni cabeceras en claro; toda prueba de logs aplica a esas trazas sintéticas, no a una plataforma de observabilidad productiva.
+
 ## 3. Auditoría A — requisitos y procedencia
 
 Confirma contrato Word Maestro C05-10/plan, dependencia C05-09 certificada y su dictamen, ausencia de archivos históricos alterados, versiones .NET10/MySQL8.4/Angular22 conforme al capítulo y alcance exacto de 11+4 archivos. No habilita C05-11 hasta ratificación final. Sin configuración de producción, Cloudflare, pagos, VPS, API de login productiva o SOLQARYN.
