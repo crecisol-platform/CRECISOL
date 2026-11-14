@@ -40,9 +40,8 @@ public sealed class MySqlDisposablePreAuthRateLimitLedger :
         await using var connection=await ConnectAsync(ct);
         await using var command=new MySqlCommand("c05_10_admit_once",connection)
         {CommandType=CommandType.StoredProcedure};
-        AddScope(command,verifiedHost,purpose,serverAttemptId);
-        command.Parameters.Add("@p_host_revision",MySqlDbType.UInt64)
-            .Value=(ulong)verifiedHost.Revision;
+        AddScope(command,verifiedHost,purpose,serverAttemptId,
+            includeHostRevision:true);
         byte[] sourceBytes=source.CopyForTrustedLedger();
         byte[] subjectBytes=subject.CopyForTrustedLedger();
         try
@@ -75,7 +74,8 @@ public sealed class MySqlDisposablePreAuthRateLimitLedger :
         await using var connection=await ConnectAsync(ct);
         await using var command=new MySqlCommand("c05_10_complete_once",connection)
         {CommandType=CommandType.StoredProcedure};
-        AddScope(command,verifiedHost,purpose,serverAttemptId);
+        AddScope(command,verifiedHost,purpose,serverAttemptId,
+            includeHostRevision:false);
         byte[] sourceBytes=source.CopyForTrustedLedger();
         byte[] subjectBytes=subject.CopyForTrustedLedger();
         try
@@ -116,7 +116,7 @@ public sealed class MySqlDisposablePreAuthRateLimitLedger :
             throw new InvalidOperationException("Fresh scoped server admission required.");
     }
     private static void AddScope(MySqlCommand command,VerifiedTenantHostHint host,
-        PreAuthRateLimitPurpose purpose,Guid attempt)
+        PreAuthRateLimitPurpose purpose,Guid attempt,bool includeHostRevision)
     {
         command.Parameters.Add("@p_tenant",MySqlDbType.Binary).Value=
             host.TenantId.Value.ToByteArray(bigEndian:true);
@@ -128,6 +128,9 @@ public sealed class MySqlDisposablePreAuthRateLimitLedger :
                 PreAuthRateLimitPurpose.MfaChallenge=>"MFA",
                 _=>throw new InvalidOperationException("Unknown protected action.")
             };
+        if(includeHostRevision)
+            command.Parameters.Add("@p_host_revision",MySqlDbType.UInt64)
+                .Value=(ulong)host.Revision;
         command.Parameters.Add("@p_attempt",MySqlDbType.Binary).Value=
             attempt.ToByteArray(bigEndian:true);
     }
