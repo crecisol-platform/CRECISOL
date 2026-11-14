@@ -49,3 +49,12 @@ Se añadió `backend/src/Crecisol.Api/Contracts/NeutralRegistrationTransportPref
 Se ampliaron las aserciones ejecutables de `backend/tests/Crecisol.Api.ContractsTests/Program.cs` con 23 casos positivos/negativos de este preflight. **Estas aserciones no equivalen a pruebas E2E** y su resultado todavía requiere ejecución en CI sobre el SHA final de la rama. Ningún endpoint se registra en `Program.cs`; no se activa transporte de producción ni se hacen migraciones. La exposición de identidad sigue en NO-GO.
 
 **Auditorías A/B/C de integración:** PENDIENTES. **Pruebas C05 de este corte:** implementadas, NO DECLARADAS PASS hasta verificar salida real de .NET 10. Los resultados previos de #149 no certifican este código. El PR debe seguir en borrador y sin fusión hasta cumplir los gates aplicables.
+
+
+## Corte 01 — contrato estricto de entrada JSON (sin ruta expuesta)
+
+Se añadió `backend/src/Crecisol.Api/Contracts/NeutralRegistrationPayload.cs`. Acepta un único objeto JSON con exactamente una clave `mailbox` de tipo cadena y usa `RequestNeutralRegistrationIntent.CanonicalMailboxOrNull` para respetar la normalización existente, sin consultar cuentas ni asignar grants. Límite: 4096 bytes UTF-8; rechaza JSON malformado, duplicados, tipos incorrectos, campos extra (incluidos tenant/rol/password), comentarios y documentos concatenados. El resultado interno es únicamente el buzón canónico: **NO** prueba posesión ni autenticación. No registrar ni devolver este dato en trazas de acceso.
+
+Se añadieron 21 aserciones adicionales en el runner .NET `Crecisol.Api.ContractsTests` para positivos y negativos de JSON. Las suites deben ejecutarse en el SHA exacto del PR #151; declarar únicamente el resultado comprobado por run ID. El entorno HTTP/API de clientes permanece sin endpoint de identidad, y los riesgos E2E y las auditorías integrales A/B/C continúan pendientes.
+
+**Cobertura delimitada:** parser JSON y validación de entrada exclusivamente; no prueba que el correo se entregue, que el host esté vinculado a un tenant activo, que un actor exista, que MFA sea válido o que una sesión se emita/revoque.
