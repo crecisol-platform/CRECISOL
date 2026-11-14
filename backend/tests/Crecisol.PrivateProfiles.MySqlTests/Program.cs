@@ -311,15 +311,14 @@ Check(otherPrepared.Status==ContextualLoginPreparationStatus.Ready &&
       "Independent actor real Argon2id proof is tenant A self-only");
 var otherProof=otherPrepared.Evidence!;
 var passwordChecks=new SemaphoreSlim(3,3);
-var reauth=new FixtureProfileReauthentication(async (address,hint,ct)=>
+var reauth=new FixtureProfileReauthentication(async (address,candidate,hint,ct)=>
 {
     await passwordChecks.WaitAsync(ct);
     try
     {
         var requestedHost=hint.TenantId==tenantA?hostA:hostB;
         return await Login(requestedHost,address.Value==otherMail).ExecuteAsync(
-            address,address.Value==otherMail?
-                otherPassword.AsMemory():password.AsMemory(),ct);
+            address,candidate,ct);
     }
     finally {passwordChecks.Release();}
 });
@@ -576,12 +575,12 @@ sealed class FixtureTenantCatalog(TenantId a,TenantId b,
 
 sealed class FixtureProfileReauthentication : ITrustedImmediatePasswordReauthentication
 {
-    private readonly Func<CanonicalLoginHandle,VerifiedTenantHostHint,
+    private readonly Func<CanonicalLoginHandle,ReadOnlyMemory<char>,VerifiedTenantHostHint,
         CancellationToken,Task<ContextualLoginPreparation>> callback;
     private long calls;
     public FixtureProfileReauthentication(
-        Func<CanonicalLoginHandle,VerifiedTenantHostHint,CancellationToken,
-            Task<ContextualLoginPreparation>> callback) =>
+        Func<CanonicalLoginHandle,ReadOnlyMemory<char>,VerifiedTenantHostHint,
+            CancellationToken,Task<ContextualLoginPreparation>> callback) =>
         this.callback=callback??throw new ArgumentNullException(nameof(callback));
     public long Calls=>Interlocked.Read(ref calls);
     public Task<ContextualLoginPreparation> VerifyFreshAsync(
@@ -590,6 +589,6 @@ sealed class FixtureProfileReauthentication : ITrustedImmediatePasswordReauthent
     {
         Interlocked.Increment(ref calls);
         // Fixture must pass the ACTUAL candidate to C05-04 Argon2id.
-        return callback(handle,host,ct);
+        return callback(handle,candidate,host,ct);
     }
 }
