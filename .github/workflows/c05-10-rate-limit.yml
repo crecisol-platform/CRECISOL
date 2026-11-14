@@ -102,4 +102,4 @@ jobs:
           for stage in A B C build throttle regressions; do
             grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-10-rate-limit-proof/$stage"
           done
-          echo 'PASS C05-10 synthetic only: pre-Argon2id dual throttle, HMAC redacted traces; NO product auth, logging provider or deployment'
+          echo 'PASS C05-10 synthetic only: pre-Argon2id dual throttle, HMAC redacted traces; NO product auth, logging provider or production'
