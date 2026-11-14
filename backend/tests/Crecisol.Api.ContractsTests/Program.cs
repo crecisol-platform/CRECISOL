@@ -210,3 +210,76 @@ Check(!NeutralRegistrationPayload.TryReadCanonicalMailbox(
           ReadOnlyMemory<byte>.Empty, out var missingPayloadMailbox) &&
       missingPayloadMailbox is null, "C05 payload refuses missing body");
 Console.WriteLine("PASS C05 payload: 21 additional isolated JSON assertions; no identity activation.");
+
+
+// C05: end-to-end WITHIN THE IN-PROCESS NEUTRAL INTAKE ONLY.
+// No SMTP, MySQL, authentication, session, tenant grant or HTTP route.
+var captured = new FakeNeutralRegistrationIntentHandler();
+var intake = new NeutralRegistrationIntake(captured);
+async Task<NeutralRegistrationIntakeOutcome> IntakeJsonAsync(
+    string json, Action<HttpRequest>? alter = null,
+    CancellationToken cancellationToken = default)
+{
+    var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+    var request = RegistrationRequest();
+    request.ContentLength = bytes.Length;
+    alter?.Invoke(request);
+    return await intake.SubmitAsync(request, bytes, cancellationToken);
+}
+var acceptedIntake = await IntakeJsonAsync("{\"mailbox\":\"Human@Example.COM\"}");
+Check(acceptedIntake == NeutralRegistrationIntakeOutcome.Acknowledged &&
+      captured.Count == 1 && captured.LastMailbox == "Human@example.com",
+    "C05 neutral intake invokes the existing application port once for canonical input");
+
+async Task DenyIntakeAsync(string name, string json, Action<HttpRequest>? alter = null)
+{
+    var countBefore = captured.Count;
+    var denied = await IntakeJsonAsync(json, alter);
+    Check(denied == NeutralRegistrationIntakeOutcome.Denied &&
+          captured.Count == countBefore, "C05 intake fails before application port: " + name);
+}
+await DenyIntakeAsync("forged tenant", "{\"mailbox\":\"human@example.com\",\"tenantId\":\"B\"}");
+await DenyIntakeAsync("duplicated mailbox", "{\"mailbox\":\"a@example.com\",\"mailbox\":\"b@example.com\"}");
+await DenyIntakeAsync("forged role", "{\"mailbox\":\"human@example.com\",\"role\":\"owner\"}");
+await DenyIntakeAsync("forwarded source", "{\"mailbox\":\"human@example.com\"}",
+    request => request.Headers["X-Forwarded-For"] = "198.51.100.99");
+await DenyIntakeAsync("forged actor", "{\"mailbox\":\"human@example.com\"}",
+    request => request.Headers["X-Actor-Id"] = "forged");
+await DenyIntakeAsync("mismatched declared content length", "{\"mailbox\":\"human@example.com\"}",
+    request => request.ContentLength = 1);
+await DenyIntakeAsync("missing declared content length", "{\"mailbox\":\"human@example.com\"}",
+    request => request.ContentLength = null);
+await DenyIntakeAsync("wrong method", "{\"mailbox\":\"human@example.com\"}",
+    request => request.Method = "PUT");
+await DenyIntakeAsync("bad JSON", "{\"mailbox\":");
+await DenyIntakeAsync("mailbox syntax rejected", "{\"mailbox\":\"invalid\"}");
+
+var cancellation = new CancellationTokenSource();
+cancellation.Cancel();
+var canceledWithoutCall = false;
+try { await IntakeJsonAsync("{\"mailbox\":\"human@example.com\"}",
+        cancellationToken: cancellation.Token); }
+catch (OperationCanceledException) { canceledWithoutCall = true; }
+Check(canceledWithoutCall && captured.Count == 1,
+    "C05 canceled request cannot trigger the application port");
+
+var missingHandlerRejected = false;
+try { _ = new NeutralRegistrationIntake(null!); }
+catch (ArgumentNullException) { missingHandlerRejected = true; }
+Check(missingHandlerRejected, "C05 missing registration port denied at construction");
+Check(!Enum.IsDefined((NeutralRegistrationIntakeOutcome)2),
+    "C05 intake cannot classify unknown values as acceptance");
+Console.WriteLine("PASS C05 intake: 14 composition assertions; NOT a complete auth flow.");
+
+sealed class FakeNeutralRegistrationIntentHandler : INeutralRegistrationIntentHandler
+{
+    public int Count { get; private set; }
+    public string? LastMailbox { get; private set; }
+    public Task SubmitAsync(string canonicalMailbox, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        Count++;
+        LastMailbox = canonicalMailbox;
+        return Task.CompletedTask;
+    }
+}
