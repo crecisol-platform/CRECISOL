@@ -702,6 +702,34 @@ await RejectSql(async()=>
     await command.ExecuteNonQueryAsync();
 },"EXECUTE-only user cannot delete private audit rows");
 
+// POSTMERGE stability gate: repeat real HTTP bursts against the SAME
+// tenant/source/subject after guarded window expiry, with the strict
+// original 5/11 rule. This reproduces the historical 503 timing failure
+// under InnoDB contention instead of treating a single lucky run as PASS.
+await using(var stablePolicy=new MySqlCommand("""
+    UPDATE c05_10_policies
+       SET subject_limit=5,source_limit=12,enabled=1,host_revision=8,
+           revision=revision+1,changed_utc=UTC_TIMESTAMP(6)
+     WHERE tenant_id=UNHEX('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+       AND purpose='LOGIN'
+    """,setup))
+    Check(await stablePolicy.ExecuteNonQueryAsync()==1,
+          "Restore reviewed 5/12 synthetic policy before repeated concurrency");
+for(int round=1;round<=5;round++)
+{
+    await ForceWindowExpiryAsync(tenantA,"LOGIN");
+    var burst=await Task.WhenAll(Enumerable.Range(0,16).Select(_=>
+        PostAsync(hostA.Value,raceLogin,wrongPassword)));
+    int allowed=burst.Count(x=>x==HttpStatusCode.Accepted);
+    int limited=burst.Count(x=>x==(HttpStatusCode)429);
+    int unavailable=burst.Count(x=>x==HttpStatusCode.ServiceUnavailable);
+    Console.WriteLine("C05-10 STRESS aggregate only: round="+round+
+        " admitted="+allowed+" limited="+limited+" unavailable="+unavailable+
+        " sql_fault_categories="+ledger.SafeAggregateDiagnostics());
+    Check(allowed==5 && limited==11 && unavailable==0,
+          "Repeated 16-way HTTP burst must admit 5/limit 11 without SQL 503");
+}
+
 await app.StopAsync();
 Console.WriteLine($"PASS CRECISOL C05-10 REAL HTTP/.NET10/MySQL8.4: {checks} checks");
 Console.WriteLine("PASS atomic pre-Argon2id dual budgets, source rotation, tenant A/B, 16 one-shot completions, audit HMAC, fail-closed and no token/password storage");
