@@ -114,6 +114,8 @@ GUARDS={
         "MfaRecoveryCodeProtector",
         "One-time code plus fresh password can open replacement PENDING",
         "Recovery does not grant step-up",
+        "Factor replacement still requires a SEPARATE new step-up challenge",
+        "public bool CanCompleteStepUp=>false",
         "A consumed backup code cannot be used twice",
         "Factor is never reset before replacement factor is cryptographically proven",
         "ECDsa.Create(ECCurve.NamedCurves.nistP256)",
