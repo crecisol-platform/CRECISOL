@@ -5,6 +5,7 @@ on:
     paths:
       - 'backend/src/Crecisol.Api/Contracts/NeutralRegistration*.cs'
       - 'backend/tests/Crecisol.NeutralRegistration.IntegrationTests/**'
+      - 'docs/c05/C05_INTEGRACION_REAL_BARRERAS_Y_EVIDENCIA.md'
       - '.github/workflows/c05-identity-neutral-mysql.yml'
   push:
     branches: [dev]
@@ -71,7 +72,7 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$C05_TESTED_SHA"
           for stage in A B mysql; do
-            grep -Fqx "PASS $stage sha=$C05_TESTED_SHA run=$GITHUB_RUN_ID" "/tmp/c05-$stage"
+            grep -Fqx "PASS $stage sha=$C05_TESTED_SHA run=$GITHUB_RUN_ID" "/tmp/c05-${stage,,}"
           done
           python3 - <<'PY'
           from pathlib import Path
