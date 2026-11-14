@@ -344,6 +344,13 @@ async Task<HttpStatusCode> PostAsync(
 // mailbox. SQL SOURCE then SUBJECT CAS must admit exactly five, block eleven.
 var bruteRace=await Task.WhenAll(Enumerable.Range(0,16).Select(_=>
     PostAsync(hostA.Value,raceLogin,wrongPassword)));
+Console.WriteLine("C05-10 SYNTHETIC race HTTP aggregate only: accepted="+
+    bruteRace.Count(x=>x==HttpStatusCode.Accepted)+
+    " limited="+bruteRace.Count(x=>x==(HttpStatusCode)429)+
+    " unavailable="+bruteRace.Count(x=>x==HttpStatusCode.ServiceUnavailable)+
+    " other="+bruteRace.Count(x=>x!=HttpStatusCode.Accepted &&
+                              x!=(HttpStatusCode)429 &&
+                              x!=HttpStatusCode.ServiceUnavailable));
 Check(bruteRace.Count(x=>x==HttpStatusCode.Accepted)==5 &&
       bruteRace.Count(x=>x==(HttpStatusCode)429)==11,
       "16 concurrent HTTP brute force admissions => exactly 5 accepted and 11 blocked");
