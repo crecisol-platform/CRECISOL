@@ -1,0 +1,104 @@
+name: CRECISOL C05-08 MFA durable step-up recovery HTTP MySQL8.4 A-B-C (synthetic)
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c05/C05_08_ESPECIFICACION.md'
+      - 'backend/src/Crecisol.Application/Identity/DisposableMfaRiskUseCases.cs'
+      - 'backend/src/Crecisol.CredentialSecurity/**'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaLedger.cs'
+      - 'backend/tests/Crecisol.MfaRisk.*/**'
+      - 'database/tests/c05_08_mfa_http_mysql.sh'
+      - 'database/tests/fixtures/c05_08_disposable_mfa.sql'
+      - 'qa/c05_08_mfa_*'
+      - '.github/workflows/c05-08-mfa-*.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c05/C05_08_ESPECIFICACION.md'
+      - 'backend/src/Crecisol.Application/Identity/DisposableMfaRiskUseCases.cs'
+      - 'backend/src/Crecisol.CredentialSecurity/**'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaLedger.cs'
+      - 'backend/tests/Crecisol.MfaRisk.*/**'
+      - 'database/tests/c05_08_mfa_http_mysql.sh'
+      - 'database/tests/fixtures/c05_08_disposable_mfa.sql'
+      - 'qa/c05_08_mfa_*'
+      - '.github/workflows/c05-08-mfa-*.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-mfa-risk:
+    name: Real MFA enrollment, passkey ES256, step-up and recovery CAS on MySQL8.4
+    runs-on: ubuntu-24.04
+    timeout-minutes: 95
+    steps:
+      - name: Exact immutable SHA checkout without write credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Audit A Word canonical and C05-07 precedent
+        run: |
+          set -euo pipefail
+          test ! -e .c05-08-integration-proof
+          python3 -m py_compile qa/c05_08_mfa_integration_audits.py
+          python3 qa/validate_foundation.py
+          python3 qa/c05_08_mfa_integration_audits.py A
+          mkdir -p .c05-08-integration-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-08-integration-proof/A
+      - name: Audit B mutation guards against factor reset, cross-tenant and replay
+        run: |
+          set -euo pipefail
+          python3 qa/c05_08_mfa_integration_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-08-integration-proof/B
+      - name: Install .NET 10 SDK pinned action
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build API and BOTH crypto / MySQL .NET10 harnesses warnings as errors
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.MfaRisk.ContractsTests/Crecisol.MfaRisk.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.MfaRisk.MySqlTests/Crecisol.MfaRisk.MySqlTests.csproj -c Release --nologo -warnaserror
+          printf 'PASS build sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-08-integration-proof/build
+      - name: Run actual SHA256 TOTP and WebAuthn ES256 tests with adverse vectors
+        run: |
+          set -euo pipefail
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.MfaRisk.ContractsTests/Crecisol.MfaRisk.ContractsTests.csproj
+          printf 'PASS crypto sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-08-integration-proof/crypto
+      - name: Real HTTP loopback and disposable MySQL8.4 MFA integration / 16-way concurrency
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_08_mfa_http_mysql.sh
+          printf 'PASS mfa sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-08-integration-proof/mfa
+      - name: Re-run PREVIOUS C05-01..07 real regressions
+        run: |
+          set -euo pipefail
+          for proj in \
+            backend/tests/Crecisol.AccountIdentity.ContractsTests/Crecisol.AccountIdentity.ContractsTests.csproj \
+            backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj \
+            backend/tests/Crecisol.PasswordHash.ContractsTests/Crecisol.PasswordHash.ContractsTests.csproj \
+            backend/tests/Crecisol.ContextualLogin.ContractsTests/Crecisol.ContextualLogin.ContractsTests.csproj; do
+            dotnet build "$proj" -c Release --nologo -warnaserror
+            dotnet run --no-build -c Release --project "$proj"
+          done
+          dotnet build backend/tests/Crecisol.MailboxApproval.MySqlTests/Crecisol.MailboxApproval.MySqlTests.csproj -c Release --nologo -warnaserror
+          bash database/tests/c05_07_mailbox_http_mysql.sh
+          dotnet build backend/tests/Crecisol.PasswordRecovery.MySqlTests/Crecisol.PasswordRecovery.MySqlTests.csproj -c Release --nologo -warnaserror
+          bash database/tests/c05_06_recovery_http_mysql.sh
+          dotnet build backend/tests/Crecisol.SessionRevocation.MySqlTests/Crecisol.SessionRevocation.MySqlTests.csproj -c Release --nologo -warnaserror
+          bash database/tests/c05_05_session_http_mysql.sh
+          printf 'PASS regressions sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-08-integration-proof/regressions
+      - name: Audit C proof all 6 real stage artifacts, exact SHA and diff
+        run: |
+          set -euo pipefail
+          python3 qa/c05_08_mfa_integration_audits.py C
+          printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-08-integration-proof/C
+      - name: Enforce real evidence and NO-GO product activation
+        run: |
+          set -euo pipefail
+          for stage in A B C build crypto mfa regressions; do
+            grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-08-integration-proof/$stage"
+          done
+          echo 'PASS SYNTHETIC C05-08 integration only: NOT product WebAuthn, KMS, login, access grant or C05 chapter closure'
