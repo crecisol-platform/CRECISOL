@@ -339,6 +339,349 @@ async Task<HttpStatusCode> PostAsync(
     return response.StatusCode;
 }
 
+
+// Real ASP.NET10 HTTP / MySQL8.4 brute force. These endpoints run only
+// in this executable; Crecisol.Api/Program.cs remains PUBLIC BRANDING ONLY.
+Check((await PostAsync("evil.example.test",login,wrongPassword))==
+      HttpStatusCode.ServiceUnavailable,
+      "Unverified host denied before SQL/PBKDF/Argon2id; no tenant from query");
+Check((await PostAsync(hostA.Value,login,wrongPassword,
+      fakeXForwardedFor:"10.9.8.7",fakeTenant:tenantB.Value.ToString()))==
+      HttpStatusCode.Accepted,
+      "First wrong password consumes real A source/subject SQL budget; spoofed headers ignored");
+Check((await PostAsync(hostA.Value,unknown,wrongPassword))==
+      HttpStatusCode.Accepted,
+      "Unknown mailbox has same neutral 202 as existing account with wrong password");
+Check((await PostAsync(hostA.Value,login,password))==
+      HttpStatusCode.Accepted,
+      "Correct real C05-04 Argon2id credential has identical 202 without session or token");
+Check(await ScalarAsync("""
+    SELECT COUNT(*) FROM c05_10_access_outcomes
+    WHERE purpose='LOGIN' AND outcome='VERIFIED'
+    """)==1,"Valid authenticated internal proof recorded ONLY as keyed audit, never exposed");
+Check(await ScalarAsync("""
+    SELECT COUNT(*) FROM c05_10_access_outcomes
+    WHERE purpose='LOGIN' AND outcome='REJECTED'
+    """)==2,"Both invalid and unknown real Argon2id attempts recorded as private rejected outcomes");
+Check((await PostAsync(hostB.Value,login,password))==
+      HttpStatusCode.Accepted,
+      "Same global actor independently uses tenant B verified host and rate policy");
+Check((await PostAsync(hostA.Value,login,wrongPassword))==
+      HttpStatusCode.Accepted,
+      "Different retry of A email remains within budget before threshold");
+
+// A now has three owner-email attempts and one unknown; two more owner
+// attempts admitted, sixth owner attempt denied; B independent.
+Check((await PostAsync(hostA.Value,login,wrongPassword))==
+      HttpStatusCode.Accepted &&
+      (await PostAsync(hostA.Value,login,wrongPassword))==
+      HttpStatusCode.Accepted,
+      "Per-subject five-attempt A budget reached with no leaks");
+Check((await PostAsync(hostA.Value,login,password,
+      fakeXForwardedFor:"192.0.2.123",
+      fakeTenant:tenantB.Value.ToString(),
+      fakeAuthorization:"Bearer totally-untrusted-secret"))==
+      (HttpStatusCode)429,
+      "Sixth attempt throttled despite correct password and forged source/tenant/bearer headers");
+Check((await PostAsync(hostB.Value,login,password))==
+      HttpStatusCode.Accepted,
+      "A locked subject cannot deny B independently verified actor/tenant login");
+Check(await ScalarAsync("""
+    SELECT COUNT(*) FROM c05_10_access_traces
+    WHERE purpose='LOGIN' AND disposition='LIMITED'
+    """)>=1,"First per-subject lockout leaves append-only LIMITED trace");
+Check(await ScalarAsync("""
+    SELECT COUNT(*) FROM c05_10_access_outcomes
+    WHERE outcome='VERIFIED'
+    """)==3,"Only genuinely verified C05-04 password proofs receive private VERIFIED outcomes");
+
+// Further same subject packets during cooldown DO NOT create fresh trace
+// rows; exposure and disk amplification are bounded by source/subject.
+long before=await ScalarAsync("""
+    SELECT COUNT(*) FROM c05_10_access_traces
+    WHERE purpose='LOGIN' AND disposition='LIMITED'
+    """);
+for(int i=0;i<5;i++)
+    Check((await PostAsync(hostA.Value,login,wrongPassword))==
+          (HttpStatusCode)429,
+          "Active cooldown rejects packet without password verifier");
+long after=await ScalarAsync("""
+    SELECT COUNT(*) FROM c05_10_access_traces
+    WHERE purpose='LOGIN' AND disposition='LIMITED'
+    """);
+Check(after>=before && after-before<=1,
+      "Repeated throttled packets do not create one audit row per request");
+
+// Source cap: after previous attempts from origin A, fresh names use the
+// remaining source budget; rotating email cannot evade an IP-based cap.
+bool sourceBlocked=false;
+int freshAdmitted=0;
+for(int i=0;i<12;i++)
+{
+    var result=await PostAsync(hostA.Value,
+        $"source-rotation-{i}@example.test",wrongPassword);
+    if(result==(HttpStatusCode)429){sourceBlocked=true;break;}
+    Check(result==HttpStatusCode.Accepted,"Rotated unknown login neutral admission");
+    freshAdmitted++;
+}
+Check(sourceBlocked && freshAdmitted<=12,
+      "Rotating unlimited unknown mailboxes cannot exceed source budget");
+Check((await PostAsync(hostA.Value,"spoof-another@example.test",wrongPassword,
+      fakeXForwardedFor:"198.51.100.42",fakeTenant:tenantB.Value.ToString()))==
+      (HttpStatusCode)429,
+      "Source cooldown resistant to X-Forwarded-For/X-Tenant-Id spoof");
+Check((await PostAsync(hostB.Value,unknown,wrongPassword))==
+      HttpStatusCode.Accepted,
+      "B unknown subject still available after A source cooldown");
+Check(await ScalarAsync("""
+    SELECT COUNT(*) FROM c05_10_access_traces
+    WHERE purpose='LOGIN' AND disposition='ADMITTED'
+    """)<=20,
+      "Source cap avoids unbounded per-request audit/admission amplification");
+
+// Direct SQL uses freshly issued server scope, never a browser ID.
+var recoverySource=protector.FingerprintSocketPeer(
+    tenantA,PreAuthRateLimitPurpose.PasswordRecovery,sourceIp);
+var recoverySubject=protector.FingerprintSubject(
+    tenantA,PreAuthRateLimitPurpose.PasswordRecovery,ownerLogin);
+var mfaSource=protector.FingerprintSocketPeer(
+    tenantA,PreAuthRateLimitPurpose.MfaChallenge,sourceIp);
+var mfaSubject=protector.FingerprintSubject(
+    tenantA,PreAuthRateLimitPurpose.MfaChallenge,ownerLogin);
+Guid firstRecovery=Guid.NewGuid();
+Check(await ledger.AdmitAsync(hintA,PreAuthRateLimitPurpose.PasswordRecovery,
+      firstRecovery,recoverySource,recoverySubject,CancellationToken.None)==
+      PreAuthAdmissionStatus.Admitted,
+      "Recovery has separate trusted-purpose budget, not bypassing login");
+var wrongSubject=protector.FingerprintSubject(
+    tenantA,PreAuthRateLimitPurpose.PasswordRecovery,unknownLogin);
+Check(!await ledger.CompleteAsync(hintA,PreAuthRateLimitPurpose.PasswordRecovery,
+      firstRecovery,recoverySource,wrongSubject,PreAuthPrivateOutcome.Rejected,
+      CancellationToken.None),
+      "Cannot finish somebody else's attempted identity even if same tenant");
+Check(!await ledger.CompleteAsync(hintB,PreAuthRateLimitPurpose.PasswordRecovery,
+      firstRecovery,recoverySource,recoverySubject,PreAuthPrivateOutcome.Rejected,
+      CancellationToken.None),
+      "Cross-tenant completion cannot mark A trace as B");
+Check(!await ledger.CompleteAsync(hintA,PreAuthRateLimitPurpose.MfaChallenge,
+      firstRecovery,recoverySource,recoverySubject,PreAuthPrivateOutcome.Rejected,
+      CancellationToken.None),
+      "Wrong-purpose completion cannot reuse recovery trace");
+
+// Concurrent trace completion is an atomic one-shot, just like sessions.
+// Test private rejection only; recovery/MFA API and delivery NOT integrated.
+bool[] finish=await Task.WhenAll(Enumerable.Range(0,16).Select(_=>
+    ledger.CompleteAsync(hintA,PreAuthRateLimitPurpose.PasswordRecovery,
+        firstRecovery,recoverySource,recoverySubject,
+        PreAuthPrivateOutcome.Rejected,CancellationToken.None)));
+Check(finish.Count(x=>x)==1 && finish.Count(x=>!x)==15,
+      "16 concurrent attempts to finish one trace: only one immutable outcome");
+Check(!await ledger.CompleteAsync(hintA,PreAuthRateLimitPurpose.PasswordRecovery,
+      firstRecovery,recoverySource,recoverySubject,
+      PreAuthPrivateOutcome.Verified,CancellationToken.None),
+      "Replay cannot upgrade previously denied attempt to VERIFIED");
+Check(await ledger.AdmitAsync(hintB,PreAuthRateLimitPurpose.PasswordRecovery,
+      Guid.NewGuid(),recoverySource,recoverySubject,CancellationToken.None)==
+      PreAuthAdmissionStatus.Denied,
+      "No B recovery policy means fail-closed rather than unlimited");
+
+Guid mfaAttempt=Guid.NewGuid();
+Check(await ledger.AdmitAsync(hintA,PreAuthRateLimitPurpose.MfaChallenge,
+      mfaAttempt,mfaSource,mfaSubject,CancellationToken.None)==
+      PreAuthAdmissionStatus.Admitted,
+      "MFA policy/budget is isolated at data-contract level only; no MFA proof issued");
+Check(await ledger.AdmitAsync(hintA,PreAuthRateLimitPurpose.MfaChallenge,
+      Guid.NewGuid(),mfaSource,mfaSubject,CancellationToken.None)==
+      PreAuthAdmissionStatus.Admitted,
+      "Second synthetic MFA budget admitted");
+Guid limitedMfa=Guid.NewGuid();
+Check(await ledger.AdmitAsync(hintA,PreAuthRateLimitPurpose.MfaChallenge,
+      limitedMfa,mfaSource,mfaSubject,CancellationToken.None)==
+      PreAuthAdmissionStatus.Limited &&
+      !await ledger.CompleteAsync(hintA,PreAuthRateLimitPurpose.MfaChallenge,
+      limitedMfa,mfaSource,mfaSubject,PreAuthPrivateOutcome.Verified,
+      CancellationToken.None),
+      "MFA lockout not finishable or converted into an authorized factor");
+Check(await ledger.AdmitAsync(hintB,PreAuthRateLimitPurpose.MfaChallenge,
+      Guid.NewGuid(),mfaSource,mfaSubject,CancellationToken.None)==
+      PreAuthAdmissionStatus.Denied,
+      "Absent B MFA policy denies by default");
+
+// Time is MySQL, not browser-controlled: move fixtures into completed
+// windows and past locks to show cooldown reset without waiting 15 min.
+async Task ForceWindowExpiryAsync(TenantId tenant,string purpose)
+{
+    await using var cmd=new MySqlCommand("""
+      UPDATE c05_10_buckets
+         SET attempts=99,
+             window_started_utc=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 4000 SECOND),
+             blocked_until_utc=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 1 SECOND)
+       WHERE tenant_id=@t AND purpose=@purpose
+      """,setup);
+    cmd.Parameters.Add("@t",MySqlDbType.Binary).Value=
+        tenant.Value.ToByteArray(bigEndian:true);
+    cmd.Parameters.Add("@purpose",MySqlDbType.VarChar).Value=purpose;
+    Check(await cmd.ExecuteNonQueryAsync()>0,
+        "Protected fixture can simulate expiry of both admission dimensions");
+}
+await ForceWindowExpiryAsync(tenantA,"LOGIN");
+Check((await PostAsync(hostA.Value,login,password))==
+      HttpStatusCode.Accepted,
+      "DB-enforced expiry permits fresh login after old cooldown only");
+Check(await ScalarAsync("""
+    SELECT COUNT(*) FROM c05_10_access_outcomes
+    WHERE purpose='LOGIN' AND outcome='VERIFIED'
+    """)==4,"Expired window still executes real Argon2id and records private result");
+
+string aHex=tenantA.Value.ToString("N");
+string bHex=tenantB.Value.ToString("N");
+await using(var update=new MySqlCommand($"""
+    UPDATE c05_10_policies
+       SET subject_limit=2,source_limit=4,revision=revision+1,
+           changed_utc=UTC_TIMESTAMP(6)
+     WHERE tenant_id=UNHEX('{aHex}') AND purpose='LOGIN'
+    """,setup))
+    Check(await update.ExecuteNonQueryAsync()==1,
+          "Fixture admin can update bounded per-tenant versioned policy");
+await ForceWindowExpiryAsync(tenantA,"LOGIN");
+Check((await PostAsync(hostA.Value,login,wrongPassword))==
+      HttpStatusCode.Accepted &&
+      (await PostAsync(hostA.Value,login,wrongPassword))==
+      HttpStatusCode.Accepted &&
+      (await PostAsync(hostA.Value,login,password))==
+      (HttpStatusCode)429,
+      "Updated policy 2/4 enforced immediately without browser selectors");
+Check((await PostAsync(hostB.Value,login,password))==
+      HttpStatusCode.Accepted,
+      "A policy updates never change B budgets or private traces");
+
+// Host catalogue revision mismatch fails closed in SQL even if the caller
+// retained an old verified-host hint. Changing policy is fixture-only.
+await using(var change=new MySqlCommand($"""
+    UPDATE c05_10_policies SET host_revision=host_revision+1,
+    revision=revision+1 WHERE tenant_id=UNHEX('{aHex}') AND purpose='LOGIN'
+    """,setup))
+    Check(await change.ExecuteNonQueryAsync()==1,
+          "Fixture simulates host catalogue rebind without upgrading hint");
+Check((await PostAsync(hostA.Value,login,password))==
+      HttpStatusCode.ServiceUnavailable,
+      "Stale host revision cannot re-use old limiter policy");
+await using(var restore=new MySqlCommand($"""
+    UPDATE c05_10_policies SET host_revision=8,revision=revision+1
+    WHERE tenant_id=UNHEX('{aHex}') AND purpose='LOGIN'
+    """,setup))
+    Check(await restore.ExecuteNonQueryAsync()==1,
+          "Fixture restores valid host policy revision");
+await using(var disable=new MySqlCommand($"""
+    UPDATE c05_10_policies SET enabled=0,revision=revision+1
+    WHERE tenant_id=UNHEX('{aHex}') AND purpose='LOGIN'
+    """,setup))
+    Check(await disable.ExecuteNonQueryAsync()==1,
+          "Fixture disables policy without authorizing bypass");
+Check((await PostAsync(hostA.Value,login,password))==
+      HttpStatusCode.ServiceUnavailable,
+      "Disabled or missing policy denies BEFORE password verifier");
+await using(var enable=new MySqlCommand($"""
+    UPDATE c05_10_policies SET enabled=1,revision=revision+1
+    WHERE tenant_id=UNHEX('{aHex}') AND purpose='LOGIN'
+    """,setup))
+    Check(await enable.ExecuteNonQueryAsync()==1,"Fixture restores scoped policy");
+
+// Missing trusted socket, host, and SQL must never call Argon2id.
+int fakeVerifications=0;
+var countingVerifier=new FixturePasswordVerifier((_,_,_)=>
+{
+    Interlocked.Increment(ref fakeVerifications);
+    return Task.FromResult(ContextualLoginPreparation.Denied);
+});
+var noSource=new ThrottledContextualPasswordAttempt(
+    new FixtureHostHintReader(hintA),new FixtureNetworkReader(null),
+    protector,ledger,countingVerifier);
+var noHost=new ThrottledContextualPasswordAttempt(
+    new FixtureHostHintReader(null),new FixtureNetworkReader(sourceIp),
+    protector,ledger,countingVerifier);
+var noDatabase=new ThrottledContextualPasswordAttempt(
+    new FixtureHostHintReader(hintA),new FixtureNetworkReader(sourceIp),
+    protector,new FixtureUnavailableLedger(),countingVerifier);
+Check(await noSource.AttemptAsync(ownerLogin,password.AsMemory(),
+          CancellationToken.None)==PreAuthPublicDisposition.Unavailable &&
+      await noHost.AttemptAsync(ownerLogin,password.AsMemory(),
+          CancellationToken.None)==PreAuthPublicDisposition.Unavailable &&
+      await noDatabase.AttemptAsync(ownerLogin,password.AsMemory(),
+          CancellationToken.None)==PreAuthPublicDisposition.Unavailable &&
+      fakeVerifications==0,
+      "Missing real network/verified host/MySQL is fail-closed; zero Argon2id calls");
+
+// Audits must never expose raw PII, origin, HTTP, token or password columns.
+Check(await ScalarAsync("""
+    SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema=DATABASE()
+      AND table_name IN ('c05_10_access_traces','c05_10_access_outcomes')
+      AND (column_name REGEXP 'ip|email|password|token|cookie|bearer|secret|header|user_agent|body|phc|url'
+       OR data_type IN ('blob','mediumblob','longblob','tinyblob','text','mediumtext','longtext'))
+    """)==0,
+      "Audit tables have no raw IP/email/password/token/header/body/URL fields");
+Check(await ScalarAsync($"""
+    SELECT COUNT(*) FROM c05_10_access_traces
+    WHERE tenant_id=UNHEX('{aHex}') AND
+     (LOCATE(HEX(CONVERT('{login}' USING utf8mb4)),HEX(CONCAT(
+       attempt_id,source_digest,subject_digest)))>0 OR
+      LOCATE(HEX(CONVERT('127.0.0.1' USING utf8mb4)),HEX(CONCAT(
+       attempt_id,source_digest,subject_digest)))>0)
+    """)==0,
+      "No raw mailbox or 127.0.0.1 socket string within persisted trace digests");
+Check(await ScalarAsync($"""
+    SELECT COUNT(*) FROM c05_10_access_traces
+    WHERE tenant_id=UNHEX('{aHex}') AND
+          purpose='LOGIN' AND policy_revision>=2
+    """)>=1,
+      "Traces preserve trusted policy revision, not browser-supplied limits");
+Check(await ScalarAsync($"""
+    SELECT COUNT(*) FROM c05_10_access_traces
+    WHERE tenant_id=UNHEX('{bHex}') AND purpose='LOGIN'
+    """)>=1,
+      "B traces are tenant-tagged and never pooled under tenant A");
+
+// Audit tables are immutable even to privileged fixture user, while
+// the least-privileged runtime cannot directly SELECT or DELETE anything.
+await RejectSql(async()=>
+{
+    await using var command=new MySqlCommand(
+        "UPDATE c05_10_access_traces SET disposition='ADMITTED'",setup);
+    await command.ExecuteNonQueryAsync();
+},"Append-only access trace cannot be UPDATEd by SQL privileges");
+await RejectSql(async()=>
+{
+    await using var command=new MySqlCommand(
+        "DELETE FROM c05_10_access_traces",setup);
+    await command.ExecuteNonQueryAsync();
+},"Append-only access trace cannot be DELETEd by SQL privileges");
+await RejectSql(async()=>
+{
+    await using var command=new MySqlCommand(
+        "UPDATE c05_10_access_outcomes SET outcome='VERIFIED'",setup);
+    await command.ExecuteNonQueryAsync();
+},"Append-only authentication outcome cannot be modified");
+await RejectSql(async()=>
+{
+    await using var command=new MySqlCommand(
+        "DELETE FROM c05_10_access_outcomes",setup);
+    await command.ExecuteNonQueryAsync();
+},"Append-only authentication outcome cannot be removed");
+await RejectSql(async()=>
+{
+    await using var conn=new MySqlConnection(runnerDsn);
+    await conn.OpenAsync();
+    await using var command=new MySqlCommand(
+        "DELETE FROM c05_10_access_traces",conn);
+    await command.ExecuteNonQueryAsync();
+},"EXECUTE-only user cannot delete private audit rows");
+
+await app.StopAsync();
+Console.WriteLine($"PASS CRECISOL C05-10 REAL HTTP/.NET10/MySQL8.4: {checks} checks");
+Console.WriteLine("PASS atomic pre-Argon2id dual budgets, source rotation, tenant A/B, 16 one-shot completions, audit HMAC, fail-closed and no token/password storage");
+Console.WriteLine("NO-GO product: not wired to live API, no reverse proxy trust, distributed shield, real data, telemetry vendor or login session");
+
 sealed class FixtureCompromisedScreen : ITrustedCompromisedPasswordScreen
 {
     public PasswordCompromiseVerdict Check(ReadOnlySpan<char> _) =>
