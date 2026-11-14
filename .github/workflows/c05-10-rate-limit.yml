@@ -1,0 +1,105 @@
+name: CRECISOL C05-10 atomic preauth rate limit and secret-free access traces A-B-C HTTP MySQL8.4
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c05/C05_10_ESPECIFICACION.md'
+      - 'backend/src/Crecisol.Domain/Identity/PreAuthRateLimitModels.cs'
+      - 'backend/src/Crecisol.Application/Identity/ThrottledContextualPasswordAttempt.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/SyntheticPreAuthDigestProtector.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposablePreAuthRateLimitLedger.cs'
+      - 'backend/tests/Crecisol.RateLimitAccess.MySqlTests/**'
+      - 'database/tests/fixtures/c05_10_disposable_rate_limits.sql'
+      - 'database/tests/c05_10_rate_limit_http_mysql.sh'
+      - 'qa/c05_10_rate_limit_audits.py'
+      - '.github/workflows/c05-10-rate-limit.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c05/C05_10_ESPECIFICACION.md'
+      - 'backend/src/Crecisol.Domain/Identity/PreAuthRateLimitModels.cs'
+      - 'backend/src/Crecisol.Application/Identity/ThrottledContextualPasswordAttempt.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/SyntheticPreAuthDigestProtector.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposablePreAuthRateLimitLedger.cs'
+      - 'backend/tests/Crecisol.RateLimitAccess.MySqlTests/**'
+      - 'database/tests/fixtures/c05_10_disposable_rate_limits.sql'
+      - 'database/tests/c05_10_rate_limit_http_mysql.sh'
+      - 'qa/c05_10_rate_limit_audits.py'
+      - '.github/workflows/c05-10-rate-limit.yml'
+permissions:
+  contents: read
+jobs:
+  strict-preauth-bruteforce:
+    name: .NET10 real MySQL8.4 HMAC throttle concurrency and no token/password audit A-B-C
+    runs-on: ubuntu-24.04
+    timeout-minutes: 110
+    steps:
+      - name: Checkout exact SHA without writable GitHub credential
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Audit A canonical Word and C05-09 certified precedent
+        run: |
+          set -euo pipefail
+          test ! -e .c05-10-rate-limit-proof
+          python3 -m py_compile qa/c05_10_rate_limit_audits.py
+          python3 qa/validate_foundation.py
+          python3 qa/c05_10_rate_limit_audits.py A
+          mkdir -p .c05-10-rate-limit-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-10-rate-limit-proof/A
+      - name: Audit B fail-closed source/subject HMAC and secret-free audit mutations
+        run: |
+          set -euo pipefail
+          python3 qa/c05_10_rate_limit_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-10-rate-limit-proof/B
+      - name: Install official .NET10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Strict product API and isolated rate-limit real HTTP suite compilation
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.RateLimitAccess.MySqlTests/Crecisol.RateLimitAccess.MySqlTests.csproj -c Release --nologo -warnaserror
+          printf 'PASS build sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-10-rate-limit-proof/build
+      - name: Real ASP.NET10 loopback HTTP and MySQL8.4 brute force HMAC and 16-way admission CAS
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_10_rate_limit_http_mysql.sh
+          printf 'PASS throttle sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-10-rate-limit-proof/throttle
+      - name: Genuine C05-01 through C05-09 .NET10 and real HTTP MySQL regressions
+        run: |
+          set -euo pipefail
+          for proj in \
+            backend/tests/Crecisol.AccountIdentity.ContractsTests/Crecisol.AccountIdentity.ContractsTests.csproj \
+            backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj \
+            backend/tests/Crecisol.PasswordHash.ContractsTests/Crecisol.PasswordHash.ContractsTests.csproj \
+            backend/tests/Crecisol.ContextualLogin.ContractsTests/Crecisol.ContextualLogin.ContractsTests.csproj \
+            backend/tests/Crecisol.MfaRisk.ContractsTests/Crecisol.MfaRisk.ContractsTests.csproj; do
+            dotnet build "$proj" -c Release --nologo -warnaserror
+            dotnet run --no-build -c Release --project "$proj"
+          done
+          dotnet build backend/tests/Crecisol.PrivateProfiles.MySqlTests/Crecisol.PrivateProfiles.MySqlTests.csproj -c Release --nologo -warnaserror
+          bash database/tests/c05_09_private_profiles_http_mysql.sh
+          dotnet build backend/tests/Crecisol.MfaRisk.MySqlTests/Crecisol.MfaRisk.MySqlTests.csproj -c Release --nologo -warnaserror
+          bash database/tests/c05_08_mfa_http_mysql.sh
+          dotnet build backend/tests/Crecisol.MailboxApproval.MySqlTests/Crecisol.MailboxApproval.MySqlTests.csproj -c Release --nologo -warnaserror
+          bash database/tests/c05_07_mailbox_http_mysql.sh
+          dotnet build backend/tests/Crecisol.PasswordRecovery.MySqlTests/Crecisol.PasswordRecovery.MySqlTests.csproj -c Release --nologo -warnaserror
+          bash database/tests/c05_06_recovery_http_mysql.sh
+          dotnet build backend/tests/Crecisol.SessionRevocation.MySqlTests/Crecisol.SessionRevocation.MySqlTests.csproj -c Release --nologo -warnaserror
+          bash database/tests/c05_05_session_http_mysql.sh
+          printf 'PASS regressions sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-10-rate-limit-proof/regressions
+      - name: Audit C verify exact 11 file SHA and actual same-run A B and C05 tests
+        run: |
+          set -euo pipefail
+          python3 qa/c05_10_rate_limit_audits.py C
+          printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-10-rate-limit-proof/C
+      - name: Verify A/B/C build actual HTTP MySQL and regressions same SHA/run
+        run: |
+          set -euo pipefail
+          for stage in A B C build throttle regressions; do
+            grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-10-rate-limit-proof/$stage"
+          done
+          echo 'PASS C05-10 synthetic only: pre-Argon2id dual throttle, HMAC redacted traces; NO product auth, logging provider or deployment'
