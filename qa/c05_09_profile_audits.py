@@ -18,7 +18,7 @@ FILES={
     "docs/c05/C05_09_ESPECIFICACION.md",
     "backend/src/Crecisol.Domain/Identity/PrivateTenantProfileModels.cs",
     "backend/src/Crecisol.Application/Identity/PrivateTenantProfileUseCases.cs",
-    "backend/src/Crecisol.CredentialSecurity/SyntheticPrivateProfileCipher.cs",
+    "backend/src/Crecisol.Infrastructure/Identity/SyntheticPrivateProfileCipher.cs",
     "backend/src/Crecisol.Infrastructure/Identity/MySqlDisposablePrivateProfileLedger.cs",
     "database/tests/fixtures/c05_09_disposable_private_profiles.sql",
     "database/tests/c05_09_private_profiles_http_mysql.sh",
@@ -55,7 +55,7 @@ GUARDS={
         "CryptographicOperations.ZeroMemory",
         "PrivateTenantProfileUseCases[redacted]",
     ),
-    "backend/src/Crecisol.CredentialSecurity/SyntheticPrivateProfileCipher.cs":(
+    "backend/src/Crecisol.Infrastructure/Identity/SyntheticPrivateProfileCipher.cs":(
         "AesGcm(key,16)", "RandomNumberGenerator.GetBytes(12)",
         "tenant.Value.TryWriteBytes", "actor.Value.TryWriteBytes",
         "gcm.Encrypt", "gcm.Decrypt", "CryptographicOperations.ZeroMemory(key)",
