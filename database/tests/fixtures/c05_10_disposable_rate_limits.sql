@@ -127,7 +127,7 @@ proc:BEGIN
  INTO v_sub_limit,v_src_limit,v_window,v_cooldown,
       v_policy_revision,v_enabled,v_host_revision
  FROM c05_10_policies
- WHERE tenant_id=p_tenant AND purpose=p_purpose FOR UPDATE;
+ WHERE tenant_id=p_tenant AND purpose=p_purpose FOR SHARE;
  IF v_missing OR v_enabled<>1 OR v_policy_revision<1 OR
     v_host_revision<>p_host_revision THEN
     ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc;
