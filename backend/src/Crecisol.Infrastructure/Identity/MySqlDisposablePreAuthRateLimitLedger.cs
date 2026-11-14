@@ -2,6 +2,7 @@ using System.Data;
 using System.Security.Cryptography;
 using Crecisol.Application.Identity;
 using Crecisol.Application.Tenancy;
+using Crecisol.Domain.Tenancy;
 using Crecisol.Domain.Identity;
 using MySqlConnector;
 
