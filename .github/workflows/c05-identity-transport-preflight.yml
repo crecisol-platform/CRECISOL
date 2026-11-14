@@ -54,6 +54,15 @@ jobs:
           for fragment in ('DenyPayload("duplicate mailbox"', 'DenyPayload("unexpected tenant selector"',
                            'DenyPayload("unexpected role"', 'DenyPayload("trailing document"'):
               assert fragment in cases, fragment
+          intake = Path("backend/src/Crecisol.Api/Contracts/NeutralRegistrationIntake.cs").read_text()
+          for fragment in ("NeutralRegistrationTransportPreflight.IsEligible",
+                           "NeutralRegistrationPayload.TryReadCanonicalMailbox",
+                           "request.ContentLength != body.Length",
+                           "handler.SubmitAsync(mailbox, cancellationToken)"):
+              assert fragment in intake, fragment
+          assert 'NeutralRegistrationIntake' not in Path("backend/src/Crecisol.Api/Program.cs").read_text()
+          for fragment in ("FakeNeutralRegistrationIntentHandler", "forged tenant", "mismatched declared content length"):
+              assert fragment in cases, fragment
           PY
       - name: Compile .NET 10 Release with warnings as errors
         run: |
