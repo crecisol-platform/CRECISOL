@@ -245,6 +245,7 @@ app.Use(async (context,next)=>
     context.Response.Headers["X-Content-Type-Options"]="nosniff";
     await next();
 });
+using var argon2Slots=new SemaphoreSlim(2,2);
 app.MapPost("/__c05_10_test__/password-login",async(HttpContext context)=>
 {
     if(context.Request.ContentLength is null or <=0 or >2048 ||
@@ -273,12 +274,18 @@ app.MapPost("/__c05_10_test__/password-login",async(HttpContext context)=>
         try{handle=CanonicalLoginHandle.Parse(rawEmail.GetString());}
         catch(InvalidOperationException){return Results.StatusCode(202);}
         string candidate=rawPassword.GetString()??"";
-        var verifier=new FixturePasswordVerifier((h,p,ct)=>
+        var verifier=new FixturePasswordVerifier(async(h,p,ct)=>
         {
             string raw=context.Request.Host.Host;
             if(raw!=hostA.Value && raw!=hostB.Value)
                 throw new UnauthorizedAccessException("Unverified direct host.");
-            return Login(CanonicalTenantHost.Parse(raw)).ExecuteAsync(h,p,ct);
+            await argon2Slots.WaitAsync(ct);
+            try
+            {
+                return await Login(CanonicalTenantHost.Parse(raw))
+                    .ExecuteAsync(h,p,ct);
+            }
+            finally {argon2Slots.Release();}
         });
         var service=new ThrottledContextualPasswordAttempt(
             new FixturePreAuthHostReader(context,resolver,hostA,hostB),
