@@ -150,6 +150,7 @@ jobs:
           bash database/tests/c05_02_independent_receiver_mysql_smoke.sh
           bash database/tests/c05_02_proof_outbox_mysql_smoke.sh
           bash database/tests/c05_02_privacy_retention_mysql.sh
+          bash database/tests/c04_11_offensive_sql.sh
       - name: Real disposable MySQL8.4 C05-05 through C05-10 sessions recovery mail MFA profiles rate limit
         run: |
           set -euo pipefail
