@@ -242,6 +242,29 @@ async Task<string> IssueSessionAsync(PreparedContextualLoginEvidence proof)
 }
 string bearerA=await IssueSessionAsync(proofA);
 string bearerB=await IssueSessionAsync(proofB);
+string otherBearer=sessionProtector.GenerateFresh().RevealForTrustedTransport();
+byte[] otherDigest=sessionProtector.TryDigest(otherBearer)!.CopyForTrustedLedger();
+try
+{
+    await using var otherSession=new MySqlCommand("""
+      INSERT INTO c05_05_sessions(session_id,tenant_id,actor_id,token_digest,
+        generation,subject_revision,issued_utc,expires_utc,
+        absolute_expires_utc,revoked_utc)
+      VALUES(@sid,@tenant,@actor,@digest,1,1,UTC_TIMESTAMP(6),
+        DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 15 MINUTE),
+        DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 8 HOUR),NULL)
+      """,setup);
+    otherSession.Parameters.Add("@sid",MySqlDbType.Binary).Value=
+        Guid.NewGuid().ToByteArray(bigEndian:true);
+    otherSession.Parameters.Add("@tenant",MySqlDbType.Binary).Value=
+        tenantB.Value.ToByteArray(bigEndian:true);
+    otherSession.Parameters.Add("@actor",MySqlDbType.Binary).Value=
+        outsider.Value.ToByteArray(bigEndian:true);
+    otherSession.Parameters.Add("@digest",MySqlDbType.Binary).Value=otherDigest;
+    Check(await otherSession.ExecuteNonQueryAsync()==1,
+        "Unrelated actor B has independent durable test session");
+}
+finally { CryptographicOperations.ZeroMemory(otherDigest); }
 Check(await sessionLedger.IsCurrentAsync(tenantA,
         sessionProtector.TryDigest(bearerA)!,CancellationToken.None) &&
       await sessionLedger.IsCurrentAsync(tenantB,
@@ -261,6 +284,29 @@ await RejectSql(async()=>
     await using var cmd=new MySqlCommand("UPDATE c05_08_factors SET state='ACTIVE'",db);
     _=await cmd.ExecuteNonQueryAsync();
 },"EXECUTE-only MFA runner cannot directly activate factors");
+
+// Independent PLATFORM operator is present but forbidden from TENANT MFA.
+await using(var privileged=new MySqlConnection(runnerDsn))
+{
+    await privileged.OpenAsync();
+    await using var cmd=new MySqlCommand("c05_08_open_enrollment",privileged)
+        {CommandType=System.Data.CommandType.StoredProcedure};
+    void Id(string n,Guid v)=>cmd.Parameters.Add(n,MySqlDbType.Binary).Value=
+        v.ToByteArray(bigEndian:true);
+    void Rev(string n,ulong v)=>cmd.Parameters.Add(n,MySqlDbType.UInt64).Value=v;
+    Id("@p_tenant",tenantB.Value);
+    Id("@p_actor",platform.Value);
+    Id("@p_link",Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb33"));
+    Rev("@p_account",7);Rev("@p_credential",3);Rev("@p_member",5);
+    Rev("@p_tenant_rev",9);Rev("@p_host",8);
+    Id("@p_factor",Guid.NewGuid());
+    cmd.Parameters.Add("@p_kind",MySqlDbType.VarChar).Value="TOTP";
+    Id("@p_challenge",Guid.NewGuid());
+    cmd.Parameters.Add("@p_digest",MySqlDbType.Binary).Value=RandomNumberGenerator.GetBytes(32);
+    cmd.Parameters.Add("@p_backup",MySqlDbType.Binary).Value=RandomNumberGenerator.GetBytes(32);
+    Check((await cmd.ExecuteScalarAsync()) is string status && status=="DENIED",
+        "PLATFORM realm cannot start tenant MFA even when given authentic fixture context");
+}
 
 var queue=new ConcurrentQueue<(
     DisposableMfaChallenge Handle, DisposableMfaProofPurpose Purpose)>();
@@ -620,6 +666,27 @@ Check(await ProvePasskey(hostB.Value,bStep,fixtureSecrets.SignFixtureAssertion(b
       HttpStatusCode.NoContent,
     "Synthetic passkey ES256 challenge succeeds only with increasing persisted signCount");
 
+var bBackup=bPasskey.BackupCodeForTrustedFixtureOnly ??
+    throw new InvalidOperationException("B trusted backup not generated");
+byte[] expiredBackupDigest=backupProtector.TryDigest(bBackup) ??
+    throw new InvalidOperationException("B backup digest absent");
+try
+{
+    await using var expiredBackup=new MySqlCommand("""
+      UPDATE c05_08_backup_codes
+         SET issued_utc=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 60 DAY),
+             expires_utc=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 30 DAY)
+       WHERE digest=@digest
+      """,setup);
+    expiredBackup.Parameters.Add("@digest",MySqlDbType.Binary).Value=expiredBackupDigest;
+    Check(await expiredBackup.ExecuteNonQueryAsync()==1,
+        "Expired B backup requires MySQL time window, not client date");
+}
+finally { CryptographicOperations.ZeroMemory(expiredBackupDigest); }
+int beforeExpiredBackup=queue.Count;
+Check(await Recover(hostB.Value,currentPassword,bPasskey.FactorId,bBackup,"TOTP")==
+      HttpStatusCode.Accepted && queue.Count==beforeExpiredBackup,
+    "Expired one-time backup cannot initiate factor replacement in B");
 string? backup=initial.BackupCodeForTrustedFixtureOnly;
 if (backup is null) throw new InvalidOperationException("Fixture backup not delivered");
 int qBefore=queue.Count;
@@ -664,6 +731,9 @@ Check((await ledger.ReadCounterAsync(tenantA,actor,initial.FactorId,Cancellation
       (await ledger.ReadCounterAsync(tenantB,actor,bPasskey.FactorId,CancellationToken.None))
         ?.State=="ACTIVE",
     "Atomic replacement revokes only A old factor, preserving B factor");
+Check(await sessionLedger.IsCurrentAsync(tenantB,
+        sessionProtector.TryDigest(otherBearer)!,CancellationToken.None),
+    "Unrelated actor session remains valid despite global A/B actor revocation");
 Check(!await sessionLedger.IsCurrentAsync(tenantA,
         sessionProtector.TryDigest(bearerA)!,CancellationToken.None) &&
       !await sessionLedger.IsCurrentAsync(tenantB,
@@ -766,8 +836,9 @@ await using(var reactivateCredential=new MySqlCommand($"""
     """,setup))
     Check(await reactivateCredential.ExecuteNonQueryAsync()==1,
         "Synthetic global credential reactivated with NEW revision");
+int beforeStaleCredential=queue.Count;
 Check(await Stepup(hostA.Value,currentPassword,replacement.FactorId)==
-      HttpStatusCode.Accepted &&
+      HttpStatusCode.Accepted && queue.Count==beforeStaleCredential &&
       (await ledger.ReadCounterAsync(tenantA,actor,replacement.FactorId,CancellationToken.None))
         ?.State=="ACTIVE",
     "Password reset does not bypass or delete MFA; stale identity revisions deny further step-up");
