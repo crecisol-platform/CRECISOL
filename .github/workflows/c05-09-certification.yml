@@ -1,0 +1,89 @@
+name: CRECISOL C05-09 institutional private encrypted profiles and photo refs A-B-C real HTTP MySQL8.4
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c05/ACTA_CERTIFICACION_ACOTADA_C05_09_2026_11_14.md'
+      - 'qa/c05_09_closure_gate.py'
+      - '.github/workflows/c05-09-certification.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c05/ACTA_CERTIFICACION_ACOTADA_C05_09_2026_11_14.md'
+      - 'qa/c05_09_closure_gate.py'
+      - '.github/workflows/c05-09-certification.yml'
+permissions:
+  contents: read
+jobs:
+  private-profile-ratification:
+    name: Canonical A-B-C + real ASP.NET10 HTTP MySQL8.4 PII/photo A-B IDOR
+    runs-on: ubuntu-24.04
+    timeout-minutes: 110
+    steps:
+      - name: Checkout immutable PR merge or dev SHA without writable token
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Audit A Word master C05-08 and ADR-015 scope
+        run: |
+          set -euo pipefail
+          test ! -e .c05-09-institutional-proof
+          python3 -m py_compile qa/c05_09_closure_gate.py
+          python3 qa/validate_foundation.py
+          python3 qa/c05_09_closure_gate.py A
+          mkdir -p .c05-09-institutional-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-09-institutional-proof/A
+      - name: Audit B reject documentary PII and photo guard deletions
+        run: |
+          set -euo pipefail
+          python3 qa/c05_09_closure_gate.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-09-institutional-proof/B
+      - name: Install official .NET 10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Strict build product API and isolated private profile HTTP harness
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.PrivateProfiles.MySqlTests/Crecisol.PrivateProfiles.MySqlTests.csproj -c Release --nologo -warnaserror
+          printf 'PASS build sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-09-institutional-proof/build
+      - name: Genuine private self PII AES256 GCM photo metadata IDOR and 16-way SQL CAS
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_09_private_profiles_http_mysql.sh
+          printf 'PASS profiles sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-09-institutional-proof/profiles
+      - name: Rerun genuine C05-01 through C05-08 .NET10 and HTTP MySQL regressions
+        run: |
+          set -euo pipefail
+          for proj in \
+            backend/tests/Crecisol.AccountIdentity.ContractsTests/Crecisol.AccountIdentity.ContractsTests.csproj \
+            backend/tests/Crecisol.InvitationSecurity.ContractsTests/Crecisol.InvitationSecurity.ContractsTests.csproj \
+            backend/tests/Crecisol.PasswordHash.ContractsTests/Crecisol.PasswordHash.ContractsTests.csproj \
+            backend/tests/Crecisol.ContextualLogin.ContractsTests/Crecisol.ContextualLogin.ContractsTests.csproj \
+            backend/tests/Crecisol.MfaRisk.ContractsTests/Crecisol.MfaRisk.ContractsTests.csproj; do
+            dotnet build "$proj" -c Release --nologo -warnaserror
+            dotnet run --no-build -c Release --project "$proj"
+          done
+          dotnet build backend/tests/Crecisol.MfaRisk.MySqlTests/Crecisol.MfaRisk.MySqlTests.csproj -c Release --nologo -warnaserror
+          bash database/tests/c05_08_mfa_http_mysql.sh
+          dotnet build backend/tests/Crecisol.MailboxApproval.MySqlTests/Crecisol.MailboxApproval.MySqlTests.csproj -c Release --nologo -warnaserror
+          bash database/tests/c05_07_mailbox_http_mysql.sh
+          dotnet build backend/tests/Crecisol.PasswordRecovery.MySqlTests/Crecisol.PasswordRecovery.MySqlTests.csproj -c Release --nologo -warnaserror
+          bash database/tests/c05_06_recovery_http_mysql.sh
+          dotnet build backend/tests/Crecisol.SessionRevocation.MySqlTests/Crecisol.SessionRevocation.MySqlTests.csproj -c Release --nologo -warnaserror
+          bash database/tests/c05_05_session_http_mysql.sh
+          printf 'PASS regressions sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-09-institutional-proof/regressions
+      - name: Audit C exact three-file SHA lineage and actual same-run evidence
+        run: |
+          set -euo pipefail
+          python3 qa/c05_09_closure_gate.py C
+          printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-09-institutional-proof/C
+      - name: Verify A B C builds actual HTTP MySQL and regressions same SHA
+        run: |
+          set -euo pipefail
+          for stage in A B C build profiles regressions; do
+            grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-09-institutional-proof/$stage"
+          done
+          echo 'PASS C05-09 synthetic tenant self-profile encryption/media references only; NO production auth or real Cloudflare'
