@@ -58,3 +58,12 @@ Se añadió `backend/src/Crecisol.Api/Contracts/NeutralRegistrationPayload.cs`. 
 Se añadieron 21 aserciones adicionales en el runner .NET `Crecisol.Api.ContractsTests` para positivos y negativos de JSON. Las suites deben ejecutarse en el SHA exacto del PR #151; declarar únicamente el resultado comprobado por run ID. El entorno HTTP/API de clientes permanece sin endpoint de identidad, y los riesgos E2E y las auditorías integrales A/B/C continúan pendientes.
 
 **Cobertura delimitada:** parser JSON y validación de entrada exclusivamente; no prueba que el correo se entregue, que el host esté vinculado a un tenant activo, que un actor exista, que MFA sea válido o que una sesión se emita/revoque.
+
+
+## Corte 02 — coordinador de entrada neutral sin exposición HTTP
+
+`backend/src/Crecisol.Api/Contracts/NeutralRegistrationIntake.cs` enlaza **únicamente** el preflight de transporte y parser JSON con una interfaz `INeutralRegistrationIntentHandler`. Su adaptador `ApplicationNeutralRegistrationIntentHandler` llama a `RequestNeutralRegistrationIntent.ExecuteAsync` ya existente, sin convertir el recibo neutral en identidad acreditada ni en grant. La barrera impone coincidencia exacta entre el tamaño de cuerpo declarado y los bytes recibidos. Se incorporaron 14 aserciones adicionales de composición con puerto simulado, incluidas entradas falsificadas y cancelación que no deben alcanzar el caso de uso.
+
+**Aclaración de alcance:** las aserciones de este corte miden el coordinador aislado en memoria. No se registra ruta en `Program.cs`, no hay binding DI operativo a persistencia MySQL, ni SMTP de cliente o prueba real de buzón. No se crea cuenta, credencial, tenant, sesión ni autorización. **No declarar flujo E2E completo.** El PR permanece DRAFT sin fusión; las auditorías A/B/C integrales P0 siguen pendientes.
+
+**Hallazgo que debe resolverse antes de conectar el directorio:** el canonizador de registro preserva las mayúsculas de la parte local, mientras `CanonicalLoginHandle.Parse` transforma a minúsculas todo el handle. Las pruebas de login existentes aceptan intencionalmente `USER@EXAMPLE.TEST` como el mismo handle. La decisión de equivalencia entre identidades debe hacerse con un contrato de unicidad almacenada y pruebas de colisión, sin alterar silenciosamente contratos históricos ni asumir equivalencia de alias.
