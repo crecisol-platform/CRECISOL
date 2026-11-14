@@ -21,3 +21,20 @@ Fuentes de autoridad: Documento Maestro Único `docs/CRECISOL_DOCUMENTO_MAESTRO_
 **Riesgos y mitigación**: falso bloqueo por fuente compartida (límites por política y propósito, ventana de enfriamiento limitada); fuerza bruta distribuida no resuelta (NO-GO producto); IPv6 /64 protege rotación trivial pero puede penalizar hogares detrás del mismo prefijo; dependencia de DB fail-closed; tabla de traces requiere retención futura; time-bound fixed-window puede permitir seam burst (cooldown del bloqueo y rate per source/subject lo limitan, no elimina ataques distribuidos). Probar explícitamente y no prometer seguridad absoluta.
 
 **Rollback:** cerrar PR previo a fusión o revertir exclusivamente squash C05-10 en `dev` con dependencia revisada; no reescribir certificados C05-01..09 ni `main`. C05-11 solo tras cierre eficaz; C06 bloqueado hasta C05 integral.
+
+## Remediación POSTMERGE — Carrera de reloj durante locks InnoDB (14-11-2026)
+
+**Incidencia NO CERTIFICADA:** PR técnico #145 quedó fusionado en dev 1b0a3ec6a62ef38582b0ef514f53cb62965b15cd con PREMERGE verde. Sin embargo, la CI POSTMERGE [#43643788104](https://github.com/crecisol-platform/CRECISOL/actions/runs/43643788104) reprodujo una carrera de 16 HTTP con **5 ACCEPTED, 4 LIMITED y 7 UNAVAILABLE (503)**. Este P1 permanece abierto hasta pruebas sobre SHA corregido. C05-11 bloqueada.
+
+**Mecanismo:** el stored procedure c05_10_admit_once capturaba UTC_TIMESTAMP(6) antes de esperar los bloqueos SOURCE/SUBJECT. MySQL 8.4 documenta que NOW/UTC_TIMESTAMP permanecen fijos desde el comienzo de todo el CALL; otro hilo podía crear la ventana después de ese instante y una transacción a la espera interpretar v_started>v_now como estado corrupto, generando DENIED (503). La variación PRE/POST no equivale a un cierre seguro.
+
+**Reparación en [PR #146](https://github.com/crecisol-platform/CRECISOL/pull/146):**
+- Configurar la sesión del fixture en UTC con @@session.time_zone='+00:00' y, después de adquirir CADA SELECT ... FOR UPDATE de los buckets SOURCE y SUBJECT, actualizar v_now=SYSDATE(6), hora DB real después del lock, manteniendo el rechazo fail-closed de timestamps futuros.
+- **SYSDATE(6) es no determinista para replicación por sentencias; esta técnica NO SE APRUEBA para producción sin revisión de replicación basada en filas/reloj monotónico, topología de BD y política UTC.** Solo se prueba en MySQL 8.4 desechable.
+- Diagnóstico exclusivamente **agregado y numérico** de categorías SQL/HTTP: jamás excepciones SQL textuales, dirección IP, correo, HMAC, contraseña, URL, cookie, token, cabecera ni DSN en consola.
+- Mantener el requisito original 16 HTTP => **5 admitidos / 11 limitados / 0 indisponibles** y repetir **cinco rondas adicionales de 16 HTTP**, reseteando solo la ventana de fixture por SQL privilegiado. Todas deben pasar 5/11/0 sin ampliar límites ni eliminar la comprobación de corrupción temporal.
+- Repetir auditorías A/B/C, .NET10/MySQL8.4/HTTP, regresiones C05-01..09, C03 integral y diff/SHA exactos, PREMERGE y POSTMERGE, luego acta institucional separada.
+
+**Referencia oficial:** https://dev.mysql.com/doc/refman/8.4/en/date-and-time-functions.html. La documentación explica la diferencia entre UTC_TIMESTAMP fijado por CALL y SYSDATE evaluado al instante.
+
+**Seguridad y rollback:** solo CRECISOL dev y rama feature; no main, Word/PDF, solqaryn/Solqaryn, producción, VPS, Cloudflare ni cobros. Revertir exclusivamente squash de remediación después de revisar dependencias. **C05-10 PENDIENTE; C05-11 BLOQUEADA** hasta dictamen final.
