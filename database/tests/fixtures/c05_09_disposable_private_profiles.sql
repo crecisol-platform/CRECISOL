@@ -169,7 +169,8 @@ proc:BEGIN
  DECLARE v_tenant_active TINYINT; DECLARE v_expires DATETIME(6);
  DECLARE v_global BIGINT UNSIGNED; DECLARE v_global_active TINYINT;
  DECLARE v_realm VARCHAR(12); DECLARE v_mail_verified TINYINT;
- DECLARE v_version BIGINT UNSIGNED; DECLARE v_key VARCHAR(192);
+ DECLARE v_version BIGINT UNSIGNED; DECLARE v_new_profile BOOLEAN DEFAULT FALSE;
+ DECLARE v_key VARCHAR(192);
  DECLARE v_mime VARCHAR(24); DECLARE v_bytes BIGINT UNSIGNED;
  DECLARE v_photo_state VARCHAR(9); DECLARE v_scan VARCHAR(8);
  DECLARE v_is_private TINYINT; DECLARE v_now DATETIME(6);
@@ -204,6 +205,11 @@ proc:BEGIN
  IF v_missing OR v_mail_verified<>1 THEN
    ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc;
  END IF;
+ SET v_missing=FALSE;
+ SELECT profile_revision INTO v_version FROM c05_09_private_profiles
+ WHERE tenant_id=p_tenant AND actor_id=p_actor FOR UPDATE;
+ SET v_new_profile=v_missing;
+ SET v_missing=FALSE;
  IF p_photo IS NOT NULL THEN
    SELECT object_key,content_type,byte_length,state,scan_state,is_private
    INTO v_key,v_mime,v_bytes,v_photo_state,v_scan,v_is_private
@@ -216,10 +222,7 @@ proc:BEGIN
      ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc;
    END IF;
  END IF;
- SET v_missing=FALSE;
- SELECT profile_revision INTO v_version FROM c05_09_private_profiles
- WHERE tenant_id=p_tenant AND actor_id=p_actor FOR UPDATE;
- IF v_missing THEN
+ IF v_new_profile THEN
    IF p_expected<>0 THEN
      ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc;
    END IF;
@@ -231,7 +234,7 @@ proc:BEGIN
    VALUES (p_tenant,p_actor,1,'CREATED',v_now);
    COMMIT; SELECT 'SAVED' AS result; LEAVE proc;
  END IF;
- IF v_version<>p_expected OR v_version=18446744073709551615 THEN
+ IF v_version<>p_expected OR v_version>=9223372036854775806 THEN
    ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc;
  END IF;
  UPDATE c05_09_private_profiles SET pii_ciphertext=p_cipher,
@@ -293,7 +296,7 @@ proc:BEGIN
  SELECT profile_revision INTO v_version FROM c05_09_private_profiles
  WHERE tenant_id=p_tenant AND actor_id=p_actor FOR UPDATE;
  IF v_missing OR v_version<>p_expected OR
-    v_version=18446744073709551615 THEN
+    v_version>=9223372036854775806 THEN
    ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc;
  END IF;
  UPDATE c05_09_private_profiles SET pii_ciphertext=NULL,photo_id=NULL,
