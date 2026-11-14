@@ -23,4 +23,4 @@ Autoridades: Documento Maestro Único `docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.doc
 
 **NO-GO productivo:** no hay usuario real autenticado, sesión/claims/roles reales, edición de perfil en UI, subida de bytes, antivirus, detector MIME real, Cloudflare R2/Images, signing/CDN, KMS/rotación, borrado físico/retención legal, preferencias de menores ni auditoría WORM. Solo código y pruebas aisladas. La implementación no habilita C05-10, C05 completo, C06, producción ni pagos.
 
-**Rollback:** cerrar PR antes de fusionar o revertir solo squash técnico/documental C05-09 en dev tras verificar dependencias. Nunca modificar certificados C05-01..08, main, Word/PDF ni SOLQARYN.
+**Rollback:** cerrar PR antes de fusionar o revertir solo squash técnico/documental C05-09 en dev tras verificar dependencias. Nunca modificar certificados C05-01..08, main, Word/PDF ni el repositorio prohibido `solqaryn/Solqaryn`.
