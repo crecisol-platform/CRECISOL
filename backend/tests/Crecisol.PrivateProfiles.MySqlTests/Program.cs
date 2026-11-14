@@ -496,6 +496,285 @@ Task<(HttpStatusCode Code,string Body)> Erase(
     string host,string email,string pass,long revision)=>
     RequestAsync("erase",host,new{email,password=pass,revision});
 
+
+// Genuine HTTP / MySQL8.4 adversarial requests (no product API routing).
+Check((await Read(hostA.Value,mail,password)).Code==HttpStatusCode.NotFound,
+    "No guessed profile or PII appears before owned profile creation");
+Check((await Save("evil.example.test",mail,password,"Alice Example",0,photoA))
+      .Code==HttpStatusCode.BadRequest,
+    "Unverified Host cannot create any profile");
+Check((await RequestAsync("save",hostA.Value,
+      new{email=mail,password,name="Alice Example",revision=0,photoId=photoA},
+      spoof:tenantB.Value.ToString())).Code==HttpStatusCode.BadRequest,
+    "Forged X-Tenant-Id cannot select another tenant");
+Check((await RequestAsync("save",hostA.Value,
+      new{email=mail,password,name="Alice Example",revision=0,photoId=photoA},
+      forwarded:true)).Code==HttpStatusCode.BadRequest,
+    "Forwarded host cannot override direct host backend");
+Check((await RequestAsync("save",hostA.Value,
+      new{email=mail,password,name="Alice Example",revision=0,photoId=photoA,
+          actorId=outsider.Value})).Code==HttpStatusCode.BadRequest,
+    "ActorId from browser is forbidden, even when owned tenant");
+Check((await Save(hostA.Value,mail,"incorrect","Alice Example",0,photoA))
+      .Code==HttpStatusCode.Forbidden &&
+      (await Read(hostA.Value,mail,"incorrect")).Code==HttpStatusCode.NotFound,
+    "Wrong Argon2id password cannot create or read PII");
+Check((await Save(hostA.Value,otherMail,password,"Alice Example",0,photoA))
+      .Code==HttpStatusCode.Forbidden,
+    "Different account email cannot borrow a password");
+Check((await Save(hostA.Value,mail,password,"<script>",0,photoA))
+      .Code==HttpStatusCode.Forbidden,
+    "Unsafe profile name cannot reach storage");
+
+async Task<bool> RejectedPhoto(Guid id,string label)
+{
+    bool denied=(await Save(hostA.Value,mail,password,"Alice Example",0,id))
+       .Code==HttpStatusCode.Forbidden;
+    Check(denied,label);
+    return denied;
+}
+_ = await RejectedPhoto(photoB,"Tenant B media ID cannot attach to tenant A profile");
+_ = await RejectedPhoto(photoOther,"Same tenant different actor media ID cannot attach");
+_ = await RejectedPhoto(pendingA,"Pending upload cannot become private profile photo");
+_ = await RejectedPhoto(revokedA,"Revoked upload cannot become private profile photo");
+_ = await RejectedPhoto(blockedA,"Unscanned or blocked content cannot become photo");
+_ = await RejectedPhoto(mismatchedKeyA,"Traversal/foreign key cannot be referenced despite verified state");
+Check((await Read(hostA.Value,mail,password)).Code==HttpStatusCode.NotFound,
+      "Rejected uploads never create a partial profile or leak PII");
+
+Check((await Save(hostA.Value,mail,password,"Alice Example",0,photoA))
+      .Code==HttpStatusCode.NoContent,
+      "Valid owner self update stores only encrypted PII and private pointer on tenant A");
+var aFirst=await Read(hostA.Value,mail,password);
+Check(aFirst.Code==HttpStatusCode.OK &&
+      aFirst.Body.Contains("\"displayName\":\"Alice Example\"",StringComparison.Ordinal) &&
+      aFirst.Body.Contains(photoA.ToString("D"),StringComparison.OrdinalIgnoreCase) &&
+      aFirst.Body.Contains("\"revision\":1",StringComparison.Ordinal),
+      "A read decrypts own private PII, revision and opaque photo ID, no object URL");
+Check((await Save(hostB.Value,mail,password,"Beta Example",0,photoB))
+      .Code==HttpStatusCode.NoContent,
+      "Same global actor has an independent profile and photo in tenant B");
+var bFirst=await Read(hostB.Value,mail,password);
+Check(bFirst.Code==HttpStatusCode.OK &&
+      bFirst.Body.Contains("\"displayName\":\"Beta Example\"",StringComparison.Ordinal) &&
+      bFirst.Body.Contains(photoB.ToString("D"),StringComparison.OrdinalIgnoreCase) &&
+      !bFirst.Body.Contains("Alice Example",StringComparison.Ordinal) &&
+      !bFirst.Body.Contains(photoA.ToString("D"),StringComparison.OrdinalIgnoreCase),
+      "Tenant B profile never returns A PII or A photo ID");
+var aAgain=await Read(hostA.Value,mail,password);
+Check(aAgain.Body.Contains("\"displayName\":\"Alice Example\"",StringComparison.Ordinal) &&
+      !aAgain.Body.Contains("Beta Example",StringComparison.Ordinal) &&
+      !aAgain.Body.Contains(photoB.ToString("D"),StringComparison.OrdinalIgnoreCase),
+      "Tenant A profile never returns B PII or B photo ID");
+
+Check((await Read(hostA.Value,otherMail,otherPassword)).Code==HttpStatusCode.NotFound,
+      "Distinct active actor in tenant A cannot see owner profile");
+Check((await Save(hostA.Value,otherMail,otherPassword,"Other Consumer",0,photoA))
+      .Code==HttpStatusCode.Forbidden,
+      "Consumer profile kind grants no ability to use owner's photo");
+Check((await Save(hostA.Value,otherMail,otherPassword,"Other Consumer",0,photoOther))
+      .Code==HttpStatusCode.NoContent,
+      "Distinct actor can create only its own independently scoped private profile");
+var otherView=await Read(hostA.Value,otherMail,otherPassword);
+Check(otherView.Code==HttpStatusCode.OK &&
+      otherView.Body.Contains("Other Consumer",StringComparison.Ordinal) &&
+      !otherView.Body.Contains("Alice Example",StringComparison.Ordinal),
+      "Other actor view never includes owner PII");
+Check((await Read(hostB.Value,otherMail,otherPassword)).Code==HttpStatusCode.NotFound,
+      "Consumer without B membership cannot read A data through B verified host");
+Check((await Save(hostA.Value,mail,password,"Alice Replaced",1,photoOther))
+      .Code==HttpStatusCode.Forbidden,
+      "Existing profile cannot be switched to foreign actor photo");
+Check((await Save(hostA.Value,mail,password,"Alice Replaced",1,photoB))
+      .Code==HttpStatusCode.Forbidden,
+      "Existing profile cannot be switched to another tenant photo");
+Check(await ScalarAsync("SELECT COUNT(*) FROM c05_09_private_profiles")==3,
+      "Exactly 3 independent tenant/actor profiles persisted in isolated MySQL");
+
+string aHex=tenantA.Value.ToString("N");
+string bHex=tenantB.Value.ToString("N");
+string actorHex=actor.Value.ToString("N");
+string otherHex=outsider.Value.ToString("N");
+Check(await ScalarAsync($"""
+    SELECT LOCATE(HEX(CONVERT('Alice Example' USING utf8mb4)),
+           HEX(pii_ciphertext)) FROM c05_09_private_profiles
+     WHERE tenant_id=UNHEX('{aHex}') AND actor_id=UNHEX('{actorHex}')
+    """)==0,"Private personal name is NOT stored as plaintext in MySQL");
+Check(await ScalarAsync("""
+    SELECT COUNT(*) FROM information_schema.columns
+     WHERE table_schema=DATABASE()
+       AND table_name IN ('c05_09_private_profiles','c05_09_profile_audit')
+       AND (column_name LIKE '%email%' OR column_name LIKE '%password%'
+         OR column_name LIKE '%token%' OR column_name LIKE '%name%'
+         OR column_name LIKE '%url%' OR column_name LIKE '%secret%'
+         OR column_name LIKE '%file_content%')
+    """)==0,"Private profile and audit schemas contain NO PII name, token, key or URL columns");
+
+// 16 real HTTP writes using the SAME optimistic revision. Password is ALWAYS
+// Argon2id-verified; limiter caps memory load, DB CAS permits exactly 1 winner.
+var race=await Task.WhenAll(Enumerable.Range(0,16).Select(_=>
+    Save(hostA.Value,mail,password,"Alice Updated",1,photoA)));
+Check(race.Count(x=>x.Code==HttpStatusCode.NoContent)==1 &&
+      race.Count(x=>x.Code==HttpStatusCode.Forbidden)==15,
+    "16 concurrent HTTP profile CAS updates: exactly one winner and fifteen denied");
+var aSecond=await Read(hostA.Value,mail,password);
+Check(aSecond.Code==HttpStatusCode.OK &&
+      aSecond.Body.Contains("\"displayName\":\"Alice Updated\"",StringComparison.Ordinal) &&
+      aSecond.Body.Contains("\"revision\":2",StringComparison.Ordinal),
+    "Concurrent updates commit exactly one encrypted private name revision");
+Check(await ScalarAsync($"""
+     SELECT COUNT(*) FROM c05_09_profile_audit
+      WHERE tenant_id=UNHEX('{aHex}') AND actor_id=UNHEX('{actorHex}')
+        AND event_type='UPDATED'
+     """)==1,"Append-only audit records exactly one successful CAS modification");
+Check((await Save(hostA.Value,mail,password,"Stale Attempt",1,null))
+      .Code==HttpStatusCode.Forbidden,
+      "Stale revision cannot remove photo or overwrite PII");
+Check((await Read(hostB.Value,mail,password)).Body.Contains("Beta Example",
+      StringComparison.Ordinal),
+    "Parallel A revision changes never overwrite B profile or photo");
+
+// A photo may be later revoked. Profile read must hide its opaque ID
+// instead of revealing a stale object pointer from a revoked manifest.
+await using(var revoke=new MySqlCommand($"""
+    UPDATE c05_09_media_manifest SET state='REVOKED'
+     WHERE tenant_id=UNHEX('{aHex}') AND actor_id=UNHEX('{actorHex}')
+       AND media_id=UNHEX('{photoA:N}')
+    """,setup))
+    Check(await revoke.ExecuteNonQueryAsync()==1,
+        "Trusted fixture revokes formerly VERIFIED photo");
+var noPhoto=await Read(hostA.Value,mail,password);
+Check(noPhoto.Code==HttpStatusCode.OK &&
+      noPhoto.Body.Contains("\"hasPhoto\":false",StringComparison.Ordinal) &&
+      !noPhoto.Body.Contains(photoA.ToString("D"),StringComparison.OrdinalIgnoreCase) &&
+      noPhoto.Body.Contains("Alice Updated",StringComparison.Ordinal),
+    "Revocation hides private photo ID without leaking storage reference");
+Check((await Save(hostA.Value,mail,password,"New Attempt",2,photoA))
+      .Code==HttpStatusCode.Forbidden,
+      "Revoked photo cannot be resurrected as an active profile photo");
+Check((await Save(hostA.Value,mail,password,"Alice Updated",2,null))
+      .Code==HttpStatusCode.NoContent,
+      "Owner can intentionally clear a profile photo pointer using CAS");
+Check((await Erase(hostA.Value,mail,"wrong",3)).Code==HttpStatusCode.Forbidden,
+      "Incorrect Argon2id cannot erase someone else's personal data");
+Check((await Erase(hostA.Value,mail,password,2)).Code==HttpStatusCode.Forbidden,
+      "Old CAS version cannot erase newer private profile");
+Check((await Erase(hostA.Value,mail,password,3)).Code==HttpStatusCode.NoContent,
+      "Owner's versioned erasure clears encrypted name and photo atomically");
+Check((await Read(hostA.Value,mail,password)).Code==HttpStatusCode.NotFound,
+      "Erased profile no longer returns PII, placeholder or photo ID");
+Check((await Erase(hostA.Value,mail,password,3)).Code==HttpStatusCode.Forbidden,
+      "Erasure replay cannot repeat audit mutation");
+Check(await ScalarAsync($"""
+    SELECT COUNT(*) FROM c05_09_private_profiles
+     WHERE tenant_id=UNHEX('{aHex}') AND actor_id=UNHEX('{actorHex}')
+       AND pii_ciphertext IS NULL AND photo_id IS NULL AND profile_revision=4
+    """)==1,"DB contains no PII envelope or photo pointer after erasure");
+Check((await Read(hostB.Value,mail,password)).Body.Contains("Beta Example",
+      StringComparison.Ordinal) &&
+      (await Read(hostA.Value,otherMail,otherPassword)).Body.Contains("Other Consumer",
+      StringComparison.Ordinal),
+      "Erasing A owner does not erase tenant B or other actor A");
+
+// Mailbox de-verification stops private PII access, despite an old password.
+await using(var off=new MySqlCommand($"""
+    UPDATE c05_06_mailboxes SET verified=0
+    WHERE tenant_id=UNHEX('{bHex}') AND actor_id=UNHEX('{actorHex}')
+    """,setup))
+    Check(await off.ExecuteNonQueryAsync()==1,
+        "Fixture de-verifies tenant B mailbox");
+Check((await Read(hostB.Value,mail,password)).Code==HttpStatusCode.NotFound &&
+      (await Save(hostB.Value,mail,password,"Wrongly Recovered",1,null))
+        .Code==HttpStatusCode.Forbidden,
+    "Unverified B mailbox cannot read or mutate B private PII");
+await using(var on=new MySqlCommand($"""
+    UPDATE c05_06_mailboxes SET verified=1
+    WHERE tenant_id=UNHEX('{bHex}') AND actor_id=UNHEX('{actorHex}')
+    """,setup))
+    Check(await on.ExecuteNonQueryAsync()==1,"Fixture re-verifies B mailbox");
+Check((await Read(hostB.Value,mail,password)).Body.Contains("Beta Example",
+      StringComparison.Ordinal),"Reverified tenant B still sees own profile only");
+
+// Changing host revision and then restoring active status cannot reuse a
+// previously prepared proof carrying the old version (host revision=8).
+await using(var rev=new MySqlCommand($"""
+    UPDATE c05_05_subjects SET host_revision=host_revision+1
+    WHERE tenant_id=UNHEX('{bHex}') AND actor_id=UNHEX('{actorHex}')
+    """,setup))
+    Check(await rev.ExecuteNonQueryAsync()==1,"Fixture bumps verified host revision in B");
+Check((await Read(hostB.Value,mail,password)).Code==HttpStatusCode.NotFound &&
+      (await Save(hostB.Value,mail,password,"Stale Host",1,null))
+        .Code==HttpStatusCode.Forbidden,
+    "Host revision mismatch always denies PII despite valid old password");
+await using(var suspend=new MySqlCommand($"""
+    UPDATE c05_05_subjects SET membership_active=0, membership_revision=membership_revision+1
+    WHERE tenant_id=UNHEX('{aHex}') AND actor_id=UNHEX('{otherHex}')
+    """,setup))
+    Check(await suspend.ExecuteNonQueryAsync()==1,
+        "Fixture suspends other actor membership and advances revision");
+Check((await Read(hostA.Value,otherMail,otherPassword)).Code==
+       HttpStatusCode.NotFound,
+    "Suspended tenant membership cannot read other actor private PII");
+await using(var restore=new MySqlCommand($"""
+    UPDATE c05_05_subjects SET membership_active=1
+    WHERE tenant_id=UNHEX('{aHex}') AND actor_id=UNHEX('{otherHex}')
+    """,setup))
+    Check(await restore.ExecuteNonQueryAsync()==1,
+        "Fixture restores membership without restoring old proof revision");
+Check((await Read(hostA.Value,otherMail,otherPassword)).Code==
+       HttpStatusCode.NotFound,
+    "Reactivated membership cannot resurrect an old profile authorization");
+
+// Platform operators cannot borrow tenant profile permissions even when
+// fixture records are syntactically complete.
+await using(var admin=new MySqlConnection(runnerDsn))
+{
+    await admin.OpenAsync();
+    await using var cmd=new MySqlCommand("c05_09_read_self",admin)
+        {CommandType=System.Data.CommandType.StoredProcedure};
+    void Id(string key,Guid v)=>cmd.Parameters.Add(key,MySqlDbType.Binary).Value=
+        v.ToByteArray(bigEndian:true);
+    void Rev(string key,ulong v)=>cmd.Parameters.Add(key,MySqlDbType.UInt64).Value=v;
+    Id("@p_tenant",tenantA.Value);
+    Id("@p_actor",platform.Value);
+    Id("@p_link",platformLink.Value);
+    Rev("@p_account",7); Rev("@p_credential",3); Rev("@p_membership",5);
+    Rev("@p_tenant_revision",9); Rev("@p_host",8);
+    await using var output=await cmd.ExecuteReaderAsync();
+    Check(await output.ReadAsync() && output.GetString(0)=="DENIED",
+        "PLATFORM realm denied by MySQL despite correct tenant-style fixture revisions");
+}
+await RejectSqlAsync(async()=>
+{
+    await using var cmd=new MySqlCommand(
+        "UPDATE c05_09_profile_audit SET event_type='CREATED' WHERE audit_id=1",setup);
+    await cmd.ExecuteNonQueryAsync();
+},"Append-only profile audit UPDATE prohibited even for fixture admin");
+await RejectSqlAsync(async()=>
+{
+    await using var cmd=new MySqlCommand(
+        "DELETE FROM c05_09_profile_audit WHERE audit_id=1",setup);
+    await cmd.ExecuteNonQueryAsync();
+},"Append-only profile audit DELETE prohibited even for fixture admin");
+Check(await ScalarAsync("""
+    SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema=DATABASE() AND table_name='c05_09_media_manifest'
+      AND (data_type IN ('blob','longblob','mediumblob','tinyblob')
+          OR column_name LIKE '%url%' OR column_name LIKE '%binary%'
+          OR column_name LIKE '%image_data%')
+    """)==0,
+    "R2-style media manifest stores metadata/reference only, not image bytes or URL");
+Check(await ScalarAsync($"""
+    SELECT COUNT(*) FROM c05_09_profile_audit WHERE tenant_id=UNHEX('{aHex}')
+      AND actor_id=UNHEX('{actorHex}') AND event_type='ERASED'
+    """)==1,"Private PII erasure is auditable without PII in immutable log");
+Check(reauth.Calls>=25,"Every private read/update/delete triggered real C05-04 Argon2id reauthentication");
+
+await app.StopAsync();
+Console.WriteLine($"PASS CRECISOL C05-09 REAL HTTP/.NET10/MySQL8.4: {checks} checks");
+Console.WriteLine("PASS self-only AES256-GCM, photo manifest pointer, A/B and actor IDOR denial, 16-way CAS, privacy erasure, revocation and audit immutability");
+Console.WriteLine("NO-GO production: no real Cloudflare upload, antivirus, MIME content verification, KMS, login session, CDN URLs or user accounts.");
+
 sealed class FixtureCompromisedScreen : ITrustedCompromisedPasswordScreen
 {
     public PasswordCompromiseVerdict Check(ReadOnlySpan<char> _) =>
