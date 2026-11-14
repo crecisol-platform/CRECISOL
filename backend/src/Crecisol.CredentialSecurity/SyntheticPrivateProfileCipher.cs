@@ -29,10 +29,10 @@ public sealed class SyntheticPrivateProfileCipher : ITrustedPrivateProfileCipher
     {
         ArgumentNullException.ThrowIfNull(tenant);
         ArgumentNullException.ThrowIfNull(actor);
-        var aad=new byte[14+16+16];
+        var aad=new byte[15+16+16];
         Encoding.ASCII.GetBytes("CRECISOL.C05-09",aad);
-        tenant.Value.TryWriteBytes(aad.AsSpan(14,16),bigEndian:true,out _);
-        actor.Value.TryWriteBytes(aad.AsSpan(30,16),bigEndian:true,out _);
+        tenant.Value.TryWriteBytes(aad.AsSpan(15,16),bigEndian:true,out _);
+        actor.Value.TryWriteBytes(aad.AsSpan(31,16),bigEndian:true,out _);
         return aad;
     }
 
