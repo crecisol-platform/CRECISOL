@@ -30,6 +30,8 @@ Las cuatro ejecuciones siguientes terminaron `completed/success` sobre el HEAD e
 | Foundation | [43637795474](https://github.com/crecisol-platform/CRECISOL/actions/runs/43637795474) | completed/success, repositorio/fuente/tipado. |
 | C03 integral | [43637795403](https://github.com/crecisol-platform/CRECISOL/actions/runs/43637795403) | completed/success, .NET10, Angular22, Chromium, MySQL8.4 y regresión histórica. |
 
+**Regresiones secuenciales verificables:** C05-01, C05-02, C05-03, C05-04, C05-05, C05-06 y C05-07 se vuelven a ejecutar en el gate institucional para impedir daños a contratos, hashing, login, sesiones, recuperación y correo. Los resultados no ejecutados no cuentan como PASS.
+
 **Fallos históricos preservados:** una CI anterior de desarrollo detectó `CS8321` (función local no utilizada) y fue corregido en commit `a4e0ded1fd02b846e59358c0f2af5b51628cf7f0` sin desactivar `warnings-as-errors`. Los runs anteriores fallidos **NO** se cuentan como aprobados; la evidencia válida pertenece al HEAD final y sus 4/4 verdes. El checkout sintético de PR en los logs puede tener SHA de merge temporal diferente del HEAD: se verificó igualdad de padres base/head y diff exacto.
 
 ## 4. POSTMERGE técnico sobre `dev`
