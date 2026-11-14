@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
+using Crecisol.Api.Contracts;
 using Crecisol.Application.Identity;
 using Crecisol.Application.Tenancy;
 using Crecisol.Domain.Identity;
@@ -81,6 +82,8 @@ builder.Services.AddSingleton<ResolveVerifiedTenantHost>();
 builder.Services.AddSingleton<ITrustedNeutralRegistrationIntentRecorder>(_ =>
     new MySqlDisposableNeutralRegistrationRecorder(limitedDsn, key, 1));
 builder.Services.AddTransient<RequestNeutralRegistrationIntent>();
+builder.Services.AddTransient<INeutralRegistrationIntentHandler, ApplicationNeutralRegistrationIntentHandler>();
+builder.Services.AddTransient<NeutralRegistrationIntake>();
 
 await using var app = builder.Build();
 app.MapPost("/__test_only/c05-02/public/registration-intent",
@@ -122,6 +125,36 @@ app.MapPost("/__test_only/c05-02/public/registration-intent",
         }
         return Results.Json(new { Code = NeutralRegistrationReceipt.Acknowledged.Code },
             statusCode: StatusCodes.Status202Accepted);
+    });
+
+
+// Integrated path ONLY in this isolated loopback test executable, never Program.cs.
+app.MapPost("/__test_only/c05-integration/registration-intent",
+    async (HttpContext context, NeutralRegistrationIntake intake) =>
+    {
+        context.Response.Headers.CacheControl = "no-store";
+        context.Response.Headers.Pragma = "no-cache";
+        context.Response.Headers["Referrer-Policy"] = "no-referrer";
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        if (!NeutralRegistrationTransportPreflight.IsEligible(context.Request))
+            return Results.BadRequest();
+        try
+        {
+            var body = new byte[checked((int)context.Request.ContentLength!.Value)];
+            await context.Request.Body.ReadExactlyAsync(body.AsMemory(), context.RequestAborted);
+            var trailing = new byte[1];
+            if (await context.Request.Body.ReadAsync(trailing.AsMemory(), context.RequestAborted) != 0)
+                return Results.BadRequest();
+            var result = await intake.SubmitAsync(context.Request, body, context.RequestAborted);
+            return result == NeutralRegistrationIntakeOutcome.Acknowledged
+                ? Results.Json(new { Code = NeutralRegistrationReceipt.Acknowledged.Code },
+                    statusCode: StatusCodes.Status202Accepted)
+                : Results.BadRequest();
+        }
+        catch (UnauthorizedAccessException) { return Results.BadRequest(); }
+        catch (EndOfStreamException) { return Results.BadRequest(); }
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested) { throw; }
+        catch (Exception) { return Results.StatusCode(StatusCodes.Status503ServiceUnavailable); }
     });
 
 await app.StartAsync();
@@ -343,6 +376,78 @@ Pass(afterRace == priorCount + 8,
 Pass(await ScalarAsync(admin,
     $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{B}'") == 1,
     "Concurrent tenant A quota cannot insert or suppress tenant B records");
+
+
+// The new integrated path is tested AFTER the historical MySQL quota and race
+// cases, preserving all previous counts and ensuring tenant B still has quota.
+async Task<Observed> SendBridgeAsync(string host, string json,
+    IReadOnlyDictionary<string, string>? headers = null, string media = "application/json")
+{
+    using var req = new HttpRequestMessage(HttpMethod.Post,
+        local + "/__test_only/c05-integration/registration-intent");
+    req.Headers.Host = host;
+    var bytes = new ByteArrayContent(Encoding.UTF8.GetBytes(json));
+    bytes.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(media);
+    req.Content = bytes;
+    if (headers is not null)
+        foreach (var pair in headers) req.Headers.TryAddWithoutValidation(pair.Key, pair.Value);
+    using var res = await client.SendAsync(req);
+    return new Observed(res.StatusCode, await res.Content.ReadAsStringAsync(),
+        res.Headers.TryGetValues("Cache-Control", out var cache) && cache.Contains("no-store"),
+        res.Headers.Contains("Set-Cookie"), res.Headers.Contains("Location"));
+}
+var aBeforeBridge = await ScalarAsync(admin,
+    $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{A}'");
+var bBeforeBridge = await ScalarAsync(admin,
+    $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{B}'");
+var bridge = await SendBridgeAsync("b.crecisol.test", "{\"mailbox\":\"Integrated+One@EXAMPLE.TEST\"}");
+Pass(bridge.Status == HttpStatusCode.Accepted && bridge.Body == known.Body &&
+     bridge.CacheDenied && !bridge.HasCookie && !bridge.HasLocation,
+    "Actual HTTP intake is neutral, with no session, redirect or cache");
+Pass(await ScalarAsync(admin,
+    $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{B}'")
+    == bBeforeBridge + 1 &&
+    await ScalarAsync(admin,
+    $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{A}'")
+    == aBeforeBridge,
+    "Actual HTTP to Application to MySQL persists one tenant B intent, zero A");
+async Task DenyBridgeAsync(string name, string host, string json,
+    IReadOnlyDictionary<string, string>? headers = null, string media = "application/json")
+{
+    var response = await SendBridgeAsync(host, json, headers, media);
+    Pass(response.Status == HttpStatusCode.BadRequest && response.CacheDenied &&
+         !response.HasCookie && !response.HasLocation,
+        "Integrated pre-database denial " + name);
+}
+await DenyBridgeAsync("forged tenant A from B", "b.crecisol.test",
+    "{\"mailbox\":\"other@example.test\"}",
+    new Dictionary<string,string> { ["X-Tenant-Id"] = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" });
+await DenyBridgeAsync("forged actor", "b.crecisol.test",
+    "{\"mailbox\":\"other@example.test\"}",
+    new Dictionary<string,string> { ["X-Actor-Id"] = "forged" });
+await DenyBridgeAsync("forged role", "b.crecisol.test",
+    "{\"mailbox\":\"other@example.test\",\"role\":\"SuperAdmin\"}");
+await DenyBridgeAsync("forged Forwarded host", "b.crecisol.test",
+    "{\"mailbox\":\"other@example.test\"}",
+    new Dictionary<string,string> { ["X-Forwarded-Host"] = "a.crecisol.test" });
+await DenyBridgeAsync("forged XFF", "b.crecisol.test",
+    "{\"mailbox\":\"other@example.test\"}",
+    new Dictionary<string,string> { ["X-Forwarded-For"] = "198.51.100.9" });
+await DenyBridgeAsync("JSON duplicate", "b.crecisol.test",
+    "{\"mailbox\":\"a@example.test\",\"mailbox\":\"b@example.test\"}");
+await DenyBridgeAsync("JSON tenant selector", "b.crecisol.test",
+    "{\"mailbox\":\"other@example.test\",\"tenant\":\"A\"}");
+await DenyBridgeAsync("invalid media", "b.crecisol.test",
+    "{\"mailbox\":\"other@example.test\"}", media: "text/plain");
+await DenyBridgeAsync("unknown direct host", "foreign.crecisol.test",
+    "{\"mailbox\":\"other@example.test\"}");
+Pass(await ScalarAsync(admin,
+    $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{B}'")
+    == bBeforeBridge + 1 &&
+    await ScalarAsync(admin,
+    $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{A}'")
+    == aBeforeBridge,
+    "Adversarial intake requests do not write records in either tenant");
 
 await app.StopAsync();
 CryptographicOperations.ZeroMemory(key);
