@@ -112,8 +112,9 @@ Check(!backupLedger.TryStartReplacement(
 Check(!backupLedger.TryActivateReplacement(newFactorProven:false),
     "Factor is never reset before replacement factor is cryptographically proven");
 Check(backupLedger.TryActivateReplacement(newFactorProven:true) &&
-      backupLedger.FactorRetired && !backupLedger.ReplacementPending,
-    "Old factor retires only after new factor proof; no password-reset bypass");
+      backupLedger.FactorRetired && !backupLedger.ReplacementPending &&
+      !backupLedger.CanCompleteStepUp,
+    "Factor replacement still requires a SEPARATE new step-up challenge; recovery never grants access");
 CryptographicOperations.ZeroMemory(backupDigest);
 CryptographicOperations.ZeroMemory(recoveryKey);
 ExpectReject<InvalidOperationException>(()=>
@@ -296,7 +297,9 @@ sealed class SyntheticBackupCodeLedger
     public SyntheticBackupCodeLedger(byte[] digest) => this.digest=(byte[])digest.Clone();
     public bool ReplacementPending=>Volatile.Read(ref state)==1;
     public bool FactorRetired=>Volatile.Read(ref state)==2;
-    public bool CanCompleteStepUp=>Volatile.Read(ref state)==2;
+    // Neither using a backup code nor proving the replacement authenticates
+    // a sensitive operation. A separate operation-bound challenge is required.
+    public bool CanCompleteStepUp=>false;
     public bool TryStartReplacement(byte[] supplied,bool freshPassword)
     {
         if(!freshPassword || supplied.Length!=digest.Length ||
