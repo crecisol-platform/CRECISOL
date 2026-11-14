@@ -168,3 +168,45 @@ try { _ = NeutralRegistrationTransportPreflight.IsEligible(null!); }
 catch (ArgumentNullException) { missingRegistrationRequestRejected = true; }
 Check(missingRegistrationRequestRejected, "C05 preflight rejects null request");
 Console.WriteLine("PASS C05 preflight: 23 new registration HTTP assertions (not E2E certification).");
+
+
+// C05 payload schema gate: no implicit claim, tenant, grant or account creation.
+bool ParseRegistrationPayload(string json, out string? canonical) =>
+    NeutralRegistrationPayload.TryReadCanonicalMailbox(
+        System.Text.Encoding.UTF8.GetBytes(json), out canonical);
+
+Check(ParseRegistrationPayload("{\"mailbox\":\"Case.Sensitive@EXAMPLE.COM\"}", out var canonicalMailbox) &&
+      canonicalMailbox == "Case.Sensitive@example.com",
+    "C05 payload accepts one mailbox with domain-only normalization");
+void DenyPayload(string description, string json)
+{
+    Check(!ParseRegistrationPayload(json, out var canonical) && canonical is null,
+        "C05 payload rejected: " + description);
+}
+DenyPayload("empty object", "{}");
+DenyPayload("null envelope", "null");
+DenyPayload("array envelope", "[]");
+DenyPayload("string envelope", "\"attacker@example.com\"");
+DenyPayload("missing mailbox", "{\"email\":\"person@example.com\"}");
+DenyPayload("unexpected tenant selector", "{\"mailbox\":\"person@example.com\",\"tenantId\":1}");
+DenyPayload("unexpected role", "{\"mailbox\":\"person@example.com\",\"role\":\"admin\"}");
+DenyPayload("unexpected password", "{\"mailbox\":\"person@example.com\",\"password\":\"hidden\"}");
+DenyPayload("duplicate mailbox", "{\"mailbox\":\"person@example.com\",\"mailbox\":\"other@example.com\"}");
+DenyPayload("case variant property", "{\"Mailbox\":\"person@example.com\"}");
+DenyPayload("array mailbox", "{\"mailbox\":[\"person@example.com\"]}");
+DenyPayload("null mailbox", "{\"mailbox\":null}");
+DenyPayload("invalid mailbox", "{\"mailbox\":\"invalid\"}");
+DenyPayload("trailing comma", "{\"mailbox\":\"person@example.com\",}");
+DenyPayload("JSON comment", "{/* ignored */\"mailbox\":\"person@example.com\"}");
+DenyPayload("nested authority", "{\"mailbox\":{\"tenant\":\"person@example.com\"}}");
+DenyPayload("trailing document", "{\"mailbox\":\"person@example.com\"}{}");
+Check(!NeutralRegistrationPayload.TryReadCanonicalMailbox(
+          new byte[NeutralRegistrationPayload.MaxBytes + 1], out var oversizedMailbox) &&
+      oversizedMailbox is null, "C05 payload refuses oversized UTF8 input");
+Check(!NeutralRegistrationPayload.TryReadCanonicalMailbox(
+          new byte[] { 0xFF, 0xFE }, out var invalidUtf8Mailbox) &&
+      invalidUtf8Mailbox is null, "C05 payload refuses malformed UTF8");
+Check(!NeutralRegistrationPayload.TryReadCanonicalMailbox(
+          ReadOnlyMemory<byte>.Empty, out var missingPayloadMailbox) &&
+      missingPayloadMailbox is null, "C05 payload refuses missing body");
+Console.WriteLine("PASS C05 payload: 21 additional isolated JSON assertions; no identity activation.");
