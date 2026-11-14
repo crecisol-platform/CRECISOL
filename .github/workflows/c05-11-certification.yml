@@ -1,0 +1,120 @@
+name: CRECISOL C05-11 institutional chapter identity A-B-C .NET10 MySQL8.4 Angular22 Chromium
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c05/C05_11_CERTIFICACION_INSTITUCIONAL.md'
+      - 'qa/c05_11_closure_gate.py'
+      - '.github/workflows/c05-11-certification.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c05/C05_11_CERTIFICACION_INSTITUCIONAL.md'
+      - 'qa/c05_11_closure_gate.py'
+      - '.github/workflows/c05-11-certification.yml'
+permissions:
+  contents: read
+jobs:
+  chapter-c05-ratification:
+    name: Real identity synthetic chapter A-B-C signed SHA and strict product NO-GO
+    runs-on: ubuntu-24.04
+    timeout-minutes: 165
+    steps:
+      - name: Checkout immutable institutional PR or dev SHA read only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Audit A original Word/PDF and ten act chains, twenty risks, C06 blocked
+        run: |
+          set -euo pipefail
+          test ! -e .c05-11-institutional-proof
+          python3 -m py_compile qa/c05_11_closure_gate.py
+          python3 qa/validate_foundation.py
+          python3 qa/c05_11_closure_gate.py A
+          mkdir -p .c05-11-institutional-proof
+          printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-11-institutional-proof/A
+      - name: Audit B independent malicious identity, trace and SHA marker removals
+        run: |
+          set -euo pipefail
+          python3 qa/c05_11_closure_gate.py B
+          python3 qa/c04_11_offensive_audits.py B
+          printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-11-institutional-proof/B
+      - name: Install official .NET10 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install official Node24 toolchain for Angular22
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Strict .NET10 Release build of API and all real identity and tenancy tests
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          while IFS= read -r project; do
+            dotnet build "$project" -c Release --nologo -warnaserror
+          done < <(find backend/tests -name '*.csproj' -type f | sort)
+          for proj in \
+            Crecisol.AccountIdentity.ContractsTests \
+            Crecisol.InvitationSecurity.ContractsTests \
+            Crecisol.PasswordHash.ContractsTests \
+            Crecisol.ContextualLogin.ContractsTests \
+            Crecisol.MfaRisk.ContractsTests \
+            Crecisol.TenantIdentity.ContractsTests \
+            Crecisol.VerifiedHosts.ContractsTests \
+            Crecisol.BranchResource.ContractsTests \
+            Crecisol.TenantOffensive.ContractsTests; do
+            dotnet run --no-build -c Release --project "backend/tests/$proj/$proj.csproj"
+          done
+          printf 'PASS build sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-11-institutional-proof/build
+      - name: Real MySQL8.4 loopback C05-02 anti-enumeration signed claimant and privacy retention
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_02_neutral_registration_http_mysql.sh
+          bash database/tests/c05_02_signed_recipient_mysql_smoke.sh
+          bash database/tests/c05_02_privacy_retention_mysql.sh
+          bash database/tests/c04_11_offensive_sql.sh
+      - name: Real MySQL8.4 HTTP sessions recovery mail MFA private profile and rate-limit
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_05_session_http_mysql.sh
+          bash database/tests/c05_06_recovery_http_mysql.sh
+          bash database/tests/c05_07_mailbox_http_mysql.sh
+          bash database/tests/c05_08_mfa_http_mysql.sh
+          bash database/tests/c05_09_private_profiles_http_mysql.sh
+          bash database/tests/c05_10_rate_limit_http_mysql.sh
+          printf 'PASS mysql sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-11-institutional-proof/mysql
+      - name: Angular22 strict TypeScript, assets and dependency runtime validation
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
+          npm audit --prefix frontend --omit=dev --audit-level=high
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+          npm run test:assets --prefix frontend
+          printf 'PASS frontend sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-11-institutional-proof/frontend
+      - name: Real Chromium public privacy and mobile accessibility regression
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright install --with-deps chromium
+          npx playwright test tests/c01-05.public-brand.spec.ts tests/c01-06.official-integration.spec.ts tests/c01-08.brand-revision.spec.ts tests/c02-03.public-information.spec.ts tests/c02-04.private-paths.spec.ts tests/c02-05.interaction-states.spec.ts tests/c02-07.mobile-accessibility.spec.ts tests/c02-08.journeys-public.spec.ts --reporter=line
+          npm run test:c02-06
+          npx playwright test --config=playwright.patterns-a11y.config.ts --reporter=line
+          npx playwright test --config=playwright.journeys-patterns.config.ts --reporter=line
+          cd ..
+          printf 'PASS chromium sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-11-institutional-proof/chromium
+      - name: Audit C exact three-file ancestry and SAME SHA/run real evidence
+        run: |
+          set -euo pipefail
+          python3 qa/c05_11_closure_gate.py C
+          printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-11-institutional-proof/C
+      - name: Fail unless A B C build mysql frontend chromium are genuine on same SHA and run
+        run: |
+          set -euo pipefail
+          for stage in A B C build mysql frontend chromium; do
+            grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-11-institutional-proof/$stage"
+          done
+          echo 'PASS institutional C05-11 synthetic-only. C06 blocked pending real integrated trusted identities.'
