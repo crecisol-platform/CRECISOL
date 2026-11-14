@@ -135,10 +135,11 @@ proc:BEGIN
 
  -- Source bucket locks first; even unlimited distinct usernames from one
  -- origin cannot create fresh SUBJECT rows after source cooldown triggers.
- INSERT IGNORE INTO c05_10_buckets
+ INSERT INTO c05_10_buckets
  (tenant_id,purpose,dimension,digest,attempts,window_started_utc,
   blocked_until_utc,updated_utc)
- VALUES (p_tenant,p_purpose,'SOURCE',p_source,0,v_now,NULL,v_now);
+ VALUES (p_tenant,p_purpose,'SOURCE',p_source,0,v_now,NULL,v_now)
+ ON DUPLICATE KEY UPDATE attempts=attempts;
  SET v_missing=FALSE;
  SELECT attempts,window_started_utc,blocked_until_utc
  INTO v_count,v_started,v_locked FROM c05_10_buckets
@@ -169,10 +170,11 @@ proc:BEGIN
  END IF;
 
  IF v_decision='ADMITTED' THEN
-    INSERT IGNORE INTO c05_10_buckets
+    INSERT INTO c05_10_buckets
     (tenant_id,purpose,dimension,digest,attempts,window_started_utc,
      blocked_until_utc,updated_utc)
-    VALUES (p_tenant,p_purpose,'SUBJECT',p_subject,0,v_now,NULL,v_now);
+    VALUES (p_tenant,p_purpose,'SUBJECT',p_subject,0,v_now,NULL,v_now)
+    ON DUPLICATE KEY UPDATE attempts=attempts;
     SET v_missing=FALSE;
     SELECT attempts,window_started_utc,blocked_until_utc
     INTO v_count,v_started,v_locked FROM c05_10_buckets
