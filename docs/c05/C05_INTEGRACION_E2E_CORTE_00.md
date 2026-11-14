@@ -41,3 +41,11 @@ Documento Maestro Único y `docs/MASTER_REFERENCE.md`; `docs/PLAN_37_CAPITULOS.m
 ## Límites de fusión y reversión
 
 La presente especificación puede revisarse en PR borrador. **NO FUSIONAR** una implementación privada hasta que A/B/C, pruebas reales completas y 0 P0/P1 estén documentadas sobre el mismo SHA. No exponer el producto a usuarios reales ni afirmar que un servidor loopback cumple KMS, TLS, SMTP externo, WAF, Cloudflare, privacidad legal o COM-T08/09/10. Rollback de cada incremento: revertir solo su commit de feature o squash sobre `dev` tras analizar dependencias, sin tocar `main` ni ningún recurso de SOLQARYN.
+
+## Avance de código del corte 00 (rama feature, sin fusión)
+
+Se añadió `backend/src/Crecisol.Api/Contracts/NeutralRegistrationTransportPreflight.cs` como **preflight de transporte exclusivamente** para un futuro registro neutral. Rechaza host ausente/ambiguo, campos Forwarded/X-Forwarded-*, método distinto de POST, query, tipo no JSON, cuerpo sin tamaño positivo o mayor de 4096 bytes, autorización/cookies, identificadores tenant/actor/rol, transfer encoding y métodos reescritos. Reutiliza la validación `StrictVerifiedHostTransport.TryReadDirectHost`; **no** verifica pertenencia a tenant, SMTP, sesión, MFA ni autorización.
+
+Se ampliaron las aserciones ejecutables de `backend/tests/Crecisol.Api.ContractsTests/Program.cs` con 23 casos positivos/negativos de este preflight. **Estas aserciones no equivalen a pruebas E2E** y su resultado todavía requiere ejecución en CI sobre el SHA final de la rama. Ningún endpoint se registra en `Program.cs`; no se activa transporte de producción ni se hacen migraciones. La exposición de identidad sigue en NO-GO.
+
+**Auditorías A/B/C de integración:** PENDIENTES. **Pruebas C05 de este corte:** implementadas, NO DECLARADAS PASS hasta verificar salida real de .NET 10. Los resultados previos de #149 no certifican este código. El PR debe seguir en borrador y sin fusión hasta cumplir los gates aplicables.
