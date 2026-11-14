@@ -59,8 +59,7 @@ public sealed class MySqlDisposableMfaLedger : ITrustedDisposableMfaLedger
         await using var connection=await ConnectAsync(ct);
         await using var cmd=new MySqlCommand("c05_08_open_stepup",connection)
             {CommandType=CommandType.StoredProcedure};
-        AddId(cmd,"@p_tenant",proof.TenantId.Value);
-        AddId(cmd,"@p_actor",proof.ActorId.Value);
+        AddProof(cmd,proof);
         AddId(cmd,"@p_factor",factor);
         AddId(cmd,"@p_challenge",challenge);
         AddBytes(cmd,"@p_digest",challengeDigest);
@@ -82,8 +81,7 @@ public sealed class MySqlDisposableMfaLedger : ITrustedDisposableMfaLedger
         await using var connection=await ConnectAsync(ct);
         await using var cmd=new MySqlCommand("c05_08_open_replacement",connection)
             {CommandType=CommandType.StoredProcedure};
-        AddId(cmd,"@p_tenant",proof.TenantId.Value);
-        AddId(cmd,"@p_actor",proof.ActorId.Value);
+        AddProof(cmd,proof);
         AddId(cmd,"@p_old",oldFactor);
         AddBytes(cmd,"@p_backup",backupDigest);
         AddId(cmd,"@p_new",newFactor);
