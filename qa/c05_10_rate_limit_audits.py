@@ -37,9 +37,9 @@ GUARDS={
   "Pruebas contra brute-force y filtrado de logs",
   "No registrar tokens o contraseñas",
   "tenant_id","SOURCE","SUBJECT","HMAC-SHA256",
-  "FOR UPDATE","MySQL8.4","Argon2id","Cool",
+  "FOR UPDATE","MySQL8.4","Argon2id","cooldown_seconds",
   "16 intentos concurrentes 5 admitidos / 11 frenados",
-  "política administrable","NO-GO","C05-11","C06",
+  "Política administrable","NO-GO","C05-11","C06",
   "main","solqaryn/Solqaryn","Rollback",
  ),
  "backend/src/Crecisol.Domain/Identity/PreAuthRateLimitModels.cs":(
