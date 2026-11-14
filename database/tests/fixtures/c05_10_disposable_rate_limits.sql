@@ -114,6 +114,11 @@ proc:BEGIN
  DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_missing=TRUE;
  DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
 
+ -- SYSDATE(6) is real execution-time, unlike UTC_TIMESTAMP(6)
+ -- which is pinned to stored CALL start even across InnoDB waits.
+ -- This fixture controls session UTC explicitly; production must review
+ -- row-based replication / authoritative clock and time-zone handling.
+ SET @@session.time_zone='+00:00';
  IF p_tenant IS NULL OR p_attempt IS NULL OR p_source IS NULL OR
     p_subject IS NULL OR p_host_revision IS NULL OR
     p_purpose NOT IN ('LOGIN','RECOVERY','MFA') OR
@@ -145,6 +150,9 @@ proc:BEGIN
  INTO v_count,v_started,v_locked FROM c05_10_buckets
  WHERE tenant_id=p_tenant AND purpose=p_purpose AND
        dimension='SOURCE' AND digest=p_source FOR UPDATE;
+ -- Use a fresh DB clock AFTER the row lock: earlier callers may have
+ -- waited for another transaction to create/start this very window.
+ SET v_now=SYSDATE(6);
  IF v_missing OR v_started>v_now THEN
     ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc;
  END IF;
@@ -180,6 +188,9 @@ proc:BEGIN
     INTO v_count,v_started,v_locked FROM c05_10_buckets
     WHERE tenant_id=p_tenant AND purpose=p_purpose
       AND dimension='SUBJECT' AND digest=p_subject FOR UPDATE;
+    -- A different SOURCE can contend on this same subject; refresh
+    -- wall-clock again after the second row lock before expiry/CAS.
+    SET v_now=SYSDATE(6);
     IF v_missing OR v_started>v_now THEN
       ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc;
     END IF;

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -33,7 +34,8 @@ if(setupConfig.Server!="127.0.0.1"||
    setupConfig.Database!="c05_10_disposable"||
    setupConfig.AllowLoadLocalInfile)
     throw new InvalidOperationException("C05-10 may use only disposable loopback DB.");
-var ledger=new MySqlDisposablePreAuthRateLimitLedger(runnerDsn);
+var realLedger=new MySqlDisposablePreAuthRateLimitLedger(runnerDsn);
+var ledger=new FixtureRateLimitDiagnosticLedger(realLedger);
 int checks=0;
 void Check(bool ok,string label)
 {
@@ -74,7 +76,7 @@ string dummy=hasher.CreateVerifier(Convert.ToBase64String(
 byte[] secret=RandomNumberGenerator.GetBytes(32);
 using var protector=new SyntheticPreAuthDigestProtector(secret);
 CryptographicOperations.ZeroMemory(secret);
-Check(ledger.ToString()=="MySqlDisposablePreAuthRateLimitLedger[redacted]"&&
+Check(realLedger.ToString()=="MySqlDisposablePreAuthRateLimitLedger[redacted]"&&
       protector.ToString()=="SyntheticPreAuthDigestProtector[redacted]"&&
       PreAuthKeyedDigest.FromTrustedProtector(RandomNumberGenerator.GetBytes(32))
       .ToString()=="PreAuthKeyedDigest[redacted]",
@@ -350,7 +352,8 @@ Console.WriteLine("C05-10 SYNTHETIC race HTTP aggregate only: accepted="+
     " unavailable="+bruteRace.Count(x=>x==HttpStatusCode.ServiceUnavailable)+
     " other="+bruteRace.Count(x=>x!=HttpStatusCode.Accepted &&
                               x!=(HttpStatusCode)429 &&
-                              x!=HttpStatusCode.ServiceUnavailable));
+                              x!=HttpStatusCode.ServiceUnavailable)+
+    " sql_fault_categories="+ledger.SafeAggregateDiagnostics());
 Check(bruteRace.Count(x=>x==HttpStatusCode.Accepted)==5 &&
       bruteRace.Count(x=>x==(HttpStatusCode)429)==11,
       "16 concurrent HTTP brute force admissions => exactly 5 accepted and 11 blocked");
@@ -699,6 +702,34 @@ await RejectSql(async()=>
     await command.ExecuteNonQueryAsync();
 },"EXECUTE-only user cannot delete private audit rows");
 
+// POSTMERGE stability gate: repeat real HTTP bursts against the SAME
+// tenant/source/subject after guarded window expiry, with the strict
+// original 5/11 rule. This reproduces the historical 503 timing failure
+// under InnoDB contention instead of treating a single lucky run as PASS.
+await using(var stablePolicy=new MySqlCommand("""
+    UPDATE c05_10_policies
+       SET subject_limit=5,source_limit=12,enabled=1,host_revision=8,
+           revision=revision+1,changed_utc=UTC_TIMESTAMP(6)
+     WHERE tenant_id=UNHEX('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+       AND purpose='LOGIN'
+    """,setup))
+    Check(await stablePolicy.ExecuteNonQueryAsync()==1,
+          "Restore reviewed 5/12 synthetic policy before repeated concurrency");
+for(int round=1;round<=5;round++)
+{
+    await ForceWindowExpiryAsync(tenantA,"LOGIN");
+    var burst=await Task.WhenAll(Enumerable.Range(0,16).Select(_=>
+        PostAsync(hostA.Value,raceLogin,wrongPassword)));
+    int allowed=burst.Count(x=>x==HttpStatusCode.Accepted);
+    int limited=burst.Count(x=>x==(HttpStatusCode)429);
+    int unavailable=burst.Count(x=>x==HttpStatusCode.ServiceUnavailable);
+    Console.WriteLine("C05-10 STRESS aggregate only: round="+round+
+        " admitted="+allowed+" limited="+limited+" unavailable="+unavailable+
+        " sql_fault_categories="+ledger.SafeAggregateDiagnostics());
+    Check(allowed==5 && limited==11 && unavailable==0,
+          "Repeated 16-way HTTP burst must admit 5/limit 11 without SQL 503");
+}
+
 await app.StopAsync();
 Console.WriteLine($"PASS CRECISOL C05-10 REAL HTTP/.NET10/MySQL8.4: {checks} checks");
 Console.WriteLine("PASS atomic pre-Argon2id dual budgets, source rotation, tenant A/B, 16 one-shot completions, audit HMAC, fail-closed and no token/password storage");
@@ -836,6 +867,51 @@ sealed class FixtureNetworkReader(IPAddress? peer):ITrustedPreAuthNetworkReader
         return ValueTask.FromResult(peer);
     }
 }
+
+/// <summary>
+/// Test-only numerical SQL error categories to investigate racing 503, not
+/// credential/IP/Host/email/DSN/SQL exceptions or audit payload logging.
+/// </summary>
+sealed class FixtureRateLimitDiagnosticLedger(
+    MySqlDisposablePreAuthRateLimitLedger inner):ITrustedPreAuthRateLimitLedger
+{
+    private readonly ConcurrentDictionary<string,int> counts=new(StringComparer.Ordinal);
+    private void Inc(string name)=>counts.AddOrUpdate(name,1,(_,n)=>n+1);
+    public string SafeAggregateDiagnostics()=>string.Join(",",
+        counts.OrderBy(x=>x.Key,StringComparer.Ordinal)
+            .Select(x=>x.Key+":"+x.Value));
+    public async Task<PreAuthAdmissionStatus> AdmitAsync(
+        VerifiedTenantHostHint host,PreAuthRateLimitPurpose purpose,Guid attempt,
+        PreAuthKeyedDigest source,PreAuthKeyedDigest subject,CancellationToken ct)
+    {
+        try
+        {
+            var result=await inner.AdmitAsync(host,purpose,attempt,source,subject,ct);
+            if(result==PreAuthAdmissionStatus.Denied) Inc("ADMIT_DENIED");
+            return result;
+        }
+        catch(MySqlException ex){Inc("ADMIT_MYSQL_"+ex.Number);throw;}
+        catch(TimeoutException){Inc("ADMIT_TIMEOUT");throw;}
+        catch(InvalidOperationException){Inc("ADMIT_INVALID");throw;}
+    }
+    public async Task<bool> CompleteAsync(
+        VerifiedTenantHostHint host,PreAuthRateLimitPurpose purpose,Guid attempt,
+        PreAuthKeyedDigest source,PreAuthKeyedDigest subject,
+        PreAuthPrivateOutcome outcome,CancellationToken ct)
+    {
+        try
+        {
+            bool result=await inner.CompleteAsync(
+                host,purpose,attempt,source,subject,outcome,ct);
+            if(!result)Inc("COMPLETE_DENIED");
+            return result;
+        }
+        catch(MySqlException ex){Inc("COMPLETE_MYSQL_"+ex.Number);throw;}
+        catch(TimeoutException){Inc("COMPLETE_TIMEOUT");throw;}
+        catch(InvalidOperationException){Inc("COMPLETE_INVALID");throw;}
+    }
+}
+
 sealed class FixtureUnavailableLedger:ITrustedPreAuthRateLimitLedger
 {
     public Task<PreAuthAdmissionStatus> AdmitAsync(

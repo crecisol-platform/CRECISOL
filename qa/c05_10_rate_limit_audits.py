@@ -14,6 +14,8 @@ from c05_01_preparation_audits import ROOT
 REPO="crecisol-platform/CRECISOL"
 BASE="6b7e0d39785bcad00cc059954eaef510f10d84fa"
 BRANCH="feature/c05-10-rate-limit-access-trace-20261114"
+REMEDIATION_BRANCH="feature/c05-10-concurrency-hardening-20261114"
+REMEDIATION_BASE="1b0a3ec6a62ef38582b0ef514f53cb62965b15cd"
 FILES={
  "docs/c05/C05_10_ESPECIFICACION.md",
  "backend/src/Crecisol.Domain/Identity/PreAuthRateLimitModels.cs",
@@ -26,6 +28,12 @@ FILES={
  "backend/tests/Crecisol.RateLimitAccess.MySqlTests/Program.cs",
  "qa/c05_10_rate_limit_audits.py",
  ".github/workflows/c05-10-rate-limit.yml",
+}
+REMEDIATION_FILES={
+ "backend/tests/Crecisol.RateLimitAccess.MySqlTests/Program.cs",
+ "database/tests/fixtures/c05_10_disposable_rate_limits.sql",
+ "docs/c05/C05_10_ESPECIFICACION.md",
+ "qa/c05_10_rate_limit_audits.py",
 }
 PROOF=ROOT/".c05-10-rate-limit-proof"
 GUARDS={
@@ -41,6 +49,9 @@ GUARDS={
   "16 intentos concurrentes 5 admitidos / 11 frenados",
   "Política administrable","NO-GO","C05-11","C06",
   "main","solqaryn/Solqaryn","Rollback",
+  "Carrera de reloj durante locks InnoDB",
+  "43643788104","UTC_TIMESTAMP(6)","SYSDATE(6)",
+  "cinco rondas adicionales de 16 HTTP","C05-10 PENDIENTE",
  ),
  "backend/src/Crecisol.Domain/Identity/PreAuthRateLimitModels.cs":(
   "PreAuthRateLimitPurpose","PasswordLogin",
@@ -98,6 +109,8 @@ GUARDS={
   "SELECT 'DENIED' AS result",
   "v_locked>v_now",
   "DATE_SUB(v_now,INTERVAL v_window SECOND)",
+  "SET @@session.time_zone='+00:00'",
+  "SET v_now=SYSDATE(6)",
   "DATE_ADD(v_now,INTERVAL v_cooldown SECOND)",
   "INSERT INTO c05_10_access_traces",
   "INSERT INTO c05_10_access_outcomes",
@@ -127,6 +140,8 @@ GUARDS={
   "Append-only access trace cannot be UPDATEd",
   "Append-only authentication outcome cannot be modified",
   "NO-GO product",
+  "Repeated 16-way HTTP burst must admit 5/limit 11 without SQL 503",
+  "FixtureRateLimitDiagnosticLedger","SafeAggregateDiagnostics",
  ),
  "database/tests/c05_10_rate_limit_http_mysql.sh":(
   "mysql:8.4@sha256:","127.0.0.1::3306",
@@ -234,11 +249,20 @@ def c()->None:
   need(f.is_file(),"Actual signed PR event required")
   event=json.loads(f.read_text(encoding="utf-8"))["pull_request"]
   base,head=event["base"],event["head"]
-  need(base["ref"]=="dev" and base["sha"]==BASE and
-       head["ref"]==BRANCH and
-       base["repo"]["full_name"]==REPO and
-       head["repo"]["full_name"]==REPO,
-       "Unexpected SHA/base/head/owner or uncontrolled PR")
+  need(base["repo"]["full_name"]==REPO and
+       head["repo"]["full_name"]==REPO and base["ref"]=="dev",
+       "Untrusted GitHub repository or base branch")
+  # Fail closed to TWO explicitly reviewed release/diff contracts:
+  # original C05-10 11-file technical PR or 4-file postmerge remediation.
+  if head["ref"]==BRANCH:
+   need(base["sha"]==BASE,"Original C05-10 PR base changed")
+   expected=FILES
+  elif head["ref"]==REMEDIATION_BRANCH:
+   need(base["sha"]==REMEDIATION_BASE,
+        "Remediation must start exactly from failed C05-10 technical squash")
+   expected=REMEDIATION_FILES
+  else:
+   raise AssertionError("Unapproved C05-10 PR branch or release scope")
   need(git("rev-list","--parents","-n","1","HEAD").split()==
        [sha,base["sha"],head["sha"]],
        "PR merge ancestry not exact")
@@ -248,8 +272,10 @@ def c()->None:
        os.getenv("GITHUB_REF")=="refs/heads/dev",
        "Only dev postmerge qualifies")
   changed=git("show","--format=","--name-only",sha).splitlines()
- need(set(changed)==FILES and len(changed)==len(FILES),
-      "C05-10 technical diff must be EXACTLY 11 files: "+repr(changed))
+  expected=FILES if set(changed)==FILES else REMEDIATION_FILES
+ need(set(changed)==expected and len(changed)==len(expected),
+      "C05-10 diff MUST match original 11-file or reviewed remediation 4-file contract: "+
+      repr(changed))
  invariants(material())
  print(f"PASS C05-10 C: real HTTP/MySQL8.4 A/B, .NET10, regressions and exact SHA={sha} run={run}")
  print("NO-GO productive API, Redis, telemetry, Cloudflare, production authentication")
