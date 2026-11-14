@@ -10,6 +10,7 @@ CREATE TABLE c05_10_policies (
  window_seconds SMALLINT UNSIGNED NOT NULL,
  cooldown_seconds SMALLINT UNSIGNED NOT NULL,
  enabled TINYINT UNSIGNED NOT NULL,
+ host_revision BIGINT UNSIGNED NOT NULL,
  revision BIGINT UNSIGNED NOT NULL,
  changed_utc DATETIME(6) NOT NULL,
  PRIMARY KEY (tenant_id,purpose),
@@ -18,7 +19,7 @@ CREATE TABLE c05_10_policies (
     subject_limit BETWEEN 1 AND 12 AND source_limit BETWEEN subject_limit AND 100
     AND window_seconds BETWEEN 60 AND 3600
     AND cooldown_seconds BETWEEN 60 AND 3600
-    AND enabled IN (0,1) AND revision>0)
+    AND enabled IN (0,1) AND host_revision>0 AND revision>0)
 ) ENGINE=InnoDB;
 
 CREATE TABLE c05_10_buckets (
@@ -90,6 +91,7 @@ BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='C05-10 append-only outcome'; END
 -- Active cooldown replies never insert a trace per repeated blocked packet.
 CREATE PROCEDURE c05_10_admit_once(
  IN p_tenant BINARY(16), IN p_purpose VARCHAR(10),
+ IN p_host_revision BIGINT UNSIGNED,
  IN p_attempt BINARY(16), IN p_source BINARY(32),
  IN p_subject BINARY(32)
 )
@@ -102,6 +104,7 @@ proc:BEGIN
  DECLARE v_cooldown SMALLINT UNSIGNED;
  DECLARE v_policy_revision BIGINT UNSIGNED;
  DECLARE v_enabled TINYINT UNSIGNED;
+ DECLARE v_host_revision BIGINT UNSIGNED;
  DECLARE v_count BIGINT UNSIGNED;
  DECLARE v_started DATETIME(6);
  DECLARE v_locked DATETIME(6);
@@ -112,17 +115,21 @@ proc:BEGIN
  DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
 
  IF p_tenant IS NULL OR p_attempt IS NULL OR p_source IS NULL OR
-    p_subject IS NULL OR p_purpose NOT IN ('LOGIN','RECOVERY','MFA') OR
+    p_subject IS NULL OR p_host_revision IS NULL OR
+    p_purpose NOT IN ('LOGIN','RECOVERY','MFA') OR
     p_purpose IS NULL THEN
    SELECT 'DENIED' AS result; LEAVE proc;
  END IF;
  START TRANSACTION;
  SET v_now=UTC_TIMESTAMP(6);
- SELECT subject_limit,source_limit,window_seconds,cooldown_seconds,revision,enabled
- INTO v_sub_limit,v_src_limit,v_window,v_cooldown,v_policy_revision,v_enabled
+ SELECT subject_limit,source_limit,window_seconds,cooldown_seconds,
+        revision,enabled,host_revision
+ INTO v_sub_limit,v_src_limit,v_window,v_cooldown,
+      v_policy_revision,v_enabled,v_host_revision
  FROM c05_10_policies
  WHERE tenant_id=p_tenant AND purpose=p_purpose FOR UPDATE;
- IF v_missing OR v_enabled<>1 OR v_policy_revision<1 THEN
+ IF v_missing OR v_enabled<>1 OR v_policy_revision<1 OR
+    v_host_revision<>p_host_revision THEN
     ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc;
  END IF;
 
