@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -33,7 +34,8 @@ if(setupConfig.Server!="127.0.0.1"||
    setupConfig.Database!="c05_10_disposable"||
    setupConfig.AllowLoadLocalInfile)
     throw new InvalidOperationException("C05-10 may use only disposable loopback DB.");
-var ledger=new MySqlDisposablePreAuthRateLimitLedger(runnerDsn);
+var realLedger=new MySqlDisposablePreAuthRateLimitLedger(runnerDsn);
+var ledger=new FixtureRateLimitDiagnosticLedger(realLedger);
 int checks=0;
 void Check(bool ok,string label)
 {
@@ -74,7 +76,7 @@ string dummy=hasher.CreateVerifier(Convert.ToBase64String(
 byte[] secret=RandomNumberGenerator.GetBytes(32);
 using var protector=new SyntheticPreAuthDigestProtector(secret);
 CryptographicOperations.ZeroMemory(secret);
-Check(ledger.ToString()=="MySqlDisposablePreAuthRateLimitLedger[redacted]"&&
+Check(realLedger.ToString()=="MySqlDisposablePreAuthRateLimitLedger[redacted]"&&
       protector.ToString()=="SyntheticPreAuthDigestProtector[redacted]"&&
       PreAuthKeyedDigest.FromTrustedProtector(RandomNumberGenerator.GetBytes(32))
       .ToString()=="PreAuthKeyedDigest[redacted]",
@@ -350,7 +352,8 @@ Console.WriteLine("C05-10 SYNTHETIC race HTTP aggregate only: accepted="+
     " unavailable="+bruteRace.Count(x=>x==HttpStatusCode.ServiceUnavailable)+
     " other="+bruteRace.Count(x=>x!=HttpStatusCode.Accepted &&
                               x!=(HttpStatusCode)429 &&
-                              x!=HttpStatusCode.ServiceUnavailable));
+                              x!=HttpStatusCode.ServiceUnavailable)+
+    " sql_fault_categories="+ledger.SafeAggregateDiagnostics());
 Check(bruteRace.Count(x=>x==HttpStatusCode.Accepted)==5 &&
       bruteRace.Count(x=>x==(HttpStatusCode)429)==11,
       "16 concurrent HTTP brute force admissions => exactly 5 accepted and 11 blocked");
@@ -836,6 +839,51 @@ sealed class FixtureNetworkReader(IPAddress? peer):ITrustedPreAuthNetworkReader
         return ValueTask.FromResult(peer);
     }
 }
+
+/// <summary>
+/// Test-only numerical SQL error categories to investigate racing 503, not
+/// credential/IP/Host/email/DSN/SQL exceptions or audit payload logging.
+/// </summary>
+sealed class FixtureRateLimitDiagnosticLedger(
+    MySqlDisposablePreAuthRateLimitLedger inner):ITrustedPreAuthRateLimitLedger
+{
+    private readonly ConcurrentDictionary<string,int> counts=new(StringComparer.Ordinal);
+    private void Inc(string name)=>counts.AddOrUpdate(name,1,(_,n)=>n+1);
+    public string SafeAggregateDiagnostics()=>string.Join(",",
+        counts.OrderBy(x=>x.Key,StringComparer.Ordinal)
+            .Select(x=>x.Key+":"+x.Value));
+    public async Task<PreAuthAdmissionStatus> AdmitAsync(
+        VerifiedTenantHostHint host,PreAuthRateLimitPurpose purpose,Guid attempt,
+        PreAuthKeyedDigest source,PreAuthKeyedDigest subject,CancellationToken ct)
+    {
+        try
+        {
+            var result=await inner.AdmitAsync(host,purpose,attempt,source,subject,ct);
+            if(result==PreAuthAdmissionStatus.Denied) Inc("ADMIT_DENIED");
+            return result;
+        }
+        catch(MySqlException ex){Inc("ADMIT_MYSQL_"+ex.Number);throw;}
+        catch(TimeoutException){Inc("ADMIT_TIMEOUT");throw;}
+        catch(InvalidOperationException){Inc("ADMIT_INVALID");throw;}
+    }
+    public async Task<bool> CompleteAsync(
+        VerifiedTenantHostHint host,PreAuthRateLimitPurpose purpose,Guid attempt,
+        PreAuthKeyedDigest source,PreAuthKeyedDigest subject,
+        PreAuthPrivateOutcome outcome,CancellationToken ct)
+    {
+        try
+        {
+            bool result=await inner.CompleteAsync(
+                host,purpose,attempt,source,subject,outcome,ct);
+            if(!result)Inc("COMPLETE_DENIED");
+            return result;
+        }
+        catch(MySqlException ex){Inc("COMPLETE_MYSQL_"+ex.Number);throw;}
+        catch(TimeoutException){Inc("COMPLETE_TIMEOUT");throw;}
+        catch(InvalidOperationException){Inc("COMPLETE_INVALID");throw;}
+    }
+}
+
 sealed class FixtureUnavailableLedger:ITrustedPreAuthRateLimitLedger
 {
     public Task<PreAuthAdmissionStatus> AdmitAsync(
