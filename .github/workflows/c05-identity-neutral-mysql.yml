@@ -1,0 +1,83 @@
+name: CRECISOL C05 integrated neutral HTTP MySQL8.4 A-B-C
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Api/Contracts/NeutralRegistration*.cs'
+      - 'backend/tests/Crecisol.NeutralRegistration.IntegrationTests/**'
+      - '.github/workflows/c05-identity-neutral-mysql.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Api/Contracts/NeutralRegistration*.cs'
+      - 'backend/tests/Crecisol.NeutralRegistration.IntegrationTests/**'
+      - '.github/workflows/c05-identity-neutral-mysql.yml'
+permissions:
+  contents: read
+jobs:
+  neutral-http-mysql:
+    name: C05 real neutral registration HTTP to disposable MySQL8.4
+    if: github.event_name == 'push' || startsWith(github.head_ref, 'feature/c05-identity-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - name: Checkout exact head without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Record immutable tested SHA
+        run: echo "C05_TESTED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Audit A canonical source and fixture
+        run: |
+          set -euo pipefail
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          bash -n database/tests/c05_02_neutral_registration_http_mysql.sh
+          printf "PASS A sha=%s run=%s\n" "$C05_TESTED_SHA" "$GITHUB_RUN_ID" > /tmp/c05-a
+      - name: Audit B deny forged tenant and actor before SQL
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          t=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/Program.cs").read_text()
+          api=Path("backend/src/Crecisol.Api/Program.cs").read_text()
+          for required in ("NeutralRegistrationIntake", "ReadExactlyAsync", "forged tenant A from B",
+                           "Adversarial intake requests do not write records in either tenant",
+                           "MySqlDisposableNeutralRegistrationRecorder"):
+              assert required in t, required
+          assert "NeutralRegistrationIntake" not in api
+          assert "app.MapPost(" not in api and "app.MapGroup(" not in api
+          PY
+          printf "PASS B sha=%s run=%s\n" "$C05_TESTED_SHA" "$GITHUB_RUN_ID" > /tmp/c05-b
+      - name: Install official .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build API and MySQL integration runner strict Release
+        run: |
+          set -euo pipefail
+          dotnet build backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.NeutralRegistration.IntegrationTests/Crecisol.NeutralRegistration.IntegrationTests.csproj -c Release --nologo -warnaserror
+      - name: Run strict HTTP and JSON contract tests
+        run: dotnet run --no-build -c Release --project backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj
+      - name: Real disposable loopback HTTP and MySQL8.4
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_02_neutral_registration_http_mysql.sh
+          printf "PASS mysql sha=%s run=%s\n" "$C05_TESTED_SHA" "$GITHUB_RUN_ID" > /tmp/c05-mysql
+      - name: Audit C same-SHA evidence and private routes remain absent
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$C05_TESTED_SHA"
+          for stage in A B mysql; do
+            grep -Fqx "PASS $stage sha=$C05_TESTED_SHA run=$GITHUB_RUN_ID" "/tmp/c05-$stage"
+          done
+          python3 - <<'PY'
+          from pathlib import Path
+          api=Path("backend/src/Crecisol.Api/Program.cs").read_text()
+          assert api.count('app.MapGet(')==1
+          assert 'app.MapPost(' not in api and 'app.MapGroup(' not in api
+          assert 'NeutralRegistrationIntake' not in api
+          PY
+          echo 'PASS C05 isolated registration HTTP/MySQL only, NOT complete identity E2E'
