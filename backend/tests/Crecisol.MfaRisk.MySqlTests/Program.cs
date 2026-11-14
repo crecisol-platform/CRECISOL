@@ -545,6 +545,26 @@ Check(await ProveTotp(hostA.Value,oldStep,validCode)==HttpStatusCode.Unauthorize
 Check(await CountAsync("SELECT COUNT(*) FROM c05_08_security_audit WHERE event_type='STEPUP_PROVED'")==1,
     "One and only one audited risk-bound step-up proof");
 
+Check(await Stepup(hostA.Value,currentPassword,initial.FactorId)==HttpStatusCode.Accepted,
+    "New short-lived step-up can be issued for explicit expiry test");
+var expiredStep=Last();
+await using(var expire=new MySqlCommand("""
+    UPDATE c05_08_challenges
+       SET issued_utc=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 10 MINUTE),
+           expires_utc=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 5 MINUTE)
+     WHERE challenge_id=@id
+    """,setup))
+{
+    expire.Parameters.Add("@id",MySqlDbType.Binary).Value=
+        expiredStep.ChallengeId.ToByteArray(bigEndian:true);
+    Check(await expire.ExecuteNonQueryAsync()==1,
+        "Trusted fixture shortens MySQL step-up expiry to an expired window");
+}
+fixtureSecrets.MoveTrustedTimeForward(TimeSpan.FromSeconds(40));
+Check(await ProveTotp(hostA.Value,expiredStep,
+        fixtureSecrets.TotpCode(initial.FactorId))==HttpStatusCode.Unauthorized,
+    "Expired step-up cannot be consumed despite a fresh correct TOTP");
+
 Check(await Enroll(hostB.Value,currentPassword,"PASSKEY")==HttpStatusCode.Accepted,
     "Passkey fixture is independently enrollable for tenant B");
 var bPasskey=Last();
@@ -561,6 +581,37 @@ Check(await ProvePasskey(hostB.Value,bPasskey,bAssertion)==HttpStatusCode.NoCont
 Check(await Stepup(hostB.Value,currentPassword,bPasskey.FactorId)==HttpStatusCode.Accepted,
     "Active passkey B can issue B risk-bound step-up");
 var bStep=Last();
+// Toggle the registered mailbox before proving an already issued challenge;
+// C05-06 revision triggers make restoration strictly different from uninterrupted verification.
+Check(await CountAsync($"""
+    SELECT mailbox_revision FROM c05_06_mailboxes
+     WHERE tenant_id=UNHEX('{tenantB.Value:N}')
+       AND actor_id=UNHEX('{actor.Value:N}')
+    """)==1, "Verified B mailbox starts at revision one");
+await using(var off=new MySqlCommand($"""
+    UPDATE c05_06_mailboxes SET verified=0
+     WHERE tenant_id=UNHEX('{tenantB.Value:N}')
+       AND actor_id=UNHEX('{actor.Value:N}')
+    """,setup))
+    Check(await off.ExecuteNonQueryAsync()==1,"Fixture de-verifies B mailbox");
+await using(var on=new MySqlCommand($"""
+    UPDATE c05_06_mailboxes SET verified=1
+     WHERE tenant_id=UNHEX('{tenantB.Value:N}')
+       AND actor_id=UNHEX('{actor.Value:N}')
+    """,setup))
+    Check(await on.ExecuteNonQueryAsync()==1,"Fixture restores B mailbox");
+Check(await CountAsync($"""
+    SELECT mailbox_revision FROM c05_06_mailboxes
+     WHERE tenant_id=UNHEX('{tenantB.Value:N}')
+       AND actor_id=UNHEX('{actor.Value:N}')
+    """)==3, "Mailbox off/on increments revision twice");
+Check(await ProvePasskey(hostB.Value,bStep,
+        fixtureSecrets.SignFixtureAssertion(bStep,2))==HttpStatusCode.Unauthorized,
+    "Old B passkey challenge cannot revive after mailbox deverification/reverification");
+Check(await Stepup(hostB.Value,currentPassword,bPasskey.FactorId)==
+      HttpStatusCode.Accepted,"New B step-up is allowed after renewed verification");
+bStep=Last();
+
 Check(await ProvePasskey(hostB.Value,bStep,
         fixtureSecrets.SignFixtureAssertion(bStep,2,crossOrigin:true))==
             HttpStatusCode.Unauthorized,
@@ -671,6 +722,55 @@ Check(await CountAsync("""
     """)==0, "Factor state schema stores no TOTP seed or private credential");
 Check(reauth.Calls>=8,
     "Each enrollment, replacement and risk issuance rechecked Argon2id on C05-04");
+
+// A valid proof issued before membership suspension remains invalid even
+// if the operator restores membership; subject_revision is monotonic.
+Check(await Stepup(hostA.Value,currentPassword,replacement.FactorId)==
+      HttpStatusCode.Accepted,"Issue challenge before membership test");
+var staleMember=Last();
+await using(var suspend=new MySqlCommand($"""
+    UPDATE c05_05_subjects SET membership_active=0
+     WHERE tenant_id=UNHEX('{tenantA.Value:N}')
+       AND actor_id=UNHEX('{actor.Value:N}')
+    """,setup))
+    Check(await suspend.ExecuteNonQueryAsync()==1,
+        "Fixture suspends A membership, revision advances");
+Check(await ProvePasskey(hostA.Value,staleMember,
+        fixtureSecrets.SignFixtureAssertion(staleMember,3))==
+      HttpStatusCode.Unauthorized,
+    "Suspended tenant A membership denies pending MFA proof");
+await using(var restore=new MySqlCommand($"""
+    UPDATE c05_05_subjects SET membership_active=1
+     WHERE tenant_id=UNHEX('{tenantA.Value:N}')
+       AND actor_id=UNHEX('{actor.Value:N}')
+    """,setup))
+    Check(await restore.ExecuteNonQueryAsync()==1,
+        "Fixture restores membership but not prior authority revision");
+Check(await ProvePasskey(hostA.Value,staleMember,
+        fixtureSecrets.SignFixtureAssertion(staleMember,3))==
+      HttpStatusCode.Unauthorized,
+    "Reactivated membership cannot resurrect old challenge");
+
+// C05-06 password reset or credential rotation may not remove active MFA.
+// Even if a cached fixture directory briefly reports old Argon2id proof,
+// global credential revision mismatch must fail closed in MySQL.
+await using(var revokeCredential=new MySqlCommand($"""
+    UPDATE c05_06_credentials SET credential_active=0
+     WHERE actor_id=UNHEX('{actor.Value:N}')
+    """,setup))
+    Check(await revokeCredential.ExecuteNonQueryAsync()==1,
+        "Synthetic global credential revoked for reset boundary");
+await using(var reactivateCredential=new MySqlCommand($"""
+    UPDATE c05_06_credentials SET credential_active=1
+     WHERE actor_id=UNHEX('{actor.Value:N}')
+    """,setup))
+    Check(await reactivateCredential.ExecuteNonQueryAsync()==1,
+        "Synthetic global credential reactivated with NEW revision");
+Check(await Stepup(hostA.Value,currentPassword,replacement.FactorId)==
+      HttpStatusCode.Accepted &&
+      (await ledger.ReadCounterAsync(tenantA,actor,replacement.FactorId,CancellationToken.None))
+        ?.State=="ACTIVE",
+    "Password reset does not bypass or delete MFA; stale identity revisions deny further step-up");
 
 await app.StopAsync();
 fixtureSecrets.Dispose();
