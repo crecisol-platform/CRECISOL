@@ -47,6 +47,13 @@ jobs:
           for fragment in ("DenyRegistration(", "forwarded address", "cookie session injection",
                            "tenant header injection", "actor header injection", "host ambiguous"):
               assert fragment in cases, fragment
+          payload = Path("backend/src/Crecisol.Api/Contracts/NeutralRegistrationPayload.cs").read_text()
+          for fragment in ("JsonDocument.Parse", 'first.NameEquals("mailbox")',
+                           "iterator.MoveNext()", "MaxBytes", "CanonicalMailboxOrNull"):
+              assert fragment in payload, fragment
+          for fragment in ('DenyPayload("duplicate mailbox"', 'DenyPayload("unexpected tenant selector"',
+                           'DenyPayload("unexpected role"', 'DenyPayload("trailing document"'):
+              assert fragment in cases, fragment
           PY
       - name: Compile .NET 10 Release with warnings as errors
         run: |
