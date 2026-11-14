@@ -45,6 +45,7 @@ CREATE TABLE c05_08_challenges (
   tenant_revision BIGINT UNSIGNED NOT NULL,
   host_revision BIGINT UNSIGNED NOT NULL,
   subject_revision BIGINT UNSIGNED NOT NULL,
+  mailbox_revision BIGINT UNSIGNED NOT NULL,
   issued_utc DATETIME(6) NOT NULL,
   expires_utc DATETIME(6) NOT NULL,
   consumed_utc DATETIME(6) NULL,
@@ -129,6 +130,7 @@ proc:BEGIN
   DECLARE v_until DATETIME(6);
   DECLARE v_global BIGINT UNSIGNED; DECLARE v_global_active TINYINT;
   DECLARE v_realm VARCHAR(12); DECLARE v_verified TINYINT;
+  DECLARE v_mail_rev BIGINT UNSIGNED;
   DECLARE v_now DATETIME(6);
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_missing=TRUE;
   DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
@@ -155,7 +157,7 @@ proc:BEGIN
   IF v_missing OR v_global<>v_credential OR v_global_active<>1 OR v_realm<>'TENANT' THEN
     ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc;
   END IF;
-  SELECT verified INTO v_verified FROM c05_06_mailboxes
+  SELECT verified,mailbox_revision INTO v_verified,v_mail_rev FROM c05_06_mailboxes
    WHERE tenant_id=p_tenant AND actor_id=p_actor FOR UPDATE;
   IF v_missing OR v_verified<>1 OR EXISTS(
      SELECT 1 FROM c05_08_factors
@@ -167,10 +169,10 @@ proc:BEGIN
   INSERT INTO c05_08_challenges(challenge_id,tenant_id,actor_id,factor_id,
       operation_id,challenge_kind,risk_action,digest,link_id,account_revision,
       credential_revision,membership_revision,tenant_revision,host_revision,
-      subject_revision,issued_utc,expires_utc,state)
+      subject_revision,mailbox_revision,issued_utc,expires_utc,state)
     VALUES(p_challenge,p_tenant,p_actor,p_factor,p_challenge,'ENROLL','ENROLL',
       p_digest,p_link,v_account,v_credential,v_member,v_tenant_rev,v_host,
-      v_subrev,v_now,DATE_ADD(v_now,INTERVAL 5 MINUTE),'PENDING');
+      v_subrev,v_mail_rev,v_now,DATE_ADD(v_now,INTERVAL 5 MINUTE),'PENDING');
   INSERT INTO c05_08_backup_codes(digest,tenant_id,actor_id,factor_id,
       issued_utc,expires_utc)
     VALUES(p_backup,p_tenant,p_actor,p_factor,v_now,DATE_ADD(v_now,INTERVAL 30 DAY));
@@ -182,6 +184,9 @@ END$$
 
 CREATE PROCEDURE c05_08_open_stepup(
  IN p_tenant BINARY(16), IN p_actor BINARY(16),
+ IN p_link BINARY(16), IN p_account BIGINT UNSIGNED,
+ IN p_credential BIGINT UNSIGNED, IN p_member BIGINT UNSIGNED,
+ IN p_tenant_rev BIGINT UNSIGNED, IN p_host BIGINT UNSIGNED,
  IN p_factor BINARY(16), IN p_challenge BINARY(16),
  IN p_digest BINARY(32), IN p_operation BINARY(16),
  IN p_risk VARCHAR(24)
@@ -199,6 +204,7 @@ proc:BEGIN
   DECLARE v_state VARCHAR(8); DECLARE v_factor_link BINARY(16);
   DECLARE v_realm VARCHAR(12); DECLARE v_global_rev BIGINT UNSIGNED;
   DECLARE v_global_active TINYINT; DECLARE v_verified TINYINT;
+  DECLARE v_mail_rev BIGINT UNSIGNED;
   DECLARE v_now DATETIME(6);
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_missing=TRUE;
   DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
@@ -213,14 +219,16 @@ proc:BEGIN
     FROM c05_05_subjects
    WHERE tenant_id=p_tenant AND actor_id=p_actor FOR UPDATE;
   IF v_missing OR v_account<>1 OR v_cred<>1 OR v_membership<>1 OR
-     v_host<>1 OR v_tenant<>1 OR v_until<=v_now THEN
+     v_host<>1 OR v_tenant<>1 OR v_until<=v_now OR
+     v_link<>p_link OR v_a<>p_account OR v_c<>p_credential OR
+     v_m<>p_member OR v_t<>p_tenant_rev OR v_h<>p_host THEN
     ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc; END IF;
   SELECT credential_revision,credential_active,realm
     INTO v_global_rev,v_global_active,v_realm FROM c05_06_credentials
    WHERE actor_id=p_actor FOR UPDATE;
   IF v_missing OR v_global_rev<>v_c OR v_global_active<>1 OR v_realm<>'TENANT' THEN
     ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc; END IF;
-  SELECT verified INTO v_verified FROM c05_06_mailboxes
+  SELECT verified,mailbox_revision INTO v_verified,v_mail_rev FROM c05_06_mailboxes
    WHERE tenant_id=p_tenant AND actor_id=p_actor FOR UPDATE;
   IF v_missing OR v_verified<>1 THEN
     ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc; END IF;
@@ -233,9 +241,9 @@ proc:BEGIN
   INSERT INTO c05_08_challenges(challenge_id,tenant_id,actor_id,factor_id,
       operation_id,challenge_kind,risk_action,digest,link_id,account_revision,
       credential_revision,membership_revision,tenant_revision,host_revision,
-      subject_revision,issued_utc,expires_utc,state)
+      subject_revision,mailbox_revision,issued_utc,expires_utc,state)
     VALUES(p_challenge,p_tenant,p_actor,p_factor,p_operation,'STEPUP',p_risk,
-      p_digest,v_link,v_a,v_c,v_m,v_t,v_h,v_sub,
+      p_digest,v_link,v_a,v_c,v_m,v_t,v_h,v_sub,v_mail_rev,
       v_now,DATE_ADD(v_now,INTERVAL 3 MINUTE),'PENDING');
   INSERT INTO c05_08_security_audit(tenant_id,actor_id,operation_id,event_type,occurred_utc)
     VALUES(p_tenant,p_actor,p_operation,'STEPUP_ISSUED',v_now);
@@ -270,8 +278,10 @@ proc:BEGIN
   DECLARE v_cm BIGINT UNSIGNED; DECLARE v_ct BIGINT UNSIGNED;
   DECLARE v_ch BIGINT UNSIGNED; DECLARE v_cs BIGINT UNSIGNED;
   DECLARE v_challenge_link BINARY(16);
+  DECLARE v_challenge_mail_rev BIGINT UNSIGNED;
   DECLARE v_global_rev BIGINT UNSIGNED; DECLARE v_global_active TINYINT;
   DECLARE v_realm VARCHAR(12); DECLARE v_verified TINYINT;
+  DECLARE v_mail_rev BIGINT UNSIGNED;
   DECLARE v_now DATETIME(6);
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_missing=TRUE;
   DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
@@ -295,7 +305,7 @@ proc:BEGIN
    WHERE actor_id=p_actor FOR UPDATE;
   IF v_missing OR v_global_rev<>v_c OR v_global_active<>1 OR v_realm<>'TENANT' THEN
     ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc; END IF;
-  SELECT verified INTO v_verified FROM c05_06_mailboxes
+  SELECT verified,mailbox_revision INTO v_verified,v_mail_rev FROM c05_06_mailboxes
    WHERE tenant_id=p_tenant AND actor_id=p_actor FOR UPDATE;
   IF v_missing OR v_verified<>1 THEN
     ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc; END IF;
@@ -312,9 +322,9 @@ proc:BEGIN
     ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc; END IF;
   SELECT digest,challenge_kind,risk_action,operation_id,state,expires_utc,
       link_id,account_revision,credential_revision,membership_revision,
-      tenant_revision,host_revision,subject_revision
+      tenant_revision,host_revision,subject_revision,mailbox_revision
     INTO v_digest,v_kind,v_risk,v_operation,v_challenge_state,v_exp,
-      v_challenge_link,v_ca,v_cc,v_cm,v_ct,v_ch,v_cs
+      v_challenge_link,v_ca,v_cc,v_cm,v_ct,v_ch,v_cs,v_challenge_mail_rev
     FROM c05_08_challenges
    WHERE challenge_id=p_challenge AND factor_id=p_factor
      AND tenant_id=p_tenant AND actor_id=p_actor FOR UPDATE;
@@ -322,6 +332,7 @@ proc:BEGIN
      v_exp<=v_now OR v_digest<>p_digest OR v_operation<>p_operation OR
      v_challenge_link<>v_link OR v_ca<>v_a OR v_cc<>v_c OR
      v_cm<>v_m OR v_ct<>v_t OR v_ch<>v_h OR v_cs<>v_sub OR
+     v_challenge_mail_rev<>v_mail_rev OR
      (p_kind='ENROLL' AND v_risk<>'ENROLL') OR
      (p_kind='STEPUP' AND v_risk<>'TENANT_SENSITIVE') THEN
     ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc; END IF;
@@ -363,7 +374,11 @@ END$$
 -- The former ACTIVE factor is NOT disabled, step-up is NOT granted, and its
 -- outstanding challenges are revoked. Activation requires separate crypto proof.
 CREATE PROCEDURE c05_08_open_replacement(
- IN p_tenant BINARY(16), IN p_actor BINARY(16), IN p_old BINARY(16),
+ IN p_tenant BINARY(16), IN p_actor BINARY(16),
+ IN p_link BINARY(16), IN p_account BIGINT UNSIGNED,
+ IN p_credential BIGINT UNSIGNED, IN p_member BIGINT UNSIGNED,
+ IN p_tenant_rev BIGINT UNSIGNED, IN p_host BIGINT UNSIGNED,
+ IN p_old BINARY(16),
  IN p_backup BINARY(32), IN p_new BINARY(16), IN p_new_kind VARCHAR(8),
  IN p_challenge BINARY(16), IN p_digest BINARY(32)
 )
@@ -380,6 +395,7 @@ proc:BEGIN
   DECLARE v_expires DATETIME(6); DECLARE v_consumed DATETIME(6);
   DECLARE v_global_rev BIGINT UNSIGNED; DECLARE v_global_active TINYINT;
   DECLARE v_realm VARCHAR(12); DECLARE v_verified TINYINT;
+  DECLARE v_mail_rev BIGINT UNSIGNED;
   DECLARE v_now DATETIME(6);
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_missing=TRUE;
   DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
@@ -394,14 +410,16 @@ proc:BEGIN
       v_host,v_tenant,v_until FROM c05_05_subjects
    WHERE tenant_id=p_tenant AND actor_id=p_actor FOR UPDATE;
   IF v_missing OR v_account<>1 OR v_cred<>1 OR v_member<>1 OR
-     v_host<>1 OR v_tenant<>1 OR v_until<=v_now THEN
+     v_host<>1 OR v_tenant<>1 OR v_until<=v_now OR
+     v_link<>p_link OR v_a<>p_account OR v_c<>p_credential OR
+     v_m<>p_member OR v_t<>p_tenant_rev OR v_h<>p_host THEN
     ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc; END IF;
   SELECT credential_revision,credential_active,realm INTO
     v_global_rev,v_global_active,v_realm FROM c05_06_credentials
    WHERE actor_id=p_actor FOR UPDATE;
   IF v_missing OR v_global_rev<>v_c OR v_global_active<>1 OR v_realm<>'TENANT' THEN
     ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc; END IF;
-  SELECT verified INTO v_verified FROM c05_06_mailboxes
+  SELECT verified,mailbox_revision INTO v_verified,v_mail_rev FROM c05_06_mailboxes
    WHERE tenant_id=p_tenant AND actor_id=p_actor FOR UPDATE;
   IF v_missing OR v_verified<>1 THEN
     ROLLBACK; SELECT 'DENIED' AS result; LEAVE proc; END IF;
@@ -425,9 +443,9 @@ proc:BEGIN
   INSERT INTO c05_08_challenges(challenge_id,tenant_id,actor_id,factor_id,
       operation_id,challenge_kind,risk_action,digest,link_id,account_revision,
       credential_revision,membership_revision,tenant_revision,host_revision,
-      subject_revision,issued_utc,expires_utc,state)
+      subject_revision,mailbox_revision,issued_utc,expires_utc,state)
     VALUES(p_challenge,p_tenant,p_actor,p_new,p_challenge,'ENROLL','ENROLL',
-      p_digest,v_link,v_a,v_c,v_m,v_t,v_h,v_sub,
+      p_digest,v_link,v_a,v_c,v_m,v_t,v_h,v_sub,v_mail_rev,
       v_now,DATE_ADD(v_now,INTERVAL 5 MINUTE),'PENDING');
   INSERT INTO c05_08_security_audit(tenant_id,actor_id,operation_id,event_type,occurred_utc)
     VALUES(p_tenant,p_actor,p_challenge,'REPLACE_PENDING',v_now);
