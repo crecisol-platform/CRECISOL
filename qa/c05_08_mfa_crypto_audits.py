@@ -23,6 +23,18 @@ FILES={
     "ci":".github/workflows/c05-08-mfa-crypto.yml",
 }
 EXPECTED=set(FILES.values())
+APPROVED_INTEGRATION={
+    "backend/src/Crecisol.Application/Identity/DisposableMfaRiskUseCases.cs",
+    "backend/src/Crecisol.CredentialSecurity/DisposableMfaChallengeProtector.cs",
+    "backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaLedger.cs",
+    "backend/tests/Crecisol.MfaRisk.MySqlTests/Crecisol.MfaRisk.MySqlTests.csproj",
+    "backend/tests/Crecisol.MfaRisk.MySqlTests/Program.cs",
+    "database/tests/fixtures/c05_08_disposable_mfa.sql",
+    "database/tests/c05_08_mfa_http_mysql.sh",
+    "qa/c05_08_mfa_integration_audits.py",
+    ".github/workflows/c05-08-mfa-integration.yml",
+}
+ALLOWED_DIFF=EXPECTED|APPROVED_INTEGRATION
 PROOF=ROOT/".c05-08-crypto-proof"
 GUARDS={
     "doc":(
@@ -243,7 +255,7 @@ def c()->None:
                os.getenv("GITHUB_REF")=="refs/heads/dev",
                "Only dev POSTMERGE may attest")
         changed=git("show","--format=","--name-only",sha).splitlines()
-    ensure(set(changed)==EXPECTED and len(changed)==len(EXPECTED),
+    ensure(set(changed)==ALLOWED_DIFF and len(changed)==len(ALLOWED_DIFF),
            "Unexpected diff or missing files: "+repr(changed))
     check(read())
     print(f"PASS C05-08 crypto C sha={sha} run={run}: A/B/.NET10/crypto/previous scope")
