@@ -62,7 +62,7 @@ GUARDS={
         "SyntheticPrivateProfileCipher[redacted]",
     ),
     "backend/src/Crecisol.Infrastructure/Identity/MySqlDisposablePrivateProfileLedger.cs":(
-        "MySqlDbType.UInt64", "b.Server", # static guard corrected below in source
+        "MySqlDbType.UInt64",
         "c05_09_read_self", "c05_09_save_self", "c05_09_erase_self",
         "config.Server!=\"127.0.0.1\"",
         "config.Database!=\"c05_05_disposable\"",
@@ -131,12 +131,6 @@ GUARDS={
         ".c05-09-profile-proof", "GITHUB_SHA", "GITHUB_RUN_ID",
     ),
 }
-# Catch accidental guard-copy typo before run; exact reviewed code markers.
-GUARDS["backend/src/Crecisol.Infrastructure/Identity/MySqlDisposablePrivateProfileLedger.cs"] = tuple(
-    x for x in GUARDS["backend/src/Crecisol.Infrastructure/Identity/MySqlDisposablePrivateProfileLedger.cs"]
-    if x!="b.Server"
-)
-
 def need(ok:bool,why:str)->None:
     if not ok: raise AssertionError(why)
 def material()->dict[str,str]:
