@@ -120,3 +120,51 @@ catch (ArgumentNullException) { nullRequestRejected = true; }
 Check(nullRequestRejected, "Validator requires a real request");
 
 Console.WriteLine($"PASS C03-05: {assertions} executable DTO/JSON/HTTP validation assertions.");
+
+
+ 
+// C05: a future anonymous registration-intent transport is bounded and
+// explicitly NOT an account/tenant authority or an enabled API endpoint.
+HttpRequest RegistrationRequest()
+{
+    var context = new DefaultHttpContext();
+    context.Request.Method = "POST";
+    context.Request.Headers.Host = "tenant.example.com";
+    context.Request.ContentType = "application/json";
+    context.Request.ContentLength = 64;
+    return context.Request;
+}
+Check(NeutralRegistrationTransportPreflight.IsEligible(RegistrationRequest()),
+    "C05 direct-host bounded neutral registration preflight");
+void DenyRegistration(string label, Action<HttpRequest> attack)
+{
+    var request = RegistrationRequest();
+    attack(request);
+    Check(!NeutralRegistrationTransportPreflight.IsEligible(request), "C05 " + label);
+}
+DenyRegistration("GET forbidden", r => r.Method = "GET");
+DenyRegistration("PUT forbidden", r => r.Method = "PUT");
+DenyRegistration("query cannot select tenant", r => r.QueryString = new QueryString("?tenant=1"));
+DenyRegistration("unbounded body", r => r.ContentLength = 4097);
+DenyRegistration("empty body", r => r.ContentLength = 0);
+DenyRegistration("missing bounded body", r => r.ContentLength = null);
+DenyRegistration("text media", r => r.ContentType = "text/plain");
+DenyRegistration("JSON media suffix", r => r.ContentType = "application/json-extra");
+DenyRegistration("host absent", r => r.Headers.Remove("Host"));
+DenyRegistration("host ambiguous", r => r.Headers.Host = new Microsoft.Extensions.Primitives.StringValues(new[] { "tenant.example.com", "other.example.com" }));
+DenyRegistration("forwarded host", r => r.Headers["X-Forwarded-Host"] = "attacker.example");
+DenyRegistration("forwarded address", r => r.Headers["X-Forwarded-For"] = "198.51.100.4");
+DenyRegistration("RFC forwarded", r => r.Headers["Forwarded"] = "host=attacker.example");
+DenyRegistration("authorization injection", r => r.Headers["Authorization"] = "Bearer forged");
+DenyRegistration("cookie session injection", r => r.Headers["Cookie"] = "sid=forged");
+DenyRegistration("tenant header injection", r => r.Headers["X-Tenant-Id"] = "42");
+DenyRegistration("actor header injection", r => r.Headers["X-Actor-Id"] = "spoof");
+DenyRegistration("role header injection", r => r.Headers["X-Role"] = "SuperAdmin");
+DenyRegistration("method override", r => r.Headers["X-HTTP-Method-Override"] = "GET");
+DenyRegistration("original method override", r => r.Headers["X-Original-Method"] = "GET");
+DenyRegistration("transfer encoding rejected", r => r.Headers["Transfer-Encoding"] = "chunked");
+var missingRegistrationRequestRejected = false;
+try { _ = NeutralRegistrationTransportPreflight.IsEligible(null!); }
+catch (ArgumentNullException) { missingRegistrationRequestRejected = true; }
+Check(missingRegistrationRequestRejected, "C05 preflight rejects null request");
+Console.WriteLine("PASS C05 preflight: 23 new registration HTTP assertions (not E2E certification).");
