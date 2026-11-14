@@ -41,7 +41,7 @@ GUARDS={
         "ES256",
         "crossOrigin",
         "signCount",
-        "verificación de atestation",
+        "atestation de inscripción",
         "MySQL 8.4",
         "A/B/C",
         "NO-GO",
