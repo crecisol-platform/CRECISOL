@@ -103,11 +103,6 @@ catch(InvalidOperationException) { Check(true,"No production MySQL DB"); }
 
 await using var setup=new MySqlConnection(setupConfig.ConnectionString);
 await setup.OpenAsync();
-async Task<int> SqlAsync(string sql)
-{
-    await using var cmd=new MySqlCommand(sql,setup);
-    return await cmd.ExecuteNonQueryAsync();
-}
 async Task<long> CountAsync(string sql)
 {
     await using var cmd=new MySqlCommand(sql,setup);
