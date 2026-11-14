@@ -340,6 +340,21 @@ async Task<HttpStatusCode> PostAsync(
 }
 
 
+// True concurrent HTTP admission from a common socket peer and unknown
+// mailbox. SQL SOURCE then SUBJECT CAS must admit exactly five, block eleven.
+var bruteRace=await Task.WhenAll(Enumerable.Range(0,16).Select(_=>
+    PostAsync(hostA.Value,raceLogin,wrongPassword)));
+Check(bruteRace.Count(x=>x==HttpStatusCode.Accepted)==5 &&
+      bruteRace.Count(x=>x==(HttpStatusCode)429)==11,
+      "16 concurrent HTTP brute force admissions => exactly 5 accepted and 11 blocked");
+Check(await ScalarAsync("""
+    SELECT COUNT(*) FROM c05_10_access_outcomes
+      WHERE tenant_id=UNHEX('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+        AND purpose='LOGIN' AND outcome='REJECTED'
+    """)==5,
+    "All five admitted synthetic unknown attempts did actual C05-04 dummy Argon2id");
+await ForceWindowExpiryAsync(tenantA,"LOGIN");
+
 // Real ASP.NET10 HTTP / MySQL8.4 brute force. These endpoints run only
 // in this executable; Crecisol.Api/Program.cs remains PUBLIC BRANDING ONLY.
 Check((await PostAsync("evil.example.test",login,wrongPassword))==
@@ -362,7 +377,7 @@ Check(await ScalarAsync("""
 Check(await ScalarAsync("""
     SELECT COUNT(*) FROM c05_10_access_outcomes
     WHERE purpose='LOGIN' AND outcome='REJECTED'
-    """)==2,"Both invalid and unknown real Argon2id attempts recorded as private rejected outcomes");
+    """)==7,"Five concurrent unknown plus invalid and unknown later remain private rejected outcomes");
 Check((await PostAsync(hostB.Value,login,password))==
       HttpStatusCode.Accepted,
       "Same global actor independently uses tenant B verified host and rate policy");
