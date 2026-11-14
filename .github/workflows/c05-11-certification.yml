@@ -32,12 +32,14 @@ jobs:
           python3 -m py_compile qa/c05_11_closure_gate.py
           python3 qa/validate_foundation.py
           python3 qa/c05_11_closure_gate.py A
+          python3 qa/c05_11_integral_audits.py A
           mkdir -p .c05-11-institutional-proof
           printf 'PASS A sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-11-institutional-proof/A
       - name: Audit B independent malicious identity, trace and SHA marker removals
         run: |
           set -euo pipefail
           python3 qa/c05_11_closure_gate.py B
+          python3 qa/c05_11_integral_audits.py B
           python3 qa/c04_11_offensive_audits.py B
           printf 'PASS B sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-11-institutional-proof/B
       - name: Install official .NET10 SDK
@@ -53,6 +55,10 @@ jobs:
         run: |
           set -euo pipefail
           dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.AccountIdentity.ContractsTests/Crecisol.AccountIdentity.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.PasswordHash.ContractsTests/Crecisol.PasswordHash.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.ContextualLogin.ContractsTests/Crecisol.ContextualLogin.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.MfaRisk.ContractsTests/Crecisol.MfaRisk.ContractsTests.csproj -c Release --nologo -warnaserror
           while IFS= read -r project; do
             dotnet build "$project" -c Release --nologo -warnaserror
           done < <(find backend/tests -name '*.csproj' -type f | sort)
