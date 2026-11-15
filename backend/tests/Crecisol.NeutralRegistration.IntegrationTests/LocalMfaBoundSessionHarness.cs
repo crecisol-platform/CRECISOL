@@ -19,7 +19,7 @@ internal static class LocalMfaBoundSessionHarness
 {
     public static async Task VerifyAsync(
         MySqlConnection protectedCandidateSetup,
-        string sessionSetupDsn,string sessionWorkerDsn,
+        string sessionSetupDsn,string sessionWorkerDsn,string approvalWorkerDsn,
         PrepareContextualPasswordLogin actualLogin,
         CanonicalLoginHandle login,string currentPassword,
         ContextualLoginPreparation approvedLogin,
@@ -175,6 +175,10 @@ internal static class LocalMfaBoundSessionHarness
              await scoped.ValidateAsync(bearer,trustedB,ct) &&
              !await scoped.ValidateAsync(bearer,trustedA,ct),
              "MFA session is one-use, valid only on trusted Host B, never on tenant A");
+
+        await LocalMfaApproverHarness.VerifyAsync(
+            protectedCandidateSetup,approvalWorkerDsn,protector,bearer,
+            approved.ActorId,trustedB,trustedA,pass,ct);
 
         await using var privateAccess=await LocalMfaPrivateResourceHarness.VerifyAsync(
             db,sessionWorkerDsn,protector,bearer,approved.ActorId,

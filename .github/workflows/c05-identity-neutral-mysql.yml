@@ -19,6 +19,9 @@ on:
       - 'backend/src/Crecisol.Infrastructure/Tenancy/MySqlDisposableMfaPrivateResourceStore.cs'
       - 'database/tests/fixtures/c05_05_private_resource_authorization_fixture.sql'
       - 'backend/src/Crecisol.Application/Identity/DisposableMfaBoundSessionIssuance.cs'
+      - 'backend/src/Crecisol.Application/Identity/ActivateMembershipWithMfaApprover.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaMembershipApprovalStore.cs'
+      - 'database/tests/fixtures/c05_02_mfa_operator_approval_fixture.sql'
       - 'database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql'
       - 'database/tests/fixtures/c05_02_membership_approval_fixture.sql'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableEmailPossessionAdapter.cs'
@@ -46,6 +49,9 @@ on:
       - 'backend/src/Crecisol.Infrastructure/Tenancy/MySqlDisposableMfaPrivateResourceStore.cs'
       - 'database/tests/fixtures/c05_05_private_resource_authorization_fixture.sql'
       - 'backend/src/Crecisol.Application/Identity/DisposableMfaBoundSessionIssuance.cs'
+      - 'backend/src/Crecisol.Application/Identity/ActivateMembershipWithMfaApprover.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaMembershipApprovalStore.cs'
+      - 'database/tests/fixtures/c05_02_mfa_operator_approval_fixture.sql'
       - 'database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql'
       - 'database/tests/fixtures/c05_02_membership_approval_fixture.sql'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableEmailPossessionAdapter.cs'
@@ -81,6 +87,7 @@ jobs:
           test -f database/tests/fixtures/c05_10_disposable_rate_limits.sql
           test -f database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql
           test -f database/tests/fixtures/c05_05_private_resource_authorization_fixture.sql
+          test -f database/tests/fixtures/c05_02_mfa_operator_approval_fixture.sql
           printf "PASS A sha=%s run=%s\n" "$C05_TESTED_SHA" "$GITHUB_RUN_ID" > /tmp/c05-a
       - name: Audit B deny forged tenant and actor before SQL
         run: |
@@ -137,6 +144,25 @@ jobs:
                          "Disabled or unavailable SQL security policy always denies",
                          "Preauth audit schema has no raw account"):
               assert marker in admission, marker
+          mfa_approval_sql=Path("database/tests/fixtures/c05_02_mfa_operator_approval_fixture.sql").read_text()
+          mfa_approval_app=Path("backend/src/Crecisol.Application/Identity/ActivateMembershipWithMfaApprover.cs").read_text()
+          mfa_approval_adapter=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaMembershipApprovalStore.cs").read_text()
+          mfa_approval_tests=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalMfaApproverHarness.cs").read_text()
+          for marker in ("c05_02_activate_by_mfa_approver",
+                         "c05_05_disposable.c05_05_sessions",
+                         "c05_05_disposable.c05_05_mfa_session_bindings",
+                         "c05_02_mfa_approval_grants", "p_candidate=v_approver",
+                         "v_candidate_mail", "v_challenge_consumed",
+                         "v_grant_active<>1", "FOR UPDATE;", "ROLLBACK"):
+              assert marker in mfa_approval_sql, marker
+          assert "tokens.TryDigest" in mfa_approval_app
+          assert "MySqlDisposableMfaMembershipApprovalStore" in mfa_approval_adapter
+          for marker in ("Twelve concurrent MFA-bound approver activations",
+                         "Valid MFA session without backend memberships.approve grant",
+                         "Explicitly suspended backend approver permission",
+                         "Backend grant revocation immediately blocks",
+                         "MFA approval EXECUTE-only worker cannot SELECT"):
+              assert marker in mfa_approval_tests, marker
           mfa_sql=Path("database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql").read_text()
           mfa_runner=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalMfaBoundSessionHarness.cs").read_text()
           mfa_adapter=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaBoundSessionLedger.cs").read_text()
@@ -158,6 +184,8 @@ jobs:
           # Shell escapes backticks in the root SQL string. Inspect the
           # normalized SQL literal, NOT a mismatched raw shell spelling.
           grants=runner.replace(chr(92)+chr(96),chr(96))
+          assert "GRANT EXECUTE ON PROCEDURE `$DB`.c05_02_activate_by_mfa_approver" in grants
+          assert "GRANT SELECT ON `$DB`.c05_02_mfa_approval_grants" not in grants
           assert "GRANT EXECUTE ON PROCEDURE `$MFA_DB`.c05_05_issue_once" not in grants
           assert "GRANT EXECUTE ON PROCEDURE `$MFA_DB`.c05_05_issue_after_mfa_once" in grants
           assert "GRANT EXECUTE ON PROCEDURE `$MFA_DB`.c05_05_read_private_resource" in grants

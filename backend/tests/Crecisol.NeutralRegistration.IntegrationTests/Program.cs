@@ -44,6 +44,7 @@ var rateSetupDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_RATE_SETUP_D
 var rateRunnerDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_RATE_RUNNER_DSN");
 var mfaSetupDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_MFA_SETUP_DSN");
 var mfaWorkerDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_MFA_WORKER_DSN");
+var mfaApprovalDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_MFA_APPROVAL_DSN");
 var key = Convert.FromHexString(keyHex);
 if (key.Length != 32)
     throw new InvalidOperationException("Invalid server-owned C05-02 test key.");
@@ -669,12 +670,13 @@ if (integratedProof is not null)
             string.IsNullOrWhiteSpace(rateSetupDsn) ||
             string.IsNullOrWhiteSpace(rateRunnerDsn) ||
             string.IsNullOrWhiteSpace(mfaSetupDsn) ||
-            string.IsNullOrWhiteSpace(mfaWorkerDsn))
+            string.IsNullOrWhiteSpace(mfaWorkerDsn) ||
+            string.IsNullOrWhiteSpace(mfaApprovalDsn))
             throw new InvalidOperationException(
                 "Integrated C05 candidate requires a separate approved-membership and login-directory fixture.");
         await LocalApprovedMembershipHarness.VerifyAsync(
             admin, activationDsn, directoryDsn, rateSetupDsn, rateRunnerDsn,
-            mfaSetupDsn, mfaWorkerDsn, key, password, proofIntent,
+            mfaSetupDsn, mfaWorkerDsn, mfaApprovalDsn, key, password, proofIntent,
             directory, directory, new SystemUtcClock(), Pass, CancellationToken.None);
 
         async Task<Guid> LatestBIntentAsync()
