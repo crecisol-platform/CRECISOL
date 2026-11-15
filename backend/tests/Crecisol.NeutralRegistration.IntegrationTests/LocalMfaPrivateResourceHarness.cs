@@ -104,6 +104,11 @@ internal static class LocalMfaPrivateResourceHarness
              await DeniedAsync(reader,null,hostB,own,ct),
              "Random or missing bearer cannot read a private resource");
 
+        await MutateAsync(setup,"UPDATE c05_08_factors SET state='REVOKED' WHERE state='ACTIVE'",ct);
+        pass(await DeniedAsync(reader,mfaBoundBearer,hostB,own,ct),
+            "Revoked MFA factor immediately denies protected resource despite unexpired session");
+        await MutateAsync(setup,"UPDATE c05_08_factors SET state='ACTIVE' WHERE state='REVOKED'",ct);
+
         await MutateAsync(setup,"UPDATE c05_05_private_grants SET access_scope='BRANCH',revision=revision+1",ct);
         var branchWide=await reader.ExecuteAsync(mfaBoundBearer,hostB,foreignOwner,ct);
         pass(branchWide.ExternalKey=="synthetic-b-outsider-case",
