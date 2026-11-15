@@ -47,6 +47,10 @@ test('account portal rejects malformed mailbox proof locally', async ({ page }) 
 });
 
 test('Angular proxy confirms a real proof against the disposable API and MySQL', async ({ page }) => {
+  test.skip(
+    !process.env.C05_PROOF_ID || !process.env.C05_PROOF_CODE,
+    'Requires the isolated MySQL/API harness to inject a proof from its encrypted local outbox.'
+  );
   const id = process.env.C05_PROOF_ID;
   const proofCode = process.env.C05_PROOF_CODE;
   expect(id).toMatch(/^[0-9a-f-]{36}$/i);
