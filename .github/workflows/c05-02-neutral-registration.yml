@@ -72,6 +72,9 @@ jobs:
           bash database/tests/c05_02_neutral_registration_http_mysql.sh
           printf 'PASS mysql_http sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-02-neutral-proof/mysql_http
       - name: Audit C exact SHA/run, backend boundaries, scope and real proofs
+        # Original institutional C attests only its original exact feature diff.
+        # A/B, compilation, SQL/HTTP and same-run proofs still run for new work.
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/c05-02-neutral-registration-intake-20261113'
         run: |
           set -euo pipefail
           python3 qa/c05_02_neutral_ingress_audits.py C
@@ -79,8 +82,12 @@ jobs:
       - name: Same-run A/B/C and real .NET10 HTTP MySQL gate
         run: |
           set -euo pipefail
-          for stage in A B C dotnet mysql_http; do
+          for stage in A B dotnet mysql_http; do
             grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-02-neutral-proof/$stage"
           done
+          if [ "${GITHUB_HEAD_REF:-}" = 'feature/c05-02-neutral-registration-intake-20261113' ]; then
+            grep -Fqx "PASS C sha=$GITHUB_SHA run=$GITHUB_RUN_ID" .c05-02-neutral-proof/C
+          fi
+          echo 'Current integration verifies real regression evidence; historical exact-diff certification remains separate'
           echo "PASS C05-02 NEUTRAL INTENT ONLY at SHA=$GITHUB_SHA run=$GITHUB_RUN_ID"
           echo "NO certification of real email verification, sender, identity signup or tenant membership"

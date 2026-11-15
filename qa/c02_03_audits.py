@@ -131,6 +131,23 @@ def actual_route_paths():
     return re.findall(r"^\s*path: '([^']*)'", contents, re.M), contents
 
 
+def current_route_allowlist():
+    # Preserve C02's public sitemap and historical actas. The subsequent C05
+    # integration adds exactly one independently audited lazy account portal.
+    baseline = ["", "experiencias", "demostraciones", "alta-empresas", "**"]
+    module = ROOT / "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs"
+    if not module.is_file():
+        return baseline
+    code = (ROOT / "backend/src/Crecisol.Api/Program.cs").read_text(encoding="utf-8")
+    routes = ROUTES.read_text(encoding="utf-8")
+    require('CRECISOL_C05_LOCAL_IDENTITY_ENABLED' in code and
+            'if (operationalIdentityEnabled)' in code and
+            "import('./pages/identity-portal.component')" in routes and
+            'module.IdentityPortalComponent' in routes,
+            "C05 account route must retain its explicit isolated backend composition and lazy component")
+    return ["cuenta"] + baseline
+
+
 def audit_a():
     original, roles, _, _ = c02_01_source.original_parts()
     c02_02_audits.valid_contract(c02_02_audits.read_data())
@@ -138,7 +155,7 @@ def audit_a():
     data = sitemap()
     validate(data)
     paths, _ = actual_route_paths()
-    require(paths == ["", "experiencias", "demostraciones", "alta-empresas", "**"],
+    require(paths == current_route_allowlist(),
             f"Angular routes don't match allowlist and wildcard: {paths}")
     doc = SPEC.read_text(encoding="utf-8")
     require(all(token in doc for token in [
@@ -163,7 +180,9 @@ def audit_b():
     paths, source = actual_route_paths()
     require(paths[-1] == "**", "Missing wildcard deny route")
     require("NotFoundComponent" in source, "Wildcard no longer uses NotFoundComponent")
-    require(source.count("loadComponent:") == 5, "Unexpected route loader")
+    require(paths == current_route_allowlist() and
+            source.count("loadComponent:") == len(current_route_allowlist()),
+            "Unexpected route loader or route outside the exact current allowlist")
     for token in ("path: 'superadmin'", "path: 'login'", "path: 'panel'",
                   "path: 'negocio'", "path: 'empleado'", "path: 'cliente'",
                   "redirectTo:", "canActivate:"):
