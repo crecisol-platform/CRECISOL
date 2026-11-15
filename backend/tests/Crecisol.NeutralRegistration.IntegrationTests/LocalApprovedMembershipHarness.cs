@@ -25,7 +25,6 @@ internal static class LocalApprovedMembershipHarness
         ITrustedHostUtcClock clock, Action<bool,string> pass,
         CancellationToken ct)
     {
-        const string B = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
         var tenantB=TenantId.From(Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
         var tenantA=TenantId.From(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
         var rawIntent = MySqlRfc4122Guid.Encode(sourceIntent);
