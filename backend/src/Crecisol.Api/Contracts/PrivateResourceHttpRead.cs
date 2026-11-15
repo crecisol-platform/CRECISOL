@@ -71,7 +71,7 @@ public sealed class PrivateResourceHttpRead
         if (authorization is null ||
             authorization.Length is < 15 or > 128 ||
             !authorization.StartsWith("Bearer ", StringComparison.Ordinal) ||
-            authorization.AsSpan(7).ContainsAny(' ', ',', '\\r', '\\n', '\\t'))
+            authorization[7..].Any(character => char.IsWhiteSpace(character) || character == ','))
             return Results.NotFound();
 
         try
