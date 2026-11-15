@@ -9,6 +9,9 @@ on:
       - 'database/tests/fixtures/c05_02_verified_candidate_fixture.sql'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableVerifiedCredentialCandidateStore.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableNeutralProofDispatch.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMembershipActivation.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableApprovedLoginDirectory.cs'
+      - 'database/tests/fixtures/c05_02_membership_approval_fixture.sql'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableEmailPossessionAdapter.cs'
       - 'docs/c05/C05_REGISTRO_Y_PRUEBA_BUZON_UNIFICADOS.md'
       - 'database/tests/fixtures/c05_02_neutral_dispatch_fixture.sql'
@@ -24,6 +27,9 @@ on:
       - 'database/tests/fixtures/c05_02_verified_candidate_fixture.sql'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableVerifiedCredentialCandidateStore.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableNeutralProofDispatch.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMembershipActivation.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableApprovedLoginDirectory.cs'
+      - 'database/tests/fixtures/c05_02_membership_approval_fixture.sql'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableEmailPossessionAdapter.cs'
       - 'docs/c05/C05_REGISTRO_Y_PRUEBA_BUZON_UNIFICADOS.md'
       - 'database/tests/fixtures/c05_02_neutral_dispatch_fixture.sql'
@@ -53,6 +59,7 @@ jobs:
           bash -n database/tests/c05_identity_neutral_proof_http_mysql.sh
           test -f database/tests/fixtures/c05_02_verified_candidate_fixture.sql
           test -f database/tests/fixtures/c05_02_neutral_dispatch_fixture.sql
+          test -f database/tests/fixtures/c05_02_membership_approval_fixture.sql
           printf "PASS A sha=%s run=%s\n" "$C05_TESTED_SHA" "$GITHUB_RUN_ID" > /tmp/c05-a
       - name: Audit B deny forged tenant and actor before SQL
         run: |
@@ -69,7 +76,10 @@ jobs:
                            "Twelve racing verified-proof enrollments",
                            "Sixteen concurrent workers safely claim one opaque B intent",
                            "Anonymous intent -> trusted outbox -> recipient link",
-                           "Expired SQL lease is reclaimed once"):
+                           "Expired SQL lease is reclaimed once",
+                           "Twelve racing independent approvals activate exactly one membership",
+                           "Real MySQL directory + Argon2id + unique host B",
+                           "Post-activation revocation immediately invalidates"):
               assert required in t, required
           candidate=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableVerifiedCredentialCandidateStore.cs").read_text()
           schema=Path("database/tests/fixtures/c05_02_verified_candidate_fixture.sql").read_text()
@@ -86,6 +96,17 @@ jobs:
               assert marker in dispatch, marker
           assert "MySqlDisposableNeutralProofDispatch" in worker
           assert "ITrustedLocalProofLinkSink" in delivery
+          approval=Path("database/tests/fixtures/c05_02_membership_approval_fixture.sql").read_text()
+          login=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableApprovedLoginDirectory.cs").read_text()
+          activate=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMembershipActivation.cs").read_text()
+          for marker in ("c05_02_activate_approved_candidate",
+                         "expected_mfa_revision", "expected_session_revision",
+                         "PENDING_MEMBERSHIP", "candidate_actor_id<>approver_actor_id",
+                         "approved_memberships"):
+              assert marker in approval, marker
+          assert "ITrustedLoginCredentialDirectory" in login
+          assert "ITrustedLoginTenantLinkDirectory" in login
+          assert "MySqlDisposableMembershipActivation" in activate
           assert "NeutralRegistrationIntake" not in api
           assert "VerifyNeutralRegistrationMailbox" not in api
           assert "app.MapPost(" not in api and "app.MapGroup(" not in api
@@ -136,4 +157,4 @@ jobs:
           original=Path(".github/workflows/c05-02-mailbox-proof.yml").read_text()
           assert "github.head_ref == 'feature/c05-02-independent-email-proof-20261113'" in original
           PY
-          echo 'PASS C05 isolated registration, internal proof dispatch, recipient-only link and pending Argon2id; NOT active auth/MFA/session E2E'
+          echo 'PASS C05 isolated registration/proof/pending PHC with synthetic independently approved membership and contextual Argon2id preparation; NOT public auth/MFA/session E2E'
