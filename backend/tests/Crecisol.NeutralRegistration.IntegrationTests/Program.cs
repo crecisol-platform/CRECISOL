@@ -881,15 +881,15 @@ if (integratedProof is not null)
         var nextOwner = Guid.NewGuid();
         var reclaimed = await queue.ClaimNextAsync(
             nextOwner, CancellationToken.None);
-        Pass(reclaimed is not null && reclaimed.Intent == stale.Intent &&
-             !await queue.CompleteAsync(stale, staleOwner, CancellationToken.None),
+        Pass(reclaimed is not null && reclaimed.Intent == stale!.Intent &&
+             !await queue.CompleteAsync(stale!, staleOwner, CancellationToken.None),
              "Expired SQL lease is reclaimed once; stale owner cannot acknowledge it");
 
         var secondDelivery = await SendProofAsync("proof-request",
             "b.crecisol.test", "{\"intentId\":\"" + reclaimed!.Intent.ToString("D") + "\"}");
         Pass(secondDelivery.Status == HttpStatusCode.Accepted &&
              await queue.CompleteAsync(
-                 reclaimed, nextOwner, CancellationToken.None) &&
+                 reclaimed!, nextOwner, CancellationToken.None) &&
              localMailbox.Has("Dispatch+Retry@example.test"),
              "Reclaimed lease dispatches only to its recorded B mailbox");
         var remaining = localMailbox.TakeLink("Dispatch+Retry@example.test");
