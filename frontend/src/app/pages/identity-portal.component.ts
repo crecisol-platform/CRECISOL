@@ -97,7 +97,7 @@ export class IdentityPortalComponent {
       const mailbox = String(new FormData(form).get('mailbox') ?? '');
       await this.identity.requestRegistration(mailbox);
       form.reset();
-      this.message.set('Si la solicitud es válida, recibirás los siguientes pasos en el buzón.');
+      this.message.set('Solicitud recibida. Esto todavía no crea una cuenta ni concede acceso.');
     });
   }
 
@@ -144,4 +144,5 @@ export class IdentityPortalComponent {
     }
   }
 }
+
 
