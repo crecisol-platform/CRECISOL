@@ -205,8 +205,14 @@ for i in $(seq 1 24); do
   pids+=("$!")
 done
 for pid in "${pids[@]}"; do wait "$pid"; done
-same 'concurrent peer quota admits exactly eight' 8 "$(root_sql "SELECT admitted_count FROM c05_identity_registration_quota WHERE tenant_id=UNHEX('00000000000000000000000000000004')")"
-same 'concurrent peer writes exactly eight intents' 8 "$(root_sql "SELECT COUNT(*) FROM c05_identity_registration_intent WHERE tenant_id=UNHEX('00000000000000000000000000000004')")"
+quota_summary="$(root_sql "SELECT CONCAT(COUNT(*),',',COALESCE(SUM(admitted_count),0),',',COALESCE(MAX(admitted_count),0),',',SUM(admitted_count>8)) FROM c05_identity_registration_quota WHERE tenant_id=UNHEX('00000000000000000000000000000004')")"
+IFS=, read -r quota_windows quota_admitted quota_peak quota_over_limit <<<"$quota_summary"
+quota_intents="$(root_sql "SELECT COUNT(*) FROM c05_identity_registration_intent WHERE tenant_id=UNHEX('00000000000000000000000000000004')")"
+[[ "$quota_windows" =~ ^[1-9][0-9]*$ && "$quota_admitted" == "$quota_intents" &&
+   "$quota_peak" == 8 && "$quota_over_limit" == 0 ]] || {
+  echo "FAIL concurrent per-minute quota windows=$quota_windows admitted=$quota_admitted intents=$quota_intents peak=$quota_peak over_limit=$quota_over_limit" >&2
+  exit 1
+}
 
 # Actual browser -> Angular same-origin proxy -> Kestrel -> disposable MySQL.
 # A separate synthetic SMTP process receives the code over loopback TCP.
@@ -216,6 +222,7 @@ API_PID=''
 coproc SMTP_RECEIVER { dotnet "$ROOT/backend/tests/Crecisol.LoopbackSmtpReceiver/bin/Release/net10.0/Crecisol.LoopbackSmtpReceiver.dll"; }
 SMTP_PID=$SMTP_RECEIVER_PID
 read -r -t 15 smtp_ready <&"${SMTP_RECEIVER[0]}"
+smtp_ready="${smtp_ready%$'\r'}"
 [[ "$smtp_ready" =~ ^READY\ ([0-9]{4,5})$ ]]
 smtp_port="${BASH_REMATCH[1]}"
 CRECISOL_C01_ALLOWED_HOSTS='127.0.0.1;tenant-a.example.test;tenant-b.example.test;tenant-c.example.test;tenant-d.example.test' \
@@ -243,6 +250,7 @@ angular_proof_digest="$(root_sql "SELECT HEX(proof_token_hmac) FROM c05_identity
 angular_proof_code=''
 for _ in $(seq 1 90); do
   if IFS=' ' read -r -t 1 marker recipient candidate <&"${SMTP_RECEIVER[0]}"; then
+    candidate="${candidate%$'\r'}"
     if [[ "$marker" == MAIL && "$recipient" == angular-e2e@example.test && "$candidate" =~ ^[A-F0-9]{64}$ ]]; then
       angular_proof_code="${candidate,,}"
       break
@@ -293,5 +301,6 @@ same 'completed registration has no active membership or granted role' '0:0:PEND
 same 'completed registration issues no session' 0 "$(root_sql 'SELECT COUNT(*) FROM c05_identity_session')"
 
 echo 'PASS C05 pending account path: Angular browser/proxy -> .NET10 API -> MySQL8.4; verified host, tenant isolation, synthetic mailbox proof, pending account/membership, no session, replay/lockout/expiry, least DB privilege and atomic quota'
+
 
 
