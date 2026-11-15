@@ -142,8 +142,11 @@ jobs:
               assert marker.lower() in mfa_runner.lower(), marker
           assert "TryIssueAfterCommittedStepUpAsync" in mfa_adapter
           assert "ITrustedMfaBoundSessionLedger" in mfa_case
-          assert "GRANT EXECUTE ON PROCEDURE `$MFA_DB`.c05_05_issue_once" not in runner
-          assert "GRANT EXECUTE ON PROCEDURE `$MFA_DB`.c05_05_issue_after_mfa_once" in runner
+          # Shell escapes backticks in the root SQL string. Inspect the
+          # normalized SQL literal, NOT a mismatched raw shell spelling.
+          grants=runner.replace(chr(92)+chr(96),chr(96))
+          assert "GRANT EXECUTE ON PROCEDURE `$MFA_DB`.c05_05_issue_once" not in grants
+          assert "GRANT EXECUTE ON PROCEDURE `$MFA_DB`.c05_05_issue_after_mfa_once" in grants
           assert "NeutralRegistrationIntake" not in api
           assert "VerifyNeutralRegistrationMailbox" not in api
           assert "app.MapPost(" not in api and "app.MapGroup(" not in api
