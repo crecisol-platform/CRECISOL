@@ -103,20 +103,24 @@ public sealed class MySqlOperationalNeutralRegistrationRecorder :
     private readonly byte[] mailboxHmacKey;
     private readonly byte[] peerHmacKey;
     private readonly byte[] mailboxEncryptionKey;
+    private readonly byte[] proofOutboxEncryptionKey;
     private bool disposed;
 
     public MySqlOperationalNeutralRegistrationRecorder(
         string? dsn, int keyVersion, ReadOnlySpan<byte> mailboxHmacKey,
-        ReadOnlySpan<byte> peerHmacKey, ReadOnlySpan<byte> mailboxEncryptionKey)
+        ReadOnlySpan<byte> peerHmacKey, ReadOnlySpan<byte> mailboxEncryptionKey,
+        ReadOnlySpan<byte> proofOutboxEncryptionKey)
     {
         if (keyVersion < 1 || mailboxHmacKey.Length != 32 ||
-            peerHmacKey.Length != 32 || mailboxEncryptionKey.Length != 32)
+            peerHmacKey.Length != 32 || mailboxEncryptionKey.Length != 32 ||
+            proofOutboxEncryptionKey.Length != 32)
             throw new InvalidOperationException("Independent 256-bit identity keys are required.");
         this.dsn = dsn;
         this.keyVersion = keyVersion;
         this.mailboxHmacKey = mailboxHmacKey.ToArray();
         this.peerHmacKey = peerHmacKey.ToArray();
         this.mailboxEncryptionKey = mailboxEncryptionKey.ToArray();
+        this.proofOutboxEncryptionKey = proofOutboxEncryptionKey.ToArray();
     }
 
     public async Task RecordWithoutEnumerationAsync(
@@ -131,8 +135,11 @@ public sealed class MySqlOperationalNeutralRegistrationRecorder :
             RequestNeutralRegistrationIntent.CanonicalMailboxOrNull(canonicalMailbox) != canonicalMailbox)
             throw new InvalidOperationException("Trusted canonical registration context required.");
 
+        var intentId = Guid.NewGuid();
         byte[]? tenant = null, mailbox = null, peer = null, aad = null;
         byte[]? mailboxDigest = null, peerDigest = null, nonce = null, tag = null, cipher = null;
+        byte[]? proofToken = null, proofDigest = null, proofAad = null;
+        byte[]? outboxNonce = null, outboxTag = null, outboxCipher = null;
         try
         {
             tenant = MySqlRfc4122Guid.Encode(verifiedTenant.Value);
@@ -156,6 +163,16 @@ public sealed class MySqlOperationalNeutralRegistrationRecorder :
             cipher = new byte[mailbox.Length];
             using (var aes = new AesGcm(mailboxEncryptionKey, 16))
                 aes.Encrypt(nonce, mailbox, cipher, tag, aad);
+
+            proofToken = RandomNumberGenerator.GetBytes(32);
+            proofDigest = EmailPossessionDigest.FromToken(verifiedTenant, intentId, proofToken)
+                .CopyForProtectedDatabase();
+            proofAad = CreateProofOutboxAad(tenant, intentId, proofDigest, keyVersion);
+            outboxNonce = RandomNumberGenerator.GetBytes(12);
+            outboxTag = new byte[16];
+            outboxCipher = new byte[proofToken.Length];
+            using (var aes = new AesGcm(proofOutboxEncryptionKey, 16))
+                aes.Encrypt(outboxNonce, proofToken, outboxCipher, outboxTag, proofAad);
 
             if (string.IsNullOrWhiteSpace(dsn))
                 throw new InvalidOperationException("Registration storage is not configured.");
@@ -210,7 +227,7 @@ public sealed class MySqlOperationalNeutralRegistrationRecorder :
                         VALUES (@tenant,@intent,@mailbox,@peer,@cipher,@nonce,@tag,@version,0,@created,@expires)
                         """, db, (MySqlTransaction)tx);
                     insert.Parameters.Add("@tenant", MySqlDbType.Binary).Value = tenant;
-                    insert.Parameters.Add("@intent", MySqlDbType.Binary).Value = MySqlRfc4122Guid.Encode(Guid.NewGuid());
+                    insert.Parameters.Add("@intent", MySqlDbType.Binary).Value = MySqlRfc4122Guid.Encode(intentId);
                     insert.Parameters.Add("@mailbox", MySqlDbType.Binary).Value = mailboxDigest;
                     insert.Parameters.Add("@peer", MySqlDbType.Binary).Value = peerDigest;
                     insert.Parameters.Add("@cipher", MySqlDbType.VarBinary).Value = cipher;
@@ -220,13 +237,55 @@ public sealed class MySqlOperationalNeutralRegistrationRecorder :
                     insert.Parameters.Add("@created", MySqlDbType.DateTime).Value = nowUtc.UtcDateTime;
                     insert.Parameters.Add("@expires", MySqlDbType.DateTime).Value = nowUtc.AddMinutes(30).UtcDateTime;
                     await insert.ExecuteNonQueryAsync(cancellationToken);
+
+                    await using (var proof = new MySqlCommand("""
+                        INSERT INTO c05_identity_mailbox_proof
+                          (tenant_id,proof_id,mailbox_hmac,proof_token_hmac,mailbox_ciphertext,
+                           mailbox_nonce,mailbox_tag,key_version,proof_state,created_at_utc,
+                           expires_at_utc,consumed_at_utc)
+                        VALUES (@tenant,@proof,@mailbox,@token,@cipher,@nonce,@tag,@version,0,
+                                @created,@expires,NULL)
+                        """, db, (MySqlTransaction)tx))
+                    {
+                        proof.Parameters.Add("@tenant", MySqlDbType.Binary).Value = tenant;
+                        proof.Parameters.Add("@proof", MySqlDbType.Binary).Value = MySqlRfc4122Guid.Encode(intentId);
+                        proof.Parameters.Add("@mailbox", MySqlDbType.Binary).Value = mailboxDigest;
+                        proof.Parameters.Add("@token", MySqlDbType.Binary).Value = proofDigest;
+                        proof.Parameters.Add("@cipher", MySqlDbType.VarBinary).Value = cipher;
+                        proof.Parameters.Add("@nonce", MySqlDbType.Binary).Value = nonce;
+                        proof.Parameters.Add("@tag", MySqlDbType.Binary).Value = tag;
+                        proof.Parameters.Add("@version", MySqlDbType.Int32).Value = keyVersion;
+                        proof.Parameters.Add("@created", MySqlDbType.DateTime).Value = nowUtc.UtcDateTime;
+                        proof.Parameters.Add("@expires", MySqlDbType.DateTime).Value = nowUtc.AddMinutes(10).UtcDateTime;
+                        await proof.ExecuteNonQueryAsync(cancellationToken);
+                    }
+
+                    await using (var outbox = new MySqlCommand("""
+                        INSERT INTO c05_identity_mailbox_outbox
+                          (tenant_id,proof_id,payload_ciphertext,payload_nonce,payload_tag,
+                           key_version,delivery_state,attempts,created_at_utc,expires_at_utc)
+                        VALUES (@tenant,@proof,@cipher,@nonce,@tag,@version,0,0,@created,@expires)
+                        """, db, (MySqlTransaction)tx))
+                    {
+                        outbox.Parameters.Add("@tenant", MySqlDbType.Binary).Value = tenant;
+                        outbox.Parameters.Add("@proof", MySqlDbType.Binary).Value = MySqlRfc4122Guid.Encode(intentId);
+                        outbox.Parameters.Add("@cipher", MySqlDbType.Binary).Value = outboxCipher;
+                        outbox.Parameters.Add("@nonce", MySqlDbType.Binary).Value = outboxNonce;
+                        outbox.Parameters.Add("@tag", MySqlDbType.Binary).Value = outboxTag;
+                        outbox.Parameters.Add("@version", MySqlDbType.Int32).Value = keyVersion;
+                        outbox.Parameters.Add("@created", MySqlDbType.DateTime).Value = nowUtc.UtcDateTime;
+                        outbox.Parameters.Add("@expires", MySqlDbType.DateTime).Value = nowUtc.AddMinutes(10).UtcDateTime;
+                        await outbox.ExecuteNonQueryAsync(cancellationToken);
+                    }
                 }
             }
             await tx.CommitAsync(cancellationToken);
         }
         finally
         {
-            foreach (var bytes in new[] { tenant, mailbox, peer, aad, mailboxDigest, peerDigest, nonce, tag, cipher })
+            foreach (var bytes in new[] { tenant, mailbox, peer, aad, mailboxDigest, peerDigest,
+                         nonce, tag, cipher, proofToken, proofDigest, proofAad,
+                         outboxNonce, outboxTag, outboxCipher })
                 if (bytes is not null) CryptographicOperations.ZeroMemory(bytes);
         }
     }
@@ -238,6 +297,21 @@ public sealed class MySqlOperationalNeutralRegistrationRecorder :
         CryptographicOperations.ZeroMemory(mailboxHmacKey);
         CryptographicOperations.ZeroMemory(peerHmacKey);
         CryptographicOperations.ZeroMemory(mailboxEncryptionKey);
+        CryptographicOperations.ZeroMemory(proofOutboxEncryptionKey);
+    }
+
+    private static byte[] CreateProofOutboxAad(
+        ReadOnlySpan<byte> tenant, Guid proofId, ReadOnlySpan<byte> digest, int version)
+    {
+        var purpose = Encoding.ASCII.GetBytes("CRECISOL/C05/registration-proof-outbox/v1\0");
+        var aad = new byte[purpose.Length + 16 + 16 + 4 + 32];
+        purpose.CopyTo(aad, 0);
+        tenant.CopyTo(aad.AsSpan(purpose.Length, 16));
+        MySqlRfc4122Guid.Encode(proofId).CopyTo(aad, purpose.Length + 16);
+        System.Buffers.Binary.BinaryPrimitives.WriteInt32BigEndian(
+            aad.AsSpan(purpose.Length + 32, 4), version);
+        digest.CopyTo(aad.AsSpan(purpose.Length + 36));
+        return aad;
     }
 }
 

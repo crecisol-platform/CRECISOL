@@ -29,6 +29,7 @@ public static class OperationalC05RegistrationModule
         var mailboxKey = ReadKey(readSetting, "CRECISOL_C05_MAILBOX_HMAC_KEY");
         var peerKey = ReadKey(readSetting, "CRECISOL_C05_PEER_HMAC_KEY");
         var encryptionKey = ReadKey(readSetting, "CRECISOL_C05_MAILBOX_ENCRYPTION_KEY");
+        var proofOutboxKey = ReadKey(readSetting, "CRECISOL_C05_PROOF_OUTBOX_ENCRYPTION_KEY");
         if (services.Any(d => d.ServiceType == typeof(NeutralRegistrationIntake)))
             throw new InvalidOperationException("C05 registration is already composed.");
 
@@ -48,11 +49,14 @@ public static class OperationalC05RegistrationModule
             sp.GetRequiredService<MySqlOperationalIdentityCatalog>());
         services.AddSingleton<ResolveVerifiedTenantHost>();
         var recorder = new MySqlOperationalNeutralRegistrationRecorder(
-            trustedDsn, keyVersion, mailboxKey, peerKey, encryptionKey);
+            trustedDsn, keyVersion, mailboxKey, peerKey, encryptionKey, proofOutboxKey);
         System.Security.Cryptography.CryptographicOperations.ZeroMemory(mailboxKey);
         System.Security.Cryptography.CryptographicOperations.ZeroMemory(peerKey);
         System.Security.Cryptography.CryptographicOperations.ZeroMemory(encryptionKey);
+        System.Security.Cryptography.CryptographicOperations.ZeroMemory(proofOutboxKey);
         services.AddSingleton<ITrustedNeutralRegistrationIntentRecorder>(recorder);
+        services.AddSingleton<ITrustedRegistrationMailboxProofLedger>(
+            new MySqlOperationalRegistrationMailboxProof(trustedDsn));
         services.AddScoped<RequestNeutralRegistrationIntent>();
         services.AddScoped<INeutralRegistrationIntentHandler,
             ApplicationNeutralRegistrationIntentHandler>();

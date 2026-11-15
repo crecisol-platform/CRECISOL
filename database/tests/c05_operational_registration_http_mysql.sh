@@ -9,6 +9,7 @@ APP_PASSWORD="$(openssl rand -hex 24)"
 MAILBOX_KEY="$(openssl rand -hex 32)"
 PEER_KEY="$(openssl rand -hex 32)"
 ENCRYPTION_KEY="$(openssl rand -hex 32)"
+OUTBOX_KEY="$(openssl rand -hex 32)"
 API_PID=''
 cleanup() {
   if [[ -n "$API_PID" ]]; then kill "$API_PID" >/dev/null 2>&1 || true; wait "$API_PID" 2>/dev/null || true; fi
@@ -33,6 +34,8 @@ done
 [[ "$ready" == 1 ]] || { docker logs "$NAME"; exit 1; }
 docker exec -i -e "MYSQL_PWD=$ROOT_PASSWORD" "$NAME" mysql -uroot -D crecisol_c05 \
   < "$ROOT/database/migrations/001_c05_identity_operational.sql"
+docker exec -i -e "MYSQL_PWD=$ROOT_PASSWORD" "$NAME" mysql -uroot -D crecisol_c05 \
+  < "$ROOT/database/migrations/002_c05_registration_proof_outbox.sql"
 
 root_sql "INSERT INTO c04_tenant_catalog VALUES
  (UNHEX('00000000000000000000000000000001'),'tenant-a','Tenant A',3,2,1,UTC_TIMESTAMP(6)),
@@ -48,7 +51,10 @@ CREATE USER 'c05_app'@'%' IDENTIFIED BY '$APP_PASSWORD';
 GRANT SELECT ON crecisol_c05.c04_tenant_catalog TO 'c05_app'@'%';
 GRANT SELECT ON crecisol_c05.c04_verified_tenant_host TO 'c05_app'@'%';
 GRANT SELECT,INSERT,UPDATE ON crecisol_c05.c05_identity_registration_quota TO 'c05_app'@'%';
-GRANT INSERT ON crecisol_c05.c05_identity_registration_intent TO 'c05_app'@'%';"
+GRANT INSERT ON crecisol_c05.c05_identity_registration_intent TO 'c05_app'@'%';
+GRANT INSERT ON crecisol_c05.c05_identity_mailbox_proof TO 'c05_app'@'%';
+GRANT INSERT ON crecisol_c05.c05_identity_mailbox_outbox TO 'c05_app'@'%';
+GRANT EXECUTE ON PROCEDURE crecisol_c05.c05_operational_consume_mailbox_proof TO 'c05_app'@'%';"
 
 dsn="Server=127.0.0.1;Port=$port;Database=crecisol_c05;User ID=c05_app;Password=$APP_PASSWORD;SslMode=None;"
 cd "$ROOT"
@@ -58,6 +64,7 @@ CRECISOL_C01_ALLOWED_HOSTS='127.0.0.1;tenant-a.example.test;tenant-b.example.tes
 CRECISOL_C05_REGISTRATION_ENABLED=true CRECISOL_C05_IDENTITY_DSN="$dsn" \
 CRECISOL_C05_KEY_VERSION=1 CRECISOL_C05_MAILBOX_HMAC_KEY="$MAILBOX_KEY" \
 CRECISOL_C05_PEER_HMAC_KEY="$PEER_KEY" CRECISOL_C05_MAILBOX_ENCRYPTION_KEY="$ENCRYPTION_KEY" \
+CRECISOL_C05_PROOF_OUTBOX_ENCRYPTION_KEY="$OUTBOX_KEY" \
 dotnet run --no-build -c Release --project backend/src/Crecisol.Api/Crecisol.Api.csproj \
   --urls "http://127.0.0.1:$api_port" > /tmp/crecisol-c05-operational-api.log 2>&1 &
 API_PID=$!
@@ -75,6 +82,7 @@ response_b="$(curl -sS -i -X POST "http://127.0.0.1:$api_port/api/v1/identity/re
 same 'two initial tenant-scoped intents' 2 "$(root_sql 'SELECT COUNT(*) FROM c05_identity_registration_intent')"
 same 'intent isolation A/B' 2 "$(root_sql 'SELECT COUNT(DISTINCT tenant_id) FROM c05_identity_registration_intent')"
 same 'ciphertext persisted' 2 "$(root_sql 'SELECT COUNT(*) FROM c05_identity_registration_intent WHERE OCTET_LENGTH(mailbox_ciphertext)>0 AND mailbox_hmac<>mailbox_ciphertext')"
+same 'operational proof/outbox atomically persisted' 2 "$(root_sql 'SELECT COUNT(*) FROM c05_identity_mailbox_proof p JOIN c05_identity_mailbox_outbox o USING (tenant_id,proof_id) WHERE p.proof_state=0 AND o.delivery_state=0 AND OCTET_LENGTH(o.payload_ciphertext)=32')"
 
 pending_response="$(curl -sS -i -X POST "http://127.0.0.1:$api_port/api/v1/identity/registration-intents" \
   -H 'Host: tenant-c.example.test' -H 'Content-Type: application/json' \

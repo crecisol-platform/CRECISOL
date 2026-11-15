@@ -74,6 +74,8 @@ app.MapGet("/api/v1/public/branding/platform", HandlePublishedBrand)
 
 if (c05RegistrationEnabled)
     app.MapNeutralRegistrationIntent();
+if (c05RegistrationEnabled)
+    app.MapOperationalRegistrationProofConfirmation();
 
 app.Run();
 
