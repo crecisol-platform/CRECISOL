@@ -45,6 +45,8 @@ docker exec -i -e "MYSQL_PWD=$ROOT_PASSWORD" "$NAME" mysql -uroot -D crecisol_c0
   < "$ROOT/database/migrations/003_c05_pending_account_completion.sql"
 docker exec -i -e "MYSQL_PWD=$ROOT_PASSWORD" "$NAME" mysql -uroot -D crecisol_c05 \
   < "$ROOT/database/migrations/004_c05_local_proof_delivery.sql"
+docker exec -i -e "MYSQL_PWD=$ROOT_PASSWORD" "$NAME" mysql -uroot -D crecisol_c05 \
+  < "$ROOT/database/migrations/005_c05_operational_login_directory.sql"
 
 root_sql "INSERT INTO c04_tenant_catalog VALUES
  (UNHEX('00000000000000000000000000000001'),'tenant-a','Tenant A',3,2,1,UTC_TIMESTAMP(6)),

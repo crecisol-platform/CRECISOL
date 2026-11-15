@@ -43,6 +43,9 @@ docker exec -i -e "MYSQL_PWD=$PASSWORD" "$NAME" \
 docker exec -i -e "MYSQL_PWD=$PASSWORD" "$NAME" \
   mysql -uroot crecisol_c05_migration \
   < "$ROOT/database/migrations/004_c05_local_proof_delivery.sql"
+docker exec -i -e "MYSQL_PWD=$PASSWORD" "$NAME" \
+  mysql -uroot crecisol_c05_migration \
+  < "$ROOT/database/migrations/005_c05_operational_login_directory.sql"
 
 actual="$(docker exec -e "MYSQL_PWD=$PASSWORD" "$NAME" \
   mysql -uroot -Nse 'SHOW TABLES' crecisol_c05_migration | sort)"
@@ -75,6 +78,12 @@ VALUES (UNHEX('00000000000000000000000000000002'),
  UNHEX('00000000000000000000000000000008'),'REGISTER',1,
  REPEAT(UNHEX('03'),32),UTC_TIMESTAMP(6));
 SQL
+
+[[ "$(root_sql "SELECT CONCAT(profile_kind,':',membership_state,':',granted_at_utc IS NULL,':',expires_at_utc IS NULL) FROM c05_identity_membership WHERE membership_id=UNHEX('00000000000000000000000000000003')")" == '3:0:1:1' ]]
+root_sql "UPDATE c05_identity_membership SET membership_state=1,approval_revision=2,approved_at_utc=UTC_TIMESTAMP(6) WHERE membership_id=UNHEX('00000000000000000000000000000003')"
+[[ "$(root_sql "SELECT CONCAT(membership_state,':',granted_at_utc IS NOT NULL,':',expires_at_utc>granted_at_utc,':',changed_at_utc>=approved_at_utc) FROM c05_identity_membership WHERE membership_id=UNHEX('00000000000000000000000000000003')")" == '1:1:1:1' ]]
+root_sql "UPDATE c05_identity_membership SET membership_state=2,approval_revision=3 WHERE membership_id=UNHEX('00000000000000000000000000000003')"
+[[ "$(root_sql "SELECT CONCAT(membership_state,':',granted_at_utc IS NOT NULL,':',expires_at_utc>granted_at_utc) FROM c05_identity_membership WHERE membership_id=UNHEX('00000000000000000000000000000003')")" == '2:1:1' ]]
 
 if docker exec -i -e "MYSQL_PWD=$PASSWORD" "$NAME" \
     mysql -uroot crecisol_c05_migration 2>/dev/null <<'SQL'
@@ -259,6 +268,9 @@ then
   exit 1
 fi
 
+docker exec -i -e "MYSQL_PWD=$PASSWORD" "$NAME" \
+  mysql -uroot crecisol_c05_migration \
+  < "$ROOT/database/migrations/005_c05_operational_login_directory.down.sql"
 docker exec -i -e "MYSQL_PWD=$PASSWORD" "$NAME" \
   mysql -uroot crecisol_c05_migration \
   < "$ROOT/database/migrations/004_c05_local_proof_delivery.down.sql"
