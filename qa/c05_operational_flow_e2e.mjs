@@ -222,6 +222,14 @@ try {
     membershipId: membershipId('approval.race@example.test'), decision: 'approve', reason: 'Concurrent isolated approval', code: approvalRaceCode
   }, approver.token)));
   check(approvalRace.filter(r => r.status === 200).length === 1, 'twelve concurrent approvals have exactly one audited winner');
+  check((await api('sessions/revoke', { sessionId: '77777777-7777-4777-8777-777777777777' }, approver.token)).status === 401,
+    'session inventory cannot revoke an unrelated or unknown session identifier');
+  const approverTokenDigest = createHmac('sha256', Buffer.from(keys.CRECISOL_C05_TOKEN_HMAC_KEY, 'hex'))
+    .update('C05/session:' + approver.token).digest('hex');
+  const approverSessionId = sql(`SELECT BIN_TO_UUID(session_id,0) FROM c05_identity_session WHERE tenant_id=UNHEX('${A}') AND token_hmac=UNHEX('${approverTokenDigest}')`);
+  check((await api('sessions/revoke', { sessionId: approverSessionId }, approver.token)).status === 200,
+    'explicit own-session revocation endpoint commits server-side');
+  check((await api('sessions', {}, approver.token)).status === 401, 'explicitly revoked session cannot be reused');
   // Angular login and enrollment traverse the real same-origin proxy.
   await page.goto('http://127.0.0.1:4200/cuenta');
   await page.getByRole('region', { name: 'Iniciar sesión', exact: true }).getByLabel('Correo electrónico', { exact: true }).fill('member@example.test');
