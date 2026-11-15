@@ -54,6 +54,17 @@ if (c05CompletionEnabled)
             .ToArray());
 }
 
+var operationalMode = Environment.GetEnvironmentVariable("CRECISOL_C05_LOCAL_IDENTITY_ENABLED");
+if (operationalMode is not (null or "true" or "false"))
+    throw new InvalidOperationException("Invalid operational identity mode.");
+var operationalIdentityEnabled = operationalMode == "true";
+if (operationalIdentityEnabled)
+{
+    if (!c05CompletionEnabled)
+        throw new InvalidOperationException("Operational identity requires isolated account completion.");
+    builder.Services.AddLocalOperationalIdentity(Environment.GetEnvironmentVariable("CRECISOL_C05_IDENTITY_DSN")!);
+}
+
 var app = builder.Build();
 
 // Safe failure across every environment, with no server exception details.
@@ -93,6 +104,8 @@ if (c05RegistrationEnabled && !c05CompletionEnabled)
     app.MapOperationalRegistrationProofConfirmation();
 if (c05CompletionEnabled)
     app.MapOperationalRegistrationCompletion();
+if (operationalIdentityEnabled)
+    app.MapLocalOperationalIdentity();
 
 app.Run();
 

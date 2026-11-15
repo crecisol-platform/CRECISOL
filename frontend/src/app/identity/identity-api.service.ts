@@ -9,9 +9,9 @@ interface LoginReceipt {
   readonly stepUpRequired: boolean;
   readonly challenge?: string;
   readonly sessionToken?: string;
+  readonly enrollmentRequired?: boolean;
 }
-interface MfaReceipt { readonly sessionToken: string; }
-interface PrivateCaseReceipt { readonly externalKey: string; }
+interface MfaReceipt { readonly sessionToken: string; readonly recoveryCodes?: readonly string[]; }
 
 const API = '/api/v1/identity';
 
@@ -24,6 +24,13 @@ export class IdentityApiService {
   private bearerValue: string | null = null;
 
   readonly state = this.stateValue.asReadonly();
+  readonly enrollmentRequired = signal(false);
+  readonly enrollmentSecret = signal('');
+  readonly recoveryCodes = signal<readonly string[]>([]);
+  readonly sessions = signal<ReadonlyArray<{ id: string; expiresAtUtc: string }>>([]);
+  readonly privateReference = signal('');
+  private expiryTimer: ReturnType<typeof setTimeout> | undefined;
+  private challengeTimer: ReturnType<typeof setTimeout> | undefined;
 
   async requestRegistration(mailbox: string): Promise<void> {
     await firstValueFrom(this.http.post<NeutralReceipt>(`${API}/registration-intents`, {
@@ -58,7 +65,9 @@ export class IdentityApiService {
       throw new Error('identity_unavailable');
     }
     this.challengeValue = receipt.challenge;
+    this.enrollmentRequired.set(receipt.enrollmentRequired === true);
     this.stateValue.set('challenge');
+    this.challengeTimer = setTimeout(() => this.clear(), 5 * 60_000);
   }
 
   async verifyMfa(code: string): Promise<void> {
@@ -72,21 +81,94 @@ export class IdentityApiService {
       throw new Error('identity_unavailable');
     }
     this.challengeValue = null;
+    if (this.challengeTimer) clearTimeout(this.challengeTimer);
+    this.challengeTimer = undefined;
     this.bearerValue = result.sessionToken;
+    this.recoveryCodes.set(result.recoveryCodes ?? []);
+    this.enrollmentSecret.set('');
+    this.enrollmentRequired.set(false);
     this.stateValue.set('authenticated');
+    this.expiryTimer = setTimeout(() => this.clear(), 30 * 60_000);
   }
 
-  async readPrivateCase(resourceId: string): Promise<string> {
-    const token = this.bearerValue;
-    if (!token || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(resourceId))
-      throw new Error('identity_unavailable');
-    const result = await firstValueFrom(this.http.get<PrivateCaseReceipt>(
-      `/api/v1/private/cases/${resourceId}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    ).pipe(timeout({ first: 8000 })));
-    if (typeof result.externalKey !== 'string' || !result.externalKey.trim())
-      throw new Error('identity_unavailable');
-    return result.externalKey;
+  async enrollMfa(): Promise<void> {
+    if (!this.challengeValue || !this.enrollmentRequired()) throw new Error('identity_unavailable');
+    const result = await this.post<{ secret: string }>('mfa/enroll', { challenge: this.challengeValue }, false);
+    this.enrollmentSecret.set(result.secret);
+  }
+
+  async refreshSessions(): Promise<void> {
+    const result = await this.post<{ sessions: Array<{ id: string; expiresAtUtc: string }> }>('sessions', {});
+    this.sessions.set(result.sessions);
+  }
+
+  async rotateSession(): Promise<void> {
+    const result = await this.post<{ sessionToken: string }>('sessions/rotate', {});
+    this.bearerValue = result.sessionToken;
+    await this.refreshSessions();
+  }
+
+  async revokeSession(sessionId: string): Promise<void> {
+    await this.post('sessions/revoke', { sessionId });
+    await this.refreshSessions();
+  }
+
+  async requestRecovery(mailbox: string): Promise<void> {
+    await this.post('recovery/request', { mailbox }, false);
+  }
+
+  async completeRecovery(token: string, code: string, newPassword: string): Promise<void> {
+    await this.post('recovery/complete', { token, code, newPassword }, false);
+    this.clear();
+  }
+
+  async changePassword(currentPassword: string, newPassword: string, code: string): Promise<void> {
+    await this.post('password/change', { currentPassword, newPassword, code });
+    this.clear();
+  }
+
+  async replaceFactor(currentPassword: string, code: string): Promise<void> {
+    const result = await this.post<LoginReceipt>('factor/replace', { currentPassword, code });
+    this.clear();
+    if (!result.challenge || !result.enrollmentRequired) throw new Error('identity_unavailable');
+    this.challengeValue = result.challenge;
+    this.enrollmentRequired.set(true);
+    this.stateValue.set('challenge');
+    this.challengeTimer = setTimeout(() => this.clear(), 5 * 60_000);
+  }
+
+  async requestMailbox(mailbox: string, code: string): Promise<void> {
+    await this.post('mailbox/request', { mailbox, code });
+  }
+
+  async completeMailbox(token: string, code: string): Promise<void> {
+    await this.post('mailbox/complete', { token, code });
+    this.clear();
+  }
+
+  async decideMembership(membershipId: string, decision: string, reason: string, code: string): Promise<void> {
+    await this.post('memberships/decide', { membershipId, decision, reason, code });
+  }
+
+  async readPrivate(branchId: string, resourceId: string): Promise<void> {
+    this.privateReference.set('');
+    const result = await this.post<{ reference: string }>('private/read', { branchId, resourceId });
+    this.privateReference.set(result.reference);
+  }
+
+  private async post<T = unknown>(operation: string, body: object, authenticated = true): Promise<T> {
+    if (authenticated && !this.bearerValue) throw new Error('identity_unavailable');
+    try {
+      return await firstValueFrom(this.http.post<T>(`${API}/${operation}`, body, {
+        headers: authenticated ? { Authorization: `Bearer ${this.bearerValue}` } : {}
+      }).pipe(timeout({ first: 12_000 })));
+    } catch (error) {
+      // A policy denial of a resource is not evidence that a session expired.
+      // Session validation endpoints decide whether local identity is retained.
+      if (authenticated && operation === 'sessions' && error instanceof HttpErrorResponse && error.status === 401)
+        this.clear();
+      throw error;
+    }
   }
 
   async logout(): Promise<void> {
@@ -104,9 +186,18 @@ export class IdentityApiService {
   }
 
   clear(): void {
+    if (this.challengeTimer) clearTimeout(this.challengeTimer);
+    this.challengeTimer = undefined;
+    if (this.expiryTimer) clearTimeout(this.expiryTimer);
+    this.expiryTimer = undefined;
     this.challengeValue = null;
     this.bearerValue = null;
     this.stateValue.set('anonymous');
+    this.enrollmentRequired.set(false);
+    this.enrollmentSecret.set('');
+    this.sessions.set([]);
+    this.privateReference.set('');
+    this.recoveryCodes.set([]);
   }
 
   static publicError(error: unknown): string {
