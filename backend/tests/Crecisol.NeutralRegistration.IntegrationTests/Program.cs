@@ -37,6 +37,7 @@ if (string.IsNullOrWhiteSpace(adminDsn) ||
     throw new InvalidOperationException("Missing isolated C05-02 verification fixture.");
 var integratedProofDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_PROOF_TEST_DSN");
 var candidateDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_CANDIDATE_DSN");
+var dispatchDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_DISPATCH_DSN");
 var key = Convert.FromHexString(keyHex);
 if (key.Length != 32)
     throw new InvalidOperationException("Invalid server-owned C05-02 test key.");
@@ -730,6 +731,189 @@ if (integratedProof is not null)
         "\",\"mailbox\":\"victim@example.test\"}");
     Pass(localMailbox.Delivered == deliveriesBeforeInvalidProofs,
          "Malformed, foreign and replay requests deliver no additional token");
+
+    if (!string.IsNullOrWhiteSpace(dispatchDsn))
+    {
+        // The internal worker receives a tenant/intent from a committed SQL
+        // outbox row, NOT from the anonymous registration response or query.
+        // Older fixture requests are marked handled by the test-only setup
+        // connection so this section can isolate one fresh enqueue.
+        await ExecuteAsync(admin, """
+            UPDATE c05_02_proof_dispatch SET state='COMPLETED',
+                claim_owner=NULL,claimed_until_utc=NULL
+            WHERE state<>'COMPLETED'
+            """);
+        using var queue = new TestDisposableDispatchHandle(
+            new MySqlDisposableNeutralProofDispatch(dispatchDsn));
+        var autoBefore = localMailbox.Delivered;
+        var auto = await SendBridgeAsync("b.crecisol.test",
+            "{\"mailbox\":\"Dispatch+Receiver@Example.test\"}");
+        Pass(auto.Status == HttpStatusCode.Accepted &&
+             auto.Body == known.Body && auto.CacheDenied &&
+             !auto.HasCookie && !auto.HasLocation &&
+             localMailbox.Delivered == autoBefore &&
+             await ScalarAsync(admin,
+                 "SELECT COUNT(*) FROM c05_02_proof_dispatch WHERE state='READY'") == 1,
+            "Public anonymous registration returns no intent or bearer while SQL enqueues one private dispatch");
+
+        var concurrent = await Task.WhenAll(Enumerable.Range(0, 16)
+            .Select(_ => Task.Run(async () =>
+            {
+                var owner = Guid.NewGuid();
+                var claim = await queue.Adapter.ClaimNextAsync(owner, CancellationToken.None);
+                return (Owner: owner, Claim: claim);
+            })));
+        var winners = concurrent.Where(x => x.Claim is not null).ToArray();
+        Pass(winners.Length == 1 &&
+             winners[0].Claim!.Tenant.Value == Guid.Parse(
+                 "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb") &&
+             winners[0].Claim!.Intent != Guid.Empty,
+            "Sixteen concurrent workers safely claim one opaque B intent exactly once");
+        var winner = winners[0];
+        var claimed = winner.Claim!;
+        var tenantBForDispatch = TenantId.From(
+            Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
+        var tenantAForDispatch = TenantId.From(
+            Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        var wrongTenantClaim = new ClaimedNeutralProofDispatch(
+            tenantAForDispatch, claimed.Intent);
+        Pass(!await queue.Adapter.CompleteAsync(
+                 wrongTenantClaim, winner.Owner, CancellationToken.None) &&
+             !await queue.Adapter.CompleteAsync(
+                 claimed, Guid.NewGuid(), CancellationToken.None) &&
+             !await queue.Adapter.CompleteAsync(
+                 claimed, winner.Owner, CancellationToken.None),
+            "Foreign tenant, wrong owner and unissued proof cannot complete a claimed dispatch");
+
+        // The trusted fixture host catalog maps SQL-owned tenant to a
+        // verified hostname. No header, body or browser chooses that scope.
+        var trustedHost = claimed.Tenant.Value == tenantBForDispatch.Value
+            ? "b.crecisol.test" : throw new InvalidOperationException(
+                "Unknown tenant returned by trusted dispatch queue.");
+        var proofStart = await SendProofAsync("proof-request", trustedHost,
+            "{\"intentId\":\"" + claimed.Intent.ToString("D") + "\"}");
+        Pass(proofStart.Status == HttpStatusCode.Accepted &&
+             proofStart.Body == known.Body &&
+             localMailbox.Delivered == autoBefore + 1 &&
+             localMailbox.Has("Dispatch+Receiver@example.test"),
+            "Server-owned dispatch issues proof to recorded mailbox without browser-provided intent");
+        var deliveredLink = localMailbox.TakeLink("Dispatch+Receiver@example.test");
+        try
+        {
+            Pass(deliveredLink.Tenant.Value == tenantBForDispatch.Value &&
+                 deliveredLink.Intent == claimed.Intent &&
+                 deliveredLink.Token.Length == 32,
+                "Only the trusted mailbox link sink receives B intent and secret");
+            Pass(await queue.Adapter.CompleteAsync(
+                     claimed, winner.Owner, CancellationToken.None) &&
+                 !await queue.Adapter.CompleteAsync(
+                     claimed, winner.Owner, CancellationToken.None),
+                "Proof-backed dispatch completion is atomic and cannot be replayed");
+            Pass(await queue.Adapter.ClaimNextAsync(
+                     Guid.NewGuid(), CancellationToken.None) is null &&
+                 await ScalarAsync(admin,
+                     "SELECT COUNT(*) FROM c05_02_proof_dispatch WHERE state='COMPLETED'") > 0,
+                "Committed dispatch leaves no stale READY work for another worker");
+
+            var fromA = await SendProofAsync("proof-confirm", "a.crecisol.test",
+                "{\"intentId\":\"" + deliveredLink.Intent.ToString("D") +
+                "\",\"code\":\"" + Convert.ToHexString(deliveredLink.Token) + "\"}");
+            Pass(fromA.Status == HttpStatusCode.Accepted &&
+                 await ScalarAsync(admin,
+                     "SELECT COUNT(*) FROM c05_02_mailbox_proofs WHERE tenant_id=X'" +
+                     B + "' AND intent_id=X'" + claimed.Intent.ToString("N") +
+                     "' AND lifecycle='PENDING'") == 1,
+                "Recipient link used on tenant A does not verify tenant B");
+            var expectedBody = "{\"intentId\":\"" + deliveredLink.Intent.ToString("D") +
+                "\",\"code\":\"" + Convert.ToHexString(deliveredLink.Token) + "\"}";
+            var completed = await SendProofAsync(
+                "proof-confirm", trustedHost, expectedBody);
+            var replay = await SendProofAsync(
+                "proof-confirm", trustedHost, expectedBody);
+            Pass(completed.Status == HttpStatusCode.Accepted &&
+                 completed.Body == proofStart.Body &&
+                 replay.Status == HttpStatusCode.Accepted &&
+                 replay.Body == proofStart.Body &&
+                 await ScalarAsync(admin,
+                     "SELECT COUNT(*) FROM c05_02_mailbox_proofs WHERE tenant_id=X'" +
+                     B + "' AND intent_id=X'" + claimed.Intent.ToString("N") +
+                     "' AND lifecycle='VERIFIED'") == 1,
+                "Trusted recipient link verifies only B mailbox once; replay stays neutral");
+
+            if (!string.IsNullOrWhiteSpace(candidateDsn))
+            {
+                using var candidate = new MySqlDisposableVerifiedCredentialCandidateStore(
+                    candidateDsn, key, 1);
+                var hasher = new Argon2idPasswordHasher(
+                    PasswordHashingPolicy.Default, new LocalOnlyFixturePasswordScreen());
+                var syntheticPassword = Convert.ToBase64String(
+                    RandomNumberGenerator.GetBytes(36));
+                var phc = hasher.CreateVerifier(
+                    syntheticPassword).ExportForTrustedCredentialStore();
+                var before = await ScalarAsync(admin,
+                    "SELECT COUNT(*) FROM c05_02_candidate_accounts");
+                Pass(await candidate.TryCreatePendingAsync(
+                         tenantBForDispatch, deliveredLink.Intent, phc, CancellationToken.None) &&
+                     await ScalarAsync(admin,
+                         "SELECT COUNT(*) FROM c05_02_candidate_accounts") == before + 1 &&
+                     !await candidate.TryCreatePendingAsync(
+                         tenantBForDispatch, deliveredLink.Intent, phc, CancellationToken.None),
+                    "Anonymous intent -> trusted outbox -> recipient link -> verified proof -> pending Argon2id is one fail-closed path");
+            }
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(deliveredLink.Token);
+        }
+
+        // A crashed worker's lease may be reclaimed by another worker, but
+        // its old owner can never complete the new lease or send a session.
+        var retryIntake = await SendBridgeAsync("b.crecisol.test",
+            "{\"mailbox\":\"Dispatch+Retry@Example.test\"}");
+        var staleOwner = Guid.NewGuid();
+        var stale = await queue.Adapter.ClaimNextAsync(staleOwner, CancellationToken.None);
+        Pass(retryIntake.Status == HttpStatusCode.Accepted && stale is not null &&
+             stale.Tenant.Value == tenantBForDispatch.Value,
+             "A second verified-host intake is queued for a trusted worker");
+        await ExecuteAsync(admin,
+            "UPDATE c05_02_proof_dispatch SET claimed_until_utc=" +
+            "DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 1 SECOND) WHERE tenant_id=X'" + B +
+            "' AND intent_id=X'" + stale!.Intent.ToString("N") + "' AND state='CLAIMED'");
+        var nextOwner = Guid.NewGuid();
+        var reclaimed = await queue.Adapter.ClaimNextAsync(
+            nextOwner, CancellationToken.None);
+        Pass(reclaimed is not null && reclaimed.Intent == stale.Intent &&
+             !await queue.Adapter.CompleteAsync(stale, staleOwner, CancellationToken.None),
+             "Expired SQL lease is reclaimed once; stale owner cannot acknowledge it");
+
+        var secondDelivery = await SendProofAsync("proof-request",
+            "b.crecisol.test", "{\"intentId\":\"" + reclaimed!.Intent.ToString("D") + "\"}");
+        Pass(secondDelivery.Status == HttpStatusCode.Accepted &&
+             await queue.Adapter.CompleteAsync(
+                 reclaimed, nextOwner, CancellationToken.None) &&
+             localMailbox.Has("Dispatch+Retry@example.test"),
+             "Reclaimed lease dispatches only to its recorded B mailbox");
+        var remaining = localMailbox.TakeLink("Dispatch+Retry@example.test");
+        CryptographicOperations.ZeroMemory(remaining.Token);
+
+        var sqlReadDenied = false;
+        await using (var limited = new MySqlConnection(dispatchDsn))
+        {
+            await limited.OpenAsync();
+            await using var attempted = new MySqlCommand(
+                "SELECT mailbox_digest FROM c05_02_neutral_intents LIMIT 1", limited);
+            try { _ = await attempted.ExecuteScalarAsync(); }
+            catch (MySqlException ex) when (ex.Number is 1142 or 1143)
+            {
+                sqlReadDenied = true;
+            }
+        }
+        Pass(sqlReadDenied, "EXECUTE-only dispatch worker cannot SELECT mailbox or credential tables");
+        Pass(await queue.Adapter.ClaimNextAsync(
+                 Guid.NewGuid(), CancellationToken.None) is null,
+             "No tenant-scoped outbox item can be claimed twice after completion");
+    }
+
 }
 
 await app.StopAsync();
