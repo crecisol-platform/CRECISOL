@@ -135,7 +135,7 @@ public sealed class MySqlDisposableApprovedLoginDirectory :
             };
             links.Add(AccountTenantLinkSnapshot.RestoreFromTrustedMembershipDirectory(
                 linkId,verifiedActor,tenant,AccountTenantProfileKind.Consumer,
-                state,rows.GetInt64(3),Utc(rows.GetDateTime(4)),
+                state,Convert.ToInt64(rows.GetValue(3)),Utc(rows.GetDateTime(4)),
                 Utc(rows.GetDateTime(5)),Utc(rows.GetDateTime(6))));
         }
         return links;
