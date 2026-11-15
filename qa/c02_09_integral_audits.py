@@ -12,6 +12,7 @@ import sys
 
 import c02_01_source as source
 import c02_08_audits as journeys
+import c02_03_audits as routing
 
 ROOT = Path(__file__).resolve().parents[1]
 PROOF = ROOT / ".c02-09-ci-proof"
@@ -141,8 +142,8 @@ def audit_b():
         proof(key)
     production_routes = contents(ROUTES)
     paths = re.findall(r"^\s*path:\s*'([^']*)'", production_routes, re.M)
-    require(paths == ["", "experiencias", "demostraciones",
-                      "alta-empresas", "**"], "Production route allowlist changed")
+    require(paths == routing.current_route_allowlist(),
+            "Production route allowlist changed outside the approved C05 extension")
     require(contract["navigation"]["public_brand_api"] ==
             "GET /api/v1/public/branding/platform" and
             contract["navigation"]["no_private_backend"] is True,

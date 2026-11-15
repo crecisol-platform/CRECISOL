@@ -84,6 +84,10 @@ jobs:
           set -euo pipefail
           python3 qa/c02_03_audits.py A
           python3 qa/c02_03_audits.py B
+          python3 qa/c02_04_audits.py A
+          python3 qa/c02_04_audits.py B
+          python3 qa/c02_06_audits.py A
+          python3 qa/c02_06_audits.py B
       - name: Same-run A/B/C and real .NET10 HTTP MySQL gate
         run: |
           set -euo pipefail

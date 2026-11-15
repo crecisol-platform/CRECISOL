@@ -67,13 +67,18 @@ def need_index():
 def checked_routes(source=None):
     src = ROUTES.read_text(encoding="utf-8") if source is None else source
     paths = re.findall(r"^\s*path: '([^']*)'", src, re.M)
-    require(paths == PUBLIC_PATHS,
+    expected = c02_03_audits.current_route_allowlist()
+    require(paths == expected,
             "Private/duplicate/unknown Angular route introduced or wildcard changed")
     require("NotFoundComponent" in src and
             src.index("path: '**'") < src.index("NotFoundComponent"),
             "Unknown paths must use the existing NotFoundComponent")
-    require(src.count("loadComponent:") == len(PUBLIC_PATHS),
+    require(src.count("loadComponent:") == len(expected),
             "Unexpected component loader/privileged frontend")
+    if "cuenta" in expected:
+        require("import('./pages/identity-portal.component')" in src and
+                "module.IdentityPortalComponent" in src,
+                "Only the reviewed C05 lazy identity portal is allowed")
     require(not re.search(r"\bcan(?:Activate|Match|Load)\s*:", src),
             "An Angular guard cannot stand in for private backend authorization")
     return paths
