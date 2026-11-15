@@ -13,6 +13,7 @@ on:
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMembershipActivation.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableApprovedLoginDirectory.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaBoundSessionLedger.cs'
+      - 'backend/src/Crecisol.Api/Contracts/VerifiedPrivateResourceHostCatalog.cs'
       - 'backend/src/Crecisol.Application/Tenancy/ReadMfaAuthorizedPrivateResource.cs'
       - 'backend/src/Crecisol.Infrastructure/Tenancy/MySqlDisposableMfaPrivateResourceStore.cs'
       - 'database/tests/fixtures/c05_05_private_resource_authorization_fixture.sql'
@@ -38,6 +39,7 @@ on:
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMembershipActivation.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableApprovedLoginDirectory.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaBoundSessionLedger.cs'
+      - 'backend/src/Crecisol.Api/Contracts/VerifiedPrivateResourceHostCatalog.cs'
       - 'backend/src/Crecisol.Application/Tenancy/ReadMfaAuthorizedPrivateResource.cs'
       - 'backend/src/Crecisol.Infrastructure/Tenancy/MySqlDisposableMfaPrivateResourceStore.cs'
       - 'database/tests/fixtures/c05_05_private_resource_authorization_fixture.sql'
@@ -171,6 +173,10 @@ jobs:
           assert "ITrustedMfaScopedPrivateResourceStore" in private_app
           assert "backendOwnedRouteAction" in private_app
           assert "MySqlDisposableMfaPrivateResourceStore" in private_adapter
+          canonical_host=Path("backend/src/Crecisol.Api/Contracts/VerifiedPrivateResourceHostCatalog.cs").read_text()
+          assert "ResolveVerifiedTenantHost" in canonical_host
+          assert "CanonicalTenantHost.Parse" in canonical_host
+          assert "FixedTestHostCatalog" not in private_tests
           http_boundary=Path("backend/src/Crecisol.Api/Contracts/PrivateResourceHttpRead.cs").read_text()
           http_tests=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalMfaPrivateHttpHarness.cs").read_text()
           for marker in ("ITrustedPrivateResourceHostCatalog", "ReadMfaAuthorizedPrivateResource",
@@ -180,7 +186,8 @@ jobs:
           for marker in ("Real loopback HTTP GET + MySQL permits only owned B1 resource after MFA",
                          "HTTP denies foreign tenant, actor owner, branch and resource identifiers",
                          "HTTP fails closed on untrusted header", "Unknown direct Host cannot select any tenant",
-                         "Query tenant selector is rejected", "Ambiguous Authorization header"):
+                         "Query tenant selector is rejected", "Ambiguous Authorization header", "Ambiguous duplicate backend catalog bindings",
+                         "Noncanonical trailing-dot Host"):
               assert marker in http_tests, marker
           for marker in ("Twelve concurrent private reads deny after scoped grant revocation",
                          "Branch B1 grant does not authorize",

@@ -176,7 +176,7 @@ internal static class LocalApprovedMembershipHarness
             await resolver.ResolveAsync(approvedHost,ct),login,knownPassword,pass,ct);
         await LocalMfaBoundSessionHarness.VerifyAsync(
             setup,mfaSetupDsn,mfaWorkerDsn,service,login,knownPassword,
-            ready,await resolver.ResolveAsync(approvedHost,ct),
+            ready,resolver,await resolver.ResolveAsync(approvedHost,ct),
             await resolver.ResolveAsync(foreignHost,ct),pass,ct);
         var wrongPassword=await service.ExecuteAsync(
             login,Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).AsMemory(),ct);

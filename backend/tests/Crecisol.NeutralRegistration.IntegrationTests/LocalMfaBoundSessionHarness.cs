@@ -22,6 +22,7 @@ internal static class LocalMfaBoundSessionHarness
         PrepareContextualPasswordLogin actualLogin,
         CanonicalLoginHandle login,string currentPassword,
         ContextualLoginPreparation approvedLogin,
+        ResolveVerifiedTenantHost resolver,
         VerifiedTenantHostHint trustedB,VerifiedTenantHostHint trustedA,
         Action<bool,string> pass,CancellationToken ct)
     {
@@ -176,7 +177,7 @@ internal static class LocalMfaBoundSessionHarness
 
         await using var privateAccess=await LocalMfaPrivateResourceHarness.VerifyAsync(
             db,sessionWorkerDsn,protector,bearer,approved.ActorId,
-            trustedB,trustedA,pass,ct);
+            resolver,trustedB,trustedA,pass,ct);
         var rotated=await Task.WhenAll(Enumerable.Range(0,12).Select(_=>
             Task.Run(()=>scoped.RotateAsync(bearer,trustedB,CancellationToken.None))));
         var newTokens=rotated.Where(x=>x is not null).ToArray();

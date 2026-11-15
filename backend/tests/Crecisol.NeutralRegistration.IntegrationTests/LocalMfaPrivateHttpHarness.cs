@@ -17,26 +17,30 @@ namespace Crecisol.NeutralRegistration.IntegrationTests;
 /// </summary>
 internal sealed class LocalMfaPrivateHttpHarness : IAsyncDisposable
 {
-    private const string HostB = "tenant-b.fixture.test";
-    private const string HostA = "tenant-a.fixture.test";
+    private const string HostB = "b.crecisol.test";
+    private const string HostA = "a.crecisol.test";
     private const string Route = "/__test_only/c05-integration/private/cases/";
     private readonly WebApplication app;
     private readonly HttpClient client;
+    private readonly ReadMfaAuthorizedPrivateResource readForAmbiguous;
     private readonly VerifiedTenantHostHint trustedB;
     private readonly VerifiedTenantHostHint trustedA;
 
     private LocalMfaPrivateHttpHarness(
         WebApplication app, HttpClient client,
+        ReadMfaAuthorizedPrivateResource reader,
         VerifiedTenantHostHint trustedB, VerifiedTenantHostHint trustedA)
     {
         this.app = app;
         this.client = client;
+        readForAmbiguous = reader;
         this.trustedB = trustedB;
         this.trustedA = trustedA;
     }
 
     public static async Task<LocalMfaPrivateHttpHarness> StartAsync(
         ReadMfaAuthorizedPrivateResource reader,
+        ResolveVerifiedTenantHost resolver,
         VerifiedTenantHostHint trustedB,
         VerifiedTenantHostHint trustedA,
         CancellationToken cancellationToken)
@@ -46,7 +50,7 @@ internal sealed class LocalMfaPrivateHttpHarness : IAsyncDisposable
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         var app = builder.Build();
         var endpoint = new PrivateResourceHttpRead(
-            new FixedTestHostCatalog(trustedB, trustedA), reader);
+            new VerifiedPrivateResourceHostCatalog(resolver), reader);
         app.MapGet(Route + "{resourceId}",
             (HttpContext ctx, string resourceId) =>
                 endpoint.ExecuteAsync(ctx, resourceId, ctx.RequestAborted));
@@ -54,7 +58,7 @@ internal sealed class LocalMfaPrivateHttpHarness : IAsyncDisposable
         var url = app.Urls.Single(value =>
             value.StartsWith("http://127.0.0.1:", StringComparison.Ordinal));
         return new LocalMfaPrivateHttpHarness(
-            app, new HttpClient { BaseAddress = new Uri(url) }, trustedB, trustedA);
+            app, new HttpClient { BaseAddress = new Uri(url) }, reader, trustedB, trustedA);
     }
 
     public async Task<bool> AllowedAsync(
@@ -107,7 +111,7 @@ internal sealed class LocalMfaPrivateHttpHarness : IAsyncDisposable
         {
             using var response = await RequestAsync(
                 bearer, HostB, own.Value.ToString("D"), header,
-                header == "Cookie" ? "session=fake" : "tenant-a.fixture.test", ct);
+                header == "Cookie" ? "session=fake" : "a.crecisol.test", ct);
             pass(await IsNotFoundAsync(response, ct),
                 "HTTP fails closed on untrusted header " + header);
         }
@@ -122,6 +126,10 @@ internal sealed class LocalMfaPrivateHttpHarness : IAsyncDisposable
             null, null, ct))
             pass(await IsNotFoundAsync(query, ct),
                 "Query tenant selector is rejected before the protected SQL read");
+        using (var dottedHost = await RequestAsync(
+            bearer, HostB + ".", own.Value.ToString("D"), null, null, ct))
+            pass(await IsNotFoundAsync(dottedHost, ct),
+                "Noncanonical trailing-dot Host is refused by central host parser");
         using (var badId = await RequestAsync(
             bearer, HostB, "not-a-uuid", null, null, ct))
             pass(await IsNotFoundAsync(badId, ct),
@@ -131,6 +139,14 @@ internal sealed class LocalMfaPrivateHttpHarness : IAsyncDisposable
             "Bearer " + bearer + ", Bearer " + bearer, ct))
             pass(await IsNotFoundAsync(duplicateBearer, ct),
                 "Ambiguous Authorization header cannot bypass bearer parser");
+
+        await using (var ambiguous = await StartAsync(
+            reader: readForAmbiguous,
+            resolver: new ResolveVerifiedTenantHost(
+                new DuplicateTestHostCatalog(trustedB), new SystemUtcClock()),
+            trustedB: trustedB, trustedA: trustedA, cancellationToken: ct))
+            pass(await ambiguous.DeniedAsync(bearer, trustedB, own, ct),
+                "Ambiguous duplicate backend catalog bindings always deny private HTTP");
     }
 
     private async Task<HttpResponseMessage> RequestAsync(
@@ -173,20 +189,25 @@ internal sealed class LocalMfaPrivateHttpHarness : IAsyncDisposable
         await app.DisposeAsync();
     }
 
-    private sealed class FixedTestHostCatalog(
-        VerifiedTenantHostHint trustedB, VerifiedTenantHostHint trustedA)
-        : ITrustedPrivateResourceHostCatalog
+
+    private sealed class DuplicateTestHostCatalog(VerifiedTenantHostHint tenantB)
+        : ITrustedVerifiedHostCatalog
     {
-        public Task<VerifiedTenantHostHint?> ResolveDirectHostAsync(
-            string directHost, CancellationToken ct)
+        public Task<IReadOnlyList<VerifiedTenantHostBinding>?> FindExactBindingsAsync(
+            CanonicalTenantHost host, CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
-            VerifiedTenantHostHint? result =
-                string.Equals(directHost, HostB, StringComparison.OrdinalIgnoreCase)
-                    ? trustedB :
-                string.Equals(directHost, HostA, StringComparison.OrdinalIgnoreCase)
-                    ? trustedA : null;
-            return Task.FromResult(result);
+            if (host.Value != HostB)
+                return Task.FromResult<IReadOnlyList<VerifiedTenantHostBinding>?>(
+                    Array.Empty<VerifiedTenantHostBinding>());
+            var now = DateTimeOffset.UtcNow;
+            var binding = VerifiedTenantHostBinding.RestoreFromTrustedCatalog(
+                tenantB.TenantId, host, tenantB.AddressMode,
+                HostVerificationState.Verified, tenantB.Revision,
+                now.AddMinutes(-3), now.AddMinutes(-3), now.AddHours(1));
+            // Even two identical bindings for the same tenant are ambiguous.
+            return Task.FromResult<IReadOnlyList<VerifiedTenantHostBinding>?>(
+                new[] { binding, binding });
         }
     }
 }

@@ -34,6 +34,7 @@ internal static class LocalMfaPrivateResourceHarness
         MySqlConnection setup,string workerDsn,
         OpaqueSessionTokenProtector sessionProtector,
         string mfaBoundBearer,TenantActorId approvedActor,
+        ResolveVerifiedTenantHost resolver,
         VerifiedTenantHostHint hostB,VerifiedTenantHostHint hostA,
         Action<bool,string> pass,CancellationToken ct)
     {
@@ -94,7 +95,7 @@ internal static class LocalMfaPrivateResourceHarness
              store.ToString()=="MySqlDisposableMfaPrivateResourceStore[redacted]",
              "Active MFA-bound B session reads exactly one owned B1 case atomically");
 
-        var http=await LocalMfaPrivateHttpHarness.StartAsync(reader,hostB,hostA,ct);
+        var http=await LocalMfaPrivateHttpHarness.StartAsync(reader,resolver,hostB,hostA,ct);
         await http.VerifyAdversarialAsync(mfaBoundBearer,own,foreignOwner,
             foreignBranch,foreignTenant,pass,ct);
 
