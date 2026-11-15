@@ -8,6 +8,9 @@ on:
       - 'database/tests/c05_identity_neutral_proof_http_mysql.sh'
       - 'database/tests/fixtures/c05_02_verified_candidate_fixture.sql'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableVerifiedCredentialCandidateStore.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableNeutralProofDispatch.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableEmailPossessionAdapter.cs'
+      - 'database/tests/fixtures/c05_02_neutral_dispatch_fixture.sql'
       - 'docs/c05/C05_INTEGRACION_REAL_BARRERAS_Y_EVIDENCIA.md'
       - '.github/workflows/c05-identity-neutral-mysql.yml'
   push:
@@ -18,6 +21,9 @@ on:
       - 'database/tests/c05_identity_neutral_proof_http_mysql.sh'
       - 'database/tests/fixtures/c05_02_verified_candidate_fixture.sql'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableVerifiedCredentialCandidateStore.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableNeutralProofDispatch.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableEmailPossessionAdapter.cs'
+      - 'database/tests/fixtures/c05_02_neutral_dispatch_fixture.sql'
       - '.github/workflows/c05-identity-neutral-mysql.yml'
 permissions:
   contents: read
@@ -43,6 +49,7 @@ jobs:
           bash -n database/tests/c05_02_neutral_registration_http_mysql.sh
           bash -n database/tests/c05_identity_neutral_proof_http_mysql.sh
           test -f database/tests/fixtures/c05_02_verified_candidate_fixture.sql
+          test -f database/tests/fixtures/c05_02_neutral_dispatch_fixture.sql
           printf "PASS A sha=%s run=%s\n" "$C05_TESTED_SHA" "$GITHUB_RUN_ID" > /tmp/c05-a
       - name: Audit B deny forged tenant and actor before SQL
         run: |
@@ -56,7 +63,10 @@ jobs:
                            "MySqlDisposableNeutralRegistrationRecorder",
                            "One-time proof accepted only by B and MySQL CAS",
                            "Case-folded login collision fails closed",
-                           "Twelve racing verified-proof enrollments"):
+                           "Twelve racing verified-proof enrollments",
+                           "Sixteen concurrent workers safely claim one opaque B intent",
+                           "Anonymous intent -> trusted outbox -> recipient link",
+                           "Expired SQL lease is reclaimed once"):
               assert required in t, required
           candidate=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableVerifiedCredentialCandidateStore.cs").read_text()
           schema=Path("database/tests/fixtures/c05_02_verified_candidate_fixture.sql").read_text()
@@ -64,6 +74,15 @@ jobs:
           assert "UNIQUE KEY uq_candidate_global_login" in schema
           assert "PENDING_MEMBERSHIP" in schema
           assert "c05_02_create_pending_candidate" in candidate
+          dispatch=Path("database/tests/fixtures/c05_02_neutral_dispatch_fixture.sql").read_text()
+          worker=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableNeutralProofDispatch.cs").read_text()
+          delivery=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableEmailPossessionAdapter.cs").read_text()
+          for marker in ("AFTER INSERT ON c05_02_neutral_intents",
+                         "FOR UPDATE SKIP LOCKED",
+                         "c05_02_dispatch_claim", "c05_02_dispatch_complete"):
+              assert marker in dispatch, marker
+          assert "MySqlDisposableNeutralProofDispatch" in worker
+          assert "ITrustedLocalProofLinkSink" in delivery
           assert "NeutralRegistrationIntake" not in api
           assert "VerifyNeutralRegistrationMailbox" not in api
           assert "app.MapPost(" not in api and "app.MapGroup(" not in api
@@ -104,4 +123,4 @@ jobs:
           assert 'app.MapPost(' not in api and 'app.MapGroup(' not in api
           assert 'NeutralRegistrationIntake' not in api
           PY
-          echo 'PASS C05 isolated neutral registration, mailbox proof and pending Argon2id candidate; NOT activated identity or full E2E'
+          echo 'PASS C05 isolated registration, internal proof dispatch, recipient-only link and pending Argon2id; NOT active auth/MFA/session E2E'
