@@ -704,6 +704,7 @@ if (integratedProof is not null)
         finally { CryptographicOperations.ZeroMemory(variantToken); }
     }
 
+    var deliveriesBeforeInvalidProofs = localMailbox.Delivered;
     async Task DenyProofAsync(string label, string endpoint, string json,
         IReadOnlyDictionary<string,string>? headers = null,
         string host = "b.crecisol.test")
@@ -727,7 +728,7 @@ if (integratedProof is not null)
     await DenyProofAsync("mailbox injection in proof", "proof-confirm",
         "{\"intentId\":\"" + proofIntent.ToString("D") +
         "\",\"mailbox\":\"victim@example.test\"}");
-    Pass(localMailbox.Delivered == deliveriesBefore + 1,
+    Pass(localMailbox.Delivered == deliveriesBeforeInvalidProofs,
          "Malformed, foreign and replay requests deliver no additional token");
 }
 
