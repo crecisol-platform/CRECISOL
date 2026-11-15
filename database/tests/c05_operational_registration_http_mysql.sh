@@ -37,11 +37,13 @@ docker exec -i -e "MYSQL_PWD=$ROOT_PASSWORD" "$NAME" mysql -uroot -D crecisol_c0
 root_sql "INSERT INTO c04_tenant_catalog VALUES
  (UNHEX('00000000000000000000000000000001'),'tenant-a','Tenant A',3,2,1,UTC_TIMESTAMP(6)),
  (UNHEX('00000000000000000000000000000002'),'tenant-b','Tenant B',3,2,1,UTC_TIMESTAMP(6)),
- (UNHEX('00000000000000000000000000000003'),'tenant-c','Tenant C',2,2,1,UTC_TIMESTAMP(6));
+ (UNHEX('00000000000000000000000000000003'),'tenant-c','Tenant C',2,2,1,UTC_TIMESTAMP(6)),
+ (UNHEX('00000000000000000000000000000004'),'tenant-d','Tenant D',3,2,1,UTC_TIMESTAMP(6));
 INSERT INTO c04_verified_tenant_host VALUES
  ('tenant-a.example.test',UNHEX('00000000000000000000000000000001'),2,2,1,UTC_TIMESTAMP(6),UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)+INTERVAL 1 DAY),
  ('tenant-b.example.test',UNHEX('00000000000000000000000000000002'),2,2,1,UTC_TIMESTAMP(6),UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)+INTERVAL 1 DAY),
- ('tenant-c.example.test',UNHEX('00000000000000000000000000000003'),2,1,1,UTC_TIMESTAMP(6),NULL,NULL);
+ ('tenant-c.example.test',UNHEX('00000000000000000000000000000003'),2,1,1,UTC_TIMESTAMP(6),NULL,NULL),
+ ('tenant-d.example.test',UNHEX('00000000000000000000000000000004'),2,2,1,UTC_TIMESTAMP(6),UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)+INTERVAL 1 DAY);
 CREATE USER 'c05_app'@'%' IDENTIFIED BY '$APP_PASSWORD';
 GRANT SELECT ON crecisol_c05.c04_tenant_catalog TO 'c05_app'@'%';
 GRANT SELECT ON crecisol_c05.c04_verified_tenant_host TO 'c05_app'@'%';
@@ -52,7 +54,7 @@ dsn="Server=127.0.0.1;Port=$port;Database=crecisol_c05;User ID=c05_app;Password=
 cd "$ROOT"
 dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release -warnaserror >/dev/null
 api_port=5187
-CRECISOL_C01_ALLOWED_HOSTS='127.0.0.1;tenant-a.example.test;tenant-b.example.test;tenant-c.example.test' \
+CRECISOL_C01_ALLOWED_HOSTS='127.0.0.1;tenant-a.example.test;tenant-b.example.test;tenant-c.example.test;tenant-d.example.test' \
 CRECISOL_C05_REGISTRATION_ENABLED=true CRECISOL_C05_IDENTITY_DSN="$dsn" \
 CRECISOL_C05_KEY_VERSION=1 CRECISOL_C05_MAILBOX_HMAC_KEY="$MAILBOX_KEY" \
 CRECISOL_C05_PEER_HMAC_KEY="$PEER_KEY" CRECISOL_C05_MAILBOX_ENCRYPTION_KEY="$ENCRYPTION_KEY" \
@@ -94,5 +96,17 @@ forbidden="$(curl -sS -i -X POST "http://127.0.0.1:$api_port/api/v1/identity/reg
 [[ "${forbidden%%$'\r\n'*}" == *'400'* ]]
 same 'forged forwarding header writes no intent' 9 "$(root_sql 'SELECT COUNT(*) FROM c05_identity_registration_intent')"
 
+pids=()
+for i in $(seq 1 24); do
+  curl -sS -o /dev/null -X POST "http://127.0.0.1:$api_port/api/v1/identity/registration-intents" \
+    -H 'Host: tenant-d.example.test' -H 'Content-Type: application/json' \
+    --data-binary "{\"mailbox\":\"parallel-$i@example.test\"}" &
+  pids+=("$!")
+done
+for pid in "${pids[@]}"; do wait "$pid"; done
+same 'concurrent peer quota admits exactly eight' 8 "$(root_sql "SELECT admitted_count FROM c05_identity_registration_quota WHERE tenant_id=UNHEX('00000000000000000000000000000004')")"
+same 'concurrent peer writes exactly eight intents' 8 "$(root_sql "SELECT COUNT(*) FROM c05_identity_registration_intent WHERE tenant_id=UNHEX('00000000000000000000000000000004')")"
+
 echo 'PASS C05 product API registration-intent .NET10 HTTP + MySQL8.4: verified host, A/B, pending-host denial, neutral receipt, encrypted mailbox, atomic quota, forged forwarding denial'
+
 
