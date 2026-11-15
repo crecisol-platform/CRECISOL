@@ -246,6 +246,25 @@ legacy_confirmation="$(curl -sS -i -X POST "http://127.0.0.1:$api_port/api/v1/id
 [[ "${legacy_confirmation%%$'\r\n'*}" == *'404'* ]]
 same 'proof-only endpoint disabled while pending account completion is enabled' '0:0' \
   "$(root_sql "SELECT CONCAT(p.proof_state,':',i.state) FROM c05_identity_mailbox_proof p JOIN c05_identity_registration_intent i ON i.tenant_id=p.tenant_id AND i.intent_id=p.proof_id WHERE p.tenant_id=UNHEX('00000000000000000000000000000001') AND p.proof_id=UNHEX(REPLACE('$angular_proof_id','-',''))")"
+invalid_completion="$(curl -sS -i -X POST "http://127.0.0.1:$api_port/api/v1/identity/registration-completions" \
+  -H 'Host: tenant-a.example.test' -H 'Content-Type: application/json' \
+  --data-binary "{\"proofId\":\"$angular_proof_id\",\"code\":\"$(printf '%064d' 0)\",\"mailbox\":\"angular-e2e@example.test\",\"password\":\"Crecisol-local-test-strong-1!\"}")"
+[[ "${invalid_completion%%$'\r\n'*}" == *'202'* ]]
+same 'wrong completion code increments lockout without consuming proof' '0:1' \
+  "$(root_sql "SELECT CONCAT(proof_state,':',failed_attempts) FROM c05_identity_mailbox_proof WHERE tenant_id=UNHEX('00000000000000000000000000000001') AND proof_id=UNHEX(REPLACE('$angular_proof_id','-',''))")"
+cross_tenant_completion="$(curl -sS -i -X POST "http://127.0.0.1:$api_port/api/v1/identity/registration-completions" \
+  -H 'Host: tenant-b.example.test' -H 'Content-Type: application/json' \
+  --data-binary "{\"proofId\":\"$angular_proof_id\",\"code\":\"$angular_proof_code\",\"mailbox\":\"angular-e2e@example.test\",\"password\":\"Crecisol-local-test-strong-1!\"}")"
+[[ "${cross_tenant_completion%%$'\r\n'*}" == *'202'* ]]
+same 'cross-tenant completion cannot consume another tenant proof' '0:1' \
+  "$(root_sql "SELECT CONCAT(proof_state,':',failed_attempts) FROM c05_identity_mailbox_proof WHERE tenant_id=UNHEX('00000000000000000000000000000001') AND proof_id=UNHEX(REPLACE('$angular_proof_id','-',''))")"
+forged_completion="$(curl -sS -i -X POST "http://127.0.0.1:$api_port/api/v1/identity/registration-completions" \
+  -H 'Host: tenant-a.example.test' -H 'X-Forwarded-Host: tenant-b.example.test' \
+  -H 'Content-Type: application/json' \
+  --data-binary "{\"proofId\":\"$angular_proof_id\",\"code\":\"$angular_proof_code\",\"mailbox\":\"angular-e2e@example.test\",\"password\":\"Crecisol-local-test-strong-1!\"}")"
+[[ "${forged_completion%%$'\r\n'*}" == *'400'* ]]
+same 'forged forwarding header cannot consume completion proof' '0:1' \
+  "$(root_sql "SELECT CONCAT(proof_state,':',failed_attempts) FROM c05_identity_mailbox_proof WHERE tenant_id=UNHEX('00000000000000000000000000000001') AND proof_id=UNHEX(REPLACE('$angular_proof_id','-',''))")"
 (cd "$ROOT/frontend" && C05_PROOF_ID="$angular_proof_id" C05_PROOF_CODE="$angular_proof_code" \
   npx playwright test --config=playwright.c05-operational.config.ts \
     tests/c05-registration-proof.spec.ts --grep 'real registration against the disposable API and MySQL')
