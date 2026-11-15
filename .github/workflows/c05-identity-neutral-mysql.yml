@@ -76,11 +76,13 @@ jobs:
                            "Twelve racing verified-proof enrollments",
                            "Sixteen concurrent workers safely claim one opaque B intent",
                            "Anonymous intent -> trusted outbox -> recipient link",
-                           "Expired SQL lease is reclaimed once",
-                           "Twelve racing independent approvals activate exactly one membership",
+                           "Expired SQL lease is reclaimed once"):
+              assert required in t, required
+          approval_runner=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalApprovedMembershipHarness.cs").read_text()
+          for required in ("Twelve racing independent approvals activate exactly one membership",
                            "Real MySQL directory + Argon2id + unique host B",
                            "Post-activation revocation immediately invalidates"):
-              assert required in t, required
+              assert required in approval_runner, required
           candidate=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableVerifiedCredentialCandidateStore.cs").read_text()
           schema=Path("database/tests/fixtures/c05_02_verified_candidate_fixture.sql").read_text()
           assert "MySqlDisposableVerifiedCredentialCandidateStore" in candidate
