@@ -6,6 +6,8 @@ on:
       - 'backend/src/Crecisol.Api/Contracts/NeutralRegistration*.cs'
       - 'backend/tests/Crecisol.NeutralRegistration.IntegrationTests/**'
       - 'database/tests/c05_identity_neutral_proof_http_mysql.sh'
+      - 'database/tests/fixtures/c05_02_verified_candidate_fixture.sql'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableVerifiedCredentialCandidateStore.cs'
       - 'docs/c05/C05_INTEGRACION_REAL_BARRERAS_Y_EVIDENCIA.md'
       - '.github/workflows/c05-identity-neutral-mysql.yml'
   push:
@@ -14,6 +16,8 @@ on:
       - 'backend/src/Crecisol.Api/Contracts/NeutralRegistration*.cs'
       - 'backend/tests/Crecisol.NeutralRegistration.IntegrationTests/**'
       - 'database/tests/c05_identity_neutral_proof_http_mysql.sh'
+      - 'database/tests/fixtures/c05_02_verified_candidate_fixture.sql'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableVerifiedCredentialCandidateStore.cs'
       - '.github/workflows/c05-identity-neutral-mysql.yml'
 permissions:
   contents: read
@@ -38,6 +42,7 @@ jobs:
           python3 qa/master_source_guard.py --self-test
           bash -n database/tests/c05_02_neutral_registration_http_mysql.sh
           bash -n database/tests/c05_identity_neutral_proof_http_mysql.sh
+          test -f database/tests/fixtures/c05_02_verified_candidate_fixture.sql
           printf "PASS A sha=%s run=%s\n" "$C05_TESTED_SHA" "$GITHUB_RUN_ID" > /tmp/c05-a
       - name: Audit B deny forged tenant and actor before SQL
         run: |
@@ -49,8 +54,16 @@ jobs:
           for required in ("NeutralRegistrationIntake", "ReadExactlyAsync", "forged tenant A from B",
                            "Adversarial intake requests do not write records in either tenant",
                            "MySqlDisposableNeutralRegistrationRecorder",
-                           "One-time proof accepted only by B and MySQL CAS"):
+                           "One-time proof accepted only by B and MySQL CAS",
+                           "Case-folded login collision fails closed",
+                           "Twelve racing verified-proof enrollments"):
               assert required in t, required
+          candidate=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableVerifiedCredentialCandidateStore.cs").read_text()
+          schema=Path("database/tests/fixtures/c05_02_verified_candidate_fixture.sql").read_text()
+          assert "MySqlDisposableVerifiedCredentialCandidateStore" in candidate
+          assert "UNIQUE KEY uq_candidate_global_login" in schema
+          assert "PENDING_MEMBERSHIP" in schema
+          assert "c05_02_create_pending_candidate" in candidate
           assert "NeutralRegistrationIntake" not in api
           assert "VerifyNeutralRegistrationMailbox" not in api
           assert "app.MapPost(" not in api and "app.MapGroup(" not in api
@@ -91,4 +104,4 @@ jobs:
           assert 'app.MapPost(' not in api and 'app.MapGroup(' not in api
           assert 'NeutralRegistrationIntake' not in api
           PY
-          echo 'PASS C05 isolated HTTP neutral registration and mailbox proof; NOT full identity E2E'
+          echo 'PASS C05 isolated neutral registration, mailbox proof and pending Argon2id candidate; NOT activated identity or full E2E'
