@@ -4,6 +4,7 @@
 **Repositorio:** `crecisol-platform/CRECISOL`  
 **Rama:** `feature/c05-identity-integration-gate-20261114`  
 **Commit con código probado:** `024b02c31ccb2d9dcf4030a56b42702e6aac49f6`.  
+**Commit con pruebas negativas reforzadas:** `18f9fd960cde5e8004cb2a5e1d1b2485ca9a137f`.  
 **Dictamen:** **C05 operativa NO CERTIFICADA; C06 BLOQUEADO.** Este corte implementa y prueba la transición de prueba de buzón a cuenta y membresía pendientes. No certifica el capítulo completo.
 
 ## Implementado en este corte
@@ -21,7 +22,7 @@
 - `npm run check:types` — **PASS**.
 - `npm run build` (Angular `22.2.4`) — **PASS**, bundle de producción generado.
 - `database/tests/c05_operational_identity_migration_smoke.sh` — **PASS** en MySQL `8.4`, migraciones hacia delante, restricciones, auditoría append-only y rollback.
-- `database/tests/c05_operational_registration_http_mysql.sh` — **PASS** con MySQL `8.4` descartable, API .NET y Chromium. Verificó hosts y aislamiento entre tenants, outbox cifrado, código erróneo, cruce de tenant, replay, lockout, expiración, privilegio mínimo, cuotas concurrentes; después recorrió Angular → proxy same-origin → API → MySQL y verificó cuenta y membresía pendientes, prueba consumida, ausencia de sesión y bloqueo de la ruta antigua en modo de finalización.
+- `database/tests/c05_operational_registration_http_mysql.sh` en el commit de pruebas reforzadas — **PASS** con MySQL `8.4` descartable, API .NET y Chromium. Verificó hosts y aislamiento entre tenants, outbox cifrado, código erróneo, cruce de tenant, replay, lockout, expiración, privilegio mínimo y cuotas concurrentes. En el nuevo endpoint comprobó además código erróneo sin consumo, intento desde tenant cruzado, `X-Forwarded-Host` falsificado y rechazo de la ruta de prueba antigua sin gasto del código; después recorrió Angular → proxy same-origin → API → MySQL y verificó cuenta y membresía pendientes, prueba consumida y ausencia de sesión.
 - `npm run test:e2e -- --config=playwright.c05-operational.config.ts` sin variables del arnés — **2 PASS, 1 SKIP**. La prueba saltada requiere una prueba efímera del outbox local; el mismo recorrido pasó **1/1** dentro del arnés MySQL/API.
 
 ## Auditorías A/B/C del alcance probado
