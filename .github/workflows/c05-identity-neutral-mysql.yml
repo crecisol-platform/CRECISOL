@@ -4,6 +4,7 @@ on:
     branches: [dev]
     paths:
       - 'backend/src/Crecisol.Api/Contracts/NeutralRegistration*.cs'
+      - 'backend/src/Crecisol.Api/Contracts/PrivateResourceHttpRead.cs'
       - 'backend/tests/Crecisol.NeutralRegistration.IntegrationTests/**'
       - 'database/tests/c05_identity_neutral_proof_http_mysql.sh'
       - 'database/tests/fixtures/c05_02_verified_candidate_fixture.sql'
@@ -28,6 +29,7 @@ on:
     branches: [dev]
     paths:
       - 'backend/src/Crecisol.Api/Contracts/NeutralRegistration*.cs'
+      - 'backend/src/Crecisol.Api/Contracts/PrivateResourceHttpRead.cs'
       - 'backend/tests/Crecisol.NeutralRegistration.IntegrationTests/**'
       - 'database/tests/c05_identity_neutral_proof_http_mysql.sh'
       - 'database/tests/fixtures/c05_02_verified_candidate_fixture.sql'
@@ -169,15 +171,27 @@ jobs:
           assert "ITrustedMfaScopedPrivateResourceStore" in private_app
           assert "backendOwnedRouteAction" in private_app
           assert "MySqlDisposableMfaPrivateResourceStore" in private_adapter
+          http_boundary=Path("backend/src/Crecisol.Api/Contracts/PrivateResourceHttpRead.cs").read_text()
+          http_tests=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalMfaPrivateHttpHarness.cs").read_text()
+          for marker in ("ITrustedPrivateResourceHostCatalog", "ReadMfaAuthorizedPrivateResource",
+                         "request.Headers.ContainsKey(\"Forwarded\")", "request.Headers.ContainsKey(\"Cookie\")",
+                         "request.Headers.Keys.Any", "Results.NotFound()", "no-store"):
+              assert marker in http_boundary, marker
+          for marker in ("Real loopback HTTP GET + MySQL permits only owned B1 resource after MFA",
+                         "HTTP denies foreign tenant, actor owner, branch and resource identifiers",
+                         "HTTP fails closed on untrusted header", "Unknown direct Host cannot select any tenant",
+                         "Query tenant selector is rejected", "Ambiguous Authorization header"):
+              assert marker in http_tests, marker
           for marker in ("Twelve concurrent private reads deny after scoped grant revocation",
                          "Branch B1 grant does not authorize",
                          "Valid cases.read permission never grants cases.update",
                          "MFA-bound tenant B session cannot read known private resource ID in A",
                          "EXECUTE-only MFA/resource worker cannot bypass authorization",
-                         "Revoked MFA factor immediately denies protected resource"):
+                         "Revoked MFA factor immediately denies SQL and HTTP private resource reads"):
               assert marker in private_tests, marker
           assert "GRANT SELECT ON `$MFA_DB`.c05_05_private_resources" not in grants
           assert "NeutralRegistrationIntake" not in api
+          assert "PrivateResourceHttpRead" not in api
           assert "VerifyNeutralRegistrationMailbox" not in api
           assert "app.MapPost(" not in api and "app.MapGroup(" not in api
           PY
