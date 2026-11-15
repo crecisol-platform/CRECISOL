@@ -16,12 +16,16 @@ namespace Crecisol.NeutralRegistration.IntegrationTests;
 internal static class LocalMfaApproverHarness
 {
     public static async Task VerifyAsync(
-        MySqlConnection protectedSetup,string approvalWorkerDsn,
+        string approvalSetupDsn,string approvalWorkerDsn,
         ITrustedOpaqueSessionTokenProtector tokens,string bearer,
         TenantActorId actualApprover,VerifiedTenantHostHint trustedB,
         VerifiedTenantHostHint trustedA,Action<bool,string> pass,
         CancellationToken ct)
     {
+        // Only this disposable setup connection can seed/remove synthetic
+        // candidates; the operational approval worker stays EXECUTE-only.
+        await using var protectedSetup=new MySqlConnection(approvalSetupDsn);
+        await protectedSetup.OpenAsync(ct);
         var issuer=new ActivateMembershipWithMfaApprover(tokens,
             new MySqlDisposableMfaMembershipApprovalStore(approvalWorkerDsn));
         var candidate=await SeedPendingCandidateAsync(

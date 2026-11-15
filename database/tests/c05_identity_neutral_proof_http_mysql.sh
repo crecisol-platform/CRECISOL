@@ -19,12 +19,13 @@ MFA_DB="c05_05_disposable"
 MFA_SETUP_PASSWORD="$(openssl rand -hex 24)"
 MFA_WORKER_PASSWORD="$(openssl rand -hex 24)"
 MFA_APPROVAL_PASSWORD="$(openssl rand -hex 24)"
+MFA_APPROVAL_SETUP_PASSWORD="$(openssl rand -hex 24)"
 ADMIN_PASSWORD="$(openssl rand -hex 24)"
 MASTER_HEX="$(openssl rand -hex 32)"
 cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 if [ -n "${GITHUB_ACTIONS:-}" ]; then
-  for value in "$ROOT_PASSWORD" "$INGEST_PASSWORD" "$PROOF_PASSWORD" "$CANDIDATE_PASSWORD" "$DISPATCH_PASSWORD" "$ACTIVATION_PASSWORD" "$DIRECTORY_PASSWORD" "$RATE_RUNNER_PASSWORD" "$RATE_SETUP_PASSWORD" "$MFA_SETUP_PASSWORD" "$MFA_WORKER_PASSWORD" "$MFA_APPROVAL_PASSWORD" "$ADMIN_PASSWORD" "$MASTER_HEX"; do
+  for value in "$ROOT_PASSWORD" "$INGEST_PASSWORD" "$PROOF_PASSWORD" "$CANDIDATE_PASSWORD" "$DISPATCH_PASSWORD" "$ACTIVATION_PASSWORD" "$DIRECTORY_PASSWORD" "$RATE_RUNNER_PASSWORD" "$RATE_SETUP_PASSWORD" "$MFA_SETUP_PASSWORD" "$MFA_WORKER_PASSWORD" "$MFA_APPROVAL_PASSWORD" "$MFA_APPROVAL_SETUP_PASSWORD" "$ADMIN_PASSWORD" "$MASTER_HEX"; do
     echo "::add-mask::$value"
   done
 fi
@@ -115,6 +116,7 @@ root_sql "CREATE USER 'c05_10_integrated_runner'@'%' IDENTIFIED BY '$RATE_RUNNER
  CREATE USER 'c05_02_dispatch_worker'@'%' IDENTIFIED BY '$DISPATCH_PASSWORD';
  CREATE USER 'c05_02_membership_worker'@'%' IDENTIFIED BY '$ACTIVATION_PASSWORD';
  CREATE USER 'c05_02_mfa_approval_worker'@'%' IDENTIFIED BY '$MFA_APPROVAL_PASSWORD';
+ CREATE USER 'c05_02_mfa_approval_setup'@'%' IDENTIFIED BY '$MFA_APPROVAL_SETUP_PASSWORD';
  CREATE USER 'c05_02_login_directory'@'%' IDENTIFIED BY '$DIRECTORY_PASSWORD';
  GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_record_registration_intent TO 'c05_02_proof_ingest'@'%';
  GRANT SELECT ON \`$DB\`.c05_02_neutral_intents TO 'c05_02_proof_limited'@'%';
@@ -133,6 +135,15 @@ root_sql "CREATE USER 'c05_10_integrated_runner'@'%' IDENTIFIED BY '$RATE_RUNNER
    TO 'c05_02_membership_worker'@'%';
  GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_activate_by_mfa_approver
    TO 'c05_02_mfa_approval_worker'@'%';
+ -- Separate fixture-only seeding from registration and EXECUTE-only workers.
+ GRANT SELECT,INSERT,DELETE ON \`$DB\`.c05_02_neutral_intents TO 'c05_02_mfa_approval_setup'@'%';
+ GRANT SELECT,INSERT,DELETE ON \`$DB\`.c05_02_mailbox_proofs TO 'c05_02_mfa_approval_setup'@'%';
+ GRANT SELECT,INSERT,DELETE ON \`$DB\`.c05_02_candidate_accounts TO 'c05_02_mfa_approval_setup'@'%';
+ GRANT SELECT,DELETE ON \`$DB\`.c05_02_member_approval_orders TO 'c05_02_mfa_approval_setup'@'%';
+ GRANT SELECT,DELETE ON \`$DB\`.c05_02_approved_memberships TO 'c05_02_mfa_approval_setup'@'%';
+ GRANT SELECT,DELETE ON \`$DB\`.c05_02_proof_dispatch TO 'c05_02_mfa_approval_setup'@'%';
+ GRANT SELECT,DELETE ON \`$DB\`.c05_02_member_authorities TO 'c05_02_mfa_approval_setup'@'%';
+ GRANT SELECT,INSERT,UPDATE,DELETE ON \`$DB\`.c05_02_mfa_approval_grants TO 'c05_02_mfa_approval_setup'@'%';
  GRANT SELECT (actor_id,lifecycle,verifier_phc,created_utc,source_tenant_id,login_digest)
    ON \`$DB\`.c05_02_candidate_accounts TO 'c05_02_login_directory'@'%';
  GRANT SELECT (tenant_id,actor_id,link_id,lifecycle,revision,changed_utc,granted_utc,expires_utc)
@@ -171,6 +182,7 @@ export CRECISOL_C05_RATE_RUNNER_DSN="Server=127.0.0.1;Port=$port;Database=$RATE_
 export CRECISOL_C05_MFA_SETUP_DSN="Server=127.0.0.1;Port=$port;Database=$MFA_DB;User ID=c05_05_mfa_setup;Password=$MFA_SETUP_PASSWORD;Pooling=false"
 export CRECISOL_C05_MFA_WORKER_DSN="Server=127.0.0.1;Port=$port;Database=$MFA_DB;User ID=c05_05_mfa_worker;Password=$MFA_WORKER_PASSWORD;Pooling=false"
 export CRECISOL_C05_MFA_APPROVAL_DSN="Server=127.0.0.1;Port=$port;Database=$DB;User ID=c05_02_mfa_approval_worker;Password=$MFA_APPROVAL_PASSWORD;Pooling=false"
+export CRECISOL_C05_MFA_APPROVAL_SETUP_DSN="Server=127.0.0.1;Port=$port;Database=$DB;User ID=c05_02_mfa_approval_setup;Password=$MFA_APPROVAL_SETUP_PASSWORD;Pooling=false"
 dotnet run --no-build -c Release \
   --project backend/tests/Crecisol.NeutralRegistration.IntegrationTests/Crecisol.NeutralRegistration.IntegrationTests.csproj \
   -- --integration
