@@ -42,6 +42,26 @@ CREATE TABLE c05_identity_membership (
     CONSTRAINT ck_c05_membership_revision CHECK (approval_revision > 0)
 ) ENGINE=InnoDB;
 
+CREATE TABLE c05_identity_mailbox_proof (
+    tenant_id BINARY(16) NOT NULL,
+    proof_id BINARY(16) NOT NULL,
+    mailbox_hmac BINARY(32) NOT NULL,
+    proof_token_hmac BINARY(32) NOT NULL,
+    mailbox_ciphertext VARBINARY(512) NOT NULL,
+    mailbox_nonce BINARY(12) NOT NULL,
+    mailbox_tag BINARY(16) NOT NULL,
+    key_version INT UNSIGNED NOT NULL,
+    proof_state TINYINT UNSIGNED NOT NULL,
+    created_at_utc DATETIME(6) NOT NULL,
+    expires_at_utc DATETIME(6) NOT NULL,
+    consumed_at_utc DATETIME(6) NULL,
+    PRIMARY KEY (tenant_id, proof_id),
+    UNIQUE KEY uq_c05_proof_token (proof_token_hmac),
+    KEY ix_c05_proof_mailbox_state (tenant_id, mailbox_hmac, proof_state),
+    CONSTRAINT ck_c05_proof_state CHECK (proof_state IN (0,1,2,3)),
+    CONSTRAINT ck_c05_proof_expiry CHECK (expires_at_utc > created_at_utc)
+) ENGINE=InnoDB;
+
 CREATE TABLE c05_identity_mfa_factor (
     account_id BINARY(16) NOT NULL,
     factor_id BINARY(16) NOT NULL,
@@ -88,6 +108,63 @@ CREATE TABLE c05_identity_session (
     CONSTRAINT ck_c05_session_expiry CHECK (expires_at_utc > issued_at_utc)
 ) ENGINE=InnoDB;
 
+CREATE TABLE c05_identity_membership_approval (
+    tenant_id BINARY(16) NOT NULL,
+    membership_id BINARY(16) NOT NULL,
+    approver_account_id BINARY(16) NOT NULL,
+    approver_session_id BINARY(16) NOT NULL,
+    decision TINYINT UNSIGNED NOT NULL,
+    reason_hmac BINARY(32) NOT NULL,
+    decided_at_utc DATETIME(6) NOT NULL,
+    PRIMARY KEY (tenant_id, membership_id),
+    KEY ix_c05_approval_actor_time (tenant_id, approver_account_id, decided_at_utc),
+    CONSTRAINT fk_c05_approval_membership FOREIGN KEY (tenant_id, membership_id)
+      REFERENCES c05_identity_membership (tenant_id, membership_id),
+    CONSTRAINT fk_c05_approval_actor FOREIGN KEY (approver_account_id)
+      REFERENCES c05_identity_account (account_id),
+    CONSTRAINT fk_c05_approval_session FOREIGN KEY (tenant_id, approver_session_id)
+      REFERENCES c05_identity_session (tenant_id, session_id),
+    CONSTRAINT ck_c05_approval_decision CHECK (decision IN (1,2))
+) ENGINE=InnoDB;
+
+CREATE TABLE c05_identity_recovery (
+    account_id BINARY(16) NOT NULL,
+    recovery_id BINARY(16) NOT NULL,
+    token_hmac BINARY(32) NOT NULL,
+    created_at_utc DATETIME(6) NOT NULL,
+    expires_at_utc DATETIME(6) NOT NULL,
+    consumed_at_utc DATETIME(6) NULL,
+    PRIMARY KEY (account_id, recovery_id),
+    UNIQUE KEY uq_c05_recovery_token (token_hmac),
+    CONSTRAINT fk_c05_recovery_account FOREIGN KEY (account_id)
+      REFERENCES c05_identity_account (account_id),
+    CONSTRAINT ck_c05_recovery_expiry CHECK (expires_at_utc > created_at_utc)
+) ENGINE=InnoDB;
+
+CREATE TABLE c05_identity_resource_grant (
+    tenant_id BINARY(16) NOT NULL,
+    grant_id BINARY(16) NOT NULL,
+    account_id BINARY(16) NOT NULL,
+    branch_id BINARY(16) NOT NULL,
+    resource_id BINARY(16) NULL,
+    scope_kind TINYINT UNSIGNED NOT NULL,
+    permission_code VARCHAR(96) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    granted_by BINARY(16) NOT NULL,
+    granted_at_utc DATETIME(6) NOT NULL,
+    expires_at_utc DATETIME(6) NULL,
+    revoked_at_utc DATETIME(6) NULL,
+    grant_revision BIGINT UNSIGNED NOT NULL DEFAULT 1,
+    PRIMARY KEY (tenant_id, grant_id),
+    KEY ix_c05_grant_policy (tenant_id, account_id, branch_id, permission_code, revoked_at_utc),
+    CONSTRAINT fk_c05_grant_account FOREIGN KEY (account_id)
+      REFERENCES c05_identity_account (account_id),
+    CONSTRAINT fk_c05_grant_grantor FOREIGN KEY (granted_by)
+      REFERENCES c05_identity_account (account_id),
+    CONSTRAINT ck_c05_grant_scope CHECK (scope_kind IN (1,2)),
+    CONSTRAINT ck_c05_grant_expiry CHECK (expires_at_utc IS NULL OR expires_at_utc > granted_at_utc),
+    CONSTRAINT ck_c05_grant_revision CHECK (grant_revision > 0)
+) ENGINE=InnoDB;
+
 CREATE TABLE c05_identity_audit (
     tenant_id BINARY(16) NOT NULL,
     audit_id BINARY(16) NOT NULL,
@@ -114,4 +191,5 @@ BEGIN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'C05 audit rows are append-only';
 END$$
 DELIMITER ;
+
 
