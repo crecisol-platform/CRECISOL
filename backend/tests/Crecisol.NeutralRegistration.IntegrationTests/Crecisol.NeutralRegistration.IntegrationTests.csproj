@@ -8,6 +8,8 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Crecisol.Infrastructure/Crecisol.Infrastructure.csproj" />
+    <ProjectReference Include="../../src/Crecisol.CredentialSecurity/Crecisol.CredentialSecurity.csproj" />
+    <ProjectReference Include="../../src/Crecisol.Api/Crecisol.Api.csproj" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 </Project>

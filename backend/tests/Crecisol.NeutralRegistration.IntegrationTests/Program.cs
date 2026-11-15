@@ -2,6 +2,10 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
+using Crecisol.Infrastructure.Tenancy;
+using Crecisol.NeutralRegistration.IntegrationTests;
+using Crecisol.Api.Contracts;
+using Crecisol.CredentialSecurity;
 using Crecisol.Application.Identity;
 using Crecisol.Application.Tenancy;
 using Crecisol.Domain.Identity;
@@ -31,6 +35,17 @@ if (string.IsNullOrWhiteSpace(adminDsn) ||
     string.IsNullOrWhiteSpace(limitedDsn) ||
     string.IsNullOrWhiteSpace(keyHex))
     throw new InvalidOperationException("Missing isolated C05-02 verification fixture.");
+var integratedProofDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_PROOF_TEST_DSN");
+var candidateDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_CANDIDATE_DSN");
+var dispatchDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_DISPATCH_DSN");
+var activationDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_ACTIVATION_DSN");
+var directoryDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_DIRECTORY_DSN");
+var rateSetupDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_RATE_SETUP_DSN");
+var rateRunnerDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_RATE_RUNNER_DSN");
+var mfaSetupDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_MFA_SETUP_DSN");
+var mfaWorkerDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_MFA_WORKER_DSN");
+var mfaApprovalDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_MFA_APPROVAL_DSN");
+var mfaApprovalSetupDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_MFA_APPROVAL_SETUP_DSN");
 var key = Convert.FromHexString(keyHex);
 if (key.Length != 32)
     throw new InvalidOperationException("Invalid server-owned C05-02 test key.");
@@ -81,6 +96,17 @@ builder.Services.AddSingleton<ResolveVerifiedTenantHost>();
 builder.Services.AddSingleton<ITrustedNeutralRegistrationIntentRecorder>(_ =>
     new MySqlDisposableNeutralRegistrationRecorder(limitedDsn, key, 1));
 builder.Services.AddTransient<RequestNeutralRegistrationIntent>();
+builder.Services.AddTransient<INeutralRegistrationIntentHandler, ApplicationNeutralRegistrationIntentHandler>();
+builder.Services.AddTransient<NeutralRegistrationIntake>();
+using var localMailbox = new LocalProofMailbox();
+using var integratedProof = string.IsNullOrWhiteSpace(integratedProofDsn)
+    ? null : new MySqlDisposableEmailPossessionAdapter(integratedProofDsn, key, 1, localMailbox);
+if (integratedProof is not null)
+{
+    builder.Services.AddSingleton<ITrustedEmailPossessionLedger>(integratedProof);
+    builder.Services.AddSingleton<ITrustedEmailPossessionDelivery>(integratedProof);
+    builder.Services.AddTransient<VerifyNeutralRegistrationMailbox>();
+}
 
 await using var app = builder.Build();
 app.MapPost("/__test_only/c05-02/public/registration-intent",
@@ -123,6 +149,74 @@ app.MapPost("/__test_only/c05-02/public/registration-intent",
         return Results.Json(new { Code = NeutralRegistrationReceipt.Acknowledged.Code },
             statusCode: StatusCodes.Status202Accepted);
     });
+
+
+// Integrated path ONLY in this isolated loopback test executable, never Program.cs.
+app.MapPost("/__test_only/c05-integration/registration-intent",
+    async (HttpContext context, NeutralRegistrationIntake intake) =>
+    {
+        context.Response.Headers.CacheControl = "no-store";
+        context.Response.Headers.Pragma = "no-cache";
+        context.Response.Headers["Referrer-Policy"] = "no-referrer";
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        if (!NeutralRegistrationTransportPreflight.IsEligible(context.Request))
+            return Results.BadRequest();
+        try
+        {
+            var body = new byte[checked((int)context.Request.ContentLength!.Value)];
+            await context.Request.Body.ReadExactlyAsync(body.AsMemory(), context.RequestAborted);
+            var trailing = new byte[1];
+            if (await context.Request.Body.ReadAsync(trailing.AsMemory(), context.RequestAborted) != 0)
+                return Results.BadRequest();
+            var result = await intake.SubmitAsync(context.Request, body, context.RequestAborted);
+            return result == NeutralRegistrationIntakeOutcome.Acknowledged
+                ? Results.Json(new { Code = NeutralRegistrationReceipt.Acknowledged.Code },
+                    statusCode: StatusCodes.Status202Accepted)
+                : Results.BadRequest();
+        }
+        catch (UnauthorizedAccessException) { return Results.BadRequest(); }
+        catch (EndOfStreamException) { return Results.BadRequest(); }
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested) { throw; }
+        catch (Exception) { return Results.StatusCode(StatusCodes.Status503ServiceUnavailable); }
+    });
+
+if (integratedProof is not null)
+{
+    // These routes exist ONLY in the loopback test executable, not in the product API.
+    app.MapPost("/__test_only/c05-integration/proof-request",
+        async (HttpContext ctx, VerifyNeutralRegistrationMailbox verifier) =>
+        {
+            LocalProofHttp.SetNeutralHeaders(ctx);
+            var data = await LocalProofHttp.ReadAsync(ctx.Request, false, ctx.RequestAborted);
+            if (data is null) return Results.BadRequest();
+            try
+            {
+                _ = await verifier.RequestProofAsync(data.Intent, ctx.RequestAborted);
+                return Results.Json(new { Code = NeutralRegistrationReceipt.Acknowledged.Code },
+                    statusCode: StatusCodes.Status202Accepted);
+            }
+            catch (UnauthorizedAccessException) { return Results.BadRequest(); }
+            catch (OperationCanceledException) when (ctx.RequestAborted.IsCancellationRequested) { throw; }
+            catch (Exception) { return Results.StatusCode(StatusCodes.Status503ServiceUnavailable); }
+        });
+    app.MapPost("/__test_only/c05-integration/proof-confirm",
+        async (HttpContext ctx, VerifyNeutralRegistrationMailbox verifier) =>
+        {
+            LocalProofHttp.SetNeutralHeaders(ctx);
+            var data = await LocalProofHttp.ReadAsync(ctx.Request, true, ctx.RequestAborted);
+            if (data is null) return Results.BadRequest();
+            try
+            {
+                _ = await verifier.ConfirmProofAsync(
+                    data.Intent, data.Code, ctx.RequestAborted);
+                return Results.Json(new { Code = NeutralRegistrationReceipt.Acknowledged.Code },
+                    statusCode: StatusCodes.Status202Accepted);
+            }
+            catch (UnauthorizedAccessException) { return Results.BadRequest(); }
+            catch (OperationCanceledException) when (ctx.RequestAborted.IsCancellationRequested) { throw; }
+            catch (Exception) { return Results.StatusCode(StatusCodes.Status503ServiceUnavailable); }
+        });
+}
 
 await app.StartAsync();
 var local = app.Urls.Single(x => x.StartsWith("http://127.0.0.1:", StringComparison.Ordinal));
@@ -344,11 +438,510 @@ Pass(await ScalarAsync(admin,
     $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{B}'") == 1,
     "Concurrent tenant A quota cannot insert or suppress tenant B records");
 
+
+// The new integrated path is tested AFTER the historical MySQL quota and race
+// cases, preserving all previous counts and ensuring tenant B still has quota.
+async Task<Observed> SendBridgeAsync(string host, string json,
+    IReadOnlyDictionary<string, string>? headers = null, string media = "application/json")
+{
+    using var req = new HttpRequestMessage(HttpMethod.Post,
+        local + "/__test_only/c05-integration/registration-intent");
+    req.Headers.Host = host;
+    var bytes = new ByteArrayContent(Encoding.UTF8.GetBytes(json));
+    bytes.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(media);
+    req.Content = bytes;
+    if (headers is not null)
+        foreach (var pair in headers) req.Headers.TryAddWithoutValidation(pair.Key, pair.Value);
+    using var res = await client.SendAsync(req);
+    return new Observed(res.StatusCode, await res.Content.ReadAsStringAsync(),
+        res.Headers.TryGetValues("Cache-Control", out var cache) && cache.Contains("no-store"),
+        res.Headers.Contains("Set-Cookie"), res.Headers.Contains("Location"));
+}
+var aBeforeBridge = await ScalarAsync(admin,
+    $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{A}'");
+var bBeforeBridge = await ScalarAsync(admin,
+    $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{B}'");
+var bridge = await SendBridgeAsync("b.crecisol.test", "{\"mailbox\":\"Integrated+One@EXAMPLE.TEST\"}");
+Pass(bridge.Status == HttpStatusCode.Accepted && bridge.Body == known.Body &&
+     bridge.CacheDenied && !bridge.HasCookie && !bridge.HasLocation,
+    "Actual HTTP intake is neutral, with no session, redirect or cache");
+Pass(await ScalarAsync(admin,
+    $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{B}'")
+    == bBeforeBridge + 1 &&
+    await ScalarAsync(admin,
+    $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{A}'")
+    == aBeforeBridge,
+    "Actual HTTP to Application to MySQL persists one tenant B intent, zero A");
+async Task DenyBridgeAsync(string name, string host, string json,
+    IReadOnlyDictionary<string, string>? headers = null, string media = "application/json")
+{
+    var response = await SendBridgeAsync(host, json, headers, media);
+    Pass(response.Status == HttpStatusCode.BadRequest && response.CacheDenied &&
+         !response.HasCookie && !response.HasLocation,
+        "Integrated pre-database denial " + name);
+}
+await DenyBridgeAsync("forged tenant A from B", "b.crecisol.test",
+    "{\"mailbox\":\"other@example.test\"}",
+    new Dictionary<string,string> { ["X-Tenant-Id"] = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" });
+await DenyBridgeAsync("forged actor", "b.crecisol.test",
+    "{\"mailbox\":\"other@example.test\"}",
+    new Dictionary<string,string> { ["X-Actor-Id"] = "forged" });
+await DenyBridgeAsync("forged role", "b.crecisol.test",
+    "{\"mailbox\":\"other@example.test\",\"role\":\"SuperAdmin\"}");
+await DenyBridgeAsync("forged Forwarded host", "b.crecisol.test",
+    "{\"mailbox\":\"other@example.test\"}",
+    new Dictionary<string,string> { ["X-Forwarded-Host"] = "a.crecisol.test" });
+await DenyBridgeAsync("forged XFF", "b.crecisol.test",
+    "{\"mailbox\":\"other@example.test\"}",
+    new Dictionary<string,string> { ["X-Forwarded-For"] = "198.51.100.9" });
+await DenyBridgeAsync("JSON duplicate", "b.crecisol.test",
+    "{\"mailbox\":\"a@example.test\",\"mailbox\":\"b@example.test\"}");
+await DenyBridgeAsync("JSON tenant selector", "b.crecisol.test",
+    "{\"mailbox\":\"other@example.test\",\"tenant\":\"A\"}");
+await DenyBridgeAsync("invalid media", "b.crecisol.test",
+    "{\"mailbox\":\"other@example.test\"}", media: "text/plain");
+await DenyBridgeAsync("unknown direct host", "foreign.crecisol.test",
+    "{\"mailbox\":\"other@example.test\"}");
+Pass(await ScalarAsync(admin,
+    $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{B}'")
+    == bBeforeBridge + 1 &&
+    await ScalarAsync(admin,
+    $"SELECT COUNT(*) FROM c05_02_neutral_intents WHERE tenant_id=X'{A}'")
+    == aBeforeBridge,
+    "Adversarial intake requests do not write records in either tenant");
+
+if (integratedProof is not null)
+{
+    // Select a non-public opaque ID only through the protected fixture admin connection.
+    byte[] storedId;
+    await using (var cmd = new MySqlCommand(
+        "SELECT intent_id FROM c05_02_neutral_intents WHERE tenant_id=X'" +
+        B + "' ORDER BY captured_at_utc DESC, intent_id DESC LIMIT 1", admin))
+    {
+        storedId = (byte[])(await cmd.ExecuteScalarAsync() ??
+            throw new InvalidOperationException("Fixture intent missing."));
+    }
+    var proofIntent = MySqlRfc4122Guid.Decode(storedId);
+    CryptographicOperations.ZeroMemory(storedId);
+    var intentJson = "{\"intentId\":\"" + proofIntent.ToString("D") + "\"}";
+
+    async Task<Observed> SendProofAsync(string endpoint, string host, string json,
+        IReadOnlyDictionary<string,string>? headers = null)
+    {
+        using var message = new HttpRequestMessage(HttpMethod.Post,
+            local + "/__test_only/c05-integration/" + endpoint);
+        message.Headers.Host = host;
+        var payload = new ByteArrayContent(Encoding.UTF8.GetBytes(json));
+        payload.Headers.ContentType =
+            new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+        message.Content = payload;
+        if (headers is not null)
+            foreach (var pair in headers)
+                message.Headers.TryAddWithoutValidation(pair.Key, pair.Value);
+        using var response = await client.SendAsync(message);
+        return new Observed(response.StatusCode,
+            await response.Content.ReadAsStringAsync(),
+            response.Headers.TryGetValues("Cache-Control", out var cache) &&
+                cache.Contains("no-store"), response.Headers.Contains("Set-Cookie"),
+            response.Headers.Contains("Location"));
+    }
+
+    var deliveriesBefore = localMailbox.Delivered;
+    var start = await SendProofAsync("proof-request", "b.crecisol.test", intentJson);
+    Pass(start.Status == HttpStatusCode.Accepted &&
+         start.Body == known.Body && start.CacheDenied &&
+         !start.HasCookie && !start.HasLocation &&
+         localMailbox.Delivered == deliveriesBefore + 1 &&
+         localMailbox.Has("Integrated+One@example.test"),
+         "Same-process HTTP registration to one-time encrypted mailbox proof delivery");
+    var challenge = localMailbox.Take("Integrated+One@example.test");
+    try
+    {
+        var code = Convert.ToHexString(challenge);
+        var foreignRequest = await SendProofAsync("proof-request", "a.crecisol.test", intentJson);
+        Pass(foreignRequest.Status == HttpStatusCode.Accepted &&
+             foreignRequest.Body == start.Body &&
+             localMailbox.Delivered == deliveriesBefore + 1,
+             "Foreign tenant cannot request another delivery from protected intent");
+
+        var bad = await SendProofAsync("proof-confirm", "b.crecisol.test",
+            "{\"intentId\":\"" + proofIntent.ToString("D") +
+            "\",\"code\":\"" + new string('0',64) + "\"}");
+        Pass(bad.Status == HttpStatusCode.Accepted &&
+             bad.Body == start.Body &&
+             await ScalarAsync(admin, "SELECT COUNT(*) FROM c05_02_mailbox_proofs WHERE tenant_id=X'" +
+                B + "' AND lifecycle='PENDING'") == 1,
+             "Invalid token is neutral and leaves B proof pending");
+
+        var cross = await SendProofAsync("proof-confirm", "a.crecisol.test",
+            "{\"intentId\":\"" + proofIntent.ToString("D") + "\",\"code\":\"" + code + "\"}");
+        Pass(cross.Status == HttpStatusCode.Accepted &&
+             cross.Body == start.Body &&
+             await ScalarAsync(admin, "SELECT COUNT(*) FROM c05_02_mailbox_proofs WHERE tenant_id=X'" +
+                A + "' AND lifecycle='VERIFIED'") == 0,
+             "B token on tenant A cannot assert mailbox possession");
+
+        var validBody = "{\"intentId\":\"" + proofIntent.ToString("D") +
+            "\",\"code\":\"" + code + "\"}";
+        var valid = await SendProofAsync("proof-confirm", "b.crecisol.test", validBody);
+        Pass(valid.Status == HttpStatusCode.Accepted &&
+             valid.Body == start.Body && valid.CacheDenied &&
+             !valid.HasCookie && !valid.HasLocation &&
+             await ScalarAsync(admin, "SELECT COUNT(*) FROM c05_02_mailbox_proofs WHERE tenant_id=X'" +
+                B + "' AND lifecycle='VERIFIED'") == 1,
+             "One-time proof accepted only by B and MySQL CAS, without session");
+        var replay = await SendProofAsync("proof-confirm", "b.crecisol.test", validBody);
+        Pass(replay.Status == HttpStatusCode.Accepted &&
+             replay.Body == start.Body &&
+             await ScalarAsync(admin, "SELECT COUNT(*) FROM c05_02_mailbox_proofs WHERE tenant_id=X'" +
+                B + "' AND lifecycle='VERIFIED'") == 1,
+             "Proof replay is neutral and cannot create another verified record");
+    }
+    finally { CryptographicOperations.ZeroMemory(challenge); }
+
+    if (!string.IsNullOrWhiteSpace(candidateDsn))
+    {
+        // This is a BACKEND-ONLY trusted fixture handoff. No public route
+        // accepts a PHC string, actor ID or candidate enrollment command.
+        using var pending = new MySqlDisposableVerifiedCredentialCandidateStore(
+            candidateDsn, key, 1);
+        var tenantB = TenantId.From(
+            Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
+        var tenantA = TenantId.From(
+            Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        var password = Convert.ToBase64String(RandomNumberGenerator.GetBytes(36));
+        var hasher = new Argon2idPasswordHasher(
+            PasswordHashingPolicy.Default, new LocalOnlyFixturePasswordScreen());
+        var phc = hasher.CreateVerifier(password).ExportForTrustedCredentialStore();
+
+        Pass(!await pending.TryCreatePendingAsync(
+                 tenantA, proofIntent, phc, CancellationToken.None),
+            "Tenant A cannot promote B's verified mailbox intent");
+        Pass(!await pending.TryCreatePendingAsync(
+                 tenantB, proofIntent, "not-a-phc", CancellationToken.None),
+            "Untrusted or malformed verifier never reaches candidate procedure");
+        Pass(!await pending.TryCreatePendingAsync(
+                 tenantB, Guid.NewGuid(), phc, CancellationToken.None),
+            "Unknown mailbox intent cannot provision a candidate");
+
+        var first = await Task.WhenAll(Enumerable.Range(0, 12)
+            .Select(_ => Task.Run(() => pending.TryCreatePendingAsync(
+                tenantB, proofIntent, phc, CancellationToken.None))));
+        Pass(first.Count(wrote => wrote) == 1 &&
+             await ScalarAsync(admin,
+                 "SELECT COUNT(*) FROM c05_02_candidate_accounts") == 1,
+            "Twelve racing verified-proof enrollments create exactly one pending account");
+        var candidateState = "";
+        var candidatePhc = "";
+        await using (var read = new MySqlCommand(
+            "SELECT lifecycle,verifier_phc FROM c05_02_candidate_accounts", admin))
+        {
+            await using var rows = await read.ExecuteReaderAsync();
+            if (await rows.ReadAsync())
+            {
+                candidateState = rows.GetString(0);
+                candidatePhc = rows.GetString(1);
+            }
+        }
+        Pass(candidateState == "PENDING_MEMBERSHIP" &&
+             string.Equals(candidatePhc, phc, StringComparison.Ordinal) &&
+             hasher.Verify(password, candidatePhc).Matched,
+            "Pending-only credential is a real Argon2id PHC, no active membership");
+        Pass(!await pending.TryCreatePendingAsync(
+                 tenantB, proofIntent, phc, CancellationToken.None),
+            "Replay of an already-promoted verified proof is denied");
+
+        // Least privilege: the candidate connector can execute only the
+        // procedure and read encrypted intent columns, never account records.
+        var directReadDenied = false;
+        await using (var limited = new MySqlConnection(candidateDsn))
+        {
+            await limited.OpenAsync();
+            await using var read = new MySqlCommand(
+                "SELECT verifier_phc FROM c05_02_candidate_accounts", limited);
+            try { _ = await read.ExecuteScalarAsync(); }
+            catch (MySqlException ex) when (ex.Number is 1142 or 1143)
+            {
+                directReadDenied = true;
+            }
+        }
+        Pass(directReadDenied, "Pending candidate DB role cannot SELECT credential verifiers");
+        if (string.IsNullOrWhiteSpace(activationDsn) ||
+            string.IsNullOrWhiteSpace(directoryDsn) ||
+            string.IsNullOrWhiteSpace(rateSetupDsn) ||
+            string.IsNullOrWhiteSpace(rateRunnerDsn) ||
+            string.IsNullOrWhiteSpace(mfaSetupDsn) ||
+            string.IsNullOrWhiteSpace(mfaWorkerDsn) ||
+            string.IsNullOrWhiteSpace(mfaApprovalDsn) ||
+            string.IsNullOrWhiteSpace(mfaApprovalSetupDsn))
+            throw new InvalidOperationException(
+                "Integrated C05 candidate requires a separate approved-membership and login-directory fixture.");
+        await LocalApprovedMembershipHarness.VerifyAsync(
+            admin, activationDsn, directoryDsn, rateSetupDsn, rateRunnerDsn,
+            mfaSetupDsn, mfaWorkerDsn, mfaApprovalDsn, mfaApprovalSetupDsn, key, password, proofIntent,
+            directory, directory, new SystemUtcClock(), Pass, CancellationToken.None);
+
+        async Task<Guid> LatestBIntentAsync()
+        {
+            await using var query = new MySqlCommand(
+                "SELECT intent_id FROM c05_02_neutral_intents WHERE tenant_id=X'" +
+                B + "' ORDER BY captured_at_utc DESC, intent_id DESC LIMIT 1", admin);
+            var raw = (byte[])(await query.ExecuteScalarAsync() ??
+                throw new InvalidOperationException("Latest protected intent unavailable."));
+            try { return MySqlRfc4122Guid.Decode(raw); }
+            finally { CryptographicOperations.ZeroMemory(raw); }
+        }
+
+        var unproved = await SendBridgeAsync("b.crecisol.test",
+            "{\"mailbox\":\"Unverified@Example.test\"}");
+        var unprovedIntent = await LatestBIntentAsync();
+        Pass(unproved.Status == HttpStatusCode.Accepted &&
+             !await pending.TryCreatePendingAsync(
+                 tenantB, unprovedIntent, phc, CancellationToken.None),
+             "Recorded mailbox without verified proof can never create a credential");
+
+        var variant = await SendBridgeAsync("b.crecisol.test",
+            "{\"mailbox\":\"integrated+one@example.test\"}");
+        var variantIntent = await LatestBIntentAsync();
+        var variantJson = "{\"intentId\":\"" + variantIntent.ToString("D") + "\"}";
+        var variantStart = await SendProofAsync(
+            "proof-request", "b.crecisol.test", variantJson);
+        Pass(variant.Status == HttpStatusCode.Accepted &&
+             variantStart.Status == HttpStatusCode.Accepted &&
+             localMailbox.Has("integrated+one@example.test"),
+            "Distinct case-sensitive mailbox is independently challenged");
+        var variantToken = localMailbox.Take("integrated+one@example.test");
+        try
+        {
+            var verifyBody = "{\"intentId\":\"" + variantIntent.ToString("D") +
+                "\",\"code\":\"" + Convert.ToHexString(variantToken) + "\"}";
+            var verifiedVariant = await SendProofAsync(
+                "proof-confirm", "b.crecisol.test", verifyBody);
+            Pass(verifiedVariant.Status == HttpStatusCode.Accepted &&
+                 !await pending.TryCreatePendingAsync(
+                     tenantB, variantIntent, phc, CancellationToken.None) &&
+                 await ScalarAsync(admin,
+                     "SELECT COUNT(*) FROM c05_02_candidate_accounts") == 1,
+                "Case-folded login collision fails closed without merging distinct inboxes");
+        }
+        finally { CryptographicOperations.ZeroMemory(variantToken); }
+    }
+
+    var deliveriesBeforeInvalidProofs = localMailbox.Delivered;
+    async Task DenyProofAsync(string label, string endpoint, string json,
+        IReadOnlyDictionary<string,string>? headers = null,
+        string host = "b.crecisol.test")
+    {
+        var denied = await SendProofAsync(endpoint, host, json, headers);
+        Pass(denied.Status == HttpStatusCode.BadRequest &&
+             denied.CacheDenied && !denied.HasCookie && !denied.HasLocation,
+             "Proof transport fails closed: " + label);
+    }
+    await DenyProofAsync("forged tenant selector", "proof-request",
+        "{\"intentId\":\"" + proofIntent.ToString("D") + "\",\"tenantId\":\"A\"}");
+    await DenyProofAsync("duplicate intent key", "proof-request",
+        "{\"intentId\":\"" + proofIntent.ToString("D") + "\",\"intentId\":\"" +
+        Guid.NewGuid().ToString("D") + "\"}");
+    await DenyProofAsync("forged actor", "proof-request", intentJson,
+        new Dictionary<string,string> { ["X-Actor-Id"] = "spoof" });
+    await DenyProofAsync("forwarded host", "proof-request", intentJson,
+        new Dictionary<string,string> { ["X-Forwarded-Host"] = "a.crecisol.test" });
+    await DenyProofAsync("unverified host", "proof-request", intentJson,
+        host: "foreign.crecisol.test");
+    await DenyProofAsync("mailbox injection in proof", "proof-confirm",
+        "{\"intentId\":\"" + proofIntent.ToString("D") +
+        "\",\"mailbox\":\"victim@example.test\"}");
+    Pass(localMailbox.Delivered == deliveriesBeforeInvalidProofs,
+         "Malformed, foreign and replay requests deliver no additional token");
+
+    if (!string.IsNullOrWhiteSpace(dispatchDsn))
+    {
+        // The internal worker receives a tenant/intent from a committed SQL
+        // outbox row, NOT from the anonymous registration response or query.
+        // Older fixture requests are marked handled by the test-only setup
+        // connection so this section can isolate one fresh enqueue.
+        await ExecuteAsync(admin, """
+            UPDATE c05_02_proof_dispatch SET state='COMPLETED',
+                claim_owner=NULL,claimed_until_utc=NULL
+            WHERE state<>'COMPLETED'
+            """);
+        var queue = new MySqlDisposableNeutralProofDispatch(dispatchDsn);
+        var autoBefore = localMailbox.Delivered;
+        var auto = await SendBridgeAsync("b.crecisol.test",
+            "{\"mailbox\":\"Dispatch+Receiver@Example.test\"}");
+        Pass(auto.Status == HttpStatusCode.Accepted &&
+             auto.Body == known.Body && auto.CacheDenied &&
+             !auto.HasCookie && !auto.HasLocation &&
+             localMailbox.Delivered == autoBefore &&
+             await ScalarAsync(admin,
+                 "SELECT COUNT(*) FROM c05_02_proof_dispatch WHERE state='READY'") == 1,
+            "Public anonymous registration returns no intent or bearer while SQL enqueues one private dispatch");
+
+        var concurrent = await Task.WhenAll(Enumerable.Range(0, 16)
+            .Select(_ => Task.Run(async () =>
+            {
+                var owner = Guid.NewGuid();
+                var claim = await queue.ClaimNextAsync(owner, CancellationToken.None);
+                return (Owner: owner, Claim: claim);
+            })));
+        var winners = concurrent.Where(x => x.Claim is not null).ToArray();
+        Pass(winners.Length == 1 &&
+             winners[0].Claim!.Tenant.Value == Guid.Parse(
+                 "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb") &&
+             winners[0].Claim!.Intent != Guid.Empty,
+            "Sixteen concurrent workers safely claim one opaque B intent exactly once");
+        var winner = winners[0];
+        var claimed = winner.Claim!;
+        var tenantBForDispatch = TenantId.From(
+            Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
+        var tenantAForDispatch = TenantId.From(
+            Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        var wrongTenantClaim = new ClaimedNeutralProofDispatch(
+            tenantAForDispatch, claimed.Intent);
+        Pass(!await queue.CompleteAsync(
+                 wrongTenantClaim, winner.Owner, CancellationToken.None) &&
+             !await queue.CompleteAsync(
+                 claimed, Guid.NewGuid(), CancellationToken.None) &&
+             !await queue.CompleteAsync(
+                 claimed, winner.Owner, CancellationToken.None),
+            "Foreign tenant, wrong owner and unissued proof cannot complete a claimed dispatch");
+
+        // The trusted fixture host catalog maps SQL-owned tenant to a
+        // verified hostname. No header, body or browser chooses that scope.
+        var trustedHost = claimed.Tenant.Value == tenantBForDispatch.Value
+            ? "b.crecisol.test" : throw new InvalidOperationException(
+                "Unknown tenant returned by trusted dispatch queue.");
+        var proofStart = await SendProofAsync("proof-request", trustedHost,
+            "{\"intentId\":\"" + claimed.Intent.ToString("D") + "\"}");
+        Pass(proofStart.Status == HttpStatusCode.Accepted &&
+             proofStart.Body == known.Body &&
+             localMailbox.Delivered == autoBefore + 1 &&
+             localMailbox.Has("Dispatch+Receiver@example.test"),
+            "Server-owned dispatch issues proof to recorded mailbox without browser-provided intent");
+        var deliveredLink = localMailbox.TakeLink("Dispatch+Receiver@example.test");
+        try
+        {
+            Pass(deliveredLink.Tenant.Value == tenantBForDispatch.Value &&
+                 deliveredLink.Intent == claimed.Intent &&
+                 deliveredLink.Token.Length == 32,
+                "Only the trusted mailbox link sink receives B intent and secret");
+            Pass(await queue.CompleteAsync(
+                     claimed, winner.Owner, CancellationToken.None) &&
+                 !await queue.CompleteAsync(
+                     claimed, winner.Owner, CancellationToken.None),
+                "Proof-backed dispatch completion is atomic and cannot be replayed");
+            Pass(await queue.ClaimNextAsync(
+                     Guid.NewGuid(), CancellationToken.None) is null &&
+                 await ScalarAsync(admin,
+                     "SELECT COUNT(*) FROM c05_02_proof_dispatch WHERE state='COMPLETED'") > 0,
+                "Committed dispatch leaves no stale READY work for another worker");
+
+            var fromA = await SendProofAsync("proof-confirm", "a.crecisol.test",
+                "{\"intentId\":\"" + deliveredLink.Intent.ToString("D") +
+                "\",\"code\":\"" + Convert.ToHexString(deliveredLink.Token) + "\"}");
+            Pass(fromA.Status == HttpStatusCode.Accepted &&
+                 await ScalarAsync(admin,
+                     "SELECT COUNT(*) FROM c05_02_mailbox_proofs WHERE tenant_id=X'" +
+                     B + "' AND intent_id=X'" + claimed.Intent.ToString("N") +
+                     "' AND lifecycle='PENDING'") == 1,
+                "Recipient link used on tenant A does not verify tenant B");
+            var expectedBody = "{\"intentId\":\"" + deliveredLink.Intent.ToString("D") +
+                "\",\"code\":\"" + Convert.ToHexString(deliveredLink.Token) + "\"}";
+            var completed = await SendProofAsync(
+                "proof-confirm", trustedHost, expectedBody);
+            var replay = await SendProofAsync(
+                "proof-confirm", trustedHost, expectedBody);
+            Pass(completed.Status == HttpStatusCode.Accepted &&
+                 completed.Body == proofStart.Body &&
+                 replay.Status == HttpStatusCode.Accepted &&
+                 replay.Body == proofStart.Body &&
+                 await ScalarAsync(admin,
+                     "SELECT COUNT(*) FROM c05_02_mailbox_proofs WHERE tenant_id=X'" +
+                     B + "' AND intent_id=X'" + claimed.Intent.ToString("N") +
+                     "' AND lifecycle='VERIFIED'") == 1,
+                "Trusted recipient link verifies only B mailbox once; replay stays neutral");
+
+            if (!string.IsNullOrWhiteSpace(candidateDsn))
+            {
+                using var candidate = new MySqlDisposableVerifiedCredentialCandidateStore(
+                    candidateDsn, key, 1);
+                var hasher = new Argon2idPasswordHasher(
+                    PasswordHashingPolicy.Default, new LocalOnlyFixturePasswordScreen());
+                var syntheticPassword = Convert.ToBase64String(
+                    RandomNumberGenerator.GetBytes(36));
+                var phc = hasher.CreateVerifier(
+                    syntheticPassword).ExportForTrustedCredentialStore();
+                var before = await ScalarAsync(admin,
+                    "SELECT COUNT(*) FROM c05_02_candidate_accounts");
+                Pass(await candidate.TryCreatePendingAsync(
+                         tenantBForDispatch, deliveredLink.Intent, phc, CancellationToken.None) &&
+                     await ScalarAsync(admin,
+                         "SELECT COUNT(*) FROM c05_02_candidate_accounts") == before + 1 &&
+                     !await candidate.TryCreatePendingAsync(
+                         tenantBForDispatch, deliveredLink.Intent, phc, CancellationToken.None),
+                    "Anonymous intent -> trusted outbox -> recipient link -> verified proof -> pending Argon2id is one fail-closed path");
+            }
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(deliveredLink.Token);
+        }
+
+        // A crashed worker's lease may be reclaimed by another worker, but
+        // its old owner can never complete the new lease or send a session.
+        var retryIntake = await SendBridgeAsync("b.crecisol.test",
+            "{\"mailbox\":\"Dispatch+Retry@Example.test\"}");
+        var staleOwner = Guid.NewGuid();
+        var stale = await queue.ClaimNextAsync(staleOwner, CancellationToken.None);
+        Pass(retryIntake.Status == HttpStatusCode.Accepted && stale is not null &&
+             stale.Tenant.Value == tenantBForDispatch.Value,
+             "A second verified-host intake is queued for a trusted worker");
+        await ExecuteAsync(admin,
+            "UPDATE c05_02_proof_dispatch SET claimed_until_utc=" +
+            "DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 1 SECOND) WHERE tenant_id=X'" + B +
+            "' AND intent_id=X'" + stale!.Intent.ToString("N") + "' AND state='CLAIMED'");
+        var nextOwner = Guid.NewGuid();
+        var reclaimed = await queue.ClaimNextAsync(
+            nextOwner, CancellationToken.None);
+        Pass(reclaimed is not null && reclaimed.Intent == stale!.Intent &&
+             !await queue.CompleteAsync(stale!, staleOwner, CancellationToken.None),
+             "Expired SQL lease is reclaimed once; stale owner cannot acknowledge it");
+
+        var secondDelivery = await SendProofAsync("proof-request",
+            "b.crecisol.test", "{\"intentId\":\"" + reclaimed!.Intent.ToString("D") + "\"}");
+        Pass(secondDelivery.Status == HttpStatusCode.Accepted &&
+             await queue.CompleteAsync(
+                 reclaimed!, nextOwner, CancellationToken.None) &&
+             localMailbox.Has("Dispatch+Retry@example.test"),
+             "Reclaimed lease dispatches only to its recorded B mailbox");
+        var remaining = localMailbox.TakeLink("Dispatch+Retry@example.test");
+        CryptographicOperations.ZeroMemory(remaining.Token);
+
+        var sqlReadDenied = false;
+        await using (var limited = new MySqlConnection(dispatchDsn))
+        {
+            await limited.OpenAsync();
+            await using var attempted = new MySqlCommand(
+                "SELECT mailbox_digest FROM c05_02_neutral_intents LIMIT 1", limited);
+            try { _ = await attempted.ExecuteScalarAsync(); }
+            catch (MySqlException ex) when (ex.Number is 1142 or 1143)
+            {
+                sqlReadDenied = true;
+            }
+        }
+        Pass(sqlReadDenied, "EXECUTE-only dispatch worker cannot SELECT mailbox or credential tables");
+        Pass(await queue.ClaimNextAsync(
+                 Guid.NewGuid(), CancellationToken.None) is null,
+             "No tenant-scoped outbox item can be claimed twice after completion");
+    }
+
+}
+
 await app.StopAsync();
 CryptographicOperations.ZeroMemory(key);
 
 Console.WriteLine($"PASS C05-02 REAL neutral HTTP + MySqlConnector/MySQL8.4: {checks} assertions");
-Console.WriteLine("LIMIT: loopback test host only; no real mailbox delivery, account registration or authenticated membership");
+Console.WriteLine("LIMIT: loopback only; pending credential is NOT account activation, tenant membership, MFA or session");
 
 // Types are test-private; no platform/tenant operator account is created.
 internal sealed record RegistrationPayload(string? Email);

@@ -27,6 +27,9 @@ permissions:
 jobs:
   c05-02-neutral-registration:
     name: Real Kestrel HTTP MySQL8.4 neutral privacy/A-B-C SHA-gated
+    # Dedicated C05 identity-integration branch has its own real MySQL gate.
+    # The original C05-02 audit C intentionally rejects an unrelated diff.
+    if: github.event_name == 'push' || github.head_ref != 'feature/c05-identity-integration-gate-20261114'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:

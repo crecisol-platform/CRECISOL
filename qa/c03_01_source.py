@@ -263,8 +263,18 @@ def validate_contract(graph):
 
 
 def actual_graph():
+    # Prospective C05 extension. The C03 JSON/acta above remains the immutable
+    # four-project public baseline; this check validates today's source graph.
+    operational_module = ROOT / "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs"
+    c05 = operational_module.is_file()
+    projects = dict(CANONICAL_PROJECTS)
+    edges = set(CURRENT_EDGES)
+    if c05:
+        projects["Crecisol.CredentialSecurity"] = "backend/src/Crecisol.CredentialSecurity/Crecisol.CredentialSecurity.csproj"
+        edges |= {("Crecisol.Api", "Crecisol.CredentialSecurity"),
+                  ("Crecisol.CredentialSecurity", "Crecisol.Application")}
     actual = set()
-    for name, path in CANONICAL_PROJECTS.items():
+    for name, path in projects.items():
         project = ROOT / path
         require(project.is_file(), "Project missing: " + path)
         node = ET.fromstring(project.read_text(encoding="utf-8"))
@@ -274,7 +284,7 @@ def actual_graph():
             dest = (project.parent / relative).resolve()
             require(dest.is_relative_to(ROOT) and dest.is_file(),
                     "ProjectReference points outside repo")
-            target = next((label for label, p in CANONICAL_PROJECTS.items()
+            target = next((label for label, p in projects.items()
                            if (ROOT / p).resolve() == dest), None)
             require(target is not None, "Unexpected project linked: " + relative)
             actual.add((name, target))
@@ -287,7 +297,7 @@ def actual_graph():
                 require(not re.search(r"\b(?:using\s+(?:MySqlConnector|Microsoft\.EntityFrameworkCore)"
                                       r"|MySqlConnection\b|DbContext\b|HttpContext\b)", txt),
                         f"Forbidden SQL/HTTP/ORM coupling in {cs.relative_to(ROOT)}")
-    require(actual == CURRENT_EDGES,
+    require(actual == edges,
             "Actual C# ProjectReference graph differs from canonical inventory")
     # This is static source verification; real compiler and API tests are CI steps.
     angular = json.loads((ROOT / "frontend/angular.json").read_text(encoding="utf-8"))
@@ -299,13 +309,23 @@ def actual_graph():
             "Synthetic harness entered production bootstrap")
     routes = (ROOT / "frontend/src/app/app.routes.ts").read_text(encoding="utf-8")
     observed = re.findall(r"^\s*path:\s*'([^']*)'", routes, re.M)
-    require(observed == PUBLIC_ROUTES,
+    require(observed == (["cuenta"] + PUBLIC_ROUTES if c05 else PUBLIC_ROUTES),
             "Unexpected private Angular route activated")
     code = (ROOT / "backend/src/Crecisol.Api/Program.cs").read_text(encoding="utf-8")
     endpoints = re.findall(r"app\.Map(Get|Post|Put|Patch|Delete)\(\s*\"([^\"]+)\"",
                            code)
     require(endpoints == [("Get", "/api/v1/public/branding/platform")],
             "Unexpected public/private .NET endpoint activated")
+    if c05:
+        require('CRECISOL_C05_LOCAL_IDENTITY_ENABLED' in code and
+                'if (operationalIdentityEnabled)' in code and
+                'app.MapLocalOperationalIdentity();' in code,
+                "C05 endpoints lack explicit opt-in composition")
+        boundary = operational_module.read_text(encoding="utf-8")
+        require('IPAddress.IsLoopback' in boundary and
+                'host.Value.EndsWith(".example.test"' in boundary and
+                'StrictVerifiedHostTransport.TryReadDirectHost' in boundary,
+                "C05 isolated transport boundary missing")
     require((ROOT / "database/c01_03_brand_schema.sql").is_file(),
             "Existing C01 read model schema missing")
 

@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Crecisol.Application/Crecisol.Application.csproj" />
+    <ProjectReference Include="../Crecisol.CredentialSecurity/Crecisol.CredentialSecurity.csproj" />
     <ProjectReference Include="../Crecisol.Infrastructure/Crecisol.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

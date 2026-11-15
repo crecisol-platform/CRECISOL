@@ -1,0 +1,114 @@
+CRECISOL C05 local operational evidence
+Source reference SHA: b2450eb207b903534c4fd51ea888c12137fc4e44
+Command: node qa/c05_operational_flow_e2e.mjs
+Scope: isolated Chromium/Angular/Kestrel/MySQL8.4/loopback SMTP only
+
+C05 isolated operational flow: starting
+PASS six forward migrations on real MySQL 8.4
+PASS neutral registration receipt
+PASS Angular -> registration completion API
+PASS Argon2id account persisted
+PASS registration never grants membership
+PASS pending account cannot log in
+PASS contextual password login
+PASS MFA enrollment uses password-bound challenge
+PASS real TOTP verification issues session
+PASS neutral registration receipt
+PASS Angular -> registration completion API
+PASS Argon2id account persisted
+PASS registration never grants membership
+PASS branch-scoped approval permission cannot become tenant-wide administrative authority
+PASS Angular real MFA approver activates pending membership through API
+PASS self approval denied
+PASS neutral registration receipt
+PASS registration proof completion
+PASS Argon2id account persisted
+PASS registration never grants membership
+PASS twelve concurrent approvals have exactly one audited winner
+PASS session inventory cannot revoke an unrelated or unknown session identifier
+PASS explicit own-session revocation endpoint commits server-side
+PASS explicitly revoked session cannot be reused
+PASS Angular MFA request accepted by the real backend
+PASS MFA enrollment returns ten one-use backup codes once
+PASS Angular validates its actual bearer against the persistent session endpoint
+PASS Angular password -> enrollment -> TOTP -> authenticated session
+PASS authenticated Angular accessibility has no serious/critical axe findings
+PASS no bearer stored in browser storage
+PASS Angular private resource authorized by tenant, branch and owner
+PASS tenant B cannot use session A
+PASS cross-branch IDOR denied
+PASS unallowlisted Host denied
+PASS X-Forwarded-Host cannot grant context
+PASS X-Forwarded-For cannot grant context
+PASS Forwarded cannot grant context
+PASS X-Tenant-Id cannot grant context
+PASS X-Actor-Id cannot grant context
+PASS X-Role cannot grant context
+PASS cross-origin CSRF request denied
+PASS ambient cookie/fixation denied
+PASS forged bearer denied
+PASS browser tenant selector in JSON denied
+PASS inactive branch denied
+PASS owner-scoped grant cannot read another owner
+PASS 12 concurrent private reads deny after grant revocation
+PASS suspended account invalidates existing session
+PASS 8 concurrent rotations have one winner
+PASS rotated token cannot be replayed
+PASS rotation winner remains usable
+PASS persistent login after MFA enrollment
+PASS invalid MFA denied
+PASS concurrent TOTP/challenge consumption has one winner
+PASS MFA replay denied
+PASS Angular clears revoked session on server validation
+PASS Angular neutral recovery request -> real API
+PASS unknown recovery returns same receipt
+PASS mailbox recovery cannot bypass MFA
+PASS Angular recovery proof + one-use MFA backup changes persistent password
+PASS recovery token one-use replay denied
+PASS recovery revokes all previous sessions
+PASS old password denied after recovery
+PASS new password works after recovery
+INFO waiting for real MFA quota window after adversarial cohort
+PASS Angular persistent login with one-use backup factor
+PASS Angular validates its actual bearer against the persistent session endpoint
+PASS consumed MFA backup cannot be reused for login
+PASS Angular mailbox change requires authenticated fresh second factor
+PASS Angular verifies new mailbox and revokes sessions
+PASS mailbox change revokes old session
+PASS old mailbox no longer authenticates
+PASS Angular persistent login with one-use backup factor
+PASS Angular validates its actual bearer against the persistent session endpoint
+PASS Angular sensitive password change verifies current password and MFA
+PASS password change revokes prior session
+PASS Angular persistent login with one-use backup factor
+PASS Angular validates its actual bearer against the persistent session endpoint
+PASS Angular rotates persistent session
+PASS Angular logout revokes server session
+PASS logout session replay denied
+PASS Angular persistent login with one-use backup factor
+PASS Angular validates its actual bearer against the persistent session endpoint
+PASS Angular factor replacement requires password plus a current one-use factor
+PASS factor replacement revokes existing sessions
+PASS replacement TOTP enrollment issues a fresh MFA-bound session
+PASS Angular validates its actual bearer against the persistent session endpoint
+PASS replacement leaves exactly one active TOTP factor
+PASS old backup codes invalidated when factor is replaced
+PASS login prepares an expirable challenge
+PASS expired MFA challenge denied
+PASS challenge bound to tenant A cannot authorize B
+PASS prepare expirable recovery proof
+PASS recovery proof cannot cross tenants
+PASS expired recovery proof denied
+PASS factor revocation immediately denies an unexpired session
+PASS revoked MFA cannot downgrade account to password-only enrollment
+PASS SQL API role denies unauthorized mutation
+PASS SQL API role denies unauthorized mutation
+PASS SQL API role denies unauthorized mutation
+PASS SQL API role denies unauthorized mutation
+PASS database permission failure denies login
+PASS restored database permission restores eligible login
+PASS concurrent login quota admits at most eight password challenges per account-minute
+PASS API logs contain no password, seed, token or key
+PASS API logs contain no mailbox or private resource
+PASS six reverse migrations leave no schema tables
+PASS C05 operational integrated assertions=106; A/B/C evidence is limited to executed cases; no production certification

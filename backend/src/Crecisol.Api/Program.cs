@@ -1,6 +1,7 @@
 using Crecisol.Api.Contracts;
 using Crecisol.Application.Branding;
 using Crecisol.Api.Modules.Branding;
+using Crecisol.Api.Modules.Identity;
 using Crecisol.Api.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +30,40 @@ var trustedHosts = new HashSet<string>(allowed, StringComparer.OrdinalIgnoreCase
 // never Host, query, headers, tenant IDs or a published response.
 var serverDsn = Environment.GetEnvironmentVariable("CRECISOL_C01_READONLY_DSN");
 builder.Services.AddPublicBrandingModule(serverDsn);
+
+var c05RegistrationMode = Environment.GetEnvironmentVariable("CRECISOL_C05_REGISTRATION_ENABLED");
+if (c05RegistrationMode is not (null or "true" or "false"))
+    throw new InvalidOperationException("Invalid C05 registration mode.");
+var c05RegistrationEnabled = string.Equals(c05RegistrationMode, "true", StringComparison.Ordinal);
+if (c05RegistrationEnabled)
+    builder.Services.AddOperationalC05Registration(
+        Environment.GetEnvironmentVariable("CRECISOL_C05_IDENTITY_DSN"));
+
+var c05CompletionMode = Environment.GetEnvironmentVariable(
+    "CRECISOL_C05_LOCAL_ACCOUNT_COMPLETION_ENABLED");
+if (c05CompletionMode is not (null or "true" or "false"))
+    throw new InvalidOperationException("Invalid local account completion mode.");
+var c05CompletionEnabled = string.Equals(c05CompletionMode, "true", StringComparison.Ordinal);
+if (c05CompletionEnabled)
+{
+    if (!c05RegistrationEnabled)
+        throw new InvalidOperationException("Local account completion requires C05 registration storage.");
+    builder.Services.AddLocalRegistrationCompletion(
+        Environment.GetEnvironmentVariable("CRECISOL_C05_IDENTITY_DSN"),
+        trustedHosts.Where(host => host.EndsWith(".example.test", StringComparison.OrdinalIgnoreCase))
+            .ToArray());
+}
+
+var operationalMode = Environment.GetEnvironmentVariable("CRECISOL_C05_LOCAL_IDENTITY_ENABLED");
+if (operationalMode is not (null or "true" or "false"))
+    throw new InvalidOperationException("Invalid operational identity mode.");
+var operationalIdentityEnabled = operationalMode == "true";
+if (operationalIdentityEnabled)
+{
+    if (!c05CompletionEnabled)
+        throw new InvalidOperationException("Operational identity requires isolated account completion.");
+    builder.Services.AddLocalOperationalIdentity(Environment.GetEnvironmentVariable("CRECISOL_C05_IDENTITY_DSN")!);
+}
 
 var app = builder.Build();
 
@@ -63,6 +98,15 @@ app.MapGet("/api/v1/public/branding/platform", HandlePublishedBrand)
     .AllowAnonymous()
     .WithName("ReadPublishedPlatformBrand");
 
+if (c05RegistrationEnabled)
+    app.MapNeutralRegistrationIntent();
+if (c05RegistrationEnabled && !c05CompletionEnabled)
+    app.MapOperationalRegistrationProofConfirmation();
+if (c05CompletionEnabled)
+    app.MapOperationalRegistrationCompletion();
+if (operationalIdentityEnabled)
+    app.MapLocalOperationalIdentity();
+
 app.Run();
 
 static async Task<IResult> HandlePublishedBrand(
@@ -90,3 +134,4 @@ static async Task<IResult> HandlePublishedBrand(
         return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
     }
 }
+

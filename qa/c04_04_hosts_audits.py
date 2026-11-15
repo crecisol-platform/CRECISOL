@@ -195,8 +195,14 @@ def audit_b() -> None:
                 count += 1
             else:
                 raise AssertionError("Guard accepted mutation: " + kind + ": " + marker)
-    require(not any("ITrustedVerifiedHostCatalog" in f.read_text(encoding="utf-8")
-                    for f in (ROOT / "backend/src/Crecisol.Infrastructure").rglob("*.cs")),
+    adapters = {f.relative_to(ROOT).as_posix()
+                for f in (ROOT / "backend/src/Crecisol.Infrastructure").rglob("*.cs")
+                if "ITrustedVerifiedHostCatalog" in f.read_text(encoding="utf-8")}
+    # The C04 baseline had no catalogue adapter. C05 now has one explicit
+    # product-schema reader, exercised against verified/false hosts in E2E.
+    expected = {"backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalRegistration.cs"}
+    c05 = (ROOT / "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs").is_file()
+    require(adapters == (expected if c05 else set()),
             "Unreviewed live host catalogue adapter created in Infrastructure")
     print(f"PASS C04-04 B: {count} adversarial source guard mutations rejected; "
           "direct Host only, no X-Forwarded-*, no ambiguous/cross-tenant hints")

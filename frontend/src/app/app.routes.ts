@@ -2,6 +2,12 @@ import type { Routes } from '@angular/router';
 
 export const appRoutes: Routes = [
   {
+    path: 'cuenta',
+    pathMatch: 'full',
+    loadComponent: () => import('./pages/identity-portal.component')
+      .then(module => module.IdentityPortalComponent)
+  },
+  {
     path: '',
     pathMatch: 'full',
     loadComponent: () => import('./pages/platform-home.component')
@@ -36,3 +42,4 @@ export const appRoutes: Routes = [
       .then(module => module.NotFoundComponent)
   }
 ];
+

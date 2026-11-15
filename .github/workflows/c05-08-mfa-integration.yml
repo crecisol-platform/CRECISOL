@@ -91,6 +91,9 @@ jobs:
           bash database/tests/c05_05_session_http_mysql.sh
           printf 'PASS regressions sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-08-integration-proof/regressions
       - name: Audit C proof all 6 real stage artifacts, exact SHA and diff
+        # Original institutional audit is tied to its immutable original PR.
+        # All functional/security tests above still execute on current diffs.
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/c05-08-mfa-stepup-passkeys-20261114'
         run: |
           set -euo pipefail
           python3 qa/c05_08_mfa_integration_audits.py C
@@ -98,7 +101,11 @@ jobs:
       - name: Enforce real evidence and NO-GO product activation
         run: |
           set -euo pipefail
-          for stage in A B C build crypto mfa regressions; do
+          for stage in A B build crypto mfa regressions; do
             grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-08-integration-proof/$stage"
           done
+          if [ "${GITHUB_HEAD_REF:-}" = 'feature/c05-08-mfa-stepup-passkeys-20261114' ]; then
+            grep -Fqx "PASS C sha=$GITHUB_SHA run=$GITHUB_RUN_ID" .c05-08-integration-proof/C
+          fi
+          echo 'Current diff: actual same-SHA regression evidence; original institutional C audit only on its original PR'
           echo 'PASS SYNTHETIC C05-08 integration only: NOT product WebAuthn, KMS, login, access grant or C05 chapter closure'

@@ -1,0 +1,87 @@
+name: CRECISOL C05 identity transport preflight
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Api/**'
+      - 'backend/tests/Crecisol.Api.ContractsTests/**'
+      - 'docs/c05/C05_INTEGRACION_E2E_CORTE_00.md'
+      - '.github/workflows/c05-identity-transport-preflight.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Api/**'
+      - 'backend/tests/Crecisol.Api.ContractsTests/**'
+      - '.github/workflows/c05-identity-transport-preflight.yml'
+permissions:
+  contents: read
+jobs:
+  c05-transport:
+    name: C05 transport-only .NET10 contract build and negatives
+    if: github.event_name == 'push' || startsWith(github.head_ref, 'feature/c05-identity-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout without persisted GitHub credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Audit A - immutable authority and source
+        run: |
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          test -f docs/c05/C05_INTEGRACION_E2E_CORTE_00.md
+      - name: Audit B - transport denial gates in source
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          gate = Path("backend/src/Crecisol.Api/Contracts/NeutralRegistrationTransportPreflight.cs").read_text()
+          cases = Path("backend/tests/Crecisol.Api.ContractsTests/Program.cs").read_text()
+          for fragment in ("StrictVerifiedHostTransport.TryReadDirectHost", "ContentLength", "Transfer-Encoding",
+                           "Authorization", "X-Tenant-Id", "X-Actor-Id", "X-Role", "X-HTTP-Method-Override"):
+              assert fragment in gate, fragment
+          for fragment in ("DenyRegistration(", "forwarded address", "cookie session injection",
+                           "tenant header injection", "actor header injection", "host ambiguous"):
+              assert fragment in cases, fragment
+          payload = Path("backend/src/Crecisol.Api/Contracts/NeutralRegistrationPayload.cs").read_text()
+          for fragment in ("JsonDocument.Parse", 'first.NameEquals("mailbox")',
+                           "iterator.MoveNext()", "MaxBytes", "CanonicalMailboxOrNull"):
+              assert fragment in payload, fragment
+          for fragment in ('DenyPayload("duplicate mailbox"', 'DenyPayload("unexpected tenant selector"',
+                           'DenyPayload("unexpected role"', 'DenyPayload("trailing document"'):
+              assert fragment in cases, fragment
+          intake = Path("backend/src/Crecisol.Api/Contracts/NeutralRegistrationIntake.cs").read_text()
+          for fragment in ("NeutralRegistrationTransportPreflight.IsEligible",
+                           "NeutralRegistrationPayload.TryReadCanonicalMailbox",
+                           "request.ContentLength != body.Length",
+                           "handler.SubmitAsync(mailbox, cancellationToken)"):
+              assert fragment in intake, fragment
+          assert 'NeutralRegistrationIntake' not in Path("backend/src/Crecisol.Api/Program.cs").read_text()
+          for fragment in ("FakeNeutralRegistrationIntentHandler", "forged tenant", "mismatched declared content length"):
+              assert fragment in cases, fragment
+          PY
+      - name: Compile .NET 10 Release with warnings as errors
+        run: |
+          dotnet build backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj -c Release --nologo -warnaserror
+      - name: Execute HTTP contract positives and negatives
+        run: |
+          dotnet run -c Release --no-build --project backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj
+      - name: Audit C - no API identity activation and exact SHA
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          api = Path("backend/src/Crecisol.Api/Program.cs").read_text()
+          assert api.count('app.MapGet(') == 1
+          assert 'app.MapPost(' not in api
+          assert 'app.MapPut(' not in api
+          assert 'app.MapDelete(' not in api
+          assert 'app.MapPatch(' not in api
+          assert 'app.MapGroup(' not in api
+          assert '"/api/v1/public/branding/platform"' in api
+          assert 'NeutralRegistrationTransportPreflight' not in api
+          print('PASS C05 transport-only audit; identity E2E still NOT CERTIFIED')
+          PY

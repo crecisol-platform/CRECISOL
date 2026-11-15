@@ -1,0 +1,103 @@
+name: C05 operational identity Angular API MySQL
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'database/migrations/**'
+      - 'database/operations/**'
+      - 'qa/c05_operational_flow_e2e.mjs'
+      - '.github/workflows/c05-operational-flow.yml'
+  push:
+    branches: [dev, feature/c05-identity-integration-gate-20261114]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'database/migrations/**'
+      - 'database/operations/**'
+      - 'qa/c05_operational_flow_e2e.mjs'
+      - '.github/workflows/c05-operational-flow.yml'
+permissions:
+  contents: read
+concurrency:
+  group: c05-operational-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  operational:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Canonical master unchanged
+        run: python3 qa/master_source_guard.py
+      - name: Compile product and independent loopback receiver
+        run: |
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release -warnaserror
+          dotnet build backend/tests/Crecisol.LoopbackSmtpReceiver/Crecisol.LoopbackSmtpReceiver.csproj -c Release -warnaserror
+      - name: Build Angular and install Chromium
+        run: |
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+          cd frontend
+          npx playwright install --with-deps chromium
+      - name: Real integrated functional security and UX checks
+        run: node qa/c05_operational_flow_e2e.mjs
+  regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Historical executable contracts C01 through C05
+        shell: bash
+        run: |
+          set -euo pipefail
+          for project in backend/tests/*.ContractsTests/*.csproj backend/tests/Crecisol.Branding.ApplicationTests/*.csproj backend/tests/Crecisol.Api.ModuleTests/*.csproj; do
+            case "$project" in
+              *Infrastructure.ContractsTests*|*Outbox.ContractsTests*) dotnet run -c Release --project "$project" -- contracts ;;
+              *) dotnet run -c Release --project "$project" ;;
+            esac
+          done
+      - name: C04 MySQL and C05 original persisted identity regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r project; do
+            dotnet build "$project" -c Release -warnaserror
+          done < <(find backend/tests -name '*.csproj' -type f | sort)
+          for script in \
+            c04_02_application_schema_smoke.sh c04_02_backend_reader_smoke.sh c04_02_shared_integrity_smoke.sh \
+            c04_07_idempotency_smoke.sh c04_08_lifecycle_smoke.sh c04_09_migration_smoke.sh \
+            c04_10_isolation_smoke.sh c04_11_offensive_sql.sh \
+            c05_02_invitation_atomic_smoke.sh c05_02_dotnet_mysql_adapter_smoke.sh \
+            c05_02_issuer_scope_mysql_smoke.sh c05_02_bound_claim_mysql_smoke.sh \
+            c05_02_mailbox_proof_mysql_smoke.sh c05_02_signed_recipient_mysql_smoke.sh \
+            c05_02_neutral_registration_http_mysql.sh c05_02_mailbox_bound_mysql_smoke.sh \
+            c05_02_independent_receiver_mysql_smoke.sh c05_02_proof_outbox_mysql_smoke.sh \
+            c05_02_privacy_retention_mysql.sh c05_05_session_http_mysql.sh c05_06_recovery_http_mysql.sh \
+            c05_07_mailbox_http_mysql.sh c05_08_mfa_http_mysql.sh c05_09_private_profiles_http_mysql.sh \
+            c05_10_rate_limit_http_mysql.sh; do
+            bash "database/tests/$script"
+          done
+      - name: Public Angular Chromium regression
+        run: |
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run build --prefix frontend
+          cd frontend
+          npx playwright install --with-deps chromium
+          npx playwright test tests/c01-05.public-brand.spec.ts tests/c01-06.official-integration.spec.ts tests/c01-08.brand-revision.spec.ts tests/c02-03.public-information.spec.ts tests/c02-04.private-paths.spec.ts tests/c02-05.interaction-states.spec.ts tests/c02-07.mobile-accessibility.spec.ts tests/c02-08.journeys-public.spec.ts --reporter=line

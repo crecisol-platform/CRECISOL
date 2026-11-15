@@ -1,0 +1,286 @@
+name: CRECISOL C05 integrated neutral HTTP MySQL8.4 A-B-C
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Api/Contracts/NeutralRegistration*.cs'
+      - 'backend/src/Crecisol.Api/Contracts/PrivateResourceHttpRead.cs'
+      - 'backend/tests/Crecisol.NeutralRegistration.IntegrationTests/**'
+      - 'database/tests/c05_identity_neutral_proof_http_mysql.sh'
+      - 'database/tests/fixtures/c05_02_verified_candidate_fixture.sql'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableVerifiedCredentialCandidateStore.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableNeutralProofDispatch.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMembershipActivation.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableApprovedLoginDirectory.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaBoundSessionLedger.cs'
+      - 'backend/src/Crecisol.Api/Contracts/VerifiedPrivateResourceHostCatalog.cs'
+      - 'backend/src/Crecisol.Api/Modules/Identity/PrivateResourceReadModule.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/ReadMfaAuthorizedPrivateResource.cs'
+      - 'backend/src/Crecisol.Infrastructure/Tenancy/MySqlDisposableMfaPrivateResourceStore.cs'
+      - 'database/tests/fixtures/c05_05_private_resource_authorization_fixture.sql'
+      - 'backend/src/Crecisol.Application/Identity/DisposableMfaBoundSessionIssuance.cs'
+      - 'backend/src/Crecisol.Application/Identity/ActivateMembershipWithMfaApprover.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaMembershipApprovalStore.cs'
+      - 'database/tests/fixtures/c05_02_mfa_operator_approval_fixture.sql'
+      - 'database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql'
+      - 'database/tests/fixtures/c05_02_membership_approval_fixture.sql'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableEmailPossessionAdapter.cs'
+      - 'docs/c05/C05_REGISTRO_Y_PRUEBA_BUZON_UNIFICADOS.md'
+      - 'database/tests/fixtures/c05_02_neutral_dispatch_fixture.sql'
+      - 'docs/c05/C05_INTEGRACION_REAL_BARRERAS_Y_EVIDENCIA.md'
+      - 'docs/c05/C05_REGISTRO_Y_PRUEBA_BUZON_UNIFICADOS.md'
+      - '.github/workflows/c05-identity-neutral-mysql.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Api/Contracts/NeutralRegistration*.cs'
+      - 'backend/src/Crecisol.Api/Contracts/PrivateResourceHttpRead.cs'
+      - 'backend/tests/Crecisol.NeutralRegistration.IntegrationTests/**'
+      - 'database/tests/c05_identity_neutral_proof_http_mysql.sh'
+      - 'database/tests/fixtures/c05_02_verified_candidate_fixture.sql'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableVerifiedCredentialCandidateStore.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableNeutralProofDispatch.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMembershipActivation.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableApprovedLoginDirectory.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaBoundSessionLedger.cs'
+      - 'backend/src/Crecisol.Api/Contracts/VerifiedPrivateResourceHostCatalog.cs'
+      - 'backend/src/Crecisol.Api/Modules/Identity/PrivateResourceReadModule.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/ReadMfaAuthorizedPrivateResource.cs'
+      - 'backend/src/Crecisol.Infrastructure/Tenancy/MySqlDisposableMfaPrivateResourceStore.cs'
+      - 'database/tests/fixtures/c05_05_private_resource_authorization_fixture.sql'
+      - 'backend/src/Crecisol.Application/Identity/DisposableMfaBoundSessionIssuance.cs'
+      - 'backend/src/Crecisol.Application/Identity/ActivateMembershipWithMfaApprover.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaMembershipApprovalStore.cs'
+      - 'database/tests/fixtures/c05_02_mfa_operator_approval_fixture.sql'
+      - 'database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql'
+      - 'database/tests/fixtures/c05_02_membership_approval_fixture.sql'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableEmailPossessionAdapter.cs'
+      - 'docs/c05/C05_REGISTRO_Y_PRUEBA_BUZON_UNIFICADOS.md'
+      - 'database/tests/fixtures/c05_02_neutral_dispatch_fixture.sql'
+      - '.github/workflows/c05-identity-neutral-mysql.yml'
+permissions:
+  contents: read
+jobs:
+  neutral-http-mysql:
+    name: C05 real neutral registration HTTP to disposable MySQL8.4
+    if: github.event_name == 'push' || startsWith(github.head_ref, 'feature/c05-identity-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - name: Checkout exact head without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Record immutable tested SHA
+        run: echo "C05_TESTED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Audit A canonical source and fixture
+        run: |
+          set -euo pipefail
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          bash -n database/tests/c05_02_neutral_registration_http_mysql.sh
+          bash -n database/tests/c05_identity_neutral_proof_http_mysql.sh
+          test -f database/tests/fixtures/c05_02_verified_candidate_fixture.sql
+          test -f database/tests/fixtures/c05_02_neutral_dispatch_fixture.sql
+          test -f database/tests/fixtures/c05_02_membership_approval_fixture.sql
+          test -f database/tests/fixtures/c05_10_disposable_rate_limits.sql
+          test -f database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql
+          test -f database/tests/fixtures/c05_05_private_resource_authorization_fixture.sql
+          test -f database/tests/fixtures/c05_02_mfa_operator_approval_fixture.sql
+          printf "PASS A sha=%s run=%s\n" "$C05_TESTED_SHA" "$GITHUB_RUN_ID" > /tmp/c05-a
+      - name: Audit B deny forged tenant and actor before SQL
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          t=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/Program.cs").read_text()
+          api=Path("backend/src/Crecisol.Api/Program.cs").read_text()
+          for required in ("NeutralRegistrationIntake", "ReadExactlyAsync", "forged tenant A from B",
+                           "Adversarial intake requests do not write records in either tenant",
+                           "MySqlDisposableNeutralRegistrationRecorder",
+                           "One-time proof accepted only by B and MySQL CAS",
+                           "Case-folded login collision fails closed",
+                           "Twelve racing verified-proof enrollments",
+                           "Sixteen concurrent workers safely claim one opaque B intent",
+                           "Anonymous intent -> trusted outbox -> recipient link",
+                           "Expired SQL lease is reclaimed once"):
+              assert required in t, required
+          approval_runner=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalApprovedMembershipHarness.cs").read_text()
+          for required in ("Twelve racing independent approvals activate exactly one membership",
+                           "Real MySQL directory + Argon2id + unique host B",
+                           "Post-activation revocation immediately invalidates"):
+              assert required in approval_runner, required
+          candidate=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableVerifiedCredentialCandidateStore.cs").read_text()
+          schema=Path("database/tests/fixtures/c05_02_verified_candidate_fixture.sql").read_text()
+          assert "MySqlDisposableVerifiedCredentialCandidateStore" in candidate
+          assert "UNIQUE KEY uq_candidate_global_login" in schema
+          assert "PENDING_MEMBERSHIP" in schema
+          assert "c05_02_create_pending_candidate" in candidate
+          dispatch=Path("database/tests/fixtures/c05_02_neutral_dispatch_fixture.sql").read_text()
+          worker=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableNeutralProofDispatch.cs").read_text()
+          delivery=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableEmailPossessionAdapter.cs").read_text()
+          for marker in ("AFTER INSERT ON c05_02_neutral_intents",
+                         "FOR UPDATE SKIP LOCKED",
+                         "c05_02_dispatch_claim", "c05_02_dispatch_complete"):
+              assert marker in dispatch, marker
+          assert "MySqlDisposableNeutralProofDispatch" in worker
+          assert "ITrustedLocalProofLinkSink" in delivery
+          approval=Path("database/tests/fixtures/c05_02_membership_approval_fixture.sql").read_text()
+          login=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableApprovedLoginDirectory.cs").read_text()
+          activate=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMembershipActivation.cs").read_text()
+          for marker in ("c05_02_activate_approved_candidate",
+                         "expected_mfa_revision", "expected_session_revision",
+                         "PENDING_MEMBERSHIP", "candidate_actor_id<>approver_actor_id",
+                         "approved_memberships"):
+              assert marker in approval, marker
+          assert "ITrustedLoginCredentialDirectory" in login
+          assert "ITrustedLoginTenantLinkDirectory" in login
+          assert "MySqlDisposableMembershipActivation" in activate
+          admission=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalApprovedThrottledLoginHarness.cs").read_text()
+          for marker in ("ThrottledContextualPasswordAttempt",
+                         "MySqlDisposablePreAuthRateLimitLedger",
+                         "Twelve simultaneous unknown logins enter Argon2id exactly three times",
+                         "Disabled or unavailable SQL security policy always denies",
+                         "Preauth audit schema has no raw account"):
+              assert marker in admission, marker
+          mfa_approval_sql=Path("database/tests/fixtures/c05_02_mfa_operator_approval_fixture.sql").read_text()
+          mfa_approval_app=Path("backend/src/Crecisol.Application/Identity/ActivateMembershipWithMfaApprover.cs").read_text()
+          mfa_approval_adapter=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaMembershipApprovalStore.cs").read_text()
+          mfa_approval_tests=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalMfaApproverHarness.cs").read_text()
+          for marker in ("c05_02_activate_by_mfa_approver",
+                         "c05_05_disposable.c05_05_sessions",
+                         "c05_05_disposable.c05_05_mfa_session_bindings",
+                         "c05_02_mfa_approval_grants", "p_candidate=v_approver",
+                         "v_candidate_mail", "v_challenge_consumed",
+                         "v_grant_active<>1", "FOR UPDATE;", "ROLLBACK"):
+              assert marker in mfa_approval_sql, marker
+          assert "tokens.TryDigest" in mfa_approval_app
+          assert "MySqlDisposableMfaMembershipApprovalStore" in mfa_approval_adapter
+          for marker in ("Twelve concurrent MFA-bound approver activations",
+                         "Valid MFA session without backend memberships.approve grant",
+                         "Explicitly suspended backend approver permission",
+                         "Backend grant revocation immediately blocks",
+                         "MFA approval EXECUTE-only worker cannot SELECT"):
+              assert marker in mfa_approval_tests, marker
+          mfa_sql=Path("database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql").read_text()
+          mfa_runner=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalMfaBoundSessionHarness.cs").read_text()
+          mfa_adapter=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaBoundSessionLedger.cs").read_text()
+          mfa_case=Path("backend/src/Crecisol.Application/Identity/DisposableMfaBoundSessionIssuance.cs").read_text()
+          runner=Path("database/tests/c05_identity_neutral_proof_http_mysql.sh").read_text()
+          for marker in ("c05_05_issue_after_mfa_once",
+                         "v_kind<>'STEPUP'", "v_challenge_state<>'CONSUMED'",
+                         "uq_c05_05_mfa_op", "v_mail_ch<>v_mail_rev",
+                         "v_cs<>v_sub"):
+              assert marker in mfa_sql, marker
+          for marker in ("Twelve racing MFA-bound session issues yield exactly one",
+                         "Actual cryptographic TOTP step-up",
+                         "Twelve racing refreshes rotate only one opaque",
+                         "Revoked membership/revision change blocks",
+                         "Legacy password-only"):
+              assert marker.lower() in mfa_runner.lower(), marker
+          assert "TryIssueAfterCommittedStepUpAsync" in mfa_adapter
+          assert "ITrustedMfaBoundSessionLedger" in mfa_case
+          # Shell escapes backticks in the root SQL string. Inspect the
+          # normalized SQL literal, NOT a mismatched raw shell spelling.
+          grants=runner.replace(chr(92)+chr(96),chr(96))
+          assert "GRANT EXECUTE ON PROCEDURE `$DB`.c05_02_activate_by_mfa_approver" in grants
+          assert "GRANT SELECT ON `$DB`.c05_02_mfa_approval_grants" not in grants
+          assert "GRANT EXECUTE ON PROCEDURE `$MFA_DB`.c05_05_issue_once" not in grants
+          assert "GRANT EXECUTE ON PROCEDURE `$MFA_DB`.c05_05_issue_after_mfa_once" in grants
+          assert "GRANT EXECUTE ON PROCEDURE `$MFA_DB`.c05_05_read_private_resource" in grants
+          private_sql=Path("database/tests/fixtures/c05_05_private_resource_authorization_fixture.sql").read_text()
+          private_app=Path("backend/src/Crecisol.Application/Tenancy/ReadMfaAuthorizedPrivateResource.cs").read_text()
+          private_adapter=Path("backend/src/Crecisol.Infrastructure/Tenancy/MySqlDisposableMfaPrivateResourceStore.cs").read_text()
+          private_tests=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalMfaPrivateResourceHarness.cs").read_text()
+          for marker in ("c05_05_read_private_resource",
+                         "c05_05_mfa_session_bindings", "v_session_rev",
+                         "v_scope='OWNER' AND v_owner<>v_actor",
+                         "action_key=p_action", "r.tenant_id=p_tenant",
+                         "session_id=v_sid", "v_factor_state<>'ACTIVE'",
+                         "v_challenge_state<>'CONSUMED'", "FOR SHARE;"):
+              assert marker in private_sql, marker
+          assert "ITrustedMfaScopedPrivateResourceStore" in private_app
+          assert "backendOwnedRouteAction" in private_app
+          assert "MySqlDisposableMfaPrivateResourceStore" in private_adapter
+          http_tests=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalMfaPrivateHttpHarness.cs").read_text()
+          canonical_host=Path("backend/src/Crecisol.Api/Contracts/VerifiedPrivateResourceHostCatalog.cs").read_text()
+          assert "ResolveVerifiedTenantHost" in canonical_host
+          assert "CanonicalTenantHost.Parse" in canonical_host
+          private_module=Path("backend/src/Crecisol.Api/Modules/Identity/PrivateResourceReadModule.cs").read_text()
+          assert "/api/v1/private/cases/{resourceId}" in private_module
+          assert "GetRequiredService<PrivateResourceHttpRead>()" in private_module
+          assert "MapMfaVerifiedPrivateResourceRead()" in http_tests
+          assert "MapMfaVerifiedPrivateResourceRead" not in api
+          assert "FixedTestHostCatalog" not in http_tests
+          http_boundary=Path("backend/src/Crecisol.Api/Contracts/PrivateResourceHttpRead.cs").read_text()
+          for marker in ("ITrustedPrivateResourceHostCatalog", "ReadMfaAuthorizedPrivateResource",
+                         "request.Headers.ContainsKey(\"Forwarded\")", "request.Headers.ContainsKey(\"Cookie\")",
+                         "request.Headers.Keys.Any", "Results.NotFound()", "no-store"):
+              assert marker in http_boundary, marker
+          for marker in ("Real loopback HTTP GET + MySQL permits only owned B1 resource after MFA",
+                         "HTTP denies foreign tenant, actor owner, branch and resource identifiers",
+                         "HTTP fails closed on untrusted header", "Unknown direct Host cannot select any tenant",
+                         "Query tenant selector is rejected", "Ambiguous Authorization header", "Ambiguous duplicate backend catalog bindings",
+                         "Noncanonical trailing-dot Host"):
+              assert marker in http_tests, marker
+          for marker in ("Twelve concurrent private reads deny after scoped grant revocation",
+                         "Branch B1 grant does not authorize",
+                         "Valid cases.read permission never grants cases.update",
+                         "MFA-bound tenant B session cannot read known private resource ID in A",
+                         "EXECUTE-only MFA/resource worker cannot bypass authorization",
+                         "Revoked MFA factor immediately denies SQL and HTTP private resource reads"):
+              assert marker in private_tests, marker
+          assert "GRANT SELECT ON `$MFA_DB`.c05_05_private_resources" not in grants
+          assert "NeutralRegistrationIntake" not in api
+          assert "PrivateResourceHttpRead" not in api
+          assert "VerifyNeutralRegistrationMailbox" not in api
+          assert "app.MapPost(" not in api and "app.MapGroup(" not in api
+          PY
+          printf "PASS B sha=%s run=%s\n" "$C05_TESTED_SHA" "$GITHUB_RUN_ID" > /tmp/c05-b
+      - name: Install official .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build API and MySQL integration runner strict Release
+        run: |
+          set -euo pipefail
+          dotnet build backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.NeutralRegistration.IntegrationTests/Crecisol.NeutralRegistration.IntegrationTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.EmailPossession.MySqlTests/Crecisol.EmailPossession.MySqlTests.csproj -c Release --nologo -warnaserror
+      - name: Run strict HTTP and JSON contract tests
+        run: dotnet run --no-build -c Release --project backend/tests/Crecisol.Api.ContractsTests/Crecisol.Api.ContractsTests.csproj
+      - name: Real disposable loopback HTTP and MySQL8.4
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_02_neutral_registration_http_mysql.sh
+          printf "PASS mysql sha=%s run=%s\n" "$C05_TESTED_SHA" "$GITHUB_RUN_ID" > /tmp/c05-mysql
+      - name: Historical C05-02 independent mailbox proof A-B and MySQL8.4 regression
+        run: |
+          set -euo pipefail
+          python3 qa/c05_02_mailbox_proof_audits.py A
+          python3 qa/c05_02_mailbox_proof_audits.py B
+          bash database/tests/c05_02_mailbox_proof_mysql_smoke.sh
+          printf "PASS independentproof sha=%s run=%s\n" "$C05_TESTED_SHA" "$GITHUB_RUN_ID" > /tmp/c05-independentproof
+      - name: Same-process neutral registration and one-time mailbox proof MySQL8.4
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_identity_neutral_proof_http_mysql.sh
+          printf "PASS proof sha=%s run=%s\n" "$C05_TESTED_SHA" "$GITHUB_RUN_ID" > /tmp/c05-proof
+      - name: Audit C same-SHA evidence and private routes remain absent
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$C05_TESTED_SHA"
+          for stage in A B mysql independentproof proof; do
+            grep -Fqx "PASS $stage sha=$C05_TESTED_SHA run=$GITHUB_RUN_ID" "/tmp/c05-${stage,,}"
+          done
+          python3 - <<'PY'
+          from pathlib import Path
+          api=Path("backend/src/Crecisol.Api/Program.cs").read_text()
+          assert api.count('app.MapGet(')==1
+          assert 'app.MapPost(' not in api and 'app.MapGroup(' not in api
+          assert 'NeutralRegistrationIntake' not in api
+          original=Path(".github/workflows/c05-02-mailbox-proof.yml").read_text()
+          assert "github.head_ref == 'feature/c05-02-independent-email-proof-20261113'" in original
+          PY
+          echo 'PASS C05 synthetic MFA session + atomic backend resource authorization and A/B tenant/branch/owner negatives; operational private API/E2E NO-GO'

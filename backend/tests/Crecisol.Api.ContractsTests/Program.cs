@@ -120,3 +120,166 @@ catch (ArgumentNullException) { nullRequestRejected = true; }
 Check(nullRequestRejected, "Validator requires a real request");
 
 Console.WriteLine($"PASS C03-05: {assertions} executable DTO/JSON/HTTP validation assertions.");
+
+
+ 
+// C05: a future anonymous registration-intent transport is bounded and
+// explicitly NOT an account/tenant authority or an enabled API endpoint.
+HttpRequest RegistrationRequest()
+{
+    var context = new DefaultHttpContext();
+    context.Request.Method = "POST";
+    context.Request.Headers.Host = "tenant.example.com";
+    context.Request.ContentType = "application/json";
+    context.Request.ContentLength = 64;
+    return context.Request;
+}
+Check(NeutralRegistrationTransportPreflight.IsEligible(RegistrationRequest()),
+    "C05 direct-host bounded neutral registration preflight");
+void DenyRegistration(string label, Action<HttpRequest> attack)
+{
+    var request = RegistrationRequest();
+    attack(request);
+    Check(!NeutralRegistrationTransportPreflight.IsEligible(request), "C05 " + label);
+}
+DenyRegistration("GET forbidden", r => r.Method = "GET");
+DenyRegistration("PUT forbidden", r => r.Method = "PUT");
+DenyRegistration("query cannot select tenant", r => r.QueryString = new QueryString("?tenant=1"));
+DenyRegistration("unbounded body", r => r.ContentLength = 4097);
+DenyRegistration("empty body", r => r.ContentLength = 0);
+DenyRegistration("missing bounded body", r => r.ContentLength = null);
+DenyRegistration("text media", r => r.ContentType = "text/plain");
+DenyRegistration("JSON media suffix", r => r.ContentType = "application/json-extra");
+DenyRegistration("host absent", r => r.Headers.Remove("Host"));
+DenyRegistration("host ambiguous", r => r.Headers.Host = new Microsoft.Extensions.Primitives.StringValues(new[] { "tenant.example.com", "other.example.com" }));
+DenyRegistration("forwarded host", r => r.Headers["X-Forwarded-Host"] = "attacker.example");
+DenyRegistration("forwarded address", r => r.Headers["X-Forwarded-For"] = "198.51.100.4");
+DenyRegistration("RFC forwarded", r => r.Headers["Forwarded"] = "host=attacker.example");
+DenyRegistration("authorization injection", r => r.Headers["Authorization"] = "Bearer forged");
+DenyRegistration("cookie session injection", r => r.Headers["Cookie"] = "sid=forged");
+DenyRegistration("tenant header injection", r => r.Headers["X-Tenant-Id"] = "42");
+DenyRegistration("actor header injection", r => r.Headers["X-Actor-Id"] = "spoof");
+DenyRegistration("role header injection", r => r.Headers["X-Role"] = "SuperAdmin");
+DenyRegistration("method override", r => r.Headers["X-HTTP-Method-Override"] = "GET");
+DenyRegistration("original method override", r => r.Headers["X-Original-Method"] = "GET");
+DenyRegistration("transfer encoding rejected", r => r.Headers["Transfer-Encoding"] = "chunked");
+var missingRegistrationRequestRejected = false;
+try { _ = NeutralRegistrationTransportPreflight.IsEligible(null!); }
+catch (ArgumentNullException) { missingRegistrationRequestRejected = true; }
+Check(missingRegistrationRequestRejected, "C05 preflight rejects null request");
+Console.WriteLine("PASS C05 preflight: 23 new registration HTTP assertions (not E2E certification).");
+
+
+// C05 payload schema gate: no implicit claim, tenant, grant or account creation.
+bool ParseRegistrationPayload(string json, out string? canonical) =>
+    NeutralRegistrationPayload.TryReadCanonicalMailbox(
+        System.Text.Encoding.UTF8.GetBytes(json), out canonical);
+
+Check(ParseRegistrationPayload("{\"mailbox\":\"Case.Sensitive@EXAMPLE.COM\"}", out var canonicalMailbox) &&
+      canonicalMailbox == "Case.Sensitive@example.com",
+    "C05 payload accepts one mailbox with domain-only normalization");
+void DenyPayload(string description, string json)
+{
+    Check(!ParseRegistrationPayload(json, out var canonical) && canonical is null,
+        "C05 payload rejected: " + description);
+}
+DenyPayload("empty object", "{}");
+DenyPayload("null envelope", "null");
+DenyPayload("array envelope", "[]");
+DenyPayload("string envelope", "\"attacker@example.com\"");
+DenyPayload("missing mailbox", "{\"email\":\"person@example.com\"}");
+DenyPayload("unexpected tenant selector", "{\"mailbox\":\"person@example.com\",\"tenantId\":1}");
+DenyPayload("unexpected role", "{\"mailbox\":\"person@example.com\",\"role\":\"admin\"}");
+DenyPayload("unexpected password", "{\"mailbox\":\"person@example.com\",\"password\":\"hidden\"}");
+DenyPayload("duplicate mailbox", "{\"mailbox\":\"person@example.com\",\"mailbox\":\"other@example.com\"}");
+DenyPayload("case variant property", "{\"Mailbox\":\"person@example.com\"}");
+DenyPayload("array mailbox", "{\"mailbox\":[\"person@example.com\"]}");
+DenyPayload("null mailbox", "{\"mailbox\":null}");
+DenyPayload("invalid mailbox", "{\"mailbox\":\"invalid\"}");
+DenyPayload("trailing comma", "{\"mailbox\":\"person@example.com\",}");
+DenyPayload("JSON comment", "{/* ignored */\"mailbox\":\"person@example.com\"}");
+DenyPayload("nested authority", "{\"mailbox\":{\"tenant\":\"person@example.com\"}}");
+DenyPayload("trailing document", "{\"mailbox\":\"person@example.com\"}{}");
+Check(!NeutralRegistrationPayload.TryReadCanonicalMailbox(
+          new byte[NeutralRegistrationPayload.MaxBytes + 1], out var oversizedMailbox) &&
+      oversizedMailbox is null, "C05 payload refuses oversized UTF8 input");
+Check(!NeutralRegistrationPayload.TryReadCanonicalMailbox(
+          new byte[] { 0xFF, 0xFE }, out var invalidUtf8Mailbox) &&
+      invalidUtf8Mailbox is null, "C05 payload refuses malformed UTF8");
+Check(!NeutralRegistrationPayload.TryReadCanonicalMailbox(
+          ReadOnlyMemory<byte>.Empty, out var missingPayloadMailbox) &&
+      missingPayloadMailbox is null, "C05 payload refuses missing body");
+Console.WriteLine("PASS C05 payload: 21 additional isolated JSON assertions; no identity activation.");
+
+
+// C05: end-to-end WITHIN THE IN-PROCESS NEUTRAL INTAKE ONLY.
+// No SMTP, MySQL, authentication, session, tenant grant or HTTP route.
+var captured = new FakeNeutralRegistrationIntentHandler();
+var intake = new NeutralRegistrationIntake(captured);
+async Task<NeutralRegistrationIntakeOutcome> IntakeJsonAsync(
+    string json, Action<HttpRequest>? alter = null,
+    CancellationToken cancellationToken = default)
+{
+    var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+    var request = RegistrationRequest();
+    request.ContentLength = bytes.Length;
+    alter?.Invoke(request);
+    return await intake.SubmitAsync(request, bytes, cancellationToken);
+}
+var acceptedIntake = await IntakeJsonAsync("{\"mailbox\":\"Human@Example.COM\"}");
+Check(acceptedIntake == NeutralRegistrationIntakeOutcome.Acknowledged &&
+      captured.Count == 1 && captured.LastMailbox == "Human@example.com",
+    "C05 neutral intake invokes the existing application port once for canonical input");
+
+async Task DenyIntakeAsync(string name, string json, Action<HttpRequest>? alter = null)
+{
+    var countBefore = captured.Count;
+    var denied = await IntakeJsonAsync(json, alter);
+    Check(denied == NeutralRegistrationIntakeOutcome.Denied &&
+          captured.Count == countBefore, "C05 intake fails before application port: " + name);
+}
+await DenyIntakeAsync("forged tenant", "{\"mailbox\":\"human@example.com\",\"tenantId\":\"B\"}");
+await DenyIntakeAsync("duplicated mailbox", "{\"mailbox\":\"a@example.com\",\"mailbox\":\"b@example.com\"}");
+await DenyIntakeAsync("forged role", "{\"mailbox\":\"human@example.com\",\"role\":\"owner\"}");
+await DenyIntakeAsync("forwarded source", "{\"mailbox\":\"human@example.com\"}",
+    request => request.Headers["X-Forwarded-For"] = "198.51.100.99");
+await DenyIntakeAsync("forged actor", "{\"mailbox\":\"human@example.com\"}",
+    request => request.Headers["X-Actor-Id"] = "forged");
+await DenyIntakeAsync("mismatched declared content length", "{\"mailbox\":\"human@example.com\"}",
+    request => request.ContentLength = 1);
+await DenyIntakeAsync("missing declared content length", "{\"mailbox\":\"human@example.com\"}",
+    request => request.ContentLength = null);
+await DenyIntakeAsync("wrong method", "{\"mailbox\":\"human@example.com\"}",
+    request => request.Method = "PUT");
+await DenyIntakeAsync("bad JSON", "{\"mailbox\":");
+await DenyIntakeAsync("mailbox syntax rejected", "{\"mailbox\":\"invalid\"}");
+
+var cancellation = new CancellationTokenSource();
+cancellation.Cancel();
+var canceledWithoutCall = false;
+try { await IntakeJsonAsync("{\"mailbox\":\"human@example.com\"}",
+        cancellationToken: cancellation.Token); }
+catch (OperationCanceledException) { canceledWithoutCall = true; }
+Check(canceledWithoutCall && captured.Count == 1,
+    "C05 canceled request cannot trigger the application port");
+
+var missingHandlerRejected = false;
+try { _ = new NeutralRegistrationIntake(null!); }
+catch (ArgumentNullException) { missingHandlerRejected = true; }
+Check(missingHandlerRejected, "C05 missing registration port denied at construction");
+Check(!Enum.IsDefined((NeutralRegistrationIntakeOutcome)2),
+    "C05 intake cannot classify unknown values as acceptance");
+Console.WriteLine("PASS C05 intake: 14 composition assertions; NOT a complete auth flow.");
+
+sealed class FakeNeutralRegistrationIntentHandler : INeutralRegistrationIntentHandler
+{
+    public int Count { get; private set; }
+    public string? LastMailbox { get; private set; }
+    public Task SubmitAsync(string canonicalMailbox, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        Count++;
+        LastMailbox = canonicalMailbox;
+        return Task.CompletedTask;
+    }
+}
