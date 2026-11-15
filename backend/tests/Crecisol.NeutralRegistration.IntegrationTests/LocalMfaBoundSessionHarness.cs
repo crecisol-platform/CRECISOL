@@ -174,6 +174,9 @@ internal static class LocalMfaBoundSessionHarness
              !await scoped.ValidateAsync(bearer,trustedA,ct),
              "MFA session is one-use, valid only on trusted Host B, never on tenant A");
 
+        var privateAccess=await LocalMfaPrivateResourceHarness.VerifyAsync(
+            db,sessionWorkerDsn,protector,bearer,approved.ActorId,
+            trustedB,trustedA,pass,ct);
         var rotated=await Task.WhenAll(Enumerable.Range(0,12).Select(_=>
             Task.Run(()=>scoped.RotateAsync(bearer,trustedB,CancellationToken.None))));
         var newTokens=rotated.Where(x=>x is not null).ToArray();
@@ -183,10 +186,17 @@ internal static class LocalMfaBoundSessionHarness
                  newTokens[0]!.RevealForTrustedTransport(),trustedB,ct),
              "Twelve racing refreshes rotate only one opaque HMAC bearer; old token is invalid");
         var current=newTokens[0]!.RevealForTrustedTransport();
+        pass(await privateAccess.DeniesAsync(bearer,trustedB,ct) &&
+             (await privateAccess.Reader.ExecuteAsync(
+                 current,trustedB,privateAccess.OwnResource,ct)).ExternalKey==
+                 "synthetic-b-owner-case",
+             "Old rotated bearer cannot read B resource; new MFA-bound bearer retains exact scoped access");
         pass(await scoped.LogoutAsync(current,trustedB,ct) &&
              !await scoped.ValidateAsync(current,trustedB,ct) &&
              !await scoped.LogoutAsync(current,trustedB,ct),
              "Protected logout revokes real MySQL session immediately and cannot replay");
+        pass(await privateAccess.DeniesAsync(current,trustedB,ct),
+             "Protected logout invalidates subsequent private resource reads");
 
         var inaccessible=false;
         await using(var runner=new MySqlConnection(sessionWorkerDsn))
