@@ -60,6 +60,7 @@ jobs:
           test -f database/tests/fixtures/c05_02_verified_candidate_fixture.sql
           test -f database/tests/fixtures/c05_02_neutral_dispatch_fixture.sql
           test -f database/tests/fixtures/c05_02_membership_approval_fixture.sql
+          test -f database/tests/fixtures/c05_10_disposable_rate_limits.sql
           printf "PASS A sha=%s run=%s\n" "$C05_TESTED_SHA" "$GITHUB_RUN_ID" > /tmp/c05-a
       - name: Audit B deny forged tenant and actor before SQL
         run: |
@@ -109,6 +110,13 @@ jobs:
           assert "ITrustedLoginCredentialDirectory" in login
           assert "ITrustedLoginTenantLinkDirectory" in login
           assert "MySqlDisposableMembershipActivation" in activate
+          admission=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalApprovedThrottledLoginHarness.cs").read_text()
+          for marker in ("ThrottledContextualPasswordAttempt",
+                         "MySqlDisposablePreAuthRateLimitLedger",
+                         "Twelve simultaneous unknown logins enter Argon2id exactly three times",
+                         "Disabled or unavailable SQL security policy always denies",
+                         "Preauth audit schema has no raw account"):
+              assert marker in admission, marker
           assert "NeutralRegistrationIntake" not in api
           assert "VerifyNeutralRegistrationMailbox" not in api
           assert "app.MapPost(" not in api and "app.MapGroup(" not in api
@@ -159,4 +167,4 @@ jobs:
           original=Path(".github/workflows/c05-02-mailbox-proof.yml").read_text()
           assert "github.head_ref == 'feature/c05-02-independent-email-proof-20261113'" in original
           PY
-          echo 'PASS C05 isolated registration/proof/pending PHC with synthetic independently approved membership and contextual Argon2id preparation; NOT public auth/MFA/session E2E'
+          echo 'PASS C05 protected proof + synthetic approved membership + MySQL preauth CAS before Argon2id; no public MFA or session E2E'
