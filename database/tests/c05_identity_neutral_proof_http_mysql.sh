@@ -8,12 +8,13 @@ DB="c05_02_disposable"
 ROOT_PASSWORD="$(openssl rand -hex 24)"
 INGEST_PASSWORD="$(openssl rand -hex 24)"
 PROOF_PASSWORD="$(openssl rand -hex 24)"
+CANDIDATE_PASSWORD="$(openssl rand -hex 24)"
 ADMIN_PASSWORD="$(openssl rand -hex 24)"
 MASTER_HEX="$(openssl rand -hex 32)"
 cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 if [ -n "${GITHUB_ACTIONS:-}" ]; then
-  for value in "$ROOT_PASSWORD" "$INGEST_PASSWORD" "$PROOF_PASSWORD" "$ADMIN_PASSWORD" "$MASTER_HEX"; do
+  for value in "$ROOT_PASSWORD" "$INGEST_PASSWORD" "$PROOF_PASSWORD" "$CANDIDATE_PASSWORD" "$ADMIN_PASSWORD" "$MASTER_HEX"; do
     echo "::add-mask::$value"
   done
 fi
@@ -44,18 +45,24 @@ esac
 for path in \
   database/tests/fixtures/c05_02_invitation_atomic_fixture.sql \
   database/tests/fixtures/c05_02_neutral_registration_fixture.sql \
-  database/tests/fixtures/c05_02_mailbox_proof_atomic_fixture.sql; do
+  database/tests/fixtures/c05_02_mailbox_proof_atomic_fixture.sql \
+  database/tests/fixtures/c05_02_verified_candidate_fixture.sql; do
   docker exec -e MYSQL_PWD="$ROOT_PASSWORD" -i "$NAME" \
     mysql -uroot -D "$DB" < "$path"
 done
 root_sql "CREATE USER 'c05_02_proof_ingest'@'%' IDENTIFIED BY '$INGEST_PASSWORD';
  CREATE USER 'c05_02_proof_limited'@'%' IDENTIFIED BY '$PROOF_PASSWORD';
  CREATE USER 'c05_02_proof_setup'@'%' IDENTIFIED BY '$ADMIN_PASSWORD';
+ CREATE USER 'c05_02_candidate_limited'@'%' IDENTIFIED BY '$CANDIDATE_PASSWORD';
  GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_record_registration_intent TO 'c05_02_proof_ingest'@'%';
  GRANT SELECT ON \`$DB\`.c05_02_neutral_intents TO 'c05_02_proof_limited'@'%';
  GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_mailbox_proof_issue TO 'c05_02_proof_limited'@'%';
  GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_mailbox_proof_verify TO 'c05_02_proof_limited'@'%';
  GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_mailbox_proof_revoke TO 'c05_02_proof_limited'@'%';
+ GRANT SELECT (tenant_id,intent_id,nonce,tag,ciphertext,key_version,mailbox_digest,expires_at_utc)
+   ON \`$DB\`.c05_02_neutral_intents TO 'c05_02_candidate_limited'@'%';
+ GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_create_pending_candidate
+   TO 'c05_02_candidate_limited'@'%';
  GRANT SELECT ON \`$DB\`.* TO 'c05_02_proof_setup'@'%';
  GRANT INSERT, UPDATE ON \`$DB\`.c05_02_tenants TO 'c05_02_proof_setup'@'%';
  GRANT UPDATE ON \`$DB\`.c05_02_mailbox_proofs TO 'c05_02_proof_setup'@'%';
@@ -74,7 +81,8 @@ export CRECISOL_C05_02_NEUTRAL_TEST_DSN="$CRECISOL_C05_02_PROOF_INGEST_DSN"
 export CRECISOL_C05_02_NEUTRAL_ADMIN_DSN="$CRECISOL_C05_02_PROOF_SETUP_DSN"
 export CRECISOL_C05_02_NEUTRAL_MASTER_HEX="$CRECISOL_C05_02_PROOF_MASTER_HEX"
 export CRECISOL_C05_PROOF_TEST_DSN="$CRECISOL_C05_02_PROOF_TEST_DSN"
+export CRECISOL_C05_CANDIDATE_DSN="Server=127.0.0.1;Port=$port;Database=$DB;User ID=c05_02_candidate_limited;Password=$CANDIDATE_PASSWORD;Pooling=false"
 dotnet run --no-build -c Release \
   --project backend/tests/Crecisol.NeutralRegistration.IntegrationTests/Crecisol.NeutralRegistration.IntegrationTests.csproj \
   -- --integration
-echo 'PASS C05 integrated neutral registration and one-time local mailbox proof via real disposable MySQL8.4; NO account/credential/session/grant'
+echo 'PASS C05 local proof + Argon2id pending credential candidate (NO active account, membership, MFA or session)'
