@@ -40,6 +40,8 @@ var candidateDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_CANDIDATE_DS
 var dispatchDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_DISPATCH_DSN");
 var activationDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_ACTIVATION_DSN");
 var directoryDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_DIRECTORY_DSN");
+var rateSetupDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_RATE_SETUP_DSN");
+var rateRunnerDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_RATE_RUNNER_DSN");
 var key = Convert.FromHexString(keyHex);
 if (key.Length != 32)
     throw new InvalidOperationException("Invalid server-owned C05-02 test key.");
@@ -661,11 +663,14 @@ if (integratedProof is not null)
         }
         Pass(directReadDenied, "Pending candidate DB role cannot SELECT credential verifiers");
         if (string.IsNullOrWhiteSpace(activationDsn) ||
-            string.IsNullOrWhiteSpace(directoryDsn))
+            string.IsNullOrWhiteSpace(directoryDsn) ||
+            string.IsNullOrWhiteSpace(rateSetupDsn) ||
+            string.IsNullOrWhiteSpace(rateRunnerDsn))
             throw new InvalidOperationException(
                 "Integrated C05 candidate requires a separate approved-membership and login-directory fixture.");
         await LocalApprovedMembershipHarness.VerifyAsync(
-            admin, activationDsn, directoryDsn, key, password, proofIntent,
+            admin, activationDsn, directoryDsn, rateSetupDsn, rateRunnerDsn,
+            key, password, proofIntent,
             directory, directory, new SystemUtcClock(), Pass, CancellationToken.None);
 
         async Task<Guid> LatestBIntentAsync()
