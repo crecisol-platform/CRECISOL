@@ -1,0 +1,11 @@
+-- Rollback for 001_c05_identity_operational.sql.
+-- Destructive: only run against the isolated environment after exporting any
+-- required audit evidence and confirming all identity traffic is disabled.
+DROP TRIGGER IF EXISTS c05_identity_audit_no_delete;
+DROP TRIGGER IF EXISTS c05_identity_audit_no_update;
+DROP TABLE IF EXISTS c05_identity_audit;
+DROP TABLE IF EXISTS c05_identity_session;
+DROP TABLE IF EXISTS c05_identity_mfa_factor;
+DROP TABLE IF EXISTS c05_identity_membership;
+DROP TABLE IF EXISTS c05_identity_account;
+
