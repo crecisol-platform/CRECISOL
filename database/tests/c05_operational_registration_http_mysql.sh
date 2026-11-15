@@ -197,6 +197,27 @@ for pid in "${pids[@]}"; do wait "$pid"; done
 same 'concurrent peer quota admits exactly eight' 8 "$(root_sql "SELECT admitted_count FROM c05_identity_registration_quota WHERE tenant_id=UNHEX('00000000000000000000000000000004')")"
 same 'concurrent peer writes exactly eight intents' 8 "$(root_sql "SELECT COUNT(*) FROM c05_identity_registration_intent WHERE tenant_id=UNHEX('00000000000000000000000000000004')")"
 
-echo 'PASS C05 product API registration/proof .NET10 HTTP + MySQL8.4: verified host, A/B, pending-host denial, neutral receipts, local test-sink decrypt, wrong proof, cross-tenant denial, consume/replay, fifth-attempt revocation, expiry, encrypted outbox, least privilege, atomic quota, forged forwarding denial'
+# Actual browser -> Angular same-origin proxy -> Kestrel -> disposable MySQL.
+# The test worker decrypts only the synthetic proof from the isolated DB.
+curl -sS -o /dev/null -X POST "http://127.0.0.1:$api_port/api/v1/identity/registration-intents" \
+  -H 'Host: tenant-a.example.test' -H 'Content-Type: application/json' \
+  --data-binary '{"mailbox":"angular-e2e@example.test"}'
+angular_proof_payload="$(root_sql "SELECT CONCAT(HEX(o.tenant_id),'|',HEX(o.proof_id),'|',HEX(p.proof_token_hmac),'|',HEX(o.payload_nonce),'|',HEX(o.payload_tag),'|',HEX(o.payload_ciphertext),'|',o.key_version) FROM c05_identity_mailbox_outbox o JOIN c05_identity_mailbox_proof p USING (tenant_id,proof_id) WHERE o.tenant_id=UNHEX('00000000000000000000000000000001') ORDER BY o.created_at_utc DESC LIMIT 1" \
+  | OUTBOX_KEY="$OUTBOX_KEY" node -e '
+const crypto=require("node:crypto");let text="";process.stdin.setEncoding("utf8");process.stdin.on("data",x=>text+=x).on("end",()=>{
+const [tenant,proof,digest,nonce,tag,ciphertext,version]=text.trim().split("|");const id=proof.toLowerCase();
+const key=Buffer.from(process.env.OUTBOX_KEY,"hex");const revision=Buffer.alloc(4);revision.writeInt32BE(Number(version));
+const aad=Buffer.concat([Buffer.from("CRECISOL/C05/registration-proof-outbox/v1\0","ascii"),Buffer.from(tenant,"hex"),Buffer.from(id,"hex"),revision,Buffer.from(digest,"hex")]);
+const d=crypto.createDecipheriv("aes-256-gcm",key,Buffer.from(nonce,"hex"));d.setAAD(aad);d.setAuthTag(Buffer.from(tag,"hex"));
+const code=Buffer.concat([d.update(Buffer.from(ciphertext,"hex")),d.final()]).toString("hex");
+process.stdout.write(`${id.slice(0,8)}-${id.slice(8,12)}-${id.slice(12,16)}-${id.slice(16,20)}-${id.slice(20)}|${code}`);
+})')"
+IFS='|' read -r angular_proof_id angular_proof_code <<< "$angular_proof_payload"
+(cd "$ROOT/frontend" && C05_PROOF_ID="$angular_proof_id" C05_PROOF_CODE="$angular_proof_code" \
+  npx playwright test --config=playwright.c05-operational.config.ts \
+    tests/c05-registration-proof.spec.ts --grep 'real proof against the disposable API and MySQL')
+same 'Angular/API/MySQL proof journey consumed once' 1 "$(root_sql "SELECT proof_state FROM c05_identity_mailbox_proof WHERE tenant_id=UNHEX('00000000000000000000000000000001') AND proof_id=UNHEX(REPLACE('$angular_proof_id','-',''))")"
+
+echo 'PASS C05 real registration path: Angular browser/proxy -> .NET10 API -> MySQL8.4; verified host, tenant isolation, synthetic mailbox proof, replay/lockout/expiry, least DB privilege and atomic quota'
 
 

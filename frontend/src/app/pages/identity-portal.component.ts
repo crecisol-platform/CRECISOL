@@ -33,6 +33,20 @@ import { IdentityApiService } from '../identity/identity-api.service';
             <button type="submit" [disabled]="busy()">{{ busy() ? 'Enviando…' : 'Enviar solicitud' }}</button>
           </form>
         </section>
+        <section aria-labelledby="confirm-heading">
+          <h2 id="confirm-heading">Confirmar correo</h2>
+          <p>Ingresa el identificador y el código de confirmación recibidos. La respuesta no revela si el código es válido.</p>
+          <form (submit)="confirmRegistration($event)">
+            <label for="proof-id">Identificador de confirmación</label>
+            <input id="proof-id" name="proofId" type="text" autocomplete="off"
+              required maxlength="36" pattern="[0-9a-fA-F-]{36}">
+            <label for="proof-code">Código de confirmación</label>
+            <input id="proof-code" name="proofCode" type="text" inputmode="text"
+              autocomplete="one-time-code" required minlength="64" maxlength="64"
+              pattern="[0-9a-fA-F]{64}">
+            <button type="submit" [disabled]="busy()">{{ busy() ? 'Verificando…' : 'Confirmar correo' }}</button>
+          </form>
+        </section>
       }
       @if (identity.state() === 'challenge') {
         <section aria-labelledby="mfa-heading">
@@ -98,6 +112,18 @@ export class IdentityPortalComponent {
       await this.identity.requestRegistration(mailbox);
       form.reset();
       this.message.set('Solicitud recibida. Esto todavía no crea una cuenta ni concede acceso.');
+    });
+  }
+
+  async confirmRegistration(event: Event): Promise<void> {
+    event.preventDefault();
+    await this.run(async () => {
+      const form = event.currentTarget as HTMLFormElement;
+      const values = new FormData(form);
+      await this.identity.confirmRegistrationProof(
+        String(values.get('proofId') ?? ''), String(values.get('proofCode') ?? ''));
+      form.reset();
+      this.message.set('Solicitud recibida. Esto no crea una cuenta ni concede acceso.');
     });
   }
 

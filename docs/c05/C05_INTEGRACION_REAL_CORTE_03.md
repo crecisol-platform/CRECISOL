@@ -12,19 +12,22 @@
 - Una confirmación válida consume la prueba una sola vez e invalida la entrega pendiente. Confirmaciones inválidas no enumeran buzones, pruebas ni tenants. La prueba de buzón no crea cuenta, aprobación, membresía o sesión.
 - Se extendieron las pruebas HTTP/MySQL y de migración para cubrir la nueva tabla, permisos mínimos, persistencia conjunta y rollback 002→001.
 - El rol de API solo ejecuta procedimientos `SQL SECURITY DEFINER` para staging y consumo; no puede leer ni insertar directamente el outbox. El procedimiento de staging valida dentro de la misma transacción que la intención pendiente existe y que su tenant y digest de buzón coinciden.
+- Angular `/cuenta` incorpora el formulario accesible por teclado para confirmar una prueba y un cliente same-origin que solo envía `proofId` y código hexadecimal acotados. Se añadió una configuración Playwright aislada con proxy local al API de pruebas.
 
 ## Evidencia ejecutada en este corte
 
 - `dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release -warnaserror`: **PASS**, 0 advertencias, 0 errores.
 - `database/tests/c05_operational_identity_migration_smoke.sh` con MySQL 8.4 descartable: **PASS**, migraciones 001/002, constraints existentes y rollback 002/001.
 - `database/tests/c05_operational_registration_http_mysql.sh` con API .NET 10 y MySQL 8.4: **PASS** para solicitudes A/B, tenant no verificado, Host reenviado, cuota y concurrencia; además prueba decrypt controlado del outbox, digest incorrecto, intento cross-tenant, confirmación válida, replay y denegación de SELECT/INSERT directos al usuario de API.
+- El mismo script ejecuta Chromium por la ruta real **Angular → proxy same-origin → Kestrel/.NET 10 → MySQL 8.4 descartable**: confirma un proof creado en esa DB y verifica en SQL que se consumió. El código de prueba solo se descifra en memoria por el sink local sintético; el navegador lo introduce como si fuera poseedor del buzón.
+- Antes del test real: `npm run check:types` PASS, `npm run build` PASS, y `tests/c05-registration-proof.spec.ts` con **2/2 PASS** usando respuestas HTTP sintéticas. El caso adicional con API/MySQL reales pasó **1/1** desde el script integrado.
 - El arnés de prueba local recupera el payload cifrado desde el MySQL descartable (no desde HTTP), lo descifra solo en memoria para simular la posesión del buzón y ejecuta confirmación incorrecta, intento desde tenant B, confirmación correcta, replay, bloqueo al quinto fallo y vencimiento. Se verifica respuesta neutral, contador exacto de cinco, aislamiento, consumo de una sola vez y revocación del outbox. El usuario SQL de API no puede leer ni escribir directamente el outbox. Esto prueba el ledger/API con un sink sintético; **no entrega correo real ni implementa el worker de entrega**.
 
 ## Auditoría A/B/C y estado
 
-- **A — Funcional/trazabilidad:** PASS parcial para registrar intención y prueba ligada al mismo tenant y consumirla una vez mediante el endpoint HTTP; pendiente entrega y continuación a cuenta pendiente.
+- **A — Funcional/trazabilidad:** PASS parcial para registrar intención y proof y consumirlo una vez mediante Angular/API/MySQL; pendiente entrega de correo y continuación a cuenta pendiente.
 - **B — Seguridad:** PASS parcial para aislamiento por Host validado, respuesta neutral, digest erróneo, replay, cruce de tenant, quinto intento, expiración, permisos mínimos, límite transaccional y persistencia cifrada; pendientes límites/temporalidad anti-enumeración y auditoría sobre el recorrido de cuenta/autenticación.
-- **C — Arquitectura/QA/UX:** PASS parcial para compilación API y migración reversible; pendiente canal de entrega del correo, interfaz Angular de confirmación, recorrido Angular→API→MySQL y pruebas de accesibilidad.
+- **C — Arquitectura/QA/UX:** PASS parcial para builds API/Angular, migración reversible y recorrido de confirmación Angular→API→MySQL con sink de pruebas; pendiente canal de entrega del correo, accesibilidad auditada y E2E del resto de identidad.
 
 Siguen sin implementación operativa aprobación administrativa auditada, credenciales/login, MFA, sesiones, recuperación, cambios sensibles, recursos privados con autorización y cierre integral de Angular. Los fixtures de pruebas existentes no sustituyen estos adaptadores. COM-T08/T09/T10 y proveedores externos siguen **NO EJECUTADOS**.
 

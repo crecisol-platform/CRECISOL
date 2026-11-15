@@ -31,6 +31,15 @@ export class IdentityApiService {
     }).pipe(timeout({ first: 8000 })));
   }
 
+  async confirmRegistrationProof(proofId: string, code: string): Promise<void> {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(proofId) ||
+        !/^[0-9a-f]{64}$/i.test(code))
+      throw new Error('identity_unavailable');
+    await firstValueFrom(this.http.post<NeutralReceipt>(`${API}/registration-proofs/confirm`, {
+      proofId, code
+    }).pipe(timeout({ first: 8000 })));
+  }
+
   async beginLogin(mailbox: string, password: string): Promise<void> {
     let receipt: LoginReceipt;
     try {
