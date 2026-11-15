@@ -23,6 +23,18 @@ public interface ITrustedLocalProofMailboxSink
 }
 
 /// <summary>
+/// Optional local harness extension: only the trusted mailbox sink may see the
+/// (tenant,intent,code) link. The anonymous registration receipt stays neutral.
+/// This is NOT a production SMTP or browser transport contract.
+/// </summary>
+public interface ITrustedLocalProofLinkSink : ITrustedLocalProofMailboxSink
+{
+    Task DeliverLinkInTestOnlyAsync(
+        TenantId tenant, Guid intent, string canonicalMailbox,
+        ReadOnlyMemory<byte> capability, CancellationToken cancellationToken);
+}
+
+/// <summary>
 /// C05-02 disposable integration of independent proof ledger and encrypted
 /// destination lookup. Only local, isolated fixture DB is permitted.
 /// There is NO production API/DI or real SMTP binding.
@@ -200,8 +212,12 @@ public sealed class MySqlDisposableEmailPossessionAdapter :
             if (storedMailbox != RequestNeutralRegistrationIntent.CanonicalMailboxOrNull(
                     storedMailbox))
                 throw new InvalidOperationException("Invalid trusted delivery mailbox.");
-            await sink.DeliverInTestOnlyAsync(
-                storedMailbox, secret, cancellationToken);
+            if (sink is ITrustedLocalProofLinkSink linkSink)
+                await linkSink.DeliverLinkInTestOnlyAsync(
+                    tenant, intentId, storedMailbox, secret, cancellationToken);
+            else
+                await sink.DeliverInTestOnlyAsync(
+                    storedMailbox, secret, cancellationToken);
         }
         finally
         {
