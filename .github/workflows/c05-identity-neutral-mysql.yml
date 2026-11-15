@@ -11,6 +11,9 @@ on:
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableNeutralProofDispatch.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMembershipActivation.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableApprovedLoginDirectory.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaBoundSessionLedger.cs'
+      - 'backend/src/Crecisol.Application/Identity/DisposableMfaBoundSessionIssuance.cs'
+      - 'database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql'
       - 'database/tests/fixtures/c05_02_membership_approval_fixture.sql'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableEmailPossessionAdapter.cs'
       - 'docs/c05/C05_REGISTRO_Y_PRUEBA_BUZON_UNIFICADOS.md'
@@ -29,6 +32,9 @@ on:
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableNeutralProofDispatch.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMembershipActivation.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableApprovedLoginDirectory.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaBoundSessionLedger.cs'
+      - 'backend/src/Crecisol.Application/Identity/DisposableMfaBoundSessionIssuance.cs'
+      - 'database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql'
       - 'database/tests/fixtures/c05_02_membership_approval_fixture.sql'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableEmailPossessionAdapter.cs'
       - 'docs/c05/C05_REGISTRO_Y_PRUEBA_BUZON_UNIFICADOS.md'
@@ -61,6 +67,7 @@ jobs:
           test -f database/tests/fixtures/c05_02_neutral_dispatch_fixture.sql
           test -f database/tests/fixtures/c05_02_membership_approval_fixture.sql
           test -f database/tests/fixtures/c05_10_disposable_rate_limits.sql
+          test -f database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql
           printf "PASS A sha=%s run=%s\n" "$C05_TESTED_SHA" "$GITHUB_RUN_ID" > /tmp/c05-a
       - name: Audit B deny forged tenant and actor before SQL
         run: |
@@ -117,6 +124,26 @@ jobs:
                          "Disabled or unavailable SQL security policy always denies",
                          "Preauth audit schema has no raw account"):
               assert marker in admission, marker
+          mfa_sql=Path("database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql").read_text()
+          mfa_runner=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalMfaBoundSessionHarness.cs").read_text()
+          mfa_adapter=Path("backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaBoundSessionLedger.cs").read_text()
+          mfa_case=Path("backend/src/Crecisol.Application/Identity/DisposableMfaBoundSessionIssuance.cs").read_text()
+          runner=Path("database/tests/c05_identity_neutral_proof_http_mysql.sh").read_text()
+          for marker in ("c05_05_issue_after_mfa_once",
+                         "v_kind<>'STEPUP'", "v_challenge_state<>'CONSUMED'",
+                         "uq_c05_05_mfa_op", "v_mail_ch<>v_mail_rev",
+                         "v_cs<>v_sub"):
+              assert marker in mfa_sql, marker
+          for marker in ("Twelve racing MFA-bound session issues yield exactly one",
+                         "Actual cryptographic TOTP step-up",
+                         "Twelve racing refreshes rotate only one opaque",
+                         "Revoked membership/revision change blocks",
+                         "Legacy password-only"):
+              assert marker.lower() in mfa_runner.lower(), marker
+          assert "TryIssueAfterCommittedStepUpAsync" in mfa_adapter
+          assert "ITrustedMfaBoundSessionLedger" in mfa_case
+          assert "GRANT EXECUTE ON PROCEDURE `$MFA_DB`.c05_05_issue_once" not in runner
+          assert "GRANT EXECUTE ON PROCEDURE `$MFA_DB`.c05_05_issue_after_mfa_once" in runner
           assert "NeutralRegistrationIntake" not in api
           assert "VerifyNeutralRegistrationMailbox" not in api
           assert "app.MapPost(" not in api and "app.MapGroup(" not in api
@@ -167,4 +194,4 @@ jobs:
           original=Path(".github/workflows/c05-02-mailbox-proof.yml").read_text()
           assert "github.head_ref == 'feature/c05-02-independent-email-proof-20261113'" in original
           PY
-          echo 'PASS C05 protected proof + synthetic approved membership + MySQL preauth CAS before Argon2id; no public MFA or session E2E'
+          echo 'PASS C05 integrated synthetic TOTP challenge consumption with atomic revocable session CAS; production private E2E still NO-GO'
