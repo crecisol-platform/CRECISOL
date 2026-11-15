@@ -15,12 +15,15 @@ DIRECTORY_PASSWORD="$(openssl rand -hex 24)"
 RATE_RUNNER_PASSWORD="$(openssl rand -hex 24)"
 RATE_SETUP_PASSWORD="$(openssl rand -hex 24)"
 RATE_DB="c05_10_disposable"
+MFA_DB="c05_05_disposable"
+MFA_SETUP_PASSWORD="$(openssl rand -hex 24)"
+MFA_WORKER_PASSWORD="$(openssl rand -hex 24)"
 ADMIN_PASSWORD="$(openssl rand -hex 24)"
 MASTER_HEX="$(openssl rand -hex 32)"
 cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 if [ -n "${GITHUB_ACTIONS:-}" ]; then
-  for value in "$ROOT_PASSWORD" "$INGEST_PASSWORD" "$PROOF_PASSWORD" "$CANDIDATE_PASSWORD" "$DISPATCH_PASSWORD" "$ACTIVATION_PASSWORD" "$DIRECTORY_PASSWORD" "$RATE_RUNNER_PASSWORD" "$RATE_SETUP_PASSWORD" "$ADMIN_PASSWORD" "$MASTER_HEX"; do
+  for value in "$ROOT_PASSWORD" "$INGEST_PASSWORD" "$PROOF_PASSWORD" "$CANDIDATE_PASSWORD" "$DISPATCH_PASSWORD" "$ACTIVATION_PASSWORD" "$DIRECTORY_PASSWORD" "$RATE_RUNNER_PASSWORD" "$RATE_SETUP_PASSWORD" "$MFA_SETUP_PASSWORD" "$MFA_WORKER_PASSWORD" "$ADMIN_PASSWORD" "$MASTER_HEX"; do
     echo "::add-mask::$value"
   done
 fi
@@ -60,11 +63,39 @@ for path in \
 done
 # Independent physical schema keeps the C05-10 preauth budget separated
 # from the registration DB, while remaining on one disposable loopback server.
-root_sql "CREATE DATABASE \`$RATE_DB\`;"
+root_sql "CREATE DATABASE \`$RATE_DB\`; CREATE DATABASE \`$MFA_DB\`;"
 docker exec -e MYSQL_PWD="$ROOT_PASSWORD" -i "$NAME" \
   mysql -uroot -D "$RATE_DB" < database/tests/fixtures/c05_10_disposable_rate_limits.sql
+for path in \
+  database/tests/fixtures/c05_05_disposable_sessions.sql \
+  database/tests/fixtures/c05_06_disposable_recovery.sql \
+  database/tests/fixtures/c05_08_disposable_mfa.sql \
+  database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql; do
+  docker exec -e MYSQL_PWD="$ROOT_PASSWORD" -i "$NAME" \
+    mysql -uroot -D "$MFA_DB" < "$path"
+done
 root_sql "CREATE USER 'c05_10_integrated_runner'@'%' IDENTIFIED BY '$RATE_RUNNER_PASSWORD';
  CREATE USER 'c05_10_integrated_setup'@'%' IDENTIFIED BY '$RATE_SETUP_PASSWORD';
+ CREATE USER 'c05_05_mfa_setup'@'%' IDENTIFIED BY '$MFA_SETUP_PASSWORD';
+ CREATE USER 'c05_05_mfa_worker'@'%' IDENTIFIED BY '$MFA_WORKER_PASSWORD';
+ GRANT SELECT,INSERT,UPDATE ON \`$MFA_DB\`.*
+   TO 'c05_05_mfa_setup'@'%';
+ GRANT EXECUTE ON PROCEDURE \`$MFA_DB\`.c05_08_open_enrollment
+   TO 'c05_05_mfa_worker'@'%';
+ GRANT EXECUTE ON PROCEDURE \`$MFA_DB\`.c05_08_open_stepup
+   TO 'c05_05_mfa_worker'@'%';
+ GRANT EXECUTE ON PROCEDURE \`$MFA_DB\`.c05_08_commit_proof
+   TO 'c05_05_mfa_worker'@'%';
+ GRANT EXECUTE ON PROCEDURE \`$MFA_DB\`.c05_08_read_counter
+   TO 'c05_05_mfa_worker'@'%';
+ GRANT EXECUTE ON PROCEDURE \`$MFA_DB\`.c05_05_issue_after_mfa_once
+   TO 'c05_05_mfa_worker'@'%';
+ GRANT EXECUTE ON PROCEDURE \`$MFA_DB\`.c05_05_is_current
+   TO 'c05_05_mfa_worker'@'%';
+ GRANT EXECUTE ON PROCEDURE \`$MFA_DB\`.c05_05_rotate_once
+   TO 'c05_05_mfa_worker'@'%';
+ GRANT EXECUTE ON PROCEDURE \`$MFA_DB\`.c05_05_logout_once
+   TO 'c05_05_mfa_worker'@'%';
  GRANT EXECUTE ON PROCEDURE \`$RATE_DB\`.c05_10_admit_once
    TO 'c05_10_integrated_runner'@'%';
  GRANT EXECUTE ON PROCEDURE \`$RATE_DB\`.c05_10_complete_once
@@ -128,7 +159,9 @@ export CRECISOL_C05_ACTIVATION_DSN="Server=127.0.0.1;Port=$port;Database=$DB;Use
 export CRECISOL_C05_DIRECTORY_DSN="Server=127.0.0.1;Port=$port;Database=$DB;User ID=c05_02_login_directory;Password=$DIRECTORY_PASSWORD;Pooling=false"
 export CRECISOL_C05_RATE_SETUP_DSN="Server=127.0.0.1;Port=$port;Database=$RATE_DB;User ID=c05_10_integrated_setup;Password=$RATE_SETUP_PASSWORD;Pooling=false"
 export CRECISOL_C05_RATE_RUNNER_DSN="Server=127.0.0.1;Port=$port;Database=$RATE_DB;User ID=c05_10_integrated_runner;Password=$RATE_RUNNER_PASSWORD;Pooling=false"
+export CRECISOL_C05_MFA_SETUP_DSN="Server=127.0.0.1;Port=$port;Database=$MFA_DB;User ID=c05_05_mfa_setup;Password=$MFA_SETUP_PASSWORD;Pooling=false"
+export CRECISOL_C05_MFA_WORKER_DSN="Server=127.0.0.1;Port=$port;Database=$MFA_DB;User ID=c05_05_mfa_worker;Password=$MFA_WORKER_PASSWORD;Pooling=false"
 dotnet run --no-build -c Release \
   --project backend/tests/Crecisol.NeutralRegistration.IntegrationTests/Crecisol.NeutralRegistration.IntegrationTests.csproj \
   -- --integration
-echo 'PASS C05 isolated tenant approval + pre-Argon2id SQL rate budget + contextual login preparation; NO public login, real MFA or session'
+echo 'PASS C05 disposable registration -> approval -> preauth -> TOTP step-up -> atomic revocable session; NO production auth/Angular'
