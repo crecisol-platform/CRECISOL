@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Crecisol.Api.Contracts;
 using Crecisol.Infrastructure.Identity;
+using Crecisol.Domain.Tenancy;
 using Microsoft.AspNetCore.Http;
 
 namespace Crecisol.NeutralRegistration.IntegrationTests;
@@ -58,35 +59,90 @@ internal static class LocalProofHttp
     }
 }
 
-internal sealed class LocalProofMailbox : ITrustedLocalProofMailboxSink, IDisposable
+internal sealed class LocalProofMailbox : ITrustedLocalProofLinkSink, IDisposable
 {
-    private readonly Dictionary<string, byte[]> messages = new(StringComparer.Ordinal);
-    public int Delivered { get; private set; }
+    private readonly object gate = new();
+    private readonly Dictionary<string, (TenantId? Tenant, Guid Intent, byte[] Token)> messages =
+        new(StringComparer.Ordinal);
+    private int delivered;
+
+    public int Delivered { get { lock (gate) return delivered; } }
 
     public Task DeliverInTestOnlyAsync(
-        string mailbox, ReadOnlyMemory<byte> secret, CancellationToken token)
+        string mailbox, ReadOnlyMemory<byte> secret, CancellationToken ct) =>
+        StoreAsync(null, Guid.Empty, mailbox, secret, ct);
+
+    public Task DeliverLinkInTestOnlyAsync(
+        TenantId tenant, Guid intent, string mailbox,
+        ReadOnlyMemory<byte> secret, CancellationToken ct)
     {
-        token.ThrowIfCancellationRequested();
-        if (secret.Length != 32 || messages.ContainsKey(mailbox))
-            throw new InvalidOperationException("Duplicate or invalid test proof.");
-        messages.Add(mailbox, secret.ToArray());
-        Delivered++;
-        return Task.CompletedTask;
+        ArgumentNullException.ThrowIfNull(tenant);
+        if (intent == Guid.Empty)
+            throw new InvalidOperationException("Trusted local link must have an opaque intent.");
+        return StoreAsync(tenant, intent, mailbox, secret, ct);
     }
 
-    public bool Has(string mailbox) => messages.ContainsKey(mailbox);
-
-    public byte[] Take(string mailbox)
+    private Task StoreAsync(
+        TenantId? tenant, Guid intent, string mailbox,
+        ReadOnlyMemory<byte> secret, CancellationToken ct)
     {
-        if (!messages.Remove(mailbox, out var bytes))
-            throw new InvalidOperationException("Local test proof not available.");
-        return bytes;
+        ct.ThrowIfCancellationRequested();
+        if (secret.Length != 32 || string.IsNullOrEmpty(mailbox))
+            throw new InvalidOperationException("Invalid disposable proof delivery.");
+        var saved = secret.ToArray();
+        try
+        {
+            lock (gate)
+            {
+                if (messages.ContainsKey(mailbox))
+                    throw new InvalidOperationException("Duplicate local mailbox challenge.");
+                messages.Add(mailbox, (tenant, intent, saved));
+                delivered++;
+            }
+            return Task.CompletedTask;
+        }
+        catch
+        {
+            CryptographicOperations.ZeroMemory(saved);
+            throw;
+        }
+    }
+
+    public bool Has(string mailbox)
+    {
+        lock (gate) return messages.ContainsKey(mailbox);
+    }
+
+    public byte[] Take(string mailbox) => Remove(mailbox).Token;
+
+    public (TenantId Tenant, Guid Intent, byte[] Token) TakeLink(string mailbox)
+    {
+        var item = Remove(mailbox);
+        if (item.Tenant is null || item.Intent == Guid.Empty)
+        {
+            CryptographicOperations.ZeroMemory(item.Token);
+            throw new InvalidOperationException("Local proof was not delivered as a trusted link.");
+        }
+        return (item.Tenant, item.Intent, item.Token);
+    }
+
+    private (TenantId? Tenant, Guid Intent, byte[] Token) Remove(string mailbox)
+    {
+        lock (gate)
+        {
+            if (!messages.Remove(mailbox, out var item))
+                throw new InvalidOperationException("Proof unavailable in local mailbox.");
+            return item;
+        }
     }
 
     public void Dispose()
     {
-        foreach (var value in messages.Values)
-            CryptographicOperations.ZeroMemory(value);
-        messages.Clear();
+        lock (gate)
+        {
+            foreach (var item in messages.Values)
+                CryptographicOperations.ZeroMemory(item.Token);
+            messages.Clear();
+        }
     }
 }
