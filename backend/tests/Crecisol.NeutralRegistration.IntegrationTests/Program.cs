@@ -38,6 +38,8 @@ if (string.IsNullOrWhiteSpace(adminDsn) ||
 var integratedProofDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_PROOF_TEST_DSN");
 var candidateDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_CANDIDATE_DSN");
 var dispatchDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_DISPATCH_DSN");
+var activationDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_ACTIVATION_DSN");
+var directoryDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_DIRECTORY_DSN");
 var key = Convert.FromHexString(keyHex);
 if (key.Length != 32)
     throw new InvalidOperationException("Invalid server-owned C05-02 test key.");
@@ -658,6 +660,13 @@ if (integratedProof is not null)
             }
         }
         Pass(directReadDenied, "Pending candidate DB role cannot SELECT credential verifiers");
+        if (string.IsNullOrWhiteSpace(activationDsn) ||
+            string.IsNullOrWhiteSpace(directoryDsn))
+            throw new InvalidOperationException(
+                "Integrated C05 candidate requires a separate approved-membership and login-directory fixture.");
+        await LocalApprovedMembershipHarness.VerifyAsync(
+            admin, activationDsn, directoryDsn, key, password, proofIntent,
+            directory, directory, new SystemUtcClock(), Pass, CancellationToken.None);
 
         async Task<Guid> LatestBIntentAsync()
         {
