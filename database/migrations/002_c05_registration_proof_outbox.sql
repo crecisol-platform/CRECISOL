@@ -34,6 +34,44 @@ CREATE TABLE c05_identity_mailbox_outbox (
 ) ENGINE=InnoDB;
 
 DELIMITER $$
+CREATE PROCEDURE c05_operational_stage_mailbox_proof(
+    IN p_tenant BINARY(16), IN p_proof BINARY(16), IN p_mailbox BINARY(32),
+    IN p_proof_digest BINARY(32), IN p_outbox_cipher BINARY(32),
+    IN p_outbox_nonce BINARY(12),
+    IN p_outbox_tag BINARY(16), IN p_version INT UNSIGNED,
+    IN p_created DATETIME(6), IN p_proof_expires DATETIME(6),
+    IN p_outbox_expires DATETIME(6)
+)
+SQL SECURITY DEFINER
+BEGIN
+    IF p_proof_expires <= p_created OR p_outbox_expires <= p_created OR
+       p_proof_expires > p_created + INTERVAL 10 MINUTE OR
+       p_outbox_expires > p_created + INTERVAL 10 MINUTE OR p_version < 1 OR
+       NOT EXISTS (
+           SELECT 1 FROM c05_identity_registration_intent
+            WHERE tenant_id=p_tenant AND intent_id=p_proof
+              AND mailbox_hmac=p_mailbox AND state=0
+              AND expires_at_utc > p_created
+       ) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='invalid mailbox proof staging context';
+    END IF;
+
+    INSERT INTO c05_identity_mailbox_proof
+      (tenant_id,proof_id,mailbox_hmac,proof_token_hmac,mailbox_ciphertext,
+       mailbox_nonce,mailbox_tag,key_version,proof_state,created_at_utc,
+       expires_at_utc,consumed_at_utc)
+    SELECT p_tenant,p_proof,p_mailbox,p_proof_digest,mailbox_ciphertext,
+           mailbox_nonce,mailbox_tag,p_version,0,p_created,p_proof_expires,NULL
+      FROM c05_identity_registration_intent
+     WHERE tenant_id=p_tenant AND intent_id=p_proof AND mailbox_hmac=p_mailbox;
+
+    INSERT INTO c05_identity_mailbox_outbox
+      (tenant_id,proof_id,payload_ciphertext,payload_nonce,payload_tag,
+       key_version,delivery_state,attempts,created_at_utc,expires_at_utc)
+    VALUES (p_tenant,p_proof,p_outbox_cipher,p_outbox_nonce,p_outbox_tag,
+            p_version,0,0,p_created,p_outbox_expires);
+END$$
+
 CREATE PROCEDURE c05_operational_consume_mailbox_proof(
     IN p_tenant BINARY(16), IN p_proof BINARY(16), IN p_digest BINARY(32)
 )

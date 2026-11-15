@@ -238,44 +238,24 @@ public sealed class MySqlOperationalNeutralRegistrationRecorder :
                     insert.Parameters.Add("@expires", MySqlDbType.DateTime).Value = nowUtc.AddMinutes(30).UtcDateTime;
                     await insert.ExecuteNonQueryAsync(cancellationToken);
 
-                    await using (var proof = new MySqlCommand("""
-                        INSERT INTO c05_identity_mailbox_proof
-                          (tenant_id,proof_id,mailbox_hmac,proof_token_hmac,mailbox_ciphertext,
-                           mailbox_nonce,mailbox_tag,key_version,proof_state,created_at_utc,
-                           expires_at_utc,consumed_at_utc)
-                        VALUES (@tenant,@proof,@mailbox,@token,@cipher,@nonce,@tag,@version,0,
-                                @created,@expires,NULL)
-                        """, db, (MySqlTransaction)tx))
+                    await using (var proof = new MySqlCommand(
+                        "c05_operational_stage_mailbox_proof", db, (MySqlTransaction)tx)
                     {
-                        proof.Parameters.Add("@tenant", MySqlDbType.Binary).Value = tenant;
-                        proof.Parameters.Add("@proof", MySqlDbType.Binary).Value = MySqlRfc4122Guid.Encode(intentId);
-                        proof.Parameters.Add("@mailbox", MySqlDbType.Binary).Value = mailboxDigest;
-                        proof.Parameters.Add("@token", MySqlDbType.Binary).Value = proofDigest;
-                        proof.Parameters.Add("@cipher", MySqlDbType.VarBinary).Value = cipher;
-                        proof.Parameters.Add("@nonce", MySqlDbType.Binary).Value = nonce;
-                        proof.Parameters.Add("@tag", MySqlDbType.Binary).Value = tag;
-                        proof.Parameters.Add("@version", MySqlDbType.Int32).Value = keyVersion;
-                        proof.Parameters.Add("@created", MySqlDbType.DateTime).Value = nowUtc.UtcDateTime;
-                        proof.Parameters.Add("@expires", MySqlDbType.DateTime).Value = nowUtc.AddMinutes(10).UtcDateTime;
+                        CommandType = CommandType.StoredProcedure
+                    })
+                    {
+                        proof.Parameters.Add("p_tenant", MySqlDbType.Binary).Value = tenant;
+                        proof.Parameters.Add("p_proof", MySqlDbType.Binary).Value = MySqlRfc4122Guid.Encode(intentId);
+                        proof.Parameters.Add("p_mailbox", MySqlDbType.Binary).Value = mailboxDigest;
+                        proof.Parameters.Add("p_proof_digest", MySqlDbType.Binary).Value = proofDigest;
+                        proof.Parameters.Add("p_outbox_cipher", MySqlDbType.Binary).Value = outboxCipher;
+                        proof.Parameters.Add("p_outbox_nonce", MySqlDbType.Binary).Value = outboxNonce;
+                        proof.Parameters.Add("p_outbox_tag", MySqlDbType.Binary).Value = outboxTag;
+                        proof.Parameters.Add("p_version", MySqlDbType.Int32).Value = keyVersion;
+                        proof.Parameters.Add("p_created", MySqlDbType.DateTime).Value = nowUtc.UtcDateTime;
+                        proof.Parameters.Add("p_proof_expires", MySqlDbType.DateTime).Value = nowUtc.AddMinutes(10).UtcDateTime;
+                        proof.Parameters.Add("p_outbox_expires", MySqlDbType.DateTime).Value = nowUtc.AddMinutes(10).UtcDateTime;
                         await proof.ExecuteNonQueryAsync(cancellationToken);
-                    }
-
-                    await using (var outbox = new MySqlCommand("""
-                        INSERT INTO c05_identity_mailbox_outbox
-                          (tenant_id,proof_id,payload_ciphertext,payload_nonce,payload_tag,
-                           key_version,delivery_state,attempts,created_at_utc,expires_at_utc)
-                        VALUES (@tenant,@proof,@cipher,@nonce,@tag,@version,0,0,@created,@expires)
-                        """, db, (MySqlTransaction)tx))
-                    {
-                        outbox.Parameters.Add("@tenant", MySqlDbType.Binary).Value = tenant;
-                        outbox.Parameters.Add("@proof", MySqlDbType.Binary).Value = MySqlRfc4122Guid.Encode(intentId);
-                        outbox.Parameters.Add("@cipher", MySqlDbType.Binary).Value = outboxCipher;
-                        outbox.Parameters.Add("@nonce", MySqlDbType.Binary).Value = outboxNonce;
-                        outbox.Parameters.Add("@tag", MySqlDbType.Binary).Value = outboxTag;
-                        outbox.Parameters.Add("@version", MySqlDbType.Int32).Value = keyVersion;
-                        outbox.Parameters.Add("@created", MySqlDbType.DateTime).Value = nowUtc.UtcDateTime;
-                        outbox.Parameters.Add("@expires", MySqlDbType.DateTime).Value = nowUtc.AddMinutes(10).UtcDateTime;
-                        await outbox.ExecuteNonQueryAsync(cancellationToken);
                     }
                 }
             }

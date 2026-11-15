@@ -22,6 +22,7 @@ docker run --rm -d --name "$NAME" -p '127.0.0.1::3306' \
   -e "MYSQL_ROOT_PASSWORD=$ROOT_PASSWORD" -e MYSQL_DATABASE=crecisol_c05 "$IMAGE" >/dev/null
 port="$(docker port "$NAME" '3306/tcp' | sed 's/.*://')"
 root_sql() { docker exec -e "MYSQL_PWD=$ROOT_PASSWORD" "$NAME" mysql -uroot -D crecisol_c05 -N -B -e "$1"; }
+app_sql() { docker exec -e "MYSQL_PWD=$APP_PASSWORD" "$NAME" mysql -h127.0.0.1 -P3306 -uc05_app -D crecisol_c05 -N -B -e "$1"; }
 same() {
   local label="$1" expected="$2" actual="$3"
   [[ "$actual" == "$expected" ]] || { echo "FAIL $label expected=$expected actual=$actual" >&2; exit 1; }
@@ -53,8 +54,7 @@ GRANT SELECT ON crecisol_c05.c04_tenant_catalog TO 'c05_app'@'%';
 GRANT SELECT ON crecisol_c05.c04_verified_tenant_host TO 'c05_app'@'%';
 GRANT SELECT,INSERT,UPDATE ON crecisol_c05.c05_identity_registration_quota TO 'c05_app'@'%';
 GRANT INSERT ON crecisol_c05.c05_identity_registration_intent TO 'c05_app'@'%';
-GRANT INSERT ON crecisol_c05.c05_identity_mailbox_proof TO 'c05_app'@'%';
-GRANT INSERT ON crecisol_c05.c05_identity_mailbox_outbox TO 'c05_app'@'%';
+GRANT EXECUTE ON PROCEDURE crecisol_c05.c05_operational_stage_mailbox_proof TO 'c05_app'@'%';
 GRANT EXECUTE ON PROCEDURE crecisol_c05.c05_operational_consume_mailbox_proof TO 'c05_app'@'%';"
 
 dsn="Server=127.0.0.1;Port=$port;Database=crecisol_c05;User ID=c05_app;Password=$APP_PASSWORD;SslMode=None;"
@@ -84,6 +84,12 @@ same 'two initial tenant-scoped intents' 2 "$(root_sql 'SELECT COUNT(*) FROM c05
 same 'intent isolation A/B' 2 "$(root_sql 'SELECT COUNT(DISTINCT tenant_id) FROM c05_identity_registration_intent')"
 same 'ciphertext persisted' 2 "$(root_sql 'SELECT COUNT(*) FROM c05_identity_registration_intent WHERE OCTET_LENGTH(mailbox_ciphertext)>0 AND mailbox_hmac<>mailbox_ciphertext')"
 same 'operational proof/outbox atomically persisted' 2 "$(root_sql 'SELECT COUNT(*) FROM c05_identity_mailbox_proof p JOIN c05_identity_mailbox_outbox o USING (tenant_id,proof_id) WHERE p.proof_state=0 AND o.delivery_state=0 AND OCTET_LENGTH(o.payload_ciphertext)=32')"
+if app_sql 'SELECT COUNT(*) FROM c05_identity_mailbox_outbox' >/dev/null 2>&1; then
+  echo 'FAIL API DB role can read the mailbox proof outbox' >&2; exit 1
+fi
+if app_sql "INSERT INTO c05_identity_mailbox_outbox (tenant_id,proof_id,payload_ciphertext,payload_nonce,payload_tag,key_version,delivery_state,attempts,created_at_utc,expires_at_utc) VALUES (UNHEX(REPEAT('11',16)),UNHEX(REPEAT('22',16)),REPEAT(UNHEX('33'),32),REPEAT(UNHEX('44'),12),REPEAT(UNHEX('55'),16),1,0,0,UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)+INTERVAL 1 MINUTE)" >/dev/null 2>&1; then
+  echo 'FAIL API DB role can insert directly into the mailbox proof outbox' >&2; exit 1
+fi
 
 # Controlled local test sink: retrieve only the encrypted outbox row from the
 # disposable root connection, decrypt in process memory, and submit as the
@@ -143,13 +149,18 @@ for _ in $(seq 1 10); do
     --data-binary '{"mailbox":"person.two@example.test"}'
 done
 same 'atomic quota cap' 8 "$(root_sql 'SELECT MAX(admitted_count) FROM c05_identity_registration_quota')"
-same 'quota-limited intent count' 9 "$(root_sql 'SELECT COUNT(*) FROM c05_identity_registration_intent')"
+same 'quota-intents equal admitted reservations across time windows' \
+  "$(root_sql "SELECT COALESCE(SUM(admitted_count),0) FROM c05_identity_registration_quota WHERE tenant_id=UNHEX('00000000000000000000000000000001')")" \
+  "$(root_sql "SELECT COUNT(*) FROM c05_identity_registration_intent WHERE tenant_id=UNHEX('00000000000000000000000000000001')")"
 
+intent_count_before_forward="$(root_sql 'SELECT COUNT(*) FROM c05_identity_registration_intent')"
 forbidden="$(curl -sS -i -X POST "http://127.0.0.1:$api_port/api/v1/identity/registration-intents" \
   -H 'Host: tenant-a.example.test' -H 'X-Forwarded-Host: tenant-b.example.test' \
   -H 'Content-Type: application/json' --data-binary '{"mailbox":"other@example.test"}')"
 [[ "${forbidden%%$'\r\n'*}" == *'400'* ]]
-same 'forged forwarding header writes no intent' 9 "$(root_sql 'SELECT COUNT(*) FROM c05_identity_registration_intent')"
+same 'forged forwarding header writes no intent' \
+  "$intent_count_before_forward" \
+  "$(root_sql 'SELECT COUNT(*) FROM c05_identity_registration_intent')"
 
 pids=()
 for i in $(seq 1 24); do
@@ -162,7 +173,6 @@ for pid in "${pids[@]}"; do wait "$pid"; done
 same 'concurrent peer quota admits exactly eight' 8 "$(root_sql "SELECT admitted_count FROM c05_identity_registration_quota WHERE tenant_id=UNHEX('00000000000000000000000000000004')")"
 same 'concurrent peer writes exactly eight intents' 8 "$(root_sql "SELECT COUNT(*) FROM c05_identity_registration_intent WHERE tenant_id=UNHEX('00000000000000000000000000000004')")"
 
-echo 'PASS C05 product API registration/proof .NET10 HTTP + MySQL8.4: verified host, A/B, pending-host denial, neutral receipts, local test-sink decrypt, wrong proof, cross-tenant denial, one-time consume/replay, encrypted outbox, atomic quota, forged forwarding denial'
-
+echo 'PASS C05 product API registration/proof .NET10 HTTP + MySQL8.4: verified host, A/B, pending-host denial, neutral receipts, local test-sink decrypt, wrong proof, cross-tenant denial, one-time consume/replay, encrypted outbox, direct DB read/write denied, atomic quota, forged forwarding denial'
 
 
