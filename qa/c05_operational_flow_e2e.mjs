@@ -122,6 +122,17 @@ async function enrollLogin(mailbox) {
   confidential.push(...verified.data.recoveryCodes);
   return { seed, token: verified.data.sessionToken, challenge: login.data.challenge, backups: [...verified.data.recoveryCodes] };
 }
+async function browserSession(page) {
+  // Observe the bearer actually used by Angular, and the DOM codes shown once.
+  // Chromium can evict a response body before CDP Network.getResponseBody;
+  // request observation avoids that race without intercepting/mocking traffic.
+  const request = page.waitForRequest(r => r.url().endsWith('/sessions') && r.method() === 'POST');
+  const response = page.waitForResponse(r => r.url().endsWith('/sessions'));
+  await page.getByRole('button', { name: 'Consultar sesiones', exact: true }).click();
+  const token = (await request).headers()['authorization'].slice(7);
+  check((await response).status() === 200, 'Angular validates its actual bearer against the persistent session endpoint');
+  confidential.push(token); return token;
+}
 
 try {
   console.log('C05 isolated operational flow: starting');
@@ -217,10 +228,11 @@ try {
   await page.getByLabel('Código de tu aplicación de autenticación').fill(totp(seed, true));
   const verified = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
-  const receipt = await (await verified).json(); let token = receipt.sessionToken; confidential.push(token);
-  const backupCodes = [...receipt.recoveryCodes]; confidential.push(...backupCodes);
-  check(backupCodes.length === 10, 'MFA enrollment returns ten one-use backup codes once');
+  check((await verified).status() === 200, 'Angular MFA request accepted by the real backend');
   await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  const backupCodes = await page.getByLabel('Códigos de respaldo MFA').locator('code').allTextContents(); confidential.push(...backupCodes);
+  check(backupCodes.length === 10, 'MFA enrollment returns ten one-use backup codes once');
+  let token = await browserSession(page);
   check(Boolean(token), 'Angular password -> enrollment -> TOTP -> authenticated session');
   const axe = await new AxeBuilder({ page }).analyze();
   check(axe.violations.filter(v => ['critical', 'serious'].includes(v.impact)).length === 0, 'authenticated Angular accessibility has no serious/critical axe findings');
@@ -304,7 +316,8 @@ try {
     const response = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
     await page.getByRole('button', { name: 'Verificar', exact: true }).click();
     const result = await response; check(result.status() === 200, 'Angular persistent login with one-use backup factor');
-    const data = await result.json(); confidential.push(data.sessionToken); return data.sessionToken;
+    await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+    return await browserSession(page);
   }
   token = await uiLogin('member@example.test', newPassword);
   check((await api('mfa/verify', { challenge: (await api('login', { mailbox: 'member@example.test', password: newPassword })).data.challenge, code: resetCode })).status === 401, 'consumed MFA backup cannot be reused for login');
@@ -357,7 +370,9 @@ try {
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   const replacedReceipt = await reverified;
   check(replacedReceipt.status() === 200, 'replacement TOTP enrollment issues a fresh MFA-bound session');
-  const replacementData = await replacedReceipt.json(); confidential.push(replacementData.sessionToken, ...replacementData.recoveryCodes);
+  await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  const replacementData = { sessionToken: await browserSession(page), recoveryCodes: await page.getByLabel('Códigos de respaldo MFA').locator('code').allTextContents() };
+  confidential.push(...replacementData.recoveryCodes);
   check(sql(`SELECT COUNT(*) FROM c05_identity_mfa_factor WHERE account_id=UNHEX('${actor}') AND factor_state=1`) === '1', 'replacement leaves exactly one active TOTP factor');
   check(sql(`SELECT COUNT(*) FROM c05_identity_mfa_backup WHERE account_id=UNHEX('${actor}') AND consumed_at_utc IS NULL`) === '10', 'old backup codes invalidated when factor is replaced');
   // Expired and cross-tenant proofs/challenges are exercised dynamically.

@@ -252,6 +252,12 @@ proc:BEGIN
     p_outcome IS NULL THEN
    SELECT 'DENIED' AS result; LEAVE proc;
  END IF;
+ -- The admitted trace row is the per-attempt serialization lock. Under
+ -- REPEATABLE READ, locking a missing outcome also takes gap locks and two
+ -- independent admitted attempts can deadlock when inserting their outcomes.
+ -- READ COMMITTED retains the trace-row lock and unique outcome PK without
+ -- those unrelated gaps; it does not admit any additional password attempt.
+ SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
  START TRANSACTION;
  SET v_now=UTC_TIMESTAMP(6);
  SELECT tenant_id,purpose,source_digest,subject_digest,disposition
