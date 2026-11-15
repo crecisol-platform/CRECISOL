@@ -4,6 +4,75 @@
 -- test schema or a tenant-selected DSN.
 -- MySQL 8.4 / InnoDB / utf8mb4.
 
+-- Shared platform catalog used by C04/C05. This is the only tenant and
+-- verified-host authority; C05 identity tables do not create a second map.
+CREATE TABLE c04_tenant_catalog (
+    tenant_id BINARY(16) NOT NULL,
+    internal_name VARCHAR(120) NOT NULL,
+    display_name VARCHAR(120) NOT NULL,
+    lifecycle_state TINYINT UNSIGNED NOT NULL,
+    address_mode TINYINT UNSIGNED NOT NULL,
+    catalog_revision BIGINT UNSIGNED NOT NULL,
+    updated_at_utc DATETIME(6) NOT NULL,
+    PRIMARY KEY (tenant_id),
+    CONSTRAINT ck_c04_catalog_state CHECK (lifecycle_state IN (1,2,3,4,5)),
+    CONSTRAINT ck_c04_catalog_address CHECK (address_mode IN (1,2,3)),
+    CONSTRAINT ck_c04_catalog_revision CHECK (catalog_revision > 0)
+) ENGINE=InnoDB;
+
+CREATE TABLE c04_verified_tenant_host (
+    canonical_host VARCHAR(253) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    tenant_id BINARY(16) NOT NULL,
+    address_mode TINYINT UNSIGNED NOT NULL,
+    verification_state TINYINT UNSIGNED NOT NULL,
+    host_revision BIGINT UNSIGNED NOT NULL,
+    changed_at_utc DATETIME(6) NOT NULL,
+    verified_at_utc DATETIME(6) NULL,
+    valid_until_utc DATETIME(6) NULL,
+    PRIMARY KEY (canonical_host),
+    KEY ix_c04_host_tenant (tenant_id, verification_state),
+    CONSTRAINT fk_c04_verified_host_tenant FOREIGN KEY (tenant_id)
+      REFERENCES c04_tenant_catalog (tenant_id),
+    CONSTRAINT ck_c04_host_address CHECK (address_mode IN (2,3)),
+    CONSTRAINT ck_c04_host_state CHECK (verification_state IN (1,2,3,4)),
+    CONSTRAINT ck_c04_host_revision CHECK (host_revision > 0),
+    CONSTRAINT ck_c04_host_verification_window CHECK
+      ((verified_at_utc IS NULL AND valid_until_utc IS NULL) OR
+       (verified_at_utc IS NOT NULL AND valid_until_utc > verified_at_utc))
+) ENGINE=InnoDB;
+
+CREATE TABLE c05_identity_registration_intent (
+    tenant_id BINARY(16) NOT NULL,
+    intent_id BINARY(16) NOT NULL,
+    mailbox_hmac BINARY(32) NOT NULL,
+    peer_hmac BINARY(32) NOT NULL,
+    mailbox_ciphertext VARBINARY(512) NOT NULL,
+    mailbox_nonce BINARY(12) NOT NULL,
+    mailbox_tag BINARY(16) NOT NULL,
+    key_version INT UNSIGNED NOT NULL,
+    state TINYINT UNSIGNED NOT NULL,
+    created_at_utc DATETIME(6) NOT NULL,
+    expires_at_utc DATETIME(6) NOT NULL,
+    PRIMARY KEY (tenant_id, intent_id),
+    KEY ix_c05_intent_mailbox_state (tenant_id, mailbox_hmac, state),
+    KEY ix_c05_intent_peer_time (tenant_id, peer_hmac, created_at_utc),
+    CONSTRAINT fk_c05_intent_tenant FOREIGN KEY (tenant_id)
+      REFERENCES c04_tenant_catalog (tenant_id),
+    CONSTRAINT ck_c05_intent_state CHECK (state IN (0,1,2,3)),
+    CONSTRAINT ck_c05_intent_expiry CHECK (expires_at_utc > created_at_utc)
+) ENGINE=InnoDB;
+
+CREATE TABLE c05_identity_registration_quota (
+    tenant_id BINARY(16) NOT NULL,
+    peer_hmac BINARY(32) NOT NULL,
+    window_start_utc DATETIME(0) NOT NULL,
+    admitted_count SMALLINT UNSIGNED NOT NULL,
+    PRIMARY KEY (tenant_id, peer_hmac, window_start_utc),
+    CONSTRAINT fk_c05_registration_quota_tenant FOREIGN KEY (tenant_id)
+      REFERENCES c04_tenant_catalog (tenant_id),
+    CONSTRAINT ck_c05_registration_quota CHECK (admitted_count <= 8)
+) ENGINE=InnoDB;
+
 CREATE TABLE c05_identity_account (
     account_id BINARY(16) NOT NULL,
     login_lookup_hmac BINARY(32) NOT NULL,
@@ -191,5 +260,6 @@ BEGIN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'C05 audit rows are append-only';
 END$$
 DELIMITER ;
+
 
 
