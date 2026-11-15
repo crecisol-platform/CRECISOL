@@ -9,12 +9,13 @@ ROOT_PASSWORD="$(openssl rand -hex 24)"
 INGEST_PASSWORD="$(openssl rand -hex 24)"
 PROOF_PASSWORD="$(openssl rand -hex 24)"
 CANDIDATE_PASSWORD="$(openssl rand -hex 24)"
+DISPATCH_PASSWORD="$(openssl rand -hex 24)"
 ADMIN_PASSWORD="$(openssl rand -hex 24)"
 MASTER_HEX="$(openssl rand -hex 32)"
 cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 if [ -n "${GITHUB_ACTIONS:-}" ]; then
-  for value in "$ROOT_PASSWORD" "$INGEST_PASSWORD" "$PROOF_PASSWORD" "$CANDIDATE_PASSWORD" "$ADMIN_PASSWORD" "$MASTER_HEX"; do
+  for value in "$ROOT_PASSWORD" "$INGEST_PASSWORD" "$PROOF_PASSWORD" "$CANDIDATE_PASSWORD" "$DISPATCH_PASSWORD" "$ADMIN_PASSWORD" "$MASTER_HEX"; do
     echo "::add-mask::$value"
   done
 fi
@@ -46,7 +47,8 @@ for path in \
   database/tests/fixtures/c05_02_invitation_atomic_fixture.sql \
   database/tests/fixtures/c05_02_neutral_registration_fixture.sql \
   database/tests/fixtures/c05_02_mailbox_proof_atomic_fixture.sql \
-  database/tests/fixtures/c05_02_verified_candidate_fixture.sql; do
+  database/tests/fixtures/c05_02_verified_candidate_fixture.sql \
+  database/tests/fixtures/c05_02_neutral_dispatch_fixture.sql; do
   docker exec -e MYSQL_PWD="$ROOT_PASSWORD" -i "$NAME" \
     mysql -uroot -D "$DB" < "$path"
 done
@@ -54,6 +56,7 @@ root_sql "CREATE USER 'c05_02_proof_ingest'@'%' IDENTIFIED BY '$INGEST_PASSWORD'
  CREATE USER 'c05_02_proof_limited'@'%' IDENTIFIED BY '$PROOF_PASSWORD';
  CREATE USER 'c05_02_proof_setup'@'%' IDENTIFIED BY '$ADMIN_PASSWORD';
  CREATE USER 'c05_02_candidate_limited'@'%' IDENTIFIED BY '$CANDIDATE_PASSWORD';
+ CREATE USER 'c05_02_dispatch_worker'@'%' IDENTIFIED BY '$DISPATCH_PASSWORD';
  GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_record_registration_intent TO 'c05_02_proof_ingest'@'%';
  GRANT SELECT ON \`$DB\`.c05_02_neutral_intents TO 'c05_02_proof_limited'@'%';
  GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_mailbox_proof_issue TO 'c05_02_proof_limited'@'%';
@@ -63,10 +66,15 @@ root_sql "CREATE USER 'c05_02_proof_ingest'@'%' IDENTIFIED BY '$INGEST_PASSWORD'
    ON \`$DB\`.c05_02_neutral_intents TO 'c05_02_candidate_limited'@'%';
  GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_create_pending_candidate
    TO 'c05_02_candidate_limited'@'%';
+ GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_dispatch_claim
+   TO 'c05_02_dispatch_worker'@'%';
+ GRANT EXECUTE ON PROCEDURE \`$DB\`.c05_02_dispatch_complete
+   TO 'c05_02_dispatch_worker'@'%';
  GRANT SELECT ON \`$DB\`.* TO 'c05_02_proof_setup'@'%';
  GRANT INSERT, UPDATE ON \`$DB\`.c05_02_tenants TO 'c05_02_proof_setup'@'%';
  GRANT UPDATE ON \`$DB\`.c05_02_mailbox_proofs TO 'c05_02_proof_setup'@'%';
- GRANT UPDATE ON \`$DB\`.c05_02_neutral_intents TO 'c05_02_proof_setup'@'%';"
+ GRANT UPDATE ON \`$DB\`.c05_02_neutral_intents TO 'c05_02_proof_setup'@'%';
+ GRANT UPDATE ON \`$DB\`.c05_02_proof_dispatch TO 'c05_02_proof_setup'@'%';"
 port_mapping="$(docker port "$NAME" '3306/tcp' | head -n 1)"
 case "$port_mapping" in
   127.0.0.1:[0-9]*) port="${port_mapping##*:}" ;;
@@ -82,7 +90,8 @@ export CRECISOL_C05_02_NEUTRAL_ADMIN_DSN="$CRECISOL_C05_02_PROOF_SETUP_DSN"
 export CRECISOL_C05_02_NEUTRAL_MASTER_HEX="$CRECISOL_C05_02_PROOF_MASTER_HEX"
 export CRECISOL_C05_PROOF_TEST_DSN="$CRECISOL_C05_02_PROOF_TEST_DSN"
 export CRECISOL_C05_CANDIDATE_DSN="Server=127.0.0.1;Port=$port;Database=$DB;User ID=c05_02_candidate_limited;Password=$CANDIDATE_PASSWORD;Pooling=false"
+export CRECISOL_C05_DISPATCH_DSN="Server=127.0.0.1;Port=$port;Database=$DB;User ID=c05_02_dispatch_worker;Password=$DISPATCH_PASSWORD;Pooling=false"
 dotnet run --no-build -c Release \
   --project backend/tests/Crecisol.NeutralRegistration.IntegrationTests/Crecisol.NeutralRegistration.IntegrationTests.csproj \
   -- --integration
-echo 'PASS C05 local proof + Argon2id pending credential candidate (NO active account, membership, MFA or session)'
+echo 'PASS C05 local proof + Argon2id pending candidate + trusted internal dispatch without public intent ID; NO active membership, MFA or session'
