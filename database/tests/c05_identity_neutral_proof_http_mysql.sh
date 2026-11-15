@@ -70,7 +70,8 @@ for path in \
   database/tests/fixtures/c05_05_disposable_sessions.sql \
   database/tests/fixtures/c05_06_disposable_recovery.sql \
   database/tests/fixtures/c05_08_disposable_mfa.sql \
-  database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql; do
+  database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql \
+  database/tests/fixtures/c05_05_private_resource_authorization_fixture.sql; do
   docker exec -e MYSQL_PWD="$ROOT_PASSWORD" -i "$NAME" \
     mysql -uroot -D "$MFA_DB" < "$path"
 done
@@ -89,6 +90,8 @@ root_sql "CREATE USER 'c05_10_integrated_runner'@'%' IDENTIFIED BY '$RATE_RUNNER
  GRANT EXECUTE ON PROCEDURE \`$MFA_DB\`.c05_08_read_counter
    TO 'c05_05_mfa_worker'@'%';
  GRANT EXECUTE ON PROCEDURE \`$MFA_DB\`.c05_05_issue_after_mfa_once
+   TO 'c05_05_mfa_worker'@'%';
+ GRANT EXECUTE ON PROCEDURE \`$MFA_DB\`.c05_05_read_private_resource
    TO 'c05_05_mfa_worker'@'%';
  GRANT EXECUTE ON PROCEDURE \`$MFA_DB\`.c05_05_is_current
    TO 'c05_05_mfa_worker'@'%';
@@ -164,4 +167,4 @@ export CRECISOL_C05_MFA_WORKER_DSN="Server=127.0.0.1;Port=$port;Database=$MFA_DB
 dotnet run --no-build -c Release \
   --project backend/tests/Crecisol.NeutralRegistration.IntegrationTests/Crecisol.NeutralRegistration.IntegrationTests.csproj \
   -- --integration
-echo 'PASS C05 disposable registration -> approval -> preauth -> TOTP step-up -> atomic revocable session; NO production auth/Angular'
+echo 'PASS C05 disposable registration -> approval -> TOTP MFA session -> atomic private BOLA/IDOR authorization; NOT production private API/Angular'
