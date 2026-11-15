@@ -20,7 +20,7 @@ internal static class LocalApprovedMembershipHarness
 {
     public static async Task VerifyAsync(
         MySqlConnection setup, string activationDsn, string directoryDsn,
-        byte[] trustedMaster, string knownPassword, Guid sourceIntent,
+        string rateSetupDsn, string rateRunnerDsn, byte[] trustedMaster, string knownPassword, Guid sourceIntent,
         ITrustedVerifiedHostCatalog hosts, ITrustedTenantCatalogReader tenants,
         ITrustedHostUtcClock clock, Action<bool,string> pass,
         CancellationToken ct)
@@ -170,6 +170,9 @@ internal static class LocalApprovedMembershipHarness
              ready.Evidence?.MembershipRevision==1 &&
              ready.Evidence?.HostRevision==1,
              "Real MySQL directory + Argon2id + unique host B + active membership prepare a non-authorizing login");
+        await LocalApprovedThrottledLoginHarness.VerifyAsync(
+            rateSetupDsn,rateRunnerDsn,service,
+            await resolver.ResolveAsync(approvedHost,ct),login,knownPassword,pass,ct);
         var wrongPassword=await service.ExecuteAsync(
             login,Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).AsMemory(),ct);
         pass(wrongPassword.Status==ContextualLoginPreparationStatus.Denied &&
