@@ -33,7 +33,10 @@ docker exec -i -e "MYSQL_PWD=$PASSWORD" "$NAME" \
 actual="$(docker exec -e "MYSQL_PWD=$PASSWORD" "$NAME" \
   mysql -uroot -Nse 'SHOW TABLES' crecisol_c05_migration | sort)"
 expected="$(printf '%s\n' c05_identity_account c05_identity_audit \
-  c05_identity_membership c05_identity_mfa_factor c05_identity_session | sort)"
+  c05_identity_mailbox_proof c05_identity_membership \
+  c05_identity_membership_approval c05_identity_mfa_factor \
+  c05_identity_recovery c05_identity_resource_grant \
+  c05_identity_session | sort)"
 [[ "$actual" == "$expected" ]]
 
 # Tenant-scoped membership FK rejects a session whose membership belongs to a
@@ -82,5 +85,13 @@ then
   exit 1
 fi
 
-echo 'PASS C05 operational schema MySQL 8.4: tables, constraints, append-only audit'
+docker exec -i -e "MYSQL_PWD=$PASSWORD" "$NAME" \
+  mysql -uroot crecisol_c05_migration \
+  < "$ROOT/database/migrations/001_c05_identity_operational.down.sql"
+remaining="$(docker exec -e "MYSQL_PWD=$PASSWORD" "$NAME" \
+  mysql -uroot -Nse 'SHOW TABLES' crecisol_c05_migration)"
+[[ -z "$remaining" ]]
+
+echo 'PASS C05 operational schema MySQL 8.4: forward, constraints, append-only audit, rollback'
+
 
