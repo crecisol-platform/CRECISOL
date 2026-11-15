@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using Crecisol.Application.Identity;
+using Crecisol.Application.Tenancy;
 using Crecisol.CredentialSecurity;
 using Crecisol.Domain.Tenancy;
 using Crecisol.Infrastructure.Identity;
