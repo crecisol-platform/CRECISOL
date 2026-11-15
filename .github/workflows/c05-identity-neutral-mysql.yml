@@ -175,6 +175,7 @@ jobs:
           assert "ITrustedMfaScopedPrivateResourceStore" in private_app
           assert "backendOwnedRouteAction" in private_app
           assert "MySqlDisposableMfaPrivateResourceStore" in private_adapter
+          http_tests=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalMfaPrivateHttpHarness.cs").read_text()
           canonical_host=Path("backend/src/Crecisol.Api/Contracts/VerifiedPrivateResourceHostCatalog.cs").read_text()
           assert "ResolveVerifiedTenantHost" in canonical_host
           assert "CanonicalTenantHost.Parse" in canonical_host
@@ -185,7 +186,6 @@ jobs:
           assert "MapMfaVerifiedPrivateResourceRead" not in api
           assert "FixedTestHostCatalog" not in http_tests
           http_boundary=Path("backend/src/Crecisol.Api/Contracts/PrivateResourceHttpRead.cs").read_text()
-          http_tests=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalMfaPrivateHttpHarness.cs").read_text()
           for marker in ("ITrustedPrivateResourceHostCatalog", "ReadMfaAuthorizedPrivateResource",
                          "request.Headers.ContainsKey(\"Forwarded\")", "request.Headers.ContainsKey(\"Cookie\")",
                          "request.Headers.Keys.Any", "Results.NotFound()", "no-store"):
