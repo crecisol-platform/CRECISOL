@@ -90,6 +90,10 @@ proc:BEGIN
  DECLARE v_global_active TINYINT;
  DECLARE v_realm VARCHAR(12);
  DECLARE v_mail_active TINYINT;
+ DECLARE v_factor_state VARCHAR(8);
+ DECLARE v_challenge_state VARCHAR(8);
+ DECLARE v_challenge_kind VARCHAR(8);
+ DECLARE v_challenge_risk VARCHAR(24);
  DECLARE v_branch BINARY(16);
  DECLARE v_owner BINARY(16);
  DECLARE v_branch_state VARCHAR(12);
@@ -147,19 +151,29 @@ proc:BEGIN
 
  SELECT verified INTO v_mail_active FROM c05_06_mailboxes
    WHERE tenant_id=p_tenant AND actor_id=v_actor FOR SHARE;
- IF v_missing OR v_mail_active<>1 OR NOT EXISTS (
-   SELECT 1 FROM c05_05_mfa_session_bindings bind
-    JOIN c05_08_challenges challenge ON challenge.challenge_id=bind.challenge_id
-    JOIN c05_08_factors factor ON factor.factor_id=challenge.factor_id
-    WHERE bind.session_id=v_sid AND bind.tenant_id=p_tenant
-      AND bind.actor_id=v_actor AND bind.operation_id=challenge.operation_id
-      AND challenge.tenant_id=p_tenant AND challenge.actor_id=v_actor
-      AND challenge.challenge_kind='STEPUP'
-      AND challenge.risk_action='TENANT_SENSITIVE'
-      AND challenge.state='CONSUMED'
-      AND factor.tenant_id=p_tenant AND factor.actor_id=v_actor
-      AND factor.state='ACTIVE'
- )
+ IF v_missing OR v_mail_active<>1
+ THEN ROLLBACK; SELECT 'DENIED' AS result,
+      CAST(NULL AS CHAR(100)) AS external_key; LEAVE proc; END IF;
+
+ -- Lock the MFA binding, challenge AND factor. A plain EXISTS subquery
+ -- would use a nonlocking snapshot and race against concurrent revocation.
+ SELECT factor.state,challenge.state,challenge.challenge_kind,
+        challenge.risk_action
+   INTO v_factor_state,v_challenge_state,v_challenge_kind,v_challenge_risk
+   FROM c05_05_mfa_session_bindings bind
+   INNER JOIN c05_08_challenges challenge
+     ON challenge.challenge_id=bind.challenge_id
+   INNER JOIN c05_08_factors factor
+     ON factor.factor_id=challenge.factor_id
+  WHERE bind.session_id=v_sid AND bind.tenant_id=p_tenant
+    AND bind.actor_id=v_actor AND bind.operation_id=challenge.operation_id
+    AND challenge.tenant_id=p_tenant AND challenge.actor_id=v_actor
+    AND factor.tenant_id=p_tenant AND factor.actor_id=v_actor
+  FOR SHARE;
+ IF v_missing OR v_factor_state<>'ACTIVE' OR
+    v_challenge_state<>'CONSUMED' OR
+    v_challenge_kind<>'STEPUP' OR
+    v_challenge_risk<>'TENANT_SENSITIVE'
  THEN ROLLBACK; SELECT 'DENIED' AS result,
       CAST(NULL AS CHAR(100)) AS external_key; LEAVE proc; END IF;
 
