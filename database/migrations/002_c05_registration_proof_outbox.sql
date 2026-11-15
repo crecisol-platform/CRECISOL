@@ -109,9 +109,17 @@ BEGIN
             SET v_result='VERIFIED';
         ELSE
             UPDATE c05_identity_mailbox_proof
-               SET failed_attempts=failed_attempts+1,
-                   proof_state=IF(failed_attempts+1>=5,2,proof_state)
+               SET failed_attempts=v_attempts+1,
+                   proof_state=IF(v_attempts+1>=5,2,proof_state)
              WHERE tenant_id=p_tenant AND proof_id=p_proof AND proof_state=0;
+            UPDATE c05_identity_mailbox_outbox
+               SET delivery_state=3, leased_until_utc=NULL
+             WHERE tenant_id=p_tenant AND proof_id=p_proof AND delivery_state IN (0,1)
+               AND EXISTS (
+                   SELECT 1 FROM c05_identity_mailbox_proof
+                    WHERE tenant_id=p_tenant AND proof_id=p_proof
+                      AND proof_state=2 AND failed_attempts>=5
+               );
         END IF;
     ELSEIF v_state=0 AND v_expires<=UTC_TIMESTAMP(6) THEN
         UPDATE c05_identity_mailbox_proof

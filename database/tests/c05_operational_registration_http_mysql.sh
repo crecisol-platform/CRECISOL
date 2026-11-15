@@ -137,11 +137,35 @@ curl -sS -o /dev/null -X POST "http://127.0.0.1:$api_port/api/v1/identity/regist
   --data-binary "{\"proofId\":\"$proof_id\",\"code\":\"$proof_code\"}"
 same 'replay does not change consumed mailbox proof' 1 "$(root_sql "SELECT proof_state FROM c05_identity_mailbox_proof WHERE tenant_id=UNHEX('00000000000000000000000000000001') AND proof_id=UNHEX(REPLACE('$proof_id','-',''))")"
 
+locked_proof_hex="$(root_sql "SELECT HEX(proof_id) FROM c05_identity_mailbox_outbox WHERE tenant_id=UNHEX('00000000000000000000000000000002') LIMIT 1")"
+locked_proof_id="$(printf '%s' "$locked_proof_hex" | node -e 'let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{s=s.trim().toLowerCase();process.stdout.write(`${s.slice(0,8)}-${s.slice(8,12)}-${s.slice(12,16)}-${s.slice(16,20)}-${s.slice(20)}`)})')"
+for _ in $(seq 1 5); do
+  curl -sS -o /dev/null -X POST "http://127.0.0.1:$api_port/api/v1/identity/registration-proofs/confirm" \
+    -H 'Host: tenant-b.example.test' -H 'Content-Type: application/json' \
+    --data-binary "{\"proofId\":\"$locked_proof_id\",\"code\":\"$(printf '%064d' 0)\"}"
+done
+same 'fifth invalid code revokes proof' 2 "$(root_sql "SELECT proof_state FROM c05_identity_mailbox_proof WHERE tenant_id=UNHEX('00000000000000000000000000000002') AND proof_id=UNHEX('$locked_proof_hex')")"
+same 'fifth invalid code counter is exact' 5 "$(root_sql "SELECT failed_attempts FROM c05_identity_mailbox_proof WHERE tenant_id=UNHEX('00000000000000000000000000000002') AND proof_id=UNHEX('$locked_proof_hex')")"
+same 'fifth invalid code revokes outbox' 3 "$(root_sql "SELECT delivery_state FROM c05_identity_mailbox_outbox WHERE tenant_id=UNHEX('00000000000000000000000000000002') AND proof_id=UNHEX('$locked_proof_hex')")"
+
+curl -sS -o /dev/null -X POST "http://127.0.0.1:$api_port/api/v1/identity/registration-intents" \
+  -H 'Host: tenant-b.example.test' -H 'Content-Type: application/json' \
+  --data-binary '{"mailbox":"expired-proof@example.test"}'
+expired_proof_hex="$(root_sql "SELECT HEX(proof_id) FROM c05_identity_mailbox_proof WHERE tenant_id=UNHEX('00000000000000000000000000000002') AND proof_id<>UNHEX('$locked_proof_hex') LIMIT 1")"
+root_sql "UPDATE c05_identity_mailbox_proof SET created_at_utc=UTC_TIMESTAMP(6)-INTERVAL 11 MINUTE,expires_at_utc=UTC_TIMESTAMP(6)-INTERVAL 1 SECOND WHERE tenant_id=UNHEX('00000000000000000000000000000002') AND proof_id=UNHEX('$expired_proof_hex'); UPDATE c05_identity_mailbox_outbox SET created_at_utc=UTC_TIMESTAMP(6)-INTERVAL 11 MINUTE,expires_at_utc=UTC_TIMESTAMP(6)-INTERVAL 1 SECOND WHERE tenant_id=UNHEX('00000000000000000000000000000002') AND proof_id=UNHEX('$expired_proof_hex')"
+expired_proof_id="$(printf '%s' "$expired_proof_hex" | node -e 'let s="";process.stdin.on("data",x=>s+=x).on("end",()=>{s=s.trim().toLowerCase();process.stdout.write(`${s.slice(0,8)}-${s.slice(8,12)}-${s.slice(12,16)}-${s.slice(16,20)}-${s.slice(20)}`)})')"
+curl -sS -o /dev/null -X POST "http://127.0.0.1:$api_port/api/v1/identity/registration-proofs/confirm" \
+  -H 'Host: tenant-b.example.test' -H 'Content-Type: application/json' \
+  --data-binary "{\"proofId\":\"$expired_proof_id\",\"code\":\"$(printf '%064d' 0)\"}"
+same 'expired code cannot be confirmed' 3 "$(root_sql "SELECT proof_state FROM c05_identity_mailbox_proof WHERE tenant_id=UNHEX('00000000000000000000000000000002') AND proof_id=UNHEX('$expired_proof_hex')")"
+same 'expired code outbox revoked' 3 "$(root_sql "SELECT delivery_state FROM c05_identity_mailbox_outbox WHERE tenant_id=UNHEX('00000000000000000000000000000002') AND proof_id=UNHEX('$expired_proof_hex')")"
+
+intent_count_before_pending_host="$(root_sql 'SELECT COUNT(*) FROM c05_identity_registration_intent')"
 pending_response="$(curl -sS -i -X POST "http://127.0.0.1:$api_port/api/v1/identity/registration-intents" \
   -H 'Host: tenant-c.example.test' -H 'Content-Type: application/json' \
   --data-binary '{"mailbox":"person.two@example.test"}')"
 [[ "${pending_response%%$'\r\n'*}" == *'202'* ]]
-same 'unverified tenant creates no intent' 2 "$(root_sql 'SELECT COUNT(*) FROM c05_identity_registration_intent')"
+same 'unverified tenant creates no intent' "$intent_count_before_pending_host" "$(root_sql 'SELECT COUNT(*) FROM c05_identity_registration_intent')"
 
 for _ in $(seq 1 10); do
   curl -sS -o /dev/null -X POST "http://127.0.0.1:$api_port/api/v1/identity/registration-intents" \
@@ -173,6 +197,6 @@ for pid in "${pids[@]}"; do wait "$pid"; done
 same 'concurrent peer quota admits exactly eight' 8 "$(root_sql "SELECT admitted_count FROM c05_identity_registration_quota WHERE tenant_id=UNHEX('00000000000000000000000000000004')")"
 same 'concurrent peer writes exactly eight intents' 8 "$(root_sql "SELECT COUNT(*) FROM c05_identity_registration_intent WHERE tenant_id=UNHEX('00000000000000000000000000000004')")"
 
-echo 'PASS C05 product API registration/proof .NET10 HTTP + MySQL8.4: verified host, A/B, pending-host denial, neutral receipts, local test-sink decrypt, wrong proof, cross-tenant denial, one-time consume/replay, encrypted outbox, direct DB read/write denied, atomic quota, forged forwarding denial'
+echo 'PASS C05 product API registration/proof .NET10 HTTP + MySQL8.4: verified host, A/B, pending-host denial, neutral receipts, local test-sink decrypt, wrong proof, cross-tenant denial, consume/replay, fifth-attempt revocation, expiry, encrypted outbox, least privilege, atomic quota, forged forwarding denial'
 
 
