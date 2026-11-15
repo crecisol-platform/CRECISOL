@@ -15,15 +15,19 @@ namespace Crecisol.NeutralRegistration.IntegrationTests;
 internal static class LocalMfaPrivateResourceHarness
 {
     internal sealed record Context(
-        ReadMfaAuthorizedPrivateResource Reader,TenantResourceId OwnResource)
+        ReadMfaAuthorizedPrivateResource Reader,TenantResourceId OwnResource,
+        LocalMfaPrivateHttpHarness Http) : IAsyncDisposable
     {
         public async Task<bool> DeniesAsync(
             string? bearer, VerifiedTenantHostHint trustedHost, CancellationToken ct)
         {
+            var denied = false;
             try { _=await Reader.ExecuteAsync(bearer,trustedHost,OwnResource,ct); }
-            catch(UnauthorizedAccessException) {return true;}
-            return false;
+            catch(UnauthorizedAccessException) {denied=true;}
+            return denied && await Http.DeniedAsync(bearer,trustedHost,OwnResource,ct);
         }
+
+        public ValueTask DisposeAsync() => Http.DisposeAsync();
     }
 
     public static async Task<Context> VerifyAsync(
@@ -90,6 +94,10 @@ internal static class LocalMfaPrivateResourceHarness
              store.ToString()=="MySqlDisposableMfaPrivateResourceStore[redacted]",
              "Active MFA-bound B session reads exactly one owned B1 case atomically");
 
+        var http=await LocalMfaPrivateHttpHarness.StartAsync(reader,hostB,hostA,ct);
+        await http.VerifyAdversarialAsync(mfaBoundBearer,own,foreignOwner,
+            foreignBranch,foreignTenant,pass,ct);
+
         pass(await DeniedAsync(reader,mfaBoundBearer,hostB,foreignOwner,ct),
             "Owner-only grant cannot read a different actor's case in same B branch");
         pass(await DeniedAsync(reader,mfaBoundBearer,hostB,foreignBranch,ct),
@@ -105,8 +113,9 @@ internal static class LocalMfaPrivateResourceHarness
              "Random or missing bearer cannot read a private resource");
 
         await MutateAsync(setup,"UPDATE c05_08_factors SET state='REVOKED' WHERE state='ACTIVE'",ct);
-        pass(await DeniedAsync(reader,mfaBoundBearer,hostB,own,ct),
-            "Revoked MFA factor immediately denies protected resource despite unexpired session");
+        pass(await DeniedAsync(reader,mfaBoundBearer,hostB,own,ct) &&
+             await http.DeniedAsync(mfaBoundBearer,hostB,own,ct),
+            "Revoked MFA factor immediately denies SQL and HTTP private resource reads");
         await MutateAsync(setup,"UPDATE c05_08_factors SET state='ACTIVE' WHERE state='REVOKED'",ct);
 
         await MutateAsync(setup,"UPDATE c05_05_private_grants SET access_scope='BRANCH',revision=revision+1",ct);
@@ -121,7 +130,8 @@ internal static class LocalMfaPrivateResourceHarness
         var revoked=await Task.WhenAll(Enumerable.Range(0,12).Select(_=>
             Task.Run(()=>DeniedAsync(
                 reader,mfaBoundBearer,hostB,own,CancellationToken.None))));
-        pass(revoked.All(x=>x),
+        pass(revoked.All(x=>x) &&
+             await http.DeniedAsync(mfaBoundBearer,hostB,own,ct),
             "Twelve concurrent private reads deny after scoped grant revocation");
         await MutateAsync(setup,"UPDATE c05_05_private_grants SET lifecycle='ACTIVE',revision=revision+1",ct);
         pass((await reader.ExecuteAsync(mfaBoundBearer,hostB,own,ct)).ExternalKey==
@@ -156,9 +166,10 @@ internal static class LocalMfaPrivateResourceHarness
         pass(directReadDenied,
             "EXECUTE-only MFA/resource worker cannot bypass authorization with table SELECT");
         pass((await reader.ExecuteAsync(mfaBoundBearer,hostB,own,ct)).ExternalKey==
-                "synthetic-b-owner-case",
-            "Protected SQL read remains available after negative tampering tests");
-        return new Context(reader,own);
+                "synthetic-b-owner-case" &&
+             await http.AllowedAsync(mfaBoundBearer,hostB,own,ct),
+            "Protected SQL and HTTP read remain available after negative tampering tests");
+        return new Context(reader,own,http);
     }
 
     private static async Task<bool> DeniedAsync(
