@@ -8,6 +8,7 @@ using Crecisol.CredentialSecurity;
 using Crecisol.Domain.Tenancy;
 using Crecisol.Infrastructure.Identity;
 using MySqlConnector;
+using Microsoft.Extensions.Hosting;
 
 namespace Crecisol.Api.Modules.Identity;
 
@@ -39,6 +40,13 @@ public static class OperationalRegistrationCompletionModule
         var mailboxKey = ReadKey(readSetting, "CRECISOL_C05_MAILBOX_HMAC_KEY");
         var peerKey = ReadKey(readSetting, "CRECISOL_C05_PEER_HMAC_KEY");
         var loginKey = ReadKey(readSetting, "CRECISOL_C05_LOGIN_LOOKUP_HMAC_KEY");
+        var mailboxEncryptionKey = ReadKey(readSetting, "CRECISOL_C05_MAILBOX_ENCRYPTION_KEY");
+        var outboxEncryptionKey = ReadKey(readSetting, "CRECISOL_C05_PROOF_OUTBOX_ENCRYPTION_KEY");
+        var keyVersionText = readSetting("CRECISOL_C05_KEY_VERSION");
+        if (!int.TryParse(keyVersionText, out var keyVersion) || keyVersion < 1 ||
+            !int.TryParse(readSetting("CRECISOL_C05_LOCAL_SMTP_PORT"), out var smtpPort) ||
+            smtpPort is < 1024 or > 65535)
+            throw new InvalidOperationException("Local proof dispatch settings are invalid.");
         services.AddSingleton<ITrustedCompromisedPasswordScreen,
             LocalTestCompromisedPasswordScreen>();
         services.AddSingleton(sp => new Argon2idPasswordHasher(
@@ -47,6 +55,21 @@ public static class OperationalRegistrationCompletionModule
         var accountCompletion = new MySqlOperationalRegistrationAccountCompletion(
             trustedDsn, mailboxKey, peerKey, loginKey);
         services.AddSingleton(accountCompletion);
+        services.AddSingleton<MySqlLocalProofOutboxDispatcher>(sp =>
+        {
+            try
+            {
+                return new MySqlLocalProofOutboxDispatcher(
+                    trustedDsn, keyVersion, mailboxEncryptionKey, outboxEncryptionKey,
+                    smtpPort, sp.GetRequiredService<ILogger<MySqlLocalProofOutboxDispatcher>>());
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(mailboxEncryptionKey);
+                CryptographicOperations.ZeroMemory(outboxEncryptionKey);
+            }
+        });
+        services.AddHostedService<LocalProofOutboxHostedService>();
         CryptographicOperations.ZeroMemory(mailboxKey);
         CryptographicOperations.ZeroMemory(peerKey);
         CryptographicOperations.ZeroMemory(loginKey);
@@ -181,6 +204,13 @@ public static class OperationalRegistrationCompletionModule
         response.Headers["X-Content-Type-Options"] = "nosniff";
         response.Headers["Referrer-Policy"] = "no-referrer";
     }
+}
+
+internal sealed class LocalProofOutboxHostedService(
+    MySqlLocalProofOutboxDispatcher dispatcher) : BackgroundService
+{
+    protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
+        dispatcher.RunAsync(stoppingToken);
 }
 
 internal sealed class LocalTestCompromisedPasswordScreen : ITrustedCompromisedPasswordScreen

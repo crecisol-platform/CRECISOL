@@ -13,8 +13,10 @@ ENCRYPTION_KEY="$(openssl rand -hex 32)"
 OUTBOX_KEY="$(openssl rand -hex 32)"
 LOGIN_KEY="$(openssl rand -hex 32)"
 API_PID=''
+SMTP_PID=''
 cleanup() {
   if [[ -n "$API_PID" ]]; then kill "$API_PID" >/dev/null 2>&1 || true; wait "$API_PID" 2>/dev/null || true; fi
+  if [[ -n "$SMTP_PID" ]]; then kill "$SMTP_PID" >/dev/null 2>&1 || true; wait "$SMTP_PID" 2>/dev/null || true; fi
   docker rm -f "$NAME" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -41,6 +43,8 @@ docker exec -i -e "MYSQL_PWD=$ROOT_PASSWORD" "$NAME" mysql -uroot -D crecisol_c0
   < "$ROOT/database/migrations/002_c05_registration_proof_outbox.sql"
 docker exec -i -e "MYSQL_PWD=$ROOT_PASSWORD" "$NAME" mysql -uroot -D crecisol_c05 \
   < "$ROOT/database/migrations/003_c05_pending_account_completion.sql"
+docker exec -i -e "MYSQL_PWD=$ROOT_PASSWORD" "$NAME" mysql -uroot -D crecisol_c05 \
+  < "$ROOT/database/migrations/004_c05_local_proof_delivery.sql"
 
 root_sql "INSERT INTO c04_tenant_catalog VALUES
  (UNHEX('00000000000000000000000000000001'),'tenant-a','Tenant A',3,2,1,UTC_TIMESTAMP(6)),
@@ -60,10 +64,12 @@ GRANT INSERT ON crecisol_c05.c05_identity_registration_intent TO 'c05_app'@'%';
 GRANT EXECUTE ON PROCEDURE crecisol_c05.c05_operational_stage_mailbox_proof TO 'c05_app'@'%';
 GRANT EXECUTE ON PROCEDURE crecisol_c05.c05_operational_consume_mailbox_proof TO 'c05_app'@'%';"
 root_sql "GRANT EXECUTE ON PROCEDURE crecisol_c05.c05_operational_reserve_registration_completion TO 'c05_app'@'%'; GRANT EXECUTE ON PROCEDURE crecisol_c05.c05_operational_complete_pending_registration TO 'c05_app'@'%';"
+root_sql "GRANT EXECUTE ON PROCEDURE crecisol_c05.c05_operational_claim_mailbox_proof_outbox TO 'c05_app'@'%'; GRANT EXECUTE ON PROCEDURE crecisol_c05.c05_operational_complete_mailbox_proof_delivery TO 'c05_app'@'%';"
 
 dsn="Server=127.0.0.1;Port=$port;Database=crecisol_c05;User ID=c05_app;Password=$APP_PASSWORD;SslMode=None;"
 cd "$ROOT"
 dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release -warnaserror >/dev/null
+dotnet build backend/tests/Crecisol.LoopbackSmtpReceiver/Crecisol.LoopbackSmtpReceiver.csproj -c Release -warnaserror >/dev/null
 api_port=5187
 CRECISOL_C01_ALLOWED_HOSTS='127.0.0.1;tenant-a.example.test;tenant-b.example.test;tenant-c.example.test;tenant-d.example.test' \
 CRECISOL_C05_REGISTRATION_ENABLED=true CRECISOL_C05_IDENTITY_DSN="$dsn" \
@@ -203,16 +209,22 @@ same 'concurrent peer quota admits exactly eight' 8 "$(root_sql "SELECT admitted
 same 'concurrent peer writes exactly eight intents' 8 "$(root_sql "SELECT COUNT(*) FROM c05_identity_registration_intent WHERE tenant_id=UNHEX('00000000000000000000000000000004')")"
 
 # Actual browser -> Angular same-origin proxy -> Kestrel -> disposable MySQL.
-# The test worker decrypts only the synthetic proof from the isolated DB.
+# A separate synthetic SMTP process receives the code over loopback TCP.
 kill "$API_PID" >/dev/null 2>&1 || true
 wait "$API_PID" 2>/dev/null || true
 API_PID=''
+coproc SMTP_RECEIVER { dotnet "$ROOT/backend/tests/Crecisol.LoopbackSmtpReceiver/bin/Release/net10.0/Crecisol.LoopbackSmtpReceiver.dll"; }
+SMTP_PID=$SMTP_RECEIVER_PID
+read -r -t 15 smtp_ready <&"${SMTP_RECEIVER[0]}"
+[[ "$smtp_ready" =~ ^READY\ ([0-9]{4,5})$ ]]
+smtp_port="${BASH_REMATCH[1]}"
 CRECISOL_C01_ALLOWED_HOSTS='127.0.0.1;tenant-a.example.test;tenant-b.example.test;tenant-c.example.test;tenant-d.example.test' \
 CRECISOL_C05_REGISTRATION_ENABLED=true CRECISOL_C05_IDENTITY_DSN="$dsn" \
 CRECISOL_C05_KEY_VERSION=1 CRECISOL_C05_MAILBOX_HMAC_KEY="$MAILBOX_KEY" \
 CRECISOL_C05_PEER_HMAC_KEY="$PEER_KEY" CRECISOL_C05_MAILBOX_ENCRYPTION_KEY="$ENCRYPTION_KEY" \
 CRECISOL_C05_PROOF_OUTBOX_ENCRYPTION_KEY="$OUTBOX_KEY" \
-CRECISOL_C05_LOGIN_LOOKUP_HMAC_KEY="$LOGIN_KEY" CRECISOL_C05_LOCAL_ACCOUNT_COMPLETION_ENABLED=true \
+CRECISOL_C05_LOGIN_LOOKUP_HMAC_KEY="$LOGIN_KEY" CRECISOL_C05_LOCAL_SMTP_PORT="$smtp_port" \
+CRECISOL_C05_LOCAL_ACCOUNT_COMPLETION_ENABLED=true \
 dotnet run --no-build -c Release --project backend/src/Crecisol.Api/Crecisol.Api.csproj \
   --urls "http://127.0.0.1:$api_port" >> /tmp/crecisol-c05-operational-api.log 2>&1 &
 API_PID=$!
@@ -225,21 +237,23 @@ curl -sS -o /dev/null -X POST "http://127.0.0.1:$api_port/api/v1/identity/regist
   -H 'Host: tenant-a.example.test' -H 'Content-Type: application/json' \
   --data-binary '{"mailbox":"angular-e2e@example.test"}'
 angular_mailbox_digest="$(MAILBOX_KEY="$MAILBOX_KEY" node -e 'const c=require("node:crypto");const t=Buffer.from("00000000000000000000000000000001","hex");const m=Buffer.from("angular-e2e@example.test","utf8");process.stdout.write(c.createHmac("sha256",Buffer.from(process.env.MAILBOX_KEY,"hex")).update(Buffer.concat([t,m])).digest("hex"))')"
-angular_proof_payload="$(root_sql "SELECT CONCAT(HEX(o.tenant_id),'|',HEX(o.proof_id),'|',HEX(p.proof_token_hmac),'|',HEX(o.payload_nonce),'|',HEX(o.payload_tag),'|',HEX(o.payload_ciphertext),'|',o.key_version) FROM c05_identity_mailbox_outbox o JOIN c05_identity_mailbox_proof p USING (tenant_id,proof_id) WHERE o.tenant_id=UNHEX('00000000000000000000000000000001') AND p.mailbox_hmac=UNHEX('$angular_mailbox_digest') ORDER BY o.created_at_utc DESC LIMIT 1" \
-  | OUTBOX_KEY="$OUTBOX_KEY" node -e '
-const crypto=require("node:crypto");let text="";process.stdin.setEncoding("utf8");process.stdin.on("data",x=>text+=x).on("end",()=>{
-const [tenant,proof,digest,nonce,tag,ciphertext,version]=text.trim().split("|");const id=proof.toLowerCase();
-const key=Buffer.from(process.env.OUTBOX_KEY,"hex");const revision=Buffer.alloc(4);revision.writeInt32BE(Number(version));
-const aad=Buffer.concat([Buffer.from("CRECISOL/C05/registration-proof-outbox/v1\0","ascii"),Buffer.from(tenant,"hex"),Buffer.from(id,"hex"),revision,Buffer.from(digest,"hex")]);
-const d=crypto.createDecipheriv("aes-256-gcm",key,Buffer.from(nonce,"hex"));d.setAAD(aad);d.setAuthTag(Buffer.from(tag,"hex"));
-const code=Buffer.concat([d.update(Buffer.from(ciphertext,"hex")),d.final()]).toString("hex");
-const proofInput=Buffer.concat([Buffer.from("CRECISOL/C05-02/mailbox-possession/v1/","ascii"),Buffer.from(tenant,"hex"),Buffer.from(id,"hex"),Buffer.from(code,"hex")]);
-const proofDigest=crypto.createHash("sha256").update(proofInput).digest("hex");
-process.stdout.write(`${id.slice(0,8)}-${id.slice(8,12)}-${id.slice(12,16)}-${id.slice(16,20)}-${id.slice(20)}|${code}|${proofDigest===digest.toLowerCase()?"MATCH":"MISMATCH"}`);
-})')"
-IFS='|' read -r angular_proof_id angular_proof_code angular_digest_check <<< "$angular_proof_payload"
-same 'outbox token digest matches the proof ledger' MATCH "$angular_digest_check"
+angular_proof_id="$(root_sql "SELECT BIN_TO_UUID(p.proof_id,0) FROM c05_identity_mailbox_proof p JOIN c05_identity_registration_intent i ON i.tenant_id=p.tenant_id AND i.intent_id=p.proof_id WHERE p.tenant_id=UNHEX('00000000000000000000000000000001') AND p.mailbox_hmac=UNHEX('$angular_mailbox_digest') AND p.proof_state=0 AND i.state=0 ORDER BY p.created_at_utc DESC LIMIT 1")"
+[[ "$angular_proof_id" =~ ^[0-9a-f-]{36}$ ]]
+angular_proof_digest="$(root_sql "SELECT HEX(proof_token_hmac) FROM c05_identity_mailbox_proof WHERE tenant_id=UNHEX('00000000000000000000000000000001') AND proof_id=UUID_TO_BIN('$angular_proof_id',0)")"
+angular_proof_code=''
+for _ in $(seq 1 90); do
+  if IFS=' ' read -r -t 1 marker recipient candidate <&"${SMTP_RECEIVER[0]}"; then
+    if [[ "$marker" == MAIL && "$recipient" == angular-e2e@example.test && "$candidate" =~ ^[A-F0-9]{64}$ ]]; then
+      angular_proof_code="${candidate,,}"
+      break
+    fi
+  fi
+done
+[[ "$angular_proof_code" =~ ^[0-9a-f]{64}$ ]]
+angular_digest_check="$(TENANT_HEX=00000000000000000000000000000001 PROOF_ID="$angular_proof_id" PROOF_CODE="$angular_proof_code" node -e 'const c=require("node:crypto");const id=process.env.PROOF_ID.replaceAll("-","");const raw=Buffer.concat([Buffer.from("CRECISOL/C05-02/mailbox-possession/v1/","ascii"),Buffer.from(process.env.TENANT_HEX,"hex"),Buffer.from(id,"hex"),Buffer.from(process.env.PROOF_CODE,"hex")]);process.stdout.write(c.createHash("sha256").update(raw).digest("hex"))')"
+same 'loopback SMTP token matches the protected proof ledger' "${angular_proof_digest,,}" "${angular_digest_check,,}"
 same 'Angular journey received a fresh unused proof' '0:0' "$(root_sql "SELECT CONCAT(p.proof_state,':',i.state) FROM c05_identity_mailbox_proof p JOIN c05_identity_registration_intent i ON i.tenant_id=p.tenant_id AND i.intent_id=p.proof_id WHERE p.tenant_id=UNHEX('00000000000000000000000000000001') AND p.proof_id=UNHEX(REPLACE('$angular_proof_id','-',''))")"
+same 'SMTP worker completed outbox delivery' 2 "$(root_sql "SELECT delivery_state FROM c05_identity_mailbox_outbox WHERE tenant_id=UNHEX('00000000000000000000000000000001') AND proof_id=UNHEX(REPLACE('$angular_proof_id','-',''))")"
 legacy_confirmation="$(curl -sS -i -X POST "http://127.0.0.1:$api_port/api/v1/identity/registration-proofs/confirm" \
   -H 'Host: tenant-a.example.test' -H 'Content-Type: application/json' \
   --data-binary "{\"proofId\":\"$angular_proof_id\",\"code\":\"$angular_proof_code\"}")"
