@@ -12,6 +12,9 @@ on:
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMembershipActivation.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableApprovedLoginDirectory.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaBoundSessionLedger.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/ReadMfaAuthorizedPrivateResource.cs'
+      - 'backend/src/Crecisol.Infrastructure/Tenancy/MySqlDisposableMfaPrivateResourceStore.cs'
+      - 'database/tests/fixtures/c05_05_private_resource_authorization_fixture.sql'
       - 'backend/src/Crecisol.Application/Identity/DisposableMfaBoundSessionIssuance.cs'
       - 'database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql'
       - 'database/tests/fixtures/c05_02_membership_approval_fixture.sql'
@@ -33,6 +36,9 @@ on:
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMembershipActivation.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableApprovedLoginDirectory.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaBoundSessionLedger.cs'
+      - 'backend/src/Crecisol.Application/Tenancy/ReadMfaAuthorizedPrivateResource.cs'
+      - 'backend/src/Crecisol.Infrastructure/Tenancy/MySqlDisposableMfaPrivateResourceStore.cs'
+      - 'database/tests/fixtures/c05_05_private_resource_authorization_fixture.sql'
       - 'backend/src/Crecisol.Application/Identity/DisposableMfaBoundSessionIssuance.cs'
       - 'database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql'
       - 'database/tests/fixtures/c05_02_membership_approval_fixture.sql'
@@ -68,6 +74,7 @@ jobs:
           test -f database/tests/fixtures/c05_02_membership_approval_fixture.sql
           test -f database/tests/fixtures/c05_10_disposable_rate_limits.sql
           test -f database/tests/fixtures/c05_05_mfa_bound_session_fixture.sql
+          test -f database/tests/fixtures/c05_05_private_resource_authorization_fixture.sql
           printf "PASS A sha=%s run=%s\n" "$C05_TESTED_SHA" "$GITHUB_RUN_ID" > /tmp/c05-a
       - name: Audit B deny forged tenant and actor before SQL
         run: |
@@ -147,6 +154,27 @@ jobs:
           grants=runner.replace(chr(92)+chr(96),chr(96))
           assert "GRANT EXECUTE ON PROCEDURE `$MFA_DB`.c05_05_issue_once" not in grants
           assert "GRANT EXECUTE ON PROCEDURE `$MFA_DB`.c05_05_issue_after_mfa_once" in grants
+          assert "GRANT EXECUTE ON PROCEDURE `$MFA_DB`.c05_05_read_private_resource" in grants
+          private_sql=Path("database/tests/fixtures/c05_05_private_resource_authorization_fixture.sql").read_text()
+          private_app=Path("backend/src/Crecisol.Application/Tenancy/ReadMfaAuthorizedPrivateResource.cs").read_text()
+          private_adapter=Path("backend/src/Crecisol.Infrastructure/Tenancy/MySqlDisposableMfaPrivateResourceStore.cs").read_text()
+          private_tests=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalMfaPrivateResourceHarness.cs").read_text()
+          for marker in ("c05_05_read_private_resource",
+                         "c05_05_mfa_session_bindings", "v_session_rev",
+                         "v_scope='OWNER' AND v_owner<>v_actor",
+                         "action_key=p_action", "r.tenant_id=p_tenant",
+                         "session_id=v_sid"):
+              assert marker in private_sql, marker
+          assert "ITrustedMfaScopedPrivateResourceStore" in private_app
+          assert "backendOwnedRouteAction" in private_app
+          assert "MySqlDisposableMfaPrivateResourceStore" in private_adapter
+          for marker in ("Twelve concurrent private reads deny after scoped grant revocation",
+                         "Branch B1 grant does not authorize",
+                         "Valid cases.read permission never grants cases.update",
+                         "MFA-bound tenant B session cannot read known private resource ID in A",
+                         "EXECUTE-only MFA/resource worker cannot bypass authorization"):
+              assert marker in private_tests, marker
+          assert "GRANT SELECT ON `$MFA_DB`.c05_05_private_resources" not in grants
           assert "NeutralRegistrationIntake" not in api
           assert "VerifyNeutralRegistrationMailbox" not in api
           assert "app.MapPost(" not in api and "app.MapGroup(" not in api
@@ -197,4 +225,4 @@ jobs:
           original=Path(".github/workflows/c05-02-mailbox-proof.yml").read_text()
           assert "github.head_ref == 'feature/c05-02-independent-email-proof-20261113'" in original
           PY
-          echo 'PASS C05 integrated synthetic TOTP challenge consumption with atomic revocable session CAS; production private E2E still NO-GO'
+          echo 'PASS C05 synthetic MFA session + atomic backend resource authorization and A/B tenant/branch/owner negatives; operational private API/E2E NO-GO'
