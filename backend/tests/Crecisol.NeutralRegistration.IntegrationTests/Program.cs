@@ -5,6 +5,7 @@ using System.Text;
 using Crecisol.Infrastructure.Tenancy;
 using Crecisol.NeutralRegistration.IntegrationTests;
 using Crecisol.Api.Contracts;
+using Crecisol.CredentialSecurity;
 using Crecisol.Application.Identity;
 using Crecisol.Application.Tenancy;
 using Crecisol.Domain.Identity;
@@ -35,6 +36,7 @@ if (string.IsNullOrWhiteSpace(adminDsn) ||
     string.IsNullOrWhiteSpace(keyHex))
     throw new InvalidOperationException("Missing isolated C05-02 verification fixture.");
 var integratedProofDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_PROOF_TEST_DSN");
+var candidateDsn = Environment.GetEnvironmentVariable("CRECISOL_C05_CANDIDATE_DSN");
 var key = Convert.FromHexString(keyHex);
 if (key.Length != 32)
     throw new InvalidOperationException("Invalid server-owned C05-02 test key.");
@@ -588,6 +590,120 @@ if (integratedProof is not null)
     }
     finally { CryptographicOperations.ZeroMemory(challenge); }
 
+    if (!string.IsNullOrWhiteSpace(candidateDsn))
+    {
+        // This is a BACKEND-ONLY trusted fixture handoff. No public route
+        // accepts a PHC string, actor ID or candidate enrollment command.
+        using var pending = new MySqlDisposableVerifiedCredentialCandidateStore(
+            candidateDsn, key, 1);
+        var tenantB = TenantId.From(
+            Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
+        var tenantA = TenantId.From(
+            Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        var password = Convert.ToBase64String(RandomNumberGenerator.GetBytes(36));
+        var hasher = new Argon2idPasswordHasher(
+            PasswordHashingPolicy.Default, new LocalOnlyFixturePasswordScreen());
+        var phc = hasher.CreateVerifier(password).ExportForTrustedCredentialStore();
+
+        Pass(!await pending.TryCreatePendingAsync(
+                 tenantA, proofIntent, phc, CancellationToken.None),
+            "Tenant A cannot promote B's verified mailbox intent");
+        Pass(!await pending.TryCreatePendingAsync(
+                 tenantB, proofIntent, "not-a-phc", CancellationToken.None),
+            "Untrusted or malformed verifier never reaches candidate procedure");
+        Pass(!await pending.TryCreatePendingAsync(
+                 tenantB, Guid.NewGuid(), phc, CancellationToken.None),
+            "Unknown mailbox intent cannot provision a candidate");
+
+        var first = await Task.WhenAll(Enumerable.Range(0, 12)
+            .Select(_ => Task.Run(() => pending.TryCreatePendingAsync(
+                tenantB, proofIntent, phc, CancellationToken.None))));
+        Pass(first.Count(wrote => wrote) == 1 &&
+             await ScalarAsync(admin,
+                 "SELECT COUNT(*) FROM c05_02_candidate_accounts") == 1,
+            "Twelve racing verified-proof enrollments create exactly one pending account");
+        var candidateState = "";
+        var candidatePhc = "";
+        await using (var read = new MySqlCommand(
+            "SELECT lifecycle,verifier_phc FROM c05_02_candidate_accounts", admin))
+        {
+            await using var rows = await read.ExecuteReaderAsync();
+            if (await rows.ReadAsync())
+            {
+                candidateState = rows.GetString(0);
+                candidatePhc = rows.GetString(1);
+            }
+        }
+        Pass(candidateState == "PENDING_MEMBERSHIP" &&
+             string.Equals(candidatePhc, phc, StringComparison.Ordinal) &&
+             hasher.Verify(password, candidatePhc).Matched,
+            "Pending-only credential is a real Argon2id PHC, no active membership");
+        Pass(!await pending.TryCreatePendingAsync(
+                 tenantB, proofIntent, phc, CancellationToken.None),
+            "Replay of an already-promoted verified proof is denied");
+
+        // Least privilege: the candidate connector can execute only the
+        // procedure and read encrypted intent columns, never account records.
+        var directReadDenied = false;
+        await using (var limited = new MySqlConnection(candidateDsn))
+        {
+            await limited.OpenAsync();
+            await using var read = new MySqlCommand(
+                "SELECT verifier_phc FROM c05_02_candidate_accounts", limited);
+            try { _ = await read.ExecuteScalarAsync(); }
+            catch (MySqlException ex) when (ex.Number is 1142 or 1143)
+            {
+                directReadDenied = true;
+            }
+        }
+        Pass(directReadDenied, "Pending candidate DB role cannot SELECT credential verifiers");
+
+        async Task<Guid> LatestBIntentAsync()
+        {
+            await using var query = new MySqlCommand(
+                "SELECT intent_id FROM c05_02_neutral_intents WHERE tenant_id=X'" +
+                B + "' ORDER BY captured_at_utc DESC, intent_id DESC LIMIT 1", admin);
+            var raw = (byte[])(await query.ExecuteScalarAsync() ??
+                throw new InvalidOperationException("Latest protected intent unavailable."));
+            try { return MySqlRfc4122Guid.Decode(raw); }
+            finally { CryptographicOperations.ZeroMemory(raw); }
+        }
+
+        var unproved = await SendBridgeAsync("b.crecisol.test",
+            "{\"mailbox\":\"Unverified@Example.test\"}");
+        var unprovedIntent = await LatestBIntentAsync();
+        Pass(unproved.Status == HttpStatusCode.Accepted &&
+             !await pending.TryCreatePendingAsync(
+                 tenantB, unprovedIntent, phc, CancellationToken.None),
+             "Recorded mailbox without verified proof can never create a credential");
+
+        var variant = await SendBridgeAsync("b.crecisol.test",
+            "{\"mailbox\":\"integrated+one@example.test\"}");
+        var variantIntent = await LatestBIntentAsync();
+        var variantJson = "{\"intentId\":\"" + variantIntent.ToString("D") + "\"}";
+        var variantStart = await SendProofAsync(
+            "proof-request", "b.crecisol.test", variantJson);
+        Pass(variant.Status == HttpStatusCode.Accepted &&
+             variantStart.Status == HttpStatusCode.Accepted &&
+             localMailbox.Has("integrated+one@example.test"),
+            "Distinct case-sensitive mailbox is independently challenged");
+        var variantToken = localMailbox.Take("integrated+one@example.test");
+        try
+        {
+            var verifyBody = "{\"intentId\":\"" + variantIntent.ToString("D") +
+                "\",\"code\":\"" + Convert.ToHexString(variantToken) + "\"}";
+            var verifiedVariant = await SendProofAsync(
+                "proof-confirm", "b.crecisol.test", verifyBody);
+            Pass(verifiedVariant.Status == HttpStatusCode.Accepted &&
+                 !await pending.TryCreatePendingAsync(
+                     tenantB, variantIntent, phc, CancellationToken.None) &&
+                 await ScalarAsync(admin,
+                     "SELECT COUNT(*) FROM c05_02_candidate_accounts") == 1,
+                "Case-folded login collision fails closed without merging distinct inboxes");
+        }
+        finally { CryptographicOperations.ZeroMemory(variantToken); }
+    }
+
     async Task DenyProofAsync(string label, string endpoint, string json,
         IReadOnlyDictionary<string,string>? headers = null,
         string host = "b.crecisol.test")
@@ -619,7 +735,7 @@ await app.StopAsync();
 CryptographicOperations.ZeroMemory(key);
 
 Console.WriteLine($"PASS C05-02 REAL neutral HTTP + MySqlConnector/MySQL8.4: {checks} assertions");
-Console.WriteLine("LIMIT: loopback test host only; no real mailbox delivery, account registration or authenticated membership");
+Console.WriteLine("LIMIT: loopback only; pending credential is NOT account activation, tenant membership, MFA or session");
 
 // Types are test-private; no platform/tenant operator account is created.
 internal sealed record RegistrationPayload(string? Email);
