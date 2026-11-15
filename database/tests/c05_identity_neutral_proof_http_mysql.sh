@@ -12,12 +12,15 @@ CANDIDATE_PASSWORD="$(openssl rand -hex 24)"
 DISPATCH_PASSWORD="$(openssl rand -hex 24)"
 ACTIVATION_PASSWORD="$(openssl rand -hex 24)"
 DIRECTORY_PASSWORD="$(openssl rand -hex 24)"
+RATE_RUNNER_PASSWORD="$(openssl rand -hex 24)"
+RATE_SETUP_PASSWORD="$(openssl rand -hex 24)"
+RATE_DB="c05_10_disposable"
 ADMIN_PASSWORD="$(openssl rand -hex 24)"
 MASTER_HEX="$(openssl rand -hex 32)"
 cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 if [ -n "${GITHUB_ACTIONS:-}" ]; then
-  for value in "$ROOT_PASSWORD" "$INGEST_PASSWORD" "$PROOF_PASSWORD" "$CANDIDATE_PASSWORD" "$DISPATCH_PASSWORD" "$ACTIVATION_PASSWORD" "$DIRECTORY_PASSWORD" "$ADMIN_PASSWORD" "$MASTER_HEX"; do
+  for value in "$ROOT_PASSWORD" "$INGEST_PASSWORD" "$PROOF_PASSWORD" "$CANDIDATE_PASSWORD" "$DISPATCH_PASSWORD" "$ACTIVATION_PASSWORD" "$DIRECTORY_PASSWORD" "$RATE_RUNNER_PASSWORD" "$RATE_SETUP_PASSWORD" "$ADMIN_PASSWORD" "$MASTER_HEX"; do
     echo "::add-mask::$value"
   done
 fi
@@ -55,7 +58,20 @@ for path in \
   docker exec -e MYSQL_PWD="$ROOT_PASSWORD" -i "$NAME" \
     mysql -uroot -D "$DB" < "$path"
 done
-root_sql "CREATE USER 'c05_02_proof_ingest'@'%' IDENTIFIED BY '$INGEST_PASSWORD';
+# Independent physical schema keeps the C05-10 preauth budget separated
+# from the registration DB, while remaining on one disposable loopback server.
+root_sql "CREATE DATABASE \`$RATE_DB\`;"
+docker exec -e MYSQL_PWD="$ROOT_PASSWORD" -i "$NAME" \
+  mysql -uroot -D "$RATE_DB" < database/tests/fixtures/c05_10_disposable_rate_limits.sql
+root_sql "CREATE USER 'c05_10_integrated_runner'@'%' IDENTIFIED BY '$RATE_RUNNER_PASSWORD';
+ CREATE USER 'c05_10_integrated_setup'@'%' IDENTIFIED BY '$RATE_SETUP_PASSWORD';
+ GRANT EXECUTE ON PROCEDURE \`$RATE_DB\`.c05_10_admit_once
+   TO 'c05_10_integrated_runner'@'%';
+ GRANT EXECUTE ON PROCEDURE \`$RATE_DB\`.c05_10_complete_once
+   TO 'c05_10_integrated_runner'@'%';
+ GRANT SELECT,INSERT,UPDATE ON \`$RATE_DB\`.*
+   TO 'c05_10_integrated_setup'@'%';
+ CREATE USER 'c05_02_proof_ingest'@'%' IDENTIFIED BY '$INGEST_PASSWORD';
  CREATE USER 'c05_02_proof_limited'@'%' IDENTIFIED BY '$PROOF_PASSWORD';
  CREATE USER 'c05_02_proof_setup'@'%' IDENTIFIED BY '$ADMIN_PASSWORD';
  CREATE USER 'c05_02_candidate_limited'@'%' IDENTIFIED BY '$CANDIDATE_PASSWORD';
@@ -110,7 +126,9 @@ export CRECISOL_C05_CANDIDATE_DSN="Server=127.0.0.1;Port=$port;Database=$DB;User
 export CRECISOL_C05_DISPATCH_DSN="Server=127.0.0.1;Port=$port;Database=$DB;User ID=c05_02_dispatch_worker;Password=$DISPATCH_PASSWORD;Pooling=false"
 export CRECISOL_C05_ACTIVATION_DSN="Server=127.0.0.1;Port=$port;Database=$DB;User ID=c05_02_membership_worker;Password=$ACTIVATION_PASSWORD;Pooling=false"
 export CRECISOL_C05_DIRECTORY_DSN="Server=127.0.0.1;Port=$port;Database=$DB;User ID=c05_02_login_directory;Password=$DIRECTORY_PASSWORD;Pooling=false"
+export CRECISOL_C05_RATE_SETUP_DSN="Server=127.0.0.1;Port=$port;Database=$RATE_DB;User ID=c05_10_integrated_setup;Password=$RATE_SETUP_PASSWORD;Pooling=false"
+export CRECISOL_C05_RATE_RUNNER_DSN="Server=127.0.0.1;Port=$port;Database=$RATE_DB;User ID=c05_10_integrated_runner;Password=$RATE_RUNNER_PASSWORD;Pooling=false"
 dotnet run --no-build -c Release \
   --project backend/tests/Crecisol.NeutralRegistration.IntegrationTests/Crecisol.NeutralRegistration.IntegrationTests.csproj \
   -- --integration
-echo 'PASS C05 isolated trusted approval + contextual login preparation; NO exposed login, MFA or session'
+echo 'PASS C05 isolated tenant approval + pre-Argon2id SQL rate budget + contextual login preparation; NO public login, real MFA or session'
