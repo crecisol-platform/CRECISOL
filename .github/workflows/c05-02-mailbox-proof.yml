@@ -29,6 +29,10 @@ permissions:
 jobs:
   c05-02-mailbox-proof:
     name: C05-02 protected local mailbox proof, A/B/C and real DB CAS
+    # This historic audit C intentionally accepts ONLY its original feature
+    # PR; unrelated identity integration diffs are verified in the new C05
+    # umbrella workflow, including this exact regression executable.
+    if: github.event_name == 'pull_request' && github.head_ref == 'feature/c05-02-independent-email-proof-20261113'
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     steps:
