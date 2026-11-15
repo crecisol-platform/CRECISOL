@@ -174,7 +174,7 @@ internal static class LocalMfaBoundSessionHarness
              !await scoped.ValidateAsync(bearer,trustedA,ct),
              "MFA session is one-use, valid only on trusted Host B, never on tenant A");
 
-        var privateAccess=await LocalMfaPrivateResourceHarness.VerifyAsync(
+        await using var privateAccess=await LocalMfaPrivateResourceHarness.VerifyAsync(
             db,sessionWorkerDsn,protector,bearer,approved.ActorId,
             trustedB,trustedA,pass,ct);
         var rotated=await Task.WhenAll(Enumerable.Range(0,12).Select(_=>
@@ -189,14 +189,16 @@ internal static class LocalMfaBoundSessionHarness
         pass(await privateAccess.DeniesAsync(bearer,trustedB,ct) &&
              (await privateAccess.Reader.ExecuteAsync(
                  current,trustedB,privateAccess.OwnResource,ct)).ExternalKey==
-                 "synthetic-b-owner-case",
-             "Old rotated bearer cannot read B resource; new MFA-bound bearer retains exact scoped access");
+                 "synthetic-b-owner-case" &&
+             await privateAccess.Http.AllowedAsync(
+                 current,trustedB,privateAccess.OwnResource,ct),
+             "Old rotated bearer denied by HTTP/SQL; new MFA bearer retains exact scope");
         pass(await scoped.LogoutAsync(current,trustedB,ct) &&
              !await scoped.ValidateAsync(current,trustedB,ct) &&
              !await scoped.LogoutAsync(current,trustedB,ct),
              "Protected logout revokes real MySQL session immediately and cannot replay");
         pass(await privateAccess.DeniesAsync(current,trustedB,ct),
-             "Protected logout invalidates subsequent private resource reads");
+             "Protected logout invalidates subsequent private SQL and HTTP resource reads");
 
         var inaccessible=false;
         await using(var runner=new MySqlConnection(sessionWorkerDsn))
