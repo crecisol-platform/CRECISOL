@@ -20,7 +20,8 @@ internal static class LocalApprovedMembershipHarness
 {
     public static async Task VerifyAsync(
         MySqlConnection setup, string activationDsn, string directoryDsn,
-        string rateSetupDsn, string rateRunnerDsn, byte[] trustedMaster, string knownPassword, Guid sourceIntent,
+        string rateSetupDsn, string rateRunnerDsn,
+        string mfaSetupDsn, string mfaWorkerDsn, byte[] trustedMaster, string knownPassword, Guid sourceIntent,
         ITrustedVerifiedHostCatalog hosts, ITrustedTenantCatalogReader tenants,
         ITrustedHostUtcClock clock, Action<bool,string> pass,
         CancellationToken ct)
@@ -173,6 +174,10 @@ internal static class LocalApprovedMembershipHarness
         await LocalApprovedThrottledLoginHarness.VerifyAsync(
             rateSetupDsn,rateRunnerDsn,service,
             await resolver.ResolveAsync(approvedHost,ct),login,knownPassword,pass,ct);
+        await LocalMfaBoundSessionHarness.VerifyAsync(
+            setup,mfaSetupDsn,mfaWorkerDsn,service,login,knownPassword,
+            ready,await resolver.ResolveAsync(approvedHost,ct),
+            await resolver.ResolveAsync(foreignHost,ct),pass,ct);
         var wrongPassword=await service.ExecuteAsync(
             login,Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).AsMemory(),ct);
         pass(wrongPassword.Status==ContextualLoginPreparationStatus.Denied &&
