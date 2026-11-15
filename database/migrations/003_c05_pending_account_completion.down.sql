@@ -1,0 +1,3 @@
+DROP PROCEDURE IF EXISTS c05_operational_complete_pending_registration;
+DROP PROCEDURE IF EXISTS c05_operational_reserve_registration_completion;
+DROP TABLE IF EXISTS c05_identity_registration_completion_quota;

@@ -26,18 +26,27 @@ for _ in $(seq 1 120); do
 done
 [[ "$ready" == 1 ]] || { docker logs "$NAME"; exit 1; }
 
+root_sql() {
+  docker exec -e "MYSQL_PWD=$PASSWORD" "$NAME" \
+    mysql -uroot -N -B -D crecisol_c05_migration -e "$1"
+}
+
 docker exec -i -e "MYSQL_PWD=$PASSWORD" "$NAME" \
   mysql -uroot crecisol_c05_migration \
   < "$ROOT/database/migrations/001_c05_identity_operational.sql"
 docker exec -i -e "MYSQL_PWD=$PASSWORD" "$NAME" \
   mysql -uroot crecisol_c05_migration \
   < "$ROOT/database/migrations/002_c05_registration_proof_outbox.sql"
+docker exec -i -e "MYSQL_PWD=$PASSWORD" "$NAME" \
+  mysql -uroot crecisol_c05_migration \
+  < "$ROOT/database/migrations/003_c05_pending_account_completion.sql"
 
 actual="$(docker exec -e "MYSQL_PWD=$PASSWORD" "$NAME" \
   mysql -uroot -Nse 'SHOW TABLES' crecisol_c05_migration | sort)"
 expected="$(printf '%s\n' c05_identity_account c05_identity_audit \
   c05_identity_registration_intent c05_identity_registration_quota \
   c05_identity_mailbox_proof c05_identity_mailbox_outbox c05_identity_membership \
+  c05_identity_registration_completion_quota \
   c05_identity_membership_approval c05_identity_mfa_factor \
   c05_identity_recovery c05_identity_resource_grant \
   c05_identity_session c04_tenant_catalog c04_verified_tenant_host | sort)"
@@ -80,6 +89,63 @@ then
   exit 1
 fi
 
+# Exercise the live completion procedures: hard per-peer budget and an
+# atomic mailbox-proof -> PENDING account + PENDING membership transition.
+docker exec -i -e "MYSQL_PWD=$PASSWORD" "$NAME" \
+  mysql -uroot crecisol_c05_migration <<'SQL'
+INSERT INTO c04_tenant_catalog VALUES
+(UNHEX('00000000000000000000000000000009'),'registration-test','Registration test',3,2,1,UTC_TIMESTAMP(6));
+INSERT INTO c05_identity_registration_intent
+  (tenant_id,intent_id,mailbox_hmac,peer_hmac,mailbox_ciphertext,mailbox_nonce,
+   mailbox_tag,key_version,state,created_at_utc,expires_at_utc)
+VALUES (UNHEX('00000000000000000000000000000009'),
+        UNHEX('00000000000000000000000000000091'),REPEAT(UNHEX('11'),32),
+        REPEAT(UNHEX('22'),32),REPEAT(UNHEX('55'),24),
+        REPEAT(UNHEX('66'),12),REPEAT(UNHEX('77'),16),1,0,
+        UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)+INTERVAL 30 MINUTE);
+INSERT INTO c05_identity_mailbox_proof
+  (tenant_id,proof_id,mailbox_hmac,proof_token_hmac,mailbox_ciphertext,
+   mailbox_nonce,mailbox_tag,key_version,proof_state,created_at_utc,
+   expires_at_utc,consumed_at_utc,failed_attempts)
+VALUES (UNHEX('00000000000000000000000000000009'),
+        UNHEX('00000000000000000000000000000091'),REPEAT(UNHEX('11'),32),
+        REPEAT(UNHEX('33'),32),REPEAT(UNHEX('55'),24),
+        REPEAT(UNHEX('66'),12),REPEAT(UNHEX('77'),16),1,0,
+        UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)+INTERVAL 10 MINUTE,NULL,0);
+INSERT INTO c05_identity_mailbox_outbox
+  (tenant_id,proof_id,payload_ciphertext,payload_nonce,payload_tag,key_version,
+   delivery_state,attempts,created_at_utc,expires_at_utc)
+VALUES (UNHEX('00000000000000000000000000000009'),
+        UNHEX('00000000000000000000000000000091'),REPEAT(UNHEX('88'),32),
+        REPEAT(UNHEX('99'),12),REPEAT(UNHEX('aa'),16),1,0,0,
+        UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)+INTERVAL 10 MINUTE);
+SQL
+window_start="$(root_sql "SELECT DATE_FORMAT(UTC_TIMESTAMP(0),'%Y-%m-%d %H:%i:00')")"
+for attempt in 1 2 3 4 5; do
+  result="$(root_sql "CALL c05_operational_reserve_registration_completion(UNHEX('00000000000000000000000000000009'),REPEAT(UNHEX('bb'),32),'$window_start')")"
+  [[ "$result" == ADMITTED ]]
+done
+result="$(root_sql "CALL c05_operational_reserve_registration_completion(UNHEX('00000000000000000000000000000009'),REPEAT(UNHEX('bb'),32),'$window_start')")"
+[[ "$result" == LIMITED ]]
+
+result="$(root_sql "CALL c05_operational_complete_pending_registration(
+  UNHEX('00000000000000000000000000000009'),
+  UNHEX('00000000000000000000000000000091'),REPEAT(UNHEX('33'),32),
+  REPEAT(UNHEX('11'),32),REPEAT(UNHEX('44'),32),
+  '\$argon2id\$v=19\$m=19456,t=2,p=1\$YWJjZGVmZ2hpamts\$YWJjZGVmZ2hpamtsYWJjZGVmZ2hpamts',
+  UNHEX('00000000000000000000000000000092'),
+  UNHEX('00000000000000000000000000000093'),UTC_TIMESTAMP(6))")"
+[[ "$result" == PENDING ]]
+state="$(root_sql "SELECT CONCAT(a.account_state,':',m.membership_state,':',p.proof_state,':',o.delivery_state)
+  FROM c05_identity_account a
+  JOIN c05_identity_membership m ON m.account_id=a.account_id
+  JOIN c05_identity_mailbox_proof p
+    ON p.proof_id=UNHEX('00000000000000000000000000000091')
+  JOIN c05_identity_mailbox_outbox o ON o.proof_id=p.proof_id
+ WHERE a.account_id=UNHEX('00000000000000000000000000000092')")"
+[[ "$state" == '0:0:1:3' ]]
+[[ "$(root_sql "SELECT COUNT(*) FROM c05_identity_audit WHERE action_code='REGISTRATION_PENDING'")" == 1 ]]
+
 if docker exec -i -e "MYSQL_PWD=$PASSWORD" "$NAME" \
     mysql -uroot crecisol_c05_migration 2>/dev/null <<'SQL'
 UPDATE c05_identity_audit SET action_code='tampered';
@@ -89,6 +155,9 @@ then
   exit 1
 fi
 
+docker exec -i -e "MYSQL_PWD=$PASSWORD" "$NAME" \
+  mysql -uroot crecisol_c05_migration \
+  < "$ROOT/database/migrations/003_c05_pending_account_completion.down.sql"
 docker exec -i -e "MYSQL_PWD=$PASSWORD" "$NAME" \
   mysql -uroot crecisol_c05_migration \
   < "$ROOT/database/migrations/002_c05_registration_proof_outbox.down.sql"

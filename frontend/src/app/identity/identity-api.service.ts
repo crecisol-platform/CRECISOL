@@ -31,13 +31,17 @@ export class IdentityApiService {
     }).pipe(timeout({ first: 8000 })));
   }
 
-  async confirmRegistrationProof(proofId: string, code: string): Promise<void> {
+  async completeRegistration(proofId: string, code: string, mailbox: string, password: string): Promise<void> {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(proofId) ||
-        !/^[0-9a-f]{64}$/i.test(code))
+        !/^[0-9a-f]{64}$/i.test(code) || mailbox.length > 254 || password.length < 15 || password.length > 128)
       throw new Error('identity_unavailable');
-    await firstValueFrom(this.http.post<NeutralReceipt>(`${API}/registration-proofs/confirm`, {
-      proofId, code
-    }).pipe(timeout({ first: 8000 })));
+    try {
+      await firstValueFrom(this.http.post<NeutralReceipt>(`${API}/registration-completions`, {
+        proofId, code, mailbox, password
+      }).pipe(timeout({ first: 8000 })));
+    } finally {
+      password = '';
+    }
   }
 
   async beginLogin(mailbox: string, password: string): Promise<void> {

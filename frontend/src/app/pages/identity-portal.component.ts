@@ -35,7 +35,7 @@ import { IdentityApiService } from '../identity/identity-api.service';
         </section>
         <section aria-labelledby="confirm-heading">
           <h2 id="confirm-heading">Confirmar correo</h2>
-          <p>Ingresa el identificador y el código de confirmación recibidos. La respuesta no revela si el código es válido.</p>
+          <p>Confirma el correo y crea una cuenta pendiente de aprobación. La solicitud no concede acceso.</p>
           <form (submit)="confirmRegistration($event)">
             <label for="proof-id">Identificador de confirmación</label>
             <input id="proof-id" name="proofId" type="text" autocomplete="off"
@@ -44,7 +44,13 @@ import { IdentityApiService } from '../identity/identity-api.service';
             <input id="proof-code" name="proofCode" type="text" inputmode="text"
               autocomplete="one-time-code" required minlength="64" maxlength="64"
               pattern="[0-9a-fA-F]{64}">
-            <button type="submit" [disabled]="busy()">{{ busy() ? 'Verificando…' : 'Confirmar correo' }}</button>
+            <label for="completion-mailbox">Correo de la solicitud</label>
+            <input id="completion-mailbox" name="completionMailbox" type="email" autocomplete="email"
+              required maxlength="254">
+            <label for="completion-password">Crear contraseña</label>
+            <input id="completion-password" name="completionPassword" type="password"
+              autocomplete="new-password" required minlength="15" maxlength="128">
+            <button type="submit" [disabled]="busy()">{{ busy() ? 'Verificando…' : 'Crear cuenta pendiente' }}</button>
           </form>
         </section>
       }
@@ -120,10 +126,11 @@ export class IdentityPortalComponent {
     await this.run(async () => {
       const form = event.currentTarget as HTMLFormElement;
       const values = new FormData(form);
-      await this.identity.confirmRegistrationProof(
-        String(values.get('proofId') ?? ''), String(values.get('proofCode') ?? ''));
+      await this.identity.completeRegistration(
+        String(values.get('proofId') ?? ''), String(values.get('proofCode') ?? ''),
+        String(values.get('completionMailbox') ?? ''), String(values.get('completionPassword') ?? ''));
       form.reset();
-      this.message.set('Solicitud recibida. Esto no crea una cuenta ni concede acceso.');
+      this.message.set('Solicitud recibida. La cuenta queda pendiente de aprobación y todavía no concede acceso.');
     });
   }
 

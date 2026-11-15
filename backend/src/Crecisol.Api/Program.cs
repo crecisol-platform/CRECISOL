@@ -39,6 +39,21 @@ if (c05RegistrationEnabled)
     builder.Services.AddOperationalC05Registration(
         Environment.GetEnvironmentVariable("CRECISOL_C05_IDENTITY_DSN"));
 
+var c05CompletionMode = Environment.GetEnvironmentVariable(
+    "CRECISOL_C05_LOCAL_ACCOUNT_COMPLETION_ENABLED");
+if (c05CompletionMode is not (null or "true" or "false"))
+    throw new InvalidOperationException("Invalid local account completion mode.");
+var c05CompletionEnabled = string.Equals(c05CompletionMode, "true", StringComparison.Ordinal);
+if (c05CompletionEnabled)
+{
+    if (!c05RegistrationEnabled)
+        throw new InvalidOperationException("Local account completion requires C05 registration storage.");
+    builder.Services.AddLocalRegistrationCompletion(
+        Environment.GetEnvironmentVariable("CRECISOL_C05_IDENTITY_DSN"),
+        trustedHosts.Where(host => host.EndsWith(".example.test", StringComparison.OrdinalIgnoreCase))
+            .ToArray());
+}
+
 var app = builder.Build();
 
 // Safe failure across every environment, with no server exception details.
@@ -74,8 +89,10 @@ app.MapGet("/api/v1/public/branding/platform", HandlePublishedBrand)
 
 if (c05RegistrationEnabled)
     app.MapNeutralRegistrationIntent();
-if (c05RegistrationEnabled)
+if (c05RegistrationEnabled && !c05CompletionEnabled)
     app.MapOperationalRegistrationProofConfirmation();
+if (c05CompletionEnabled)
+    app.MapOperationalRegistrationCompletion();
 
 app.Run();
 
