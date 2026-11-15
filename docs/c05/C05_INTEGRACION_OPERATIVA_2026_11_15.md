@@ -60,11 +60,17 @@ El rol SQL no crea cuentas ni grants por acceso directo, no tiene DDL ni DELETE 
 
 **B — seguridad:** se probaron tenant A/B, sucursal/propietario, Host/Forwarded/XFF/claims falsos, cookies y origen cruzado, bearer inventado, cuota concurrente, MFA inválido/replay/expirado, recuperación replay/expirada/cruzada y sin bypass MFA, cuenta suspendida, revocación de factor/grant, carreras de rotación/aprobación y ausencia de secretos/PII en logs. Se corrigió una degradación potencial tras revocar MFA: una contraseña no puede reabrir enrolamiento si ya existió un factor revocado. Se mantiene separación de operaciones tenant y plataforma.
 
+La revisión final añadió la condición `branch_id=tenant_id` al grant `MEMBERSHIP_APPROVE`: esa combinación representa autoridad tenant-wide explícita, provisionada fuera de HTTP. Un grant limitado a otra sucursal no puede convertirse en aprobación global de membresías. Se añadió una prueba negativa dinámica antes de la aprobación positiva de Angular.
+
 **C — arquitectura, QA y UX:** .NET 10 Release `-warnaserror` pasó sin advertencias; tipos y build de Angular 22/Node 24 pasaron. Las 25 suites de contratos C01..C05 pasaron; `SharedTenancy` se repitió sin el argumento `contracts` que su ejecutable no acepta. Regresión histórica de recuperación: 91 aserciones .NET/HTTP/MySQL, más sus verificaciones de esquema, PASS. Axe no detectó hallazgos serious/critical en el portal autenticado. Las seis migraciones se aplicaron y revirtieron sobre el esquema poblado, sin tablas restantes.
 
 Se preservan los fallos históricos: selector ambiguo de Playwright, contexto requerido por axe, espera de la cuota real tras ataques, ejecutable histórico no compilado, lectura intermitente del cuerpo de respuesta de Chromium, auditor de dependencias anterior a C05 y runner Ubuntu 26 no soportado por Playwright 1.56.1. Cada corrección debe comprobarse en una nueva ejecución; ninguno de esos fallos se etiqueta retroactivamente PASS.
 
 La CI de `0f93631…` falló al instalar Chromium en `ubuntu-latest` (Ubuntu 26.04) y en auditores históricos no actualizados; no acredita el cierre. La CI de `5befbbd…` verifica la corrección del runner/grafo y permanece evidencia de su propio SHA, no de cambios posteriores. La CI final sigue pendiente al redactar esta sección. No hay POSTMERGE porque no se ha fusionado el PR.
+
+Regresión adicional corregida: el registro de resultados C05-10 podía sufrir deadlock 1213 por gap locks entre intentos diferentes. `READ COMMITTED` conserva el bloqueo de la traza por intento y la PK única, evitando ese gap sin aumentar admisiones ni ocultar errores. La repetición local pasó **211 comprobaciones** y **seis cohortes de 16**, siempre **5 admitidos / 11 limitados / 0 no disponibles**; auditor B mantuvo **174 mutaciones rechazadas**. El fallo previo 4/11/1 se preserva. Las auditorías institucionales C05-08/C05-10 de diff exacto siguen intactas y solo corresponden a sus PR originales; sus A/B, compilaciones y todas las pruebas funcionales/SQL siguen siendo obligatorias en las integraciones actuales.
+
+La regresión pública local completó 64/65 al primer intento; una prueba axe agotó 45 segundos bajo carga. Su repetición aislada, con un solo worker y 120 segundos de presupuesto, pasó sin alterar aserciones ni código del producto. Resultado: los 65 casos distintos disponen de ejecución satisfactoria, preservando el timeout original. La CI también ejecuta esos mismos 65 casos sin usar esa repetición como sustituto de su resultado propio.
 
 ## Reproducción, riesgos y rollback
 

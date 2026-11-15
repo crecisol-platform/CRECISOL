@@ -347,6 +347,7 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
             var authority = await u.One("""
                 SELECT grant_id FROM c05_identity_resource_grant WHERE tenant_id=@t AND account_id=@a
                 AND permission_code='MEMBERSHIP_APPROVE' AND scope_kind=2 AND resource_id IS NULL
+                AND branch_id=@t
                 AND revoked_at_utc IS NULL AND granted_at_utc<=UTC_TIMESTAMP(6)
                 AND expires_at_utc>UTC_TIMESTAMP(6) LIMIT 1 FOR SHARE
                 """, ("t", tenant), ("a", actor));

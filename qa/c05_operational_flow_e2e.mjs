@@ -198,6 +198,10 @@ try {
   const approver = await enrollLogin('approver@example.test');
   await register('member@example.test', page);
   const memberId = membershipId('member@example.test');
+  sql(`UPDATE c05_identity_resource_grant SET branch_id=UUID_TO_BIN('${otherBranch}',0) WHERE permission_code='MEMBERSHIP_APPROVE'`);
+  check((await api('memberships/decide', { membershipId: memberId, decision: 'approve', reason: 'Wrong authority scope', code: approver.backups.pop() }, approver.token)).status === 401,
+    'branch-scoped approval permission cannot become tenant-wide administrative authority');
+  sql(`UPDATE c05_identity_resource_grant SET branch_id=tenant_id WHERE permission_code='MEMBERSHIP_APPROVE'`);
   await page.getByRole('region', { name: 'Iniciar sesión', exact: true }).getByLabel('Correo electrónico', { exact: true }).fill('approver@example.test');
   await page.getByLabel('Contraseña', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
