@@ -163,7 +163,8 @@ jobs:
                          "c05_05_mfa_session_bindings", "v_session_rev",
                          "v_scope='OWNER' AND v_owner<>v_actor",
                          "action_key=p_action", "r.tenant_id=p_tenant",
-                         "session_id=v_sid"):
+                         "session_id=v_sid", "v_factor_state<>'ACTIVE'",
+                         "v_challenge_state<>'CONSUMED'", "FOR SHARE;"):
               assert marker in private_sql, marker
           assert "ITrustedMfaScopedPrivateResourceStore" in private_app
           assert "backendOwnedRouteAction" in private_app
@@ -172,7 +173,8 @@ jobs:
                          "Branch B1 grant does not authorize",
                          "Valid cases.read permission never grants cases.update",
                          "MFA-bound tenant B session cannot read known private resource ID in A",
-                         "EXECUTE-only MFA/resource worker cannot bypass authorization"):
+                         "EXECUTE-only MFA/resource worker cannot bypass authorization",
+                         "Revoked MFA factor immediately denies protected resource"):
               assert marker in private_tests, marker
           assert "GRANT SELECT ON `$MFA_DB`.c05_05_private_resources" not in grants
           assert "NeutralRegistrationIntake" not in api
