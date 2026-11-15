@@ -1,11 +1,13 @@
 using System.Net;
 using Crecisol.Api.Contracts;
+using Crecisol.Api.Modules.Identity;
 using Crecisol.Application.Identity;
 using Crecisol.Application.Tenancy;
 using Crecisol.Domain.Tenancy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Crecisol.NeutralRegistration.IntegrationTests;
@@ -19,7 +21,7 @@ internal sealed class LocalMfaPrivateHttpHarness : IAsyncDisposable
 {
     private const string HostB = "b.crecisol.test";
     private const string HostA = "a.crecisol.test";
-    private const string Route = "/__test_only/c05-integration/private/cases/";
+    private const string Route = "/api/v1/private/cases/";
     private readonly WebApplication app;
     private readonly HttpClient client;
     private readonly ReadMfaAuthorizedPrivateResource readForAmbiguous;
@@ -48,12 +50,14 @@ internal sealed class LocalMfaPrivateHttpHarness : IAsyncDisposable
         var builder = WebApplication.CreateBuilder();
         builder.Logging.ClearProviders(); // No sensitive bearer or resource logs.
         builder.WebHost.UseUrls("http://127.0.0.1:0");
+        // Compose the API endpoint with the exact backend interfaces that
+        // a later operational composition root must supply. No fake DI.
+        builder.Services.AddSingleton<ITrustedPrivateResourceHostCatalog>(
+            new VerifiedPrivateResourceHostCatalog(resolver));
+        builder.Services.AddSingleton(reader);
+        builder.Services.AddTransient<PrivateResourceHttpRead>();
         var app = builder.Build();
-        var endpoint = new PrivateResourceHttpRead(
-            new VerifiedPrivateResourceHostCatalog(resolver), reader);
-        app.MapGet(Route + "{resourceId}",
-            (HttpContext ctx, string resourceId) =>
-                endpoint.ExecuteAsync(ctx, resourceId, ctx.RequestAborted));
+        app.MapMfaVerifiedPrivateResourceRead();
         await app.StartAsync(cancellationToken);
         var url = app.Urls.Single(value =>
             value.StartsWith("http://127.0.0.1:", StringComparison.Ordinal));

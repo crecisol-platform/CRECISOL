@@ -14,6 +14,7 @@ on:
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableApprovedLoginDirectory.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaBoundSessionLedger.cs'
       - 'backend/src/Crecisol.Api/Contracts/VerifiedPrivateResourceHostCatalog.cs'
+      - 'backend/src/Crecisol.Api/Modules/Identity/PrivateResourceReadModule.cs'
       - 'backend/src/Crecisol.Application/Tenancy/ReadMfaAuthorizedPrivateResource.cs'
       - 'backend/src/Crecisol.Infrastructure/Tenancy/MySqlDisposableMfaPrivateResourceStore.cs'
       - 'database/tests/fixtures/c05_05_private_resource_authorization_fixture.sql'
@@ -40,6 +41,7 @@ on:
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableApprovedLoginDirectory.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlDisposableMfaBoundSessionLedger.cs'
       - 'backend/src/Crecisol.Api/Contracts/VerifiedPrivateResourceHostCatalog.cs'
+      - 'backend/src/Crecisol.Api/Modules/Identity/PrivateResourceReadModule.cs'
       - 'backend/src/Crecisol.Application/Tenancy/ReadMfaAuthorizedPrivateResource.cs'
       - 'backend/src/Crecisol.Infrastructure/Tenancy/MySqlDisposableMfaPrivateResourceStore.cs'
       - 'database/tests/fixtures/c05_05_private_resource_authorization_fixture.sql'
@@ -176,7 +178,12 @@ jobs:
           canonical_host=Path("backend/src/Crecisol.Api/Contracts/VerifiedPrivateResourceHostCatalog.cs").read_text()
           assert "ResolveVerifiedTenantHost" in canonical_host
           assert "CanonicalTenantHost.Parse" in canonical_host
-          assert "FixedTestHostCatalog" not in private_tests
+          private_module=Path("backend/src/Crecisol.Api/Modules/Identity/PrivateResourceReadModule.cs").read_text()
+          assert "/api/v1/private/cases/{resourceId}" in private_module
+          assert "GetRequiredService<PrivateResourceHttpRead>()" in private_module
+          assert "MapMfaVerifiedPrivateResourceRead()" in http_tests
+          assert "MapMfaVerifiedPrivateResourceRead" not in api
+          assert "FixedTestHostCatalog" not in http_tests
           http_boundary=Path("backend/src/Crecisol.Api/Contracts/PrivateResourceHttpRead.cs").read_text()
           http_tests=Path("backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalMfaPrivateHttpHarness.cs").read_text()
           for marker in ("ITrustedPrivateResourceHostCatalog", "ReadMfaAuthorizedPrivateResource",
