@@ -48,7 +48,8 @@ def check(path: str, value: str) -> None:
     if path == "docs/PLAN_37_CAPITULOS.md":
         require(prefix == heading + "\n" and
                 history.startswith("  \n" + old_open) and
-                value.splitlines()[6].startswith("**ESTADO VIGENTE:"),
+                value.splitlines()[6].startswith("Fuente de nombres: Documento Maestro Único.") and
+                "**ESTADO VIGENTE:" in value.splitlines()[6],
                 path + " historical C03 7-line status shifted")
     else:
         require(prefix.endswith(heading + "\n\n") and
