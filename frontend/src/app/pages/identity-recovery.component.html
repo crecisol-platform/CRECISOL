@@ -4,12 +4,15 @@
             <label for="recovery-mailbox">Correo para recuperación</label><input id="recovery-mailbox" name="mailbox" type="email" autocomplete="email" required maxlength="254">
             <button [disabled]="busy() || identity.restoring()">Solicitar recuperación</button>
           </form>
+          <details class="recovery-step"><summary>Ya tengo mi código de recuperación</summary>
+            <p>Escribe el código recibido y confirma con tu segundo factor para crear una nueva contraseña.</p>
           <form (submit)="securityActionRequested.emit({ event: $event, action: 'recovery-complete' })">
             <label for="recovery-token">Token de recuperación</label><input id="recovery-token" name="token" autocomplete="off" required pattern="[0-9a-fA-F]{64}">
             <label for="recovery-code">Código MFA para recuperación</label><input id="recovery-code" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
             <label for="recovery-password">Contraseña recuperada</label><input id="recovery-password" name="newPassword" type="password" autocomplete="new-password" required minlength="15" maxlength="128">
             <button [disabled]="busy() || identity.restoring()">Restablecer contraseña</button>
           </form>
+          </details>
           <details><summary>Reportar un cambio que no reconozco</summary>
             <p>Usa el código del aviso de seguridad enviado a tu correo verificado. La denuncia revoca las sesiones; no concede acceso ni cambia contraseñas.</p>
             <form (submit)="securityActionRequested.emit({ event: $event, action: 'incident' })">
