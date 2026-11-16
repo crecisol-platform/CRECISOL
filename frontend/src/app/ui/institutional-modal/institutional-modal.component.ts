@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, effect, input } from '@angular/core';
 
 /**
  * Modal institucional C05. Usa la top layer nativa (<dialog>.showModal):
@@ -23,8 +23,22 @@ export class InstitutionalModalComponent implements OnDestroy {
   readonly feedback = input('');
   readonly error = input('');
   readonly wide = input(false);
+  readonly closeOnSuccess = input(false);
   @ViewChild('surface', { static: true }) private surface?: ElementRef<HTMLDialogElement>;
   private previouslyFocused: HTMLElement | null = null;
+  private submittedWhileOpen = false;
+
+  constructor() {
+    effect(() => {
+      const busy = this.busy(), feedback = this.feedback(), error = this.error();
+      if (!this.closeOnSuccess() || !this.surface?.nativeElement.open) return;
+      if (busy) this.submittedWhileOpen = true;
+      else if (this.submittedWhileOpen && feedback && !error) {
+        this.submittedWhileOpen = false;
+        this.surface.nativeElement.close();
+      }
+    });
+  }
 
   open(): void {
     const dialog = this.surface?.nativeElement;
@@ -46,6 +60,7 @@ export class InstitutionalModalComponent implements OnDestroy {
     // Restituir el punto de lectura y navegación a teclado.
     if (this.previouslyFocused?.isConnected) this.previouslyFocused.focus();
     this.previouslyFocused = null;
+    this.submittedWhileOpen = false;
   }
 
   ngOnDestroy(): void {
