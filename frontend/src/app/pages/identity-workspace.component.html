@@ -234,11 +234,22 @@
               <button type="button" [disabled]="busy()" (click)="revokeRequested.emit(session.id)">Confirmar revocación</button>
             </cs-institutional-modal>
           }
-          <form (submit)="securityActionRequested.emit({ event: $event, action: 'private' })">
+          <div class="institutional-task">
+  <button type="button" class="institutional-task__trigger"
+    [disabled]="busy() || identity.restoring()" (click)="privateAccessModal.open()">
+    <span>Comprobar un acceso privado</span><span aria-hidden="true">›</span>
+  </button>
+  <cs-institutional-modal #privateAccessModal title="Consulta segura de recurso"
+    description="Esta comprobación solo devuelve recursos autorizados en la empresa y sucursal verificadas por el servidor."
+    [busy]="busy()" [feedback]="feedback()" [error]="error()"
+    [closeOnSuccess]="true" [wide]="true">
+    <form (submit)="securityActionRequested.emit({ event: $event, action: 'private' })">
             <label for="private-branch">Sucursal del recurso</label><input id="private-branch" name="branchId" required maxlength="36">
             <label for="private-resource">Identificador del recurso</label><input id="private-resource" name="resourceId" required maxlength="36">
             <button [disabled]="busy() || identity.restoring()">Consultar recurso autorizado</button>
           </form>
+  </cs-institutional-modal>
+</div>
           @if (identity.privateReference()) { <p aria-label="Referencia privada">{{ identity.privateReference() }}</p> }
           
 }
