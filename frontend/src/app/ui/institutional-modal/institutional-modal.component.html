@@ -1,0 +1,23 @@
+<dialog #surface class="cs-modal" [class.cs-modal--wide]="wide()"
+  [attr.aria-labelledby]="titleId"
+  [attr.aria-describedby]="description() ? descriptionId : null"
+  (cancel)="onCancel($event)" (close)="onClosed()">
+  <header class="cs-modal__header">
+    <div class="cs-modal__heading">
+      <p class="cs-modal__eyebrow">CRECISOL · ACCIÓN SEGURA</p>
+      <h2 [id]="titleId">{{ title() }}</h2>
+      @if (description()) { <p class="cs-modal__description" [id]="descriptionId">{{ description() }}</p> }
+    </div>
+    <button type="button" class="cs-modal__dismiss" aria-label="Cerrar ventana"
+      [disabled]="busy()" (click)="close()">×</button>
+  </header>
+  <div class="cs-modal__content">
+    @if (error()) { <p class="cs-modal__feedback cs-modal__feedback--error" role="alert">{{ error() }}</p> }
+    @if (feedback()) { <p class="cs-modal__feedback" role="status" aria-live="polite">{{ feedback() }}</p> }
+    <ng-content></ng-content>
+  </div>
+  <footer class="cs-modal__footer">
+    <span>Acción protegida · Nunca compartas tus códigos.</span>
+    <button type="button" class="cs-modal__cancel" [disabled]="busy()" (click)="close()">Cerrar</button>
+  </footer>
+</dialog>
