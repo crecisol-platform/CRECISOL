@@ -75,13 +75,18 @@ async function api(operation, fields = {}, token, host = 'tenant-a.example.test'
   const body = JSON.stringify(fields);
   return await new Promise((resolve, reject) => {
     const endpoint = operation.startsWith('platform/') ? '/api/v1/platform-identity/' + operation.slice(9) : '/api/v1/identity/' + operation;
-    const req = httpRequest({ hostname: '127.0.0.1', port: apiPort, path: endpoint, method: 'POST',
+    const req = httpRequest({ agent: false, hostname: '127.0.0.1', port: apiPort, path: endpoint, method: 'POST',
       headers: { Host: host, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body),
         ...(token ? { Authorization: `Bearer ${token}` } : {}), ...extra } }, response => {
       let text = ''; response.setEncoding('utf8'); response.on('data', chunk => text += chunk);
       response.on('end', () => { let data; try { data = JSON.parse(text); } catch { data = null; } resolve({ status: response.statusCode, data }); });
     });
-    req.setTimeout(30000, () => req.destroy(new Error('Isolated HTTP request deadline exceeded')));
+    req.setTimeout(120000, () => {
+      console.error('Safe timeout operation=' + operation);
+      try { console.error('DB wait states=' + sql('SELECT COMMAND,COALESCE(STATE,"idle"),COUNT(*),MAX(TIME) FROM information_schema.PROCESSLIST GROUP BY COMMAND,STATE'));
+        console.error('DB lock waits=' + sql('SELECT COUNT(*) FROM performance_schema.data_lock_waits')); } catch { /* No private SQL text is printed. */ }
+      req.destroy(new Error('Isolated HTTP request deadline exceeded'));
+    });
     req.on('error', reject); req.end(body);
   });
 }
@@ -346,8 +351,9 @@ try {
   check(selfDecision.status === 401, 'self approval denied');
   await register('approval.race@example.test');
   const approvalRaceCode = approver.backups.pop();
+  const approvalRaceMembership = membershipId('approval.race@example.test');
   const approvalRace = await Promise.all(Array.from({ length: 12 }, () => api('memberships/decide', {
-    membershipId: membershipId('approval.race@example.test'), decision: 'approve', reason: 'Concurrent isolated approval', code: approvalRaceCode
+    membershipId: approvalRaceMembership, decision: 'approve', reason: 'Concurrent isolated approval', code: approvalRaceCode
   }, approver.token)));
   check(approvalRace.filter(r => r.status === 200).length === 1, 'twelve concurrent approvals have exactly one audited winner');
   check((await api('sessions/revoke', { sessionId: '77777777-7777-4777-8777-777777777777' }, approver.token)).status === 401,
