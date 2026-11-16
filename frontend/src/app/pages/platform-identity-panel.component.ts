@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { PlatformIdentityApiService } from '../identity/platform-identity-api.service';
 import { IdentityApiService } from '../identity/identity-api.service';
+import { PlatformOperatorSessionsComponent, PlatformOperatorProfileComponent, PlatformOperatorMonitorComponent, PlatformOperatorSecurityComponent, PlatformOperatorCasesComponent } from './platform-operator-views.component';
 
 @Component({
   selector: 'cs-platform-identity-panel', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [PlatformOperatorSessionsComponent, PlatformOperatorProfileComponent, PlatformOperatorMonitorComponent, PlatformOperatorSecurityComponent, PlatformOperatorCasesComponent],
   templateUrl: './platform-identity-panel.component.html',
   styleUrl: './identity-flow.component.css'
 })
