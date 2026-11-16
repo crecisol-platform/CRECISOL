@@ -411,7 +411,13 @@ try {
   await page.getByRole('button', { name: 'Registrar aceptación', exact: true }).click();
   check((await termsAccepted).status() === 200, 'Angular records deliberate acceptance of the exact published terms version and hash');
   const axe = await new AxeBuilder({ page }).analyze();
-  check(axe.violations.filter(v => ['critical', 'serious'].includes(v.impact)).length === 0, 'authenticated Angular accessibility has no serious/critical axe findings');
+  const severeAxe = axe.violations.filter(v => ['critical', 'serious'].includes(v.impact));
+  if (severeAxe.length) {
+    // Expose only rule IDs and node counts; never log form values, MFA or secrets.
+    console.error('C05 accessibility rule diagnostics: ' +
+      severeAxe.map(v => v.id + ':nodes=' + v.nodes.length).join(', '));
+  }
+  check(severeAxe.length === 0, 'authenticated Angular accessibility has no serious/critical axe findings');
   check(await page.evaluate(() => localStorage.length === 0 && sessionStorage.length === 0), 'no bearer stored in browser storage');
   const actor = accountId('member@example.test');
   sql(`INSERT INTO c05_identity_branch VALUES(UNHEX('${A}'),UUID_TO_BIN('${branch}',0),TRUE),(UNHEX('${A}'),UUID_TO_BIN('${otherBranch}',0),TRUE);
