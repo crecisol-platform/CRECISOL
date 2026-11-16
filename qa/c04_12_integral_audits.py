@@ -153,6 +153,15 @@ def audit_b() -> None:
     offense = (ROOT / "backend/tests/Crecisol.TenantOffensive.ContractsTests/Program.cs").read_text()
     sql_offense = (DB / "c04_11_offensive_sql.sh").read_text()
     guarded = (DB / "c04_09_guarded_smoke.sh").read_text()
+    catalog_names = (ROOT /
+        "backend/src/Crecisol.Domain/Tenancy/TenantCatalogSnapshot.cs").read_text()
+    catalog_tests = (ROOT /
+        "backend/tests/Crecisol.TenantCatalog.ContractsTests/Program.cs").read_text()
+    all_in(catalog_names, ("UnicodeCategory.LineSeparator",
+                           "UnicodeCategory.ParagraphSeparator"),
+           "C04 catalogue display-name formatting guard")
+    all_in(catalog_tests, (r"Safe\u2028Unsafe", r"Safe\u2029Unsafe"),
+           "C04 real .NET negative Unicode separator coverage")
     all_in(branch_app, ("resource.TenantId != identity.TenantId",
                        "freshResource != resource", "freshCandidates[0] != grant"),
            "BOLA resource and branch scope")
@@ -206,6 +215,9 @@ def audit_c() -> None:
                   "qa/c04_12_integral_audits.py A",
                   "qa/c04_12_integral_audits.py B",
                   "qa/c04_12_integral_audits.py C",
+                  "qa/c03_10_current_state_audits.py A",
+                  "qa/c03_10_current_state_audits.py B",
+                  "qa/c03_10_current_state_audits.py C",
                   "master_source_guard.py --self-test",
                   "c04_02_backend_reader_smoke.sh",
                   "c04_07_idempotency_smoke.sh",

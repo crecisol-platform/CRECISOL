@@ -94,7 +94,8 @@ public sealed record TenantCatalogSnapshot
         {
             var category = CharUnicodeInfo.GetUnicodeCategory(c);
             if (char.IsControl(c) ||
-                category is UnicodeCategory.Format or UnicodeCategory.Surrogate ||
+                category is UnicodeCategory.Format or UnicodeCategory.Surrogate or
+                    UnicodeCategory.LineSeparator or UnicodeCategory.ParagraphSeparator ||
                 c is '<' or '>' or '/' or '\\')
                 throw new InvalidOperationException("Unsafe catalog " + field + ".");
         }

@@ -72,6 +72,7 @@ foreach (var unsafeName in new[] {
     "", " ", "a", " Café Central", "Café Central ",
     "<img src=x onerror=alert(1)>", "Ti/enda", "Ti\\enda",
     "Safe\nUnsafe", "Safe\u202EUnsafe", "Café\u200B Central",
+    "Safe\u2028Unsafe", "Safe\u2029Unsafe",
     new string('x', 121) })
 {
     Expect<InvalidOperationException>(() => TenantCatalogSnapshot.RestoreFromTrustedCatalog(
