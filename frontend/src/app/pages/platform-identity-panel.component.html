@@ -46,7 +46,17 @@
       }
       @if (platform.state() === 'authenticated') {
         <p role="status">Operador de identidad verificado. Esta sesión pertenece al ámbito de plataforma.</p>
-        <details><summary>Mis sesiones de plataforma</summary>
+        <nav class="operator-nav" aria-label="Áreas de la consola de identidad">
+          <button type="button" [attr.aria-current]="panel() === 'casos' ? 'page' : null" (click)="panel.set('casos')">Casos</button>
+          <button type="button" [attr.aria-current]="panel() === 'sesiones' ? 'page' : null" (click)="panel.set('sesiones')">Sesiones</button>
+          <button type="button" [attr.aria-current]="panel() === 'perfil' ? 'page' : null" (click)="panel.set('perfil')">Perfil</button>
+          <button type="button" [attr.aria-current]="panel() === 'seguridad' ? 'page' : null" (click)="panel.set('seguridad')">Seguridad</button>
+          <button type="button" [attr.aria-current]="panel() === 'monitor' ? 'page' : null" (click)="panel.set('monitor')">Monitor</button>
+        </nav>
+        <div class="operator-content">
+          @switch (panel()) {
+            @case ('sesiones') {
+<details><summary>Mis sesiones de plataforma</summary>
           <button type="button" [disabled]="busy()" (click)="loadSessions()">Consultar sesiones de operador</button>
           <button type="button" [disabled]="busy()" (click)="rotateSession()">Rotar sesión de operador</button>
           @for (session of platform.sessions(); track session.id) {
@@ -58,7 +68,9 @@
             <button [disabled]="busy()">Cerrar todas mis sesiones de plataforma</button>
           </form>
         </details>
-        <details><summary>Mi perfil de operador</summary>
+            }
+            @case ('perfil') {
+<details><summary>Mi perfil de operador</summary>
           <button type="button" [disabled]="busy()" (click)="loadProfile()">Consultar perfil de operador</button>
           @if (platform.profile(); as profile) { <p aria-label="Nombre del perfil de operador">{{ profile.displayName }}</p> }
           @if (platform.photo()) { <img [src]="platform.photo()" width="64" height="64" alt="Foto de mi perfil de operador"> }
@@ -73,12 +85,16 @@
             <button [disabled]="busy()">Guardar foto de operador</button>
           </form>
         </details>
-        <details><summary>Señales de abuso de identidad</summary>
+            }
+            @case ('monitor') {
+<details><summary>Señales de abuso de identidad</summary>
           <p>Solo cantidades agregadas; no expone correos, direcciones IP ni datos de otros negocios.</p>
           <button type="button" [disabled]="busy()" (click)="loadAbuse()">Consultar señales agregadas</button>
           <ul>@for (signal of platform.abuse(); track signal.kind) { <li>{{ signal.kind }}: {{ signal.count }}</li> }</ul>
         </details>
-        <details><summary>Cambiar contraseña de operador</summary>
+            }
+            @case ('seguridad') {
+<details><summary>Cambiar contraseña de operador</summary>
           <form (submit)="action($event, 'password')">
             <label for="operator-current-password">Contraseña actual del operador</label><input id="operator-current-password" name="currentPassword" type="password" required maxlength="128" autocomplete="current-password">
             <label for="operator-new-password">Nueva contraseña de operador</label><input id="operator-new-password" name="newPassword" type="password" required minlength="15" maxlength="128" autocomplete="new-password">
@@ -112,7 +128,9 @@
             </form>
           }
         </details>
-        <form (submit)="action($event, 'case')">
+            }
+            @default {
+<form (submit)="action($event, 'case')">
           <label for="platform-case">Referencia del caso de recuperación</label><input id="platform-case" name="caseId" required maxlength="36">
           <button [disabled]="busy()">Consultar caso de identidad</button>
         </form>
@@ -151,6 +169,9 @@
           <output aria-label="Parte de recuperación del operador">{{ platform.handoffShare() }}</output>
           <button type="button" (click)="platform.handoffShare.set('')">Ocultar mi parte</button>
         }
+            }
+          }
+        </div>
         <button type="button" [disabled]="busy()" (click)="logout()">Cerrar sesión de plataforma</button>
       }
       @if (platform.recoveryCodes().length) {
