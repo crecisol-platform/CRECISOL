@@ -1,0 +1,15 @@
+<details><summary>Mi perfil de operador</summary>
+          <button type="button" [disabled]="busy()" (click)="loadProfileRequested.emit()">Consultar perfil de operador</button>
+          @if (platform.profile(); as profile) { <p aria-label="Nombre del perfil de operador">{{ profile.displayName }}</p> }
+          @if (platform.photo()) { <img [src]="platform.photo()" width="64" height="64" alt="Foto de mi perfil de operador"> }
+          <form (submit)="actionRequested.emit({ event: $event, action: 'profile' })">
+            <label for="operator-profile-name">Nombre visible del operador</label><input id="operator-profile-name" name="displayName" required maxlength="80" autocomplete="nickname">
+            <label for="operator-profile-language">Idioma del perfil de operador</label><select id="operator-profile-language" name="language"><option value="es-HN">Español de Honduras</option><option value="es">Español</option><option value="en">English</option></select>
+            <label for="operator-profile-zone">Zona horaria del operador</label><input id="operator-profile-zone" name="timeZone" required maxlength="64" value="America/Tegucigalpa">
+            <button [disabled]="busy()">Guardar perfil de operador</button>
+          </form>
+          <form (submit)="photoRequested.emit($event)">
+            <label for="operator-photo">Foto del operador (PNG, JPEG o WebP, hasta 2 MB)</label><input id="operator-photo" name="photo" type="file" accept="image/png,image/jpeg,image/webp" required>
+            <button [disabled]="busy()">Guardar foto de operador</button>
+          </form>
+        </details>
