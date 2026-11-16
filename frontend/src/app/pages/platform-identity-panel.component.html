@@ -112,9 +112,6 @@
             </form>
           }
         </details>
-        <details class="operator-case-workflows">
-          <summary>Gestión de casos de identidad</summary>
-          <p>Consulta, verifica y resuelve casos de recuperación con autorizaciones independientes y MFA vigente.</p>
         <form (submit)="action($event, 'case')">
           <label for="platform-case">Referencia del caso de recuperación</label><input id="platform-case" name="caseId" required maxlength="36">
           <button [disabled]="busy()">Consultar caso de identidad</button>
@@ -154,7 +151,6 @@
           <output aria-label="Parte de recuperación del operador">{{ platform.handoffShare() }}</output>
           <button type="button" (click)="platform.handoffShare.set('')">Ocultar mi parte</button>
         }
-        </details>
         <button type="button" [disabled]="busy()" (click)="logout()">Cerrar sesión de plataforma</button>
       }
       @if (platform.recoveryCodes().length) {
