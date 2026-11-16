@@ -28,3 +28,6 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
 .operator-panel h2 { display: none; }
 :host :focus-visible { outline: 3px solid #126aaf; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { button { scroll-behavior: auto; } }
+
+.operator-feedback { position: sticky; top: .65rem; z-index: 2; margin: 1rem 0; border: 1px solid #c8ddec; padding: .8rem 1rem; border-radius: .7rem; background: #f2f8fc; color: #17476c; overflow-wrap: anywhere; }
+.operator-feedback--error { background: #fff4f1; color: #852e22; border-color: #e5c9c3; }
