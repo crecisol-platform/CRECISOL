@@ -1,0 +1,91 @@
+name: CRECISOL DOC-P2 #163 current-status precedence A-B-C
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'AGENTS.md'
+      - '.agents/skills/crecisol-project-governance/SKILL.md'
+      - 'docs/MASTER_REFERENCE.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'qa/c05_doc_precedence_163.py'
+      - '.github/workflows/c05-doc-status-precedence.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'AGENTS.md'
+      - '.agents/skills/crecisol-project-governance/SKILL.md'
+      - 'docs/MASTER_REFERENCE.md'
+      - 'docs/PLAN_37_CAPITULOS.md'
+      - 'qa/c05_doc_precedence_163.py'
+      - '.github/workflows/c05-doc-status-precedence.yml'
+permissions:
+  contents: read
+
+jobs:
+  documentary-a:
+    name: "A | Autoridad vigente y huellas Word/PDF"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Active institutional state plus byte-accurate master guard
+        run: |
+          set -euo pipefail
+          python3 qa/c05_doc_precedence_163.py A
+          python3 qa/master_source_guard.py --self-test
+          printf 'PASS DOC163 A SHA=%s RUN=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID"
+
+  documentary-b:
+    name: "B | 24 negative mutations and C03/C04 boundary"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Falsified status, missing authority, historical deletion and tenant scope
+        run: |
+          set -euo pipefail
+          python3 qa/c05_doc_precedence_163.py B
+          python3 qa/c03_10_current_state_audits.py B
+          python3 qa/c04_12_integral_audits.py B
+          printf 'PASS DOC163 B SHA=%s RUN=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID"
+
+  documentary-c:
+    name: "C | Gobernanza, compatibilidad y regresiones documentales"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Foundation and C01-C04 document compatibility without product changes
+        run: |
+          set -euo pipefail
+          python3 -m py_compile qa/c05_doc_precedence_163.py
+          python3 qa/c05_doc_precedence_163.py C
+          python3 qa/validate_foundation.py
+          python3 qa/c03_10_current_state_audits.py A
+          python3 qa/c04_12_integral_audits.py A
+          printf 'PASS DOC163 C SHA=%s RUN=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID"
+
+  no-premature-certificate:
+    name: "DOC163 | A+B+C deben estar en SUCCESS"
+    if: always()
+    needs: [documentary-a, documentary-b, documentary-c]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Fail closed if any independent audit fails, skips or is cancelled
+        env:
+          A: ${{ needs.documentary-a.result }}
+          B: ${{ needs.documentary-b.result }}
+          C: ${{ needs.documentary-c.result }}
+        run: |
+          set -euo pipefail
+          test "$A" = "success"
+          test "$B" = "success"
+          test "$C" = "success"
+          printf 'PASS DOC163 3/3 independent audits SHA=%s RUN=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID"
+          echo 'This certification is DOCUMENTATION ONLY, not a product security acceptance'
