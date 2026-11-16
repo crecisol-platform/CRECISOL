@@ -56,3 +56,20 @@ test('C05 account header uses only the validated published platform brand', asyn
   await expect(header.locator('img.brand-mark')).toHaveAttribute('src', '/assets/crecisol-oficial.png');
   expect(headers).toEqual([{ auth: undefined, tenant: undefined }]);
 });
+
+for (const viewport of [{ width: 390, height: 844 }, { width: 1366, height: 768 }]) {
+  test(`C05 operator portal keeps client registration separate at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/cuenta?vista=operadores');
+    await expect(page.getByRole('heading', { name: 'Identidad de plataforma' }).first()).toBeVisible();
+    await expect(page.getByLabel('Correo del operador de identidad')).toBeVisible();
+    await expect(page.getByLabel('Identificador de confirmación')).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Opciones de identidad' })).toHaveCount(0);
+    const overflow = await page.evaluate(() =>
+      Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth));
+    expect(overflow).toBeLessThanOrEqual(2);
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+    expect(results.violations.filter(v => ['critical', 'serious'].includes(v.impact ?? ''))).toEqual([]);
+  });
+}
