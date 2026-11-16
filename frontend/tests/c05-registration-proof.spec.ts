@@ -22,7 +22,7 @@ test('account portal submits only bounded mailbox proof data and keeps a neutral
     });
   });
 
-  await page.goto('/cuenta');
+  await page.goto('/cuenta?vista=confirmar');
   await page.getByLabel('Identificador de confirmación').fill(proofId);
   await page.getByLabel('Código de confirmación').fill(code);
   await page.getByLabel('Correo de la solicitud').fill(mailbox);
@@ -43,7 +43,7 @@ test('account portal rejects malformed mailbox proof locally', async ({ page }) 
     await route.fulfill({ status: 202, contentType: 'application/json', body: '{"accepted":true}' });
   });
 
-  await page.goto('/cuenta');
+  await page.goto('/cuenta?vista=confirmar');
   await page.getByLabel('Identificador de confirmación').fill('not-a-guid');
   await page.getByLabel('Código de confirmación').fill('short');
   await page.getByLabel('Correo de la solicitud').fill(mailbox);
@@ -62,7 +62,7 @@ test('Angular proxy completes a real registration against the disposable API and
   expect(id).toMatch(/^[0-9a-f-]{36}$/i);
   expect(proofCode).toMatch(/^[0-9a-f]{64}$/i);
 
-  await page.goto('/cuenta');
+  await page.goto('/cuenta?vista=confirmar');
   await page.getByLabel('Identificador de confirmación').fill(id!);
   await page.getByLabel('Código de confirmación').fill(proofCode!);
   await page.getByLabel('Correo de la solicitud').fill(mailbox);

@@ -1,0 +1,83 @@
+<main class="account-page" id="contenido" tabindex="-1">
+  <a class="skip-link" href="#account-content">Ir al formulario de cuenta</a>
+  <header class="account-header">
+    <a routerLink="/" class="brand" aria-label="CRECISOL, volver al inicio">CRECISOL</a>
+    <span class="header-context">Identidad y acceso</span>
+  </header>
+
+  <div class="account-layout">
+    <aside class="account-aside" aria-label="Acerca del acceso">
+      <div class="aside-top">
+        <p class="eyebrow">CRECISOL · IDENTIDAD</p>
+        <h1>Tu cuenta, a tu manera.</h1>
+        <p>Una experiencia privada, clara y controlada. Cada empresa se identifica por su dominio verificado, nunca por un selector de acceso.</p>
+      </div>
+      <div class="aside-bottom">
+        <p><span class="aside-mark" aria-hidden="true">✓</span> Verificación en dos pasos</p>
+        <p><span class="aside-mark" aria-hidden="true">✓</span> Sesiones que puedes revocar</p>
+        <p><span class="aside-mark" aria-hidden="true">✓</span> Tu información pertenece a tu contexto</p>
+      </div>
+    </aside>
+
+    <div class="account-main" id="account-content">
+      @if (view() === 'operadores') {
+        <div class="page-heading"><p class="eyebrow">ÁREA RESTRINGIDA</p><h2>Identidad de plataforma</h2>
+          <p>Exclusiva para personal autorizado y previamente provisionado.</p></div>
+        <cs-platform-identity-panel />
+        <a class="back-link" routerLink="/cuenta">Volver al acceso de cuentas</a>
+      } @else {
+        @if (identity.state() === 'anonymous') {
+          <nav class="account-nav" aria-label="Opciones de identidad">
+            <a routerLink="/cuenta" [queryParams]="{ vista: 'ingresar' }" [attr.aria-current]="view() === 'ingresar' ? 'page' : null">Iniciar sesión</a>
+            <a routerLink="/cuenta" [queryParams]="{ vista: 'registro' }" [attr.aria-current]="view() === 'registro' ? 'page' : null">Solicitar cuenta</a>
+            <a routerLink="/cuenta" [queryParams]="{ vista: 'confirmar' }" [attr.aria-current]="view() === 'confirmar' ? 'page' : null">Confirmar correo</a>
+            <a routerLink="/cuenta" [queryParams]="{ vista: 'recuperar' }" [attr.aria-current]="view() === 'recuperar' ? 'page' : null">Recuperar acceso</a>
+          </nav>
+          @if (view() === 'recuperar') {
+            <cs-identity-recovery [busy]="busy()" (securityActionRequested)="securityAction($event.event, $event.action)" />
+          } @else {
+            <cs-identity-guest [busy]="busy()" [view]="view()"
+              (loginRequested)="login($event)" (registerRequested)="register($event)"
+              (confirmRequested)="confirmRegistration($event)"
+              (securityActionRequested)="securityAction($event.event, $event.action)"
+              (passkeyLoginRequested)="passkeyLogin()" (startPairingRequested)="startPairing()"
+              (completePairingRequested)="completePairing()" />
+          }
+          <div class="account-subnav">
+            <a routerLink="/cuenta" [queryParams]="{vista:'invitacion'}">Aceptar invitación</a>
+            <a routerLink="/cuenta" [queryParams]="{vista:'acceso-existente'}">Ya tengo cuenta</a>
+          </div>
+        } @else if (identity.state() === 'challenge') {
+          <cs-identity-mfa [busy]="busy()" (verifyRequested)="verify($event)"
+            (enrollRequested)="enroll()" />
+        } @else {
+          <cs-identity-workspace [busy]="busy()" [incomingPairToken]="incomingPairToken"
+            [incomingPairFingerprint]="incomingPairFingerprint"
+            (securityActionRequested)="securityAction($event.event, $event.action)"
+            (uploadPhotoRequested)="uploadPhoto($event)"
+            (loadProfileRequested)="loadProfile()" (removePhotoRequested)="removePhoto()"
+            (securityEventsRequested)="securityEvents()" (passkeyListRequested)="passkeyList()"
+            (sessionRequested)="sessionAction($event)" (revokeRequested)="revoke($event)"
+            (logoutRequested)="logout()" />
+        }
+        <details class="account-terms"><summary>Condiciones de la cuenta</summary>
+          <button type="button" [disabled]="busy() || identity.restoring()" (click)="loadTerms()">Leer condiciones vigentes</button>
+          @if (identity.terms(); as terms) {
+            <h3>Condiciones {{ terms.version }}</h3><p class="terms-content">{{ terms.text }}</p>
+            @if (identity.state() === 'authenticated') {
+              <form (submit)="securityAction($event, 'terms')">
+                <label><input name="accepted" type="checkbox" required> Acepto esta versión de las condiciones</label>
+                <button [disabled]="busy() || identity.restoring()">Registrar aceptación</button>
+              </form>
+            }
+          }
+        </details>
+        <div class="account-operator-link">
+          <a routerLink="/cuenta" [queryParams]="{vista:'operadores'}">Acceso de personal autorizado</a>
+        </div>
+      }
+      @if (message()) { <p class="feedback feedback--success" role="status" aria-live="polite">{{ message() }}</p> }
+      @if (error()) { <p class="feedback feedback--error" role="alert">{{ error() }}</p> }
+    </div>
+  </div>
+</main>

@@ -12,7 +12,7 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   check((await platform('mfa', { challenge: pendingLogin.data.challenge, code: operators[0].backups.at(-1) + '00' })).status === 400,
     'malformed platform recovery factor cannot enter the cryptographic verifier');
   const subject = await browser.newContext(), page = await subject.newPage();
-  await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
+  await page.goto(`http://127.0.0.1:${uiPort}/cuenta?vista=operadores`);
   await page.getByText('Personal autorizado de identidad CRECISOL', { exact: true }).click();
   await page.getByText('Recuperar acceso de operador de plataforma', { exact: true }).click();
   await page.getByLabel('Correo del operador sin acceso', { exact: true }).fill(target.mailbox);
@@ -30,7 +30,7 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   const contexts = [], reviewers = [], tokens = [];
   for (const operator of operators.slice(1)) {
     const context = await browser.newContext(), p = await context.newPage(); contexts.push(context); reviewers.push(p);
-    await p.goto(`http://127.0.0.1:${uiPort}/cuenta`);
+    await p.goto(`http://127.0.0.1:${uiPort}/cuenta?vista=operadores`);
     await p.getByText('Personal autorizado de identidad CRECISOL', { exact: true }).click();
     await p.getByLabel('Correo del operador de identidad').fill(operator.mailbox);
     await p.getByLabel('Contraseña del operador', { exact: true }).fill(operator.password);

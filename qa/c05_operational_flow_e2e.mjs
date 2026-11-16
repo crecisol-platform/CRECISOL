@@ -145,7 +145,7 @@ async function register(mailbox, page) {
   const token = await mailFor(mailbox); confidential.push(token);
   const proof = sql(`SELECT BIN_TO_UUID(proof_id,0) FROM c05_identity_mailbox_proof WHERE tenant_id=UNHEX('${A}') AND proof_state=0 ORDER BY created_at_utc DESC LIMIT 1`);
   if (page) {
-    await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
+    await page.goto(`http://127.0.0.1:${uiPort}/cuenta?vista=confirmar`);
     await page.getByLabel('Identificador de confirmación', { exact: true }).fill(proof);
     await page.getByLabel('Código de confirmación', { exact: true }).fill(token);
     await page.getByLabel('Correo de la solicitud').fill(mailbox);
@@ -457,6 +457,7 @@ try {
   await page.getByRole('heading', { name: 'Iniciar sesión', exact: true }).waitFor();
   check(true, 'Angular clears revoked session on server validation');
   await reserveTestWindow(35);
+  await page.goto(`http://127.0.0.1:${uiPort}/cuenta?vista=recuperar`);
   await page.getByLabel('Correo para recuperación').fill('member@example.test');
   const recoveryReceipt = page.waitForResponse(r => r.url().endsWith('/recovery/request'));
   await page.getByRole('button', { name: 'Solicitar recuperación', exact: true }).click();
@@ -476,6 +477,7 @@ try {
   check((await api('login', { mailbox: 'member@example.test', password })).status === 401, 'old password denied after recovery');
   check((await api('login', { mailbox: 'member@example.test', password: newPassword })).status === 200, 'new password works after recovery');
   async function uiLogin(mailbox, currentPassword) {
+    await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
     const factorBucket = createHmac('sha256', Buffer.from(keys.CRECISOL_C05_TOKEN_HMAC_KEY, 'hex'))
       .update('C05/quota:mfa:' + accountId(mailbox)).digest('hex');
     const currentAttempts = Number(sql(`SELECT COALESCE(MAX(attempts),0) FROM c05_identity_attempt_quota WHERE tenant_id=UNHEX('${A}') AND bucket_hmac=UNHEX('${factorBucket}') AND window_utc=FLOOR(UNIX_TIMESTAMP()/60)`));
