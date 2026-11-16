@@ -112,6 +112,7 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   check(!(await subject.cookies()).some(c => c.name === '__Host-crecisol-platform-c05'), 'operator recovery never logs the operator in automatically');
   await page.keyboard.press('Escape'); // Cerrar recuperación institucional ya verificada.
   async function uiLogin(mailbox, password, code) {
+    if (await page.locator('dialog.cs-modal[open]').count()) await page.keyboard.press('Escape');
     await page.getByLabel('Correo del operador de identidad').fill(mailbox);
     await page.getByLabel('Contraseña del operador', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Acceder a identidad de plataforma', exact: true }).click();
