@@ -376,6 +376,7 @@ try {
   check((await api('sessions', {}, approver.token)).status === 401, 'explicitly revoked session cannot be reused');
   // Browser sessions now survive reload in an HttpOnly cookie. Explicitly log
   // out the approver's distinct UI session before switching to the member.
+  await page.keyboard.press('Escape'); // Cerrar el modal de revisión antes de cerrar la sesión.
   const approverLogout = page.waitForResponse(r => r.url().endsWith('/logout'));
   await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
   check((await approverLogout).status() === 200, 'browser logout completes server revocation and cookie deletion before navigation');
