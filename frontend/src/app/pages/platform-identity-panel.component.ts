@@ -9,6 +9,7 @@ import { IdentityApiService } from '../identity/identity-api.service';
 })
 export class PlatformIdentityPanelComponent {
   readonly platform = inject(PlatformIdentityApiService);
+  readonly panel = signal<'casos' | 'sesiones' | 'perfil' | 'seguridad' | 'monitor'>('casos');
   readonly busy = signal(false); readonly message = signal(''); readonly error = signal('');
   async action(event: Event, action: string): Promise<void> {
     event.preventDefault(); const form = event.currentTarget as HTMLFormElement; const data = new FormData(form);
