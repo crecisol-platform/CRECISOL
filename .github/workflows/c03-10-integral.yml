@@ -48,6 +48,8 @@ jobs:
           python3 qa/master_source_guard.py --self-test
           python3 qa/c03_10_integral_audits.py A
           python3 qa/c03_10_integral_audits.py B
+          python3 qa/c03_10_current_state_audits.py A
+          python3 qa/c03_10_current_state_audits.py B
           python3 qa/c03_local_preflight.py
           python3 qa/c03_07_outbox_audits.py A
           python3 qa/c03_07_outbox_audits.py B
@@ -121,4 +123,6 @@ jobs:
           python3 qa/c03_08_status_audits.py
           printf 'PASS regressions sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c03-10-ci-proof/regressions
       - name: Independent audit C rejects absent or stale same-run evidence
-        run: python3 qa/c03_10_integral_audits.py C
+        run: |
+          python3 qa/c03_10_integral_audits.py C
+          python3 qa/c03_10_current_state_audits.py C

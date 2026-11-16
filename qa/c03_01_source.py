@@ -262,6 +262,14 @@ def validate_contract(graph):
             "C03 first ten negative contracts missing or reordered")
 
 
+def authored_cs_files(project_dir):
+    """Ignore dotnet build output; inspect only project-authored C# source."""
+    for source in project_dir.rglob("*.cs"):
+        if {"bin", "obj"} & set(source.relative_to(project_dir).parts):
+            continue
+        yield source
+
+
 def actual_graph():
     # Prospective C05 extension. The C03 JSON/acta above remains the immutable
     # four-project public baseline; this check validates today's source graph.
@@ -292,7 +300,7 @@ def actual_graph():
             require(not node.findall(".//PackageReference"),
                     name + " cannot depend on infrastructure packages")
             cs_dir = project.parent
-            for cs in cs_dir.rglob("*.cs"):
+            for cs in authored_cs_files(cs_dir):
                 txt = cs.read_text(encoding="utf-8")
                 require(not re.search(r"\b(?:using\s+(?:MySqlConnector|Microsoft\.EntityFrameworkCore)"
                                       r"|MySqlConnection\b|DbContext\b|HttpContext\b)", txt),

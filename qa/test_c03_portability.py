@@ -11,6 +11,20 @@ import c03_05_status as state
 
 
 class C03PortabilityTests(TestCase):
+    def test_current_graph_ignores_generated_obj_and_bin_sources(self):
+        import c03_01_source as graph
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            authored = root / "Branding" / "PublishedBrand.cs"
+            obj = root / "obj" / "Debug" / "net10.0" / "Generated.cs"
+            binary = root / "bin" / "Release" / "Generated.cs"
+            for path in (authored, obj, binary):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("using MySqlConnector;\\n", encoding="utf-8")
+            observed = {path.relative_to(root).as_posix()
+                        for path in graph.authored_cs_files(root)}
+            self.assertEqual(observed, {"Branding/PublishedBrand.cs"})
+
     def test_windows_relative_keys_use_posix(self):
         root = PureWindowsPath("C:/Proyectos/FullStack/Crecisol/backend/src/Crecisol.Domain")
         source = root / "Common" / "DomainRevision.cs"

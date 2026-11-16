@@ -1,12 +1,24 @@
 # CRECISOL
 
+<!-- CRECISOL-ESTADO-C03-RETRO:INICIO -->
+## Estado operativo comprobado — 16 de noviembre de 2026
+
+**5/37 capítulos certificados en sus alcances documentados (C01–C05)**, conforme a [estado vigente institucional](docs/ESTADO_VIGENTE_CAPITULOS.md). **C03: 10/10**, arquitectura y contratos; **C04: 12/12**, arquitectura multitenant y fixtures sintéticos; **C05**, identidad operativa en entorno local aislado. **C06 permanece BLOQUEADO**. La certificación histórica no elimina las revisiones correctivas de calidad abiertas.
+
+**Código presente:** Angular 22 mantiene las páginas públicas C01/C02 y la ruta de cuenta de C05; ASP.NET Core 10 utiliza módulos y activaciones explícitas para identidad local; MySQL 8.4 se verifica con pruebas desechables y 16 migraciones/reversiones documentadas. La API vigente incluye operaciones aisladas de identidad local además del primer endpoint público de marca.
+
+**Límites reales:** pruebas locales y sintéticas no demuestran preparación productiva, un pentest integral ni aceptación visual comercial. Sin despliegues, VPS, dominios productivos, cobros o servicios externos activados. El Documento Maestro Único continúa siendo la autoridad funcional; este resumen solo orienta sobre el código y su evidencia.
+
+La comparación retrospectiva de calidad **C03 → C04 → C05** se revisa capítulo por capítulo. Los apartados históricos de C03 que aparecen más abajo son evidencia de sus fechas y no sustituyen este estado ni el registro institucional.
+<!-- CRECISOL-ESTADO-C03-RETRO:FIN -->
+
 **Repositorio vigente (transferencia 11-11-2026):** [`crecisol-platform/CRECISOL`](https://github.com/crecisol-platform/CRECISOL), ID `1450414592`, rama `dev`. [Registro de migración](docs/MIGRACION_ORGANIZACION_GITHUB_2026_11_11.md). Los enlaces al propietario previo en evidencias de PR/CI son históricos. C03 condicionado a CI posterior al PR #79, todavía `queued`; **C04 bloqueado**.
 
 **TRANSICIÓN INSTITUCIONAL C03 (11-11-2026, POSTERIOR A ESTADOS HISTÓRICOS):** El propietario autorizó expresamente certificar C03 después de comprobar A/B/C y CI. [Acta de certificación integral](docs/c03/C03_CERTIFICACION_INTEGRAL_2026_11_11.md) y [registro de estado prospectivo](docs/ESTADO_VIGENTE_CAPITULOS.md). Al aprobar CI PREMERGE y POSTMERGE del acta, **C03 CERTIFICADO (10/10), 3/37 capítulos (C01, C02 y C03)**; solo entonces C04-01 queda habilitada PARA PREPARACIÓN, nunca certificada ni desplegada. Las leyendas anteriores «2/37», «C03 NO CERTIFICADO» y «C04 BLOQUEADO» permanecen como capturas históricas de sus auditorías, no son el estado actual tras las puertas. No tocar Word/PDF, producción ni SOLQARYN.
 
 **Tu negocio, a tu manera.** — SaaS multitenant en desarrollo para comercio, servicios y membresías.
 
-## Estado vigente (GitHub, noviembre de 2026)
+## Registro histórico de C03 — 11 de noviembre de 2026 (no vigente)
 
 **ACTUALIZACIÓN PREVALENTE (11-11-2026):** C01/C02 certificados (2/37). C03-01..09 certificadas en sus alcances; C03-10 **CERRADA TÉCNICAMENTE** por [PR #75](https://github.com/solqaryn-platform/CRECISOL/pull/75) y [acta](docs/c03/C03_10_ACTA_CIERRE_TECNICO_CI.md), con auditorías A/B/C y 16/16 CI POSTMERGE `SUCCESS` en dev `a8726d3ffd0ee08aae8bd25405b318ef262dea6c`. **C03 NO CERTIFICADO; C04 BLOQUEADO** hasta aceptación expresa. Los párrafos siguientes preservan el estado histórico de microfases anteriores.
 
@@ -17,7 +29,7 @@ C03-06 quedó certificada exclusivamente para el módulo público Branding/DI de
 
 **Autoridad funcional:** Documento Maestro Único Word y PDF de lectura, huellas en [MASTER_REFERENCE.md](docs/MASTER_REFERENCE.md). **Autoridad del estado vigente:** [PLAN_37_CAPITULOS.md](docs/PLAN_37_CAPITULOS.md). Las actas y notas antiguas conservan sus estados históricos, pero no sustituyen el encabezado de estado actual.
 
-## Qué existe y qué falta
+## Inventario histórico al inicio de C03 (no vigente)
 
 - frontend/: Angular 22, sitio de marca pública, experiencias, demostraciones, alta de empresas, harness sintético y pruebas Chromium; Node.js 24 para tooling.
 - backend/: .NET 10, Domain/Application/Infrastructure/API, contratos tipados, validación HTTP y solo una ruta GET pública de marca PLATFORM.
