@@ -10,7 +10,7 @@
           <button [disabled]="busy() || platform.restoring()">Acceder a identidad de plataforma</button>
         </form>
         <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="operatorRecoveryModal.open()">Recuperar acceso de operador de plataforma</button>
-        <cs-institutional-modal #operatorRecoveryModal title="Recuperar acceso de operador de plataforma"
+        <cs-institutional-modal #operatorRecoveryModal title="Recuperación segura de operador"
           description="Acceso excepcional. Dos revisores independientes, verificación de identidad y un mínimo de 24 horas."
           [busy]="busy()" [feedback]="message()" [error]="error()" [wide]="true">
           
