@@ -78,8 +78,9 @@ export class IdentityApiService {
       new TextEncoder().encode('CRECISOL:C05:PAIR:START')));
     const result = await this.post<{ token: string; nonce: string; fingerprint: string }>('pairings/start', { publicKey, signature }, false);
     this.pairingKey = keys.privateKey; this.pairingNonce = result.nonce;
-    const { toDataURL } = await import('qrcode');
-    const qr = await toDataURL(`${location.origin}/cuenta#pair=${result.token}.${result.fingerprint}`, { width: 320, errorCorrectionLevel: 'M' });
+    // CommonJS uses its default export when Angular prebundling is disabled.
+    const { default: QRCode } = await import('qrcode');
+    const qr = await QRCode.toDataURL(`${location.origin}/cuenta#pair=${result.token}.${result.fingerprint}`, { width: 320, errorCorrectionLevel: 'M' });
     this.pairing.set({ token: result.token, fingerprint: result.fingerprint, qr });
   }
 

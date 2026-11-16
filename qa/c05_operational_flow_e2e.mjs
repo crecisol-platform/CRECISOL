@@ -238,7 +238,7 @@ try {
     '/api': { target: `http://127.0.0.1:${apiPort}`, secure: false, changeOrigin: true, headers: { Host: 'tenant-a.example.test' } }
   }));
   const ui = child(process.execPath, [path.join(root, 'frontend/node_modules/@angular/cli/bin/ng.js'), 'serve', '--host', '127.0.0.1', '--port', String(uiPort),
-    '--watch=false', '--proxy-config', proxyPath], { ...process.env, NG_CLI_ANALYTICS: 'false' }, path.join(root, 'frontend'));
+    '--watch=false', '--proxy-config', proxyPath], { ...process.env, ...(preview ? {} : { CI: 'true' }), NG_CLI_ANALYTICS: 'false' }, path.join(root, 'frontend'));
   // Angular workspace must be the child cwd, without a shell/interpolated command.
   ui.stdout.on('data', b => uiLogs += b); ui.stderr.on('data', b => uiLogs += b);
   // ng requires workspace cwd: the runner below passes --project only if launched

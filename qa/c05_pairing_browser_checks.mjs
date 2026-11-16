@@ -6,7 +6,9 @@ export async function verifyPairing({ browser, api, check, confidential, mailbox
   const requester = await browser.newContext(); const target = await requester.newPage();
   await target.goto(`http://127.0.0.1:${uiPort}/cuenta`);
   await target.getByText('Entrar vinculando un navegador', { exact: true }).click();
+  const started = target.waitForResponse(r => r.url().endsWith('/pairings/start'));
   await target.getByRole('button', { name: 'Crear solicitud de vinculación', exact: true }).click();
+  check((await started).status() === 200, 'uncached Angular starts a real cryptographic browser-pairing request');
   const token = await target.getByLabel('Solicitud de vinculación', { exact: true }).innerText();
   const fingerprint = await target.getByLabel('Huella de vinculación', { exact: true }).innerText();
   confidential.push(token);
