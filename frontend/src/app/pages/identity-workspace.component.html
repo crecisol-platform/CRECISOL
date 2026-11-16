@@ -8,7 +8,8 @@
             </aside>
           }
           <p>La autenticación no concede por sí sola autorización a recursos privados.</p>
-          <details><summary>Mi perfil en esta empresa</summary>
+          @if (view() === 'perfil') {
+<details open><summary>Mi perfil en esta empresa</summary>
             <button type="button" [disabled]="busy()" (click)="loadProfileRequested.emit()">Consultar mi perfil</button>
             @if (identity.profile(); as profile) {
               <p aria-label="Nombre de mi perfil">{{ profile.displayName }}</p>
@@ -32,7 +33,9 @@
             <button type="button" [disabled]="busy()" (click)="securityEventsRequested.emit()">Consultar mis eventos</button>
             <ul>@for (event of identity.securityEvents(); track $index) { <li>{{ event.atUtc }} · {{ event.action }} · resultado {{ event.outcome }}</li> }</ul>
           </details>
-          <details><summary>Llaves de acceso</summary>
+          
+} @else if (view() === 'llaves') {
+<details><summary>Llaves de acceso</summary>
             <p>Registra una llave con verificación de usuario. Se necesita un código MFA o de respaldo para agregarla o revocarla.</p>
             <form (submit)="securityActionRequested.emit({ event: $event, action: 'passkey-add' })">
               <label for="passkey-code">Código MFA para registrar llave</label><input id="passkey-code" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
@@ -46,35 +49,9 @@
               <button [disabled]="busy() || identity.restoring()">Revocar llave de acceso</button>
             </form>
           </details>
-          <button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRequested.emit('list')">Consultar sesiones</button>
-          <button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRequested.emit('rotate')">Rotar sesión</button>
-          <details><summary>Revocar todas mis sesiones</summary>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'sessions-all' })">
-              <label for="sessions-all-code">Código MFA para cerrar todas las sesiones</label><input id="sessions-all-code" name="code" autocomplete="one-time-code" required maxlength="32">
-              <button [disabled]="busy()">Cerrar todas mis sesiones</button>
-            </form>
-          </details>
-          <details><summary>Aprobar otro navegador</summary>
-            <p>Autoriza solo un navegador que tú controles. Compara la huella con la pantalla que inició la solicitud; no apruebes códigos que te envíe otra persona.</p>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'pairing-approve' })">
-              <label for="pair-token">Solicitud del navegador nuevo</label><input id="pair-token" name="token" [value]="incomingPairToken()" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
-              <label for="pair-fingerprint">Huella del navegador nuevo</label><input id="pair-fingerprint" name="fingerprint" [value]="incomingPairFingerprint()" required pattern="[0-9A-F]{12}" autocomplete="off">
-              <label for="pair-code">Código MFA para aprobar navegador</label><input id="pair-code" name="code" required maxlength="32" autocomplete="one-time-code">
-              <label><input name="confirmed" type="checkbox" required> Comparé la huella y autorizo este navegador</label>
-              <button [disabled]="busy()">Aprobar vinculación</button>
-            </form>
-          </details>
-          @for (session of identity.sessions(); track session.id) {
-            <p>Sesión {{ session.id }} · {{ session.device }} · {{ session.factor }} · última actividad UTC {{ session.lastSeenAtUtc }} · vence {{ session.expiresAtUtc }}</p>
-            <button type="button" [disabled]="busy() || identity.restoring()" (click)="revokeRequested.emit(session.id)">Revocar sesión {{ session.id }}</button>
-          }
-          <form (submit)="securityActionRequested.emit({ event: $event, action: 'private' })">
-            <label for="private-branch">Sucursal del recurso</label><input id="private-branch" name="branchId" required maxlength="36">
-            <label for="private-resource">Identificador del recurso</label><input id="private-resource" name="resourceId" required maxlength="36">
-            <button [disabled]="busy() || identity.restoring()">Consultar recurso autorizado</button>
-          </form>
-          @if (identity.privateReference()) { <p aria-label="Referencia privada">{{ identity.privateReference() }}</p> }
-          <details><summary>Cambiar contraseña</summary>
+          
+} @else if (view() === 'seguridad') {
+<details><summary>Cambiar contraseña</summary>
             <form (submit)="securityActionRequested.emit({ event: $event, action: 'password' })">
               <label for="current-password">Contraseña actual</label><input id="current-password" name="currentPassword" type="password" autocomplete="current-password" required maxlength="128">
               <label for="new-password">Nueva contraseña</label><input id="new-password" name="newPassword" type="password" autocomplete="new-password" required minlength="15" maxlength="128">
@@ -114,7 +91,9 @@
               <button [disabled]="busy() || identity.restoring()">Confirmar cambio de correo</button>
             </form>
           </details>
-          <details><summary>Revisar membresía con permiso administrativo</summary>
+          
+} @else if (view() === 'administracion') {
+<details><summary>Revisar membresía con permiso administrativo</summary>
             <p>Esta acción requiere autorización vigente del servidor. No concede permisos al solicitante.</p>
             <form (submit)="securityActionRequested.emit({ event: $event, action: 'membership' })">
               <label for="membership-id">Membresía pendiente</label><input id="membership-id" name="membershipId" required maxlength="36">
@@ -132,5 +111,37 @@
               <button [disabled]="busy() || identity.restoring()">Enviar invitación</button>
             </form>
           </details>
-          <button type="button" [disabled]="busy() || identity.restoring()" (click)="logoutRequested.emit()">Cerrar sesión</button>
+          
+} @else {
+<button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRequested.emit('list')">Consultar sesiones</button>
+          <button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRequested.emit('rotate')">Rotar sesión</button>
+          <details><summary>Revocar todas mis sesiones</summary>
+            <form (submit)="securityActionRequested.emit({ event: $event, action: 'sessions-all' })">
+              <label for="sessions-all-code">Código MFA para cerrar todas las sesiones</label><input id="sessions-all-code" name="code" autocomplete="one-time-code" required maxlength="32">
+              <button [disabled]="busy()">Cerrar todas mis sesiones</button>
+            </form>
+          </details>
+          <details><summary>Aprobar otro navegador</summary>
+            <p>Autoriza solo un navegador que tú controles. Compara la huella con la pantalla que inició la solicitud; no apruebes códigos que te envíe otra persona.</p>
+            <form (submit)="securityActionRequested.emit({ event: $event, action: 'pairing-approve' })">
+              <label for="pair-token">Solicitud del navegador nuevo</label><input id="pair-token" name="token" [value]="incomingPairToken()" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
+              <label for="pair-fingerprint">Huella del navegador nuevo</label><input id="pair-fingerprint" name="fingerprint" [value]="incomingPairFingerprint()" required pattern="[0-9A-F]{12}" autocomplete="off">
+              <label for="pair-code">Código MFA para aprobar navegador</label><input id="pair-code" name="code" required maxlength="32" autocomplete="one-time-code">
+              <label><input name="confirmed" type="checkbox" required> Comparé la huella y autorizo este navegador</label>
+              <button [disabled]="busy()">Aprobar vinculación</button>
+            </form>
+          </details>
+          @for (session of identity.sessions(); track session.id) {
+            <p>Sesión {{ session.id }} · {{ session.device }} · {{ session.factor }} · última actividad UTC {{ session.lastSeenAtUtc }} · vence {{ session.expiresAtUtc }}</p>
+            <button type="button" [disabled]="busy() || identity.restoring()" (click)="revokeRequested.emit(session.id)">Revocar sesión {{ session.id }}</button>
+          }
+          <form (submit)="securityActionRequested.emit({ event: $event, action: 'private' })">
+            <label for="private-branch">Sucursal del recurso</label><input id="private-branch" name="branchId" required maxlength="36">
+            <label for="private-resource">Identificador del recurso</label><input id="private-resource" name="resourceId" required maxlength="36">
+            <button [disabled]="busy() || identity.restoring()">Consultar recurso autorizado</button>
+          </form>
+          @if (identity.privateReference()) { <p aria-label="Referencia privada">{{ identity.privateReference() }}</p> }
+          
+}
+<button type="button" [disabled]="busy() || identity.restoring()" (click)="logoutRequested.emit()">Cerrar sesión</button>
         </section>

@@ -35,6 +35,7 @@ export class IdentityMfaComponent {
 })
 export class IdentityWorkspaceComponent {
   readonly identity = inject(IdentityApiService);
+  readonly view = input('resumen');
   readonly busy = input(false);
   readonly incomingPairToken = input('');
   readonly incomingPairFingerprint = input('');

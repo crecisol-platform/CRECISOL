@@ -20,6 +20,7 @@ export async function verifyPasskeys({ browser, api, check, confidential, passwo
   await page.getByLabel('Código de tu aplicación de autenticación').fill(backups.pop());
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  await page.getByRole('link', { name: 'Llaves', exact: true }).click();
   await page.getByText('Llaves de acceso', { exact: true }).click();
   await page.getByLabel('Código MFA para registrar llave').fill(backups.pop());
   const registered = page.waitForResponse(r => r.url().endsWith('/passkeys/register'));
@@ -144,6 +145,7 @@ export async function verifyPasskeys({ browser, api, check, confidential, passwo
   await page.getByLabel('Código de tu aplicación de autenticación').fill(backups.pop());
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  await page.getByRole('link', { name: 'Llaves', exact: true }).click();
   await page.getByText('Llaves de acceso', { exact: true }).click();
   await page.getByLabel('Código MFA para registrar llave').fill(backups.pop());
   const secondRegistration = page.waitForResponse(r => r.url().endsWith('/passkeys/register'));
@@ -153,6 +155,7 @@ export async function verifyPasskeys({ browser, api, check, confidential, passwo
   await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click(); await loggedOut;
   await page.getByRole('button', { name: 'Entrar con llave de acceso', exact: true }).click();
   await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  await page.getByRole('link', { name: 'Seguridad', exact: true }).click();
   await page.getByText('Recuperar MFA con una llave de acceso', { exact: true }).click();
   await page.getByLabel('Correo verificado para recuperar MFA').fill(mailbox);
   const recoveryRequested = page.waitForResponse(r => r.url().endsWith('/recovery/request'));

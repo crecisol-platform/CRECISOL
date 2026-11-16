@@ -51,7 +51,14 @@
           <cs-identity-mfa [busy]="busy()" (verifyRequested)="verify($event)"
             (enrollRequested)="enroll()" />
         } @else {
-          <cs-identity-workspace [busy]="busy()" [incomingPairToken]="incomingPairToken"
+          <nav class="account-nav account-nav--workspace" aria-label="Mi cuenta">
+            <a routerLink="/cuenta" [queryParams]="{vista:'resumen'}" [attr.aria-current]="view() === 'resumen' || view() === 'ingresar' ? 'page' : null">Resumen</a>
+            <a routerLink="/cuenta" [queryParams]="{vista:'perfil'}" [attr.aria-current]="view() === 'perfil' ? 'page' : null">Mi perfil en esta empresa</a>
+            <a routerLink="/cuenta" [queryParams]="{vista:'llaves'}" [attr.aria-current]="view() === 'llaves' ? 'page' : null">Llaves</a>
+            <a routerLink="/cuenta" [queryParams]="{vista:'seguridad'}" [attr.aria-current]="view() === 'seguridad' ? 'page' : null">Seguridad</a>
+            <a routerLink="/cuenta" [queryParams]="{vista:'administracion'}" [attr.aria-current]="view() === 'administracion' ? 'page' : null">Aprobaciones</a>
+          </nav>
+          <cs-identity-workspace [busy]="busy()" [view]="view()" [incomingPairToken]="incomingPairToken"
             [incomingPairFingerprint]="incomingPairFingerprint"
             (securityActionRequested)="securityAction($event.event, $event.action)"
             (uploadPhotoRequested)="uploadPhoto($event)"

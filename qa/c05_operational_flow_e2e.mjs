@@ -344,6 +344,7 @@ try {
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await page.getByLabel('Código de tu aplicación de autenticación').fill(approver.backups.pop());
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
+  await page.getByRole('link', { name: 'Aprobaciones', exact: true }).click();
   await page.getByText('Revisar membresía con permiso administrativo', { exact: true }).click();
   await page.getByLabel('Membresía pendiente', { exact: true }).fill(memberId);
   await page.getByLabel('Motivo', { exact: true }).fill('Synthetic local approval');
@@ -497,6 +498,7 @@ try {
   }
   token = await uiLogin('member@example.test', newPassword);
   check((await api('mfa/verify', { challenge: (await api('login', { mailbox: 'member@example.test', password: newPassword })).data.challenge, code: resetCode })).status === 401, 'consumed MFA backup cannot be reused for login');
+  await page.getByRole('link', { name: 'Seguridad', exact: true }).click();
   await page.getByText('Cambiar correo', { exact: true }).click();
   await page.getByLabel('Nuevo correo', { exact: true }).fill('member.changed@example.test');
   await page.getByLabel('Código MFA para solicitar correo').fill(backupCodes.pop());
@@ -512,6 +514,7 @@ try {
   check((await api('sessions', {}, token)).status === 401, 'mailbox change revokes old session');
   check((await api('login', { mailbox: 'member@example.test', password: newPassword })).status === 401, 'old mailbox no longer authenticates');
   token = await uiLogin('member.changed@example.test', newPassword);
+  await page.getByRole('link', { name: 'Seguridad', exact: true }).click();
   await page.getByText('Cambiar contraseña', { exact: true }).click();
   await page.getByLabel('Contraseña actual', { exact: true }).fill(newPassword);
   await page.getByLabel('Nueva contraseña', { exact: true }).fill(password);
@@ -532,6 +535,7 @@ try {
   check((await logoutUi).status() === 200, 'Angular logout revokes server session');
   check((await api('sessions', {}, logoutToken)).status === 401, 'logout session replay denied');
   token = await uiLogin('member.changed@example.test', password);
+  await page.getByRole('link', { name: 'Seguridad', exact: true }).click();
   await page.getByText('Reemplazar segundo factor', { exact: true }).click();
   await page.getByLabel('Contraseña para reemplazar MFA').fill(password);
   await page.getByLabel('Código actual o respaldo MFA').fill(backupCodes.pop());

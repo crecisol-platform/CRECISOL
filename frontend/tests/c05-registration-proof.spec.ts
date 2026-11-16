@@ -72,3 +72,22 @@ test('Angular proxy completes a real registration against the disposable API and
     'pendiente de aprobación'
   );
 });
+
+test('identity flows expose individual navigable views', async ({ page }) => {
+  await page.goto('/cuenta');
+  await expect(page.getByRole('heading', { name: 'Iniciar sesión', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Confirmar correo', exact: true })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Solicitar cuenta', exact: true }).click();
+  await expect(page).toHaveURL(/vista=registro/);
+  await expect(page.getByRole('heading', { name: 'Solicitar una cuenta', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Iniciar sesión', exact: true })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Confirmar correo', exact: true }).click();
+  await expect(page.getByLabel('Identificador de confirmación')).toBeVisible();
+  await page.getByRole('link', { name: 'Recuperar acceso', exact: true }).click();
+  await expect(page.getByLabel('Correo para recuperación')).toBeVisible();
+  await expect(page.getByLabel('Identificador de confirmación')).toHaveCount(0);
+  await page.getByRole('link', { name: 'Acceso de personal autorizado' }).click();
+  await expect(page).toHaveURL(/vista=operadores/);
+  await expect(page.getByLabel('Correo del operador de identidad')).toBeVisible();
+  await expect(page.getByLabel('Correo para recuperación')).toHaveCount(0);
+});
