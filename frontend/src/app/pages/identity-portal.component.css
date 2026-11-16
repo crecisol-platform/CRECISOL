@@ -3,7 +3,9 @@
 .skip-link { position: fixed; top: -5rem; left: 1rem; z-index: 10; padding: .8rem 1rem; background: white; color: #142b46; border-radius: .65rem; }
 .skip-link:focus { top: 1rem; }
 .account-header { max-width: 1220px; margin: auto; padding: 1.4rem clamp(1rem, 4vw, 3rem); display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.brand { font-size: 1.1rem; font-weight: 850; letter-spacing: .075em; text-decoration: none; color: #103f7e; }
+.brand { display: inline-flex; align-items: center; gap: .7rem; min-width: 0; font-size: 1.1rem; font-weight: 850; letter-spacing: .075em; text-decoration: none; color: #103f7e; }
+.brand-mark { width: 2.35rem; height: 2.35rem; flex: 0 0 auto; border-radius: .5rem; object-fit: contain; background: #fff; }
+.brand span { overflow-wrap: anywhere; }
 .header-context { color: #465d74; font-size: .87rem; font-weight: 650; }
 .account-layout { max-width: 1220px; margin: 0 auto; padding: clamp(.5rem, 3vw, 2rem) clamp(1rem, 4vw, 3rem) 4rem; display: grid; grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr); align-items: stretch; gap: clamp(1rem, 2vw, 2rem); }
 .account-aside { display: flex; flex-direction: column; justify-content: space-between; gap: 2.5rem; padding: clamp(1.7rem, 4vw, 4rem); background: #10345b; color: white; border-radius: 1.5rem; min-height: 680px; }
