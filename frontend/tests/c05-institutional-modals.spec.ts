@@ -6,7 +6,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1366, height: 768 
     await page.setViewportSize(viewport);
     await page.goto('/cuenta?vista=operadores');
     const opener = page.getByRole('button', { name: 'Recuperar acceso de operador de plataforma', exact: true });
-    const modal = page.getByRole('dialog', { name: 'Recuperar acceso de operador de plataforma', exact: true });
+    const modal = page.getByRole('dialog', { name: 'Recuperación segura de operador', exact: true });
     await expect(opener).toBeVisible();
     await expect(modal).toHaveCount(0); // Closed modal must not enter the accessible tree.
     await expect(page.getByLabel('Correo del operador sin acceso')).not.toBeVisible();
