@@ -9,7 +9,11 @@
           <label for="platform-password">Contraseña del operador</label><input id="platform-password" name="password" type="password" autocomplete="current-password" required maxlength="128">
           <button [disabled]="busy() || platform.restoring()">Acceder a identidad de plataforma</button>
         </form>
-        <details><summary>Recuperar acceso de operador de plataforma</summary>
+        <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="operatorRecoveryModal.open()">Recuperar acceso de operador de plataforma</button>
+        <cs-institutional-modal #operatorRecoveryModal title="Recuperación segura de operador"
+          description="Acceso excepcional. Dos revisores independientes, verificación de identidad y un mínimo de 24 horas."
+          [busy]="busy()" [feedback]="message()" [error]="error()" [wide]="true">
+          
           <p>Se necesitan otros dos operadores de identidad, verificación independiente y al menos 24 horas. Ninguna aprobación de un negocio sirve para este ámbito.</p>
           <form (submit)="action($event, 'operator-recovery-request')">
             <label for="operator-recovery-mail">Correo del operador sin acceso</label><input id="operator-recovery-mail" name="mailbox" type="email" required maxlength="254" autocomplete="email">
@@ -36,7 +40,8 @@
             <label for="operator-incident-token">Código del aviso de seguridad de operador</label><input id="operator-incident-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
             <button [disabled]="busy()">Reportar incidente de operador</button>
           </form>
-        </details>
+        
+        </cs-institutional-modal>
       }
       @if (platform.state() === 'challenge') {
         <form (submit)="action($event, 'mfa')">
@@ -46,112 +51,38 @@
       }
       @if (platform.state() === 'authenticated') {
         <p role="status">Operador de identidad verificado. Esta sesión pertenece al ámbito de plataforma.</p>
-        <details><summary>Mis sesiones de plataforma</summary>
-          <button type="button" [disabled]="busy()" (click)="loadSessions()">Consultar sesiones de operador</button>
-          <button type="button" [disabled]="busy()" (click)="rotateSession()">Rotar sesión de operador</button>
-          @for (session of platform.sessions(); track session.id) {
-            <p>{{ session.device }} · última actividad UTC {{ session.lastSeenAtUtc }} · vence {{ session.expiresAtUtc }}</p>
-            <button type="button" [disabled]="busy()" (click)="revokeSession(session.id)">Revocar sesión de operador {{ session.id }}</button>
+        <nav class="operator-nav" aria-label="Áreas de la consola de identidad">
+          <button type="button" [attr.aria-current]="panel() === 'casos' ? 'page' : null" (click)="panel.set('casos')">Casos</button>
+          <button type="button" [attr.aria-current]="panel() === 'sesiones' ? 'page' : null" (click)="panel.set('sesiones')">Sesiones</button>
+          <button type="button" [attr.aria-current]="panel() === 'perfil' ? 'page' : null" (click)="panel.set('perfil')">Perfil</button>
+          <button type="button" [attr.aria-current]="panel() === 'seguridad' ? 'page' : null" (click)="panel.set('seguridad')">Seguridad</button>
+          <button type="button" [attr.aria-current]="panel() === 'monitor' ? 'page' : null" (click)="panel.set('monitor')">Monitor</button>
+        </nav>
+        <div class="operator-content">
+          @switch (panel()) {
+            @case ('sesiones') {
+              <cs-platform-operator-sessions [busy]="busy()" [feedback]="message()" [error]="error()"
+                (actionRequested)="action($event.event, $event.action)"
+                (loadSessionsRequested)="loadSessions()" (rotateSessionRequested)="rotateSession()"
+                (revokeSessionRequested)="revokeSession($event)" />
+            }
+            @case ('perfil') {
+              <cs-platform-operator-profile [busy]="busy()" [feedback]="message()" [error]="error()"
+                (actionRequested)="action($event.event, $event.action)"
+                (loadProfileRequested)="loadProfile()" (photoRequested)="photo($event)" />
+            }
+            @case ('monitor') {
+              <cs-platform-operator-monitor [busy]="busy()" (loadAbuseRequested)="loadAbuse()" />
+            }
+            @case ('seguridad') {
+              <cs-platform-operator-security [busy]="busy()" [feedback]="message()" [error]="error()" (actionRequested)="action($event.event, $event.action)" />
+            }
+            @default {
+              <cs-platform-operator-cases [busy]="busy()" [feedback]="message()" [error]="error()" (actionRequested)="action($event.event, $event.action)" />
+            }
           }
-          <form (submit)="action($event, 'revoke-all')">
-            <label for="operator-sessions-code">Código MFA para cerrar sesiones de plataforma</label><input id="operator-sessions-code" name="code" required maxlength="32" autocomplete="one-time-code">
-            <button [disabled]="busy()">Cerrar todas mis sesiones de plataforma</button>
-          </form>
-        </details>
-        <details><summary>Mi perfil de operador</summary>
-          <button type="button" [disabled]="busy()" (click)="loadProfile()">Consultar perfil de operador</button>
-          @if (platform.profile(); as profile) { <p aria-label="Nombre del perfil de operador">{{ profile.displayName }}</p> }
-          @if (platform.photo()) { <img [src]="platform.photo()" width="64" height="64" alt="Foto de mi perfil de operador"> }
-          <form (submit)="action($event, 'profile')">
-            <label for="operator-profile-name">Nombre visible del operador</label><input id="operator-profile-name" name="displayName" required maxlength="80" autocomplete="nickname">
-            <label for="operator-profile-language">Idioma del perfil de operador</label><select id="operator-profile-language" name="language"><option value="es-HN">Español de Honduras</option><option value="es">Español</option><option value="en">English</option></select>
-            <label for="operator-profile-zone">Zona horaria del operador</label><input id="operator-profile-zone" name="timeZone" required maxlength="64" value="America/Tegucigalpa">
-            <button [disabled]="busy()">Guardar perfil de operador</button>
-          </form>
-          <form (submit)="photo($event)">
-            <label for="operator-photo">Foto del operador (PNG, JPEG o WebP, hasta 2 MB)</label><input id="operator-photo" name="photo" type="file" accept="image/png,image/jpeg,image/webp" required>
-            <button [disabled]="busy()">Guardar foto de operador</button>
-          </form>
-        </details>
-        <details><summary>Señales de abuso de identidad</summary>
-          <p>Solo cantidades agregadas; no expone correos, direcciones IP ni datos de otros negocios.</p>
-          <button type="button" [disabled]="busy()" (click)="loadAbuse()">Consultar señales agregadas</button>
-          <ul>@for (signal of platform.abuse(); track signal.kind) { <li>{{ signal.kind }}: {{ signal.count }}</li> }</ul>
-        </details>
-        <details><summary>Cambiar contraseña de operador</summary>
-          <form (submit)="action($event, 'password')">
-            <label for="operator-current-password">Contraseña actual del operador</label><input id="operator-current-password" name="currentPassword" type="password" required maxlength="128" autocomplete="current-password">
-            <label for="operator-new-password">Nueva contraseña de operador</label><input id="operator-new-password" name="newPassword" type="password" required minlength="15" maxlength="128" autocomplete="new-password">
-            <label for="operator-password-code">Código MFA para cambiar contraseña de operador</label><input id="operator-password-code" name="code" required maxlength="32" autocomplete="one-time-code">
-            <button [disabled]="busy()">Cambiar contraseña de plataforma</button>
-          </form>
-        </details>
-        <details><summary>Cambiar correo de operador</summary>
-          <form (submit)="action($event, 'mailbox-request')">
-            <label for="operator-new-mailbox">Nuevo correo del operador</label><input id="operator-new-mailbox" name="mailbox" type="email" required maxlength="254" autocomplete="email">
-            <label for="operator-mailbox-code">Código MFA para solicitar correo de operador</label><input id="operator-mailbox-code" name="code" required maxlength="32" autocomplete="one-time-code">
-            <button [disabled]="busy()">Solicitar nuevo correo de operador</button>
-          </form>
-          <form (submit)="action($event, 'mailbox-complete')">
-            <label for="operator-mailbox-token">Token del nuevo correo de operador</label><input id="operator-mailbox-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
-            <label for="operator-mailbox-confirm-code">Código MFA para confirmar correo de operador</label><input id="operator-mailbox-confirm-code" name="code" required maxlength="32" autocomplete="one-time-code">
-            <button [disabled]="busy()">Confirmar correo de operador</button>
-          </form>
-        </details>
-        <details><summary>Reemplazar MFA de operador</summary>
-          <form (submit)="action($event, 'factor')">
-            <label for="operator-factor-password">Contraseña para reemplazar MFA de operador</label><input id="operator-factor-password" name="currentPassword" type="password" required maxlength="128" autocomplete="current-password">
-            <label for="operator-factor-code">Código MFA o respaldo para reemplazar factor de operador</label><input id="operator-factor-code" name="code" required maxlength="32" autocomplete="one-time-code">
-            <button [disabled]="busy()">Preparar nuevo factor de operador</button>
-          </form>
-          @if (platform.factorSecret()) {
-            <output aria-label="Semilla del factor de operador a reemplazar">{{ platform.factorSecret() }}</output>
-            <form (submit)="action($event, 'factor-confirm')">
-              <label for="operator-factor-confirm-code">Código del factor nuevo de operador</label><input id="operator-factor-confirm-code" name="code" required pattern="[0-9]{6}" autocomplete="one-time-code">
-              <button [disabled]="busy()">Activar nuevo factor de operador</button>
-            </form>
-          }
-        </details>
-        <form (submit)="action($event, 'case')">
-          <label for="platform-case">Referencia del caso de recuperación</label><input id="platform-case" name="caseId" required maxlength="36">
-          <button [disabled]="busy()">Consultar caso de identidad</button>
-        </form>
-        <details><summary>Localizar una solicitud de identidad pendiente</summary>
-          <p>Permite localizar un caso cuando el titular perdió su referencia o recibió una referencia neutra por una solicitud previa. Requiere un motivo de soporte y MFA fresco; no devuelve empresas, perfiles ni correos privados.</p>
-          <form (submit)="action($event, 'find-case')">
-            <label for="find-case-mail">Correo indicado por el titular del caso</label><input id="find-case-mail" name="mailbox" type="email" required maxlength="254" autocomplete="off">
-            <label for="find-case-realm">Ámbito del caso de identidad</label><select id="find-case-realm" name="realm"><option value="TENANT_IDENTITY">Identidad de negocio</option><option value="PLATFORM_OPERATOR">Operador de plataforma</option></select>
-            <label for="find-case-reason">Motivo de localización del caso</label><input id="find-case-reason" name="reason" required minlength="12" maxlength="240">
-            <label for="find-case-code">Código MFA para localizar caso</label><input id="find-case-code" name="code" required maxlength="32" autocomplete="one-time-code">
-            <button [disabled]="busy()">Localizar referencia de identidad</button>
-          </form>
-          @if (platform.locatedCase()) { <output aria-label="Referencia localizada de identidad">{{ platform.locatedCase() }}</output> }
-        </details>
-        @if (platform.case(); as item) {
-          <p>Referencia {{ item.caseId }} · bloqueado {{ item.blocked }} · completado {{ item.consumed }}</p>
-          <p>Disponible después de: {{ item.readyAtUtc ?? 'pendiente de doble revisión' }}</p>
-        }
-        <form (submit)="action($event, 'review')">
-          <label for="review-case">Caso a revisar</label><input id="review-case" name="caseId" required maxlength="36">
-          <label for="review-decision">Decisión de identidad</label><select id="review-decision" name="decision"><option value="approve">Aprobar</option><option value="reject">Rechazar</option></select>
-          <label for="review-evidence">SHA-256 del expediente de verificación</label><input id="review-evidence" name="evidenceHash" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
-          <label for="review-reason">Motivo de la revisión de identidad</label><input id="review-reason" name="reason" required minlength="12" maxlength="240">
-          <label for="review-code">Código MFA fresco para revisar</label><input id="review-code" name="code" required pattern="([0-9]{6}|[0-9a-fA-F]{32})" autocomplete="one-time-code">
-          <label><input name="verified" type="checkbox" required> Verifiqué la identidad de forma independiente; no usé preguntas personales ni solo un correo nuevo</label>
-          <button [disabled]="busy()">Registrar revisión de identidad</button>
-        </form>
-        <p>Se necesitan dos operadores distintos y un mínimo de 24 horas. Un rechazo o una denuncia bloquea el caso. En este entorno usa únicamente expedientes ficticios.</p>
-        <form (submit)="action($event, 'share')">
-          <label for="share-case">Caso para entrega segura</label><input id="share-case" name="caseId" required maxlength="36">
-          <label for="share-code">Código MFA para emitir mi parte</label><input id="share-code" name="code" required pattern="([0-9]{6}|[0-9a-fA-F]{32})" autocomplete="one-time-code">
-          <button [disabled]="busy()">Emitir mi parte de recuperación</button>
-        </form>
-        @if (platform.handoffShare()) {
-          <p>Entrega esta parte solo al titular cuya identidad verificaste, por un canal independiente del otro operador. Vence en 30 minutos; una nueva emisión invalida la anterior.</p>
-          <output aria-label="Parte de recuperación del operador">{{ platform.handoffShare() }}</output>
-          <button type="button" (click)="platform.handoffShare.set('')">Ocultar mi parte</button>
-        }
-        <button type="button" [disabled]="busy()" (click)="logout()">Cerrar sesión de plataforma</button>
+        </div>
+                <button type="button" [disabled]="busy()" (click)="logout()">Cerrar sesión de plataforma</button>
       }
       @if (platform.recoveryCodes().length) {
         <aside aria-label="Códigos de respaldo del operador"><p>Guarda estos códigos fuera del navegador. Cada uno sirve una sola vez.</p>

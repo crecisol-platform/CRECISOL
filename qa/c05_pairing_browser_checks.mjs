@@ -30,7 +30,7 @@ export async function verifyPairing({ browser, api, check, confidential, mailbox
   await page.getByLabel('Código de tu aplicación de autenticación').fill(backups.pop());
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
-  await page.getByText('Aprobar otro navegador', { exact: true }).click();
+  await page.getByRole('button', { name: 'Aprobar otro navegador', exact: true }).click();
   check(await page.getByLabel('Solicitud del navegador nuevo', { exact: true }).inputValue() === token &&
     await page.getByLabel('Huella del navegador nuevo', { exact: true }).inputValue() === fingerprint,
     'QR deep link only prefills the explicit approval form after authenticated login');
@@ -51,7 +51,12 @@ export async function verifyPairing({ browser, api, check, confidential, mailbox
   check((await api('sessions', {}, pairedToken)).status === 200, 'paired session is persisted and revocable in the same tenant');
   check((await api('pairings/complete', { token, signature: '00'.repeat(64) })).status === 401,
     'consumed pairing cannot create a second session');
-  await page.getByText('Revocar todas mis sesiones', { exact: true }).click();
+  // The successful browser approval intentionally leaves its institutional dialog
+  // visible for review. Dismiss it through the user's keyboard path before
+  // navigating to the separate session-revocation action (no forced clicks).
+  await page.keyboard.press('Escape');
+  await page.getByRole('dialog', { name: 'Aprobar otro navegador' }).waitFor({ state: 'hidden' });
+  await page.getByRole('button', { name: 'Revocar todas mis sesiones', exact: true }).click();
   await page.getByLabel('Código MFA para cerrar todas las sesiones').fill(backups.pop());
   const revoked = page.waitForResponse(r => r.url().endsWith('/sessions/revoke-all'));
   await page.getByRole('button', { name: 'Cerrar todas mis sesiones', exact: true }).click();

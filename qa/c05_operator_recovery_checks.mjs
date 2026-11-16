@@ -48,6 +48,7 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
       check(sql(`SELECT COUNT(*) FROM c05_platform_identity_audit WHERE action_code='platform/cases/find' AND case_id=UUID_TO_BIN('${caseId}',0) AND purpose_hmac IS NOT NULL`) === '1',
         'support lookup purpose is stored as an immutable digest rather than personal text');
     }
+    await p.getByRole('button', { name: 'Revisar identidad del titular', exact: true }).click();
     await p.getByLabel('Caso a revisar', { exact: true }).fill(caseId);
     await p.getByLabel('SHA-256 del expediente de verificación').fill(evidenceHash);
     await p.getByLabel('Motivo de la revisión de identidad').fill('Independent institutional verification of fictional operator');
@@ -56,13 +57,20 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
     const reviewed = p.waitForResponse(r => r.url().endsWith('/platform-identity/review'));
     await p.getByRole('button', { name: 'Registrar revisión de identidad', exact: true }).click();
     check((await reviewed).status() === 200, 'distinct platform reviewer approves an operator case after independent identity attestation');
+    await p.getByRole('dialog', { name: 'Revisar identidad del titular', exact: true })
+      .getByRole('button', { name: 'Cerrar ventana', exact: true }).click();
+    await p.locator('dialog.cs-modal:modal').waitFor({ state: 'hidden' });
   }
   const profilePage = reviewers[0];
-  await profilePage.getByText('Mi perfil de operador', { exact: true }).click();
+  await profilePage.getByRole('button', { name: 'Perfil', exact: true }).click();
+  await profilePage.getByRole('button', { name: 'Editar perfil de operador', exact: true }).click();
   await profilePage.getByLabel('Nombre visible del operador', { exact: true }).fill('Fictional platform profile');
   const saved = profilePage.waitForResponse(r => r.url().endsWith('/platform-identity/profile/save'));
   await profilePage.getByRole('button', { name: 'Guardar perfil de operador', exact: true }).click();
   check((await saved).status() === 200, 'operator profile persists in its independent platform table and encryption realm');
+  await profilePage.getByRole('dialog', { name: 'Editar perfil de operador', exact: true })
+    .getByRole('button', { name: 'Cerrar ventana', exact: true }).click();
+  await profilePage.locator('dialog.cs-modal:modal').waitFor({ state: 'hidden' });
   check((await platform('profile/read', {}, tokens[1])).data.displayName === '', 'one operator cannot inherit another operator profile');
   check((await api('profile/read', {}, tokens[0])).status === 401, 'platform profile credential cannot read any tenant profile');
   check(Number(sql(`SELECT TIMESTAMPDIFF(SECOND,UTC_TIMESTAMP(6),ready_at_utc) FROM c05_platform_recovery_case WHERE case_id=UUID_TO_BIN('${caseId}',0)`)) > 86300,
@@ -74,12 +82,20 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   const shares = [];
   for (let index = 0; index < reviewers.length; index++) {
     const p = reviewers[index], operator = operators[index + 1];
+    await p.locator('dialog.cs-modal:modal').waitFor({ state: 'hidden' });
+    await p.getByRole('button', { name: 'Casos', exact: true }).click();
+    await p.getByRole('button', { name: 'Emitir parte de recuperación', exact: true }).click();
     await p.getByLabel('Caso para entrega segura', { exact: true }).fill(caseId);
     await p.getByLabel('Código MFA para emitir mi parte').fill(operator.backups.pop());
     const release = p.waitForResponse(r => r.url().endsWith('/platform-identity/release-share'));
     await p.getByRole('button', { name: 'Emitir mi parte de recuperación', exact: true }).click();
     check((await release).status() === 200, 'reviewer releases only their own operator-recovery share after the security deadline');
-    shares.push(await p.getByLabel('Parte de recuperación del operador').innerText()); confidential.push(shares[index]);
+    const shareDialog = p.getByRole('dialog', { name: 'Emitir parte de recuperación', exact: true });
+    shares.push(await shareDialog.getByLabel('Parte de recuperación del operador').innerText()); confidential.push(shares[index]);
+    await shareDialog.getByRole('button', { name: 'Cerrar ventana', exact: true }).click();
+    await p.locator('dialog.cs-modal:modal').waitFor({ state: 'hidden' });
+    await p.getByLabel('Parte de recuperación del operador').waitFor({ state: 'hidden' });
+    check(true, 'reviewer secret appears only inside its modal and clears on dismissal');
   }
   const newPassword = 'Fictional-recovered-platform-strong-4!'; confidential.push(newPassword);
   await reservePlatformWindow(25);
@@ -104,7 +120,9 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   const backups = await page.getByLabel('Códigos de respaldo del operador').locator('code').allTextContents(); confidential.push(...backups);
   check(backups.length === 10, 'operator recovery emits ten independent new one-use backup codes once');
   check(!(await subject.cookies()).some(c => c.name === '__Host-crecisol-platform-c05'), 'operator recovery never logs the operator in automatically');
+  await page.keyboard.press('Escape'); // Cerrar recuperación institucional ya verificada.
   async function uiLogin(mailbox, password, code) {
+    if (await page.locator('dialog.cs-modal[open]').count()) await page.keyboard.press('Escape');
     await page.getByLabel('Correo del operador de identidad').fill(mailbox);
     await page.getByLabel('Contraseña del operador', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Acceder a identidad de plataforma', exact: true }).click();
@@ -114,7 +132,7 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
     check((await response).status() === 200, 'recovered operator authenticates through the normal password-plus-MFA browser flow');
   }
   await uiLogin(target.mailbox, newPassword, backups.pop());
-  await page.getByText('Mis sesiones de plataforma', { exact: true }).click();
+  await page.getByRole('button', { name: 'Sesiones', exact: true }).click();
   const listed = page.waitForResponse(r => r.url().endsWith('/platform-identity/sessions'));
   await page.getByRole('button', { name: 'Consultar sesiones de operador', exact: true }).click();
   check((await listed).status() === 200, 'operator can inspect their own live browser/device sessions');
@@ -131,13 +149,16 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   check(ownSession.device === 'Chromium', 'session device label is a coarse browser family rather than a raw fingerprint or IP');
   check((await platform('sessions/revoke', { sessionId: ownSession.id }, tokens[1])).status === 401,
     'another platform operator cannot revoke the subject operator session by identifier');
+  await page.getByRole('button', { name: 'Cerrar todas mis sesiones de plataforma', exact: true }).click();
   await page.getByLabel('Código MFA para cerrar sesiones de plataforma').fill(backups.pop());
   const allRevoked = page.waitForResponse(r => r.url().endsWith('/platform-identity/sessions/revoke-all'));
-  await page.getByRole('button', { name: 'Cerrar todas mis sesiones de plataforma', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Cerrar todas mis sesiones de plataforma', exact: true })
+    .getByRole('button', { name: 'Confirmar cierre de todas mis sesiones de plataforma', exact: true }).click();
   check((await allRevoked).status() === 200 && (await platform('session', {}, afterRotation)).status === 401,
     'fresh platform MFA revokes all own platform sessions without changing tenant identities');
   await uiLogin(target.mailbox, newPassword, backups.pop());
-  await page.getByText('Reemplazar MFA de operador', { exact: true }).click();
+  await page.getByRole('button', { name: 'Seguridad', exact: true }).click();
+  await page.getByRole('button', { name: 'Reemplazar MFA de operador', exact: true }).click();
   await page.getByLabel('Contraseña para reemplazar MFA de operador').fill(newPassword);
   await page.getByLabel('Código MFA o respaldo para reemplazar factor de operador').fill(backups.pop());
   const replace = page.waitForResponse(r => r.url().endsWith('/platform-identity/factor/replace'));
@@ -153,7 +174,8 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   const finalBackups = await page.getByLabel('Códigos de respaldo del operador').locator('code').allTextContents(); confidential.push(...finalBackups);
   await reservePlatformWindow(30);
   await uiLogin(target.mailbox, newPassword, finalBackups.pop());
-  await page.getByText('Cambiar contraseña de operador', { exact: true }).click();
+  await page.getByRole('button', { name: 'Seguridad', exact: true }).click();
+  await page.getByRole('button', { name: 'Cambiar contraseña de operador', exact: true }).click();
   const finalPassword = 'Fictional-platform-password-change-5!'; confidential.push(finalPassword);
   await page.getByLabel('Contraseña actual del operador').fill(newPassword);
   await page.getByLabel('Nueva contraseña de operador', { exact: true }).fill(finalPassword);
@@ -162,7 +184,8 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   await page.getByRole('button', { name: 'Cambiar contraseña de plataforma', exact: true }).click();
   check((await changed).status() === 200, 'operator password change requires current password and fresh independent factor');
   await uiLogin(target.mailbox, finalPassword, finalBackups.pop());
-  await page.getByText('Cambiar correo de operador', { exact: true }).click();
+  await page.getByRole('button', { name: 'Seguridad', exact: true }).click();
+  await page.getByRole('button', { name: 'Cambiar correo de operador', exact: true }).click();
   const changedMailbox = 'identity.changed@example.test';
   await page.getByLabel('Nuevo correo del operador', { exact: true }).fill(changedMailbox);
   await page.getByLabel('Código MFA para solicitar correo de operador').fill(finalBackups.pop());

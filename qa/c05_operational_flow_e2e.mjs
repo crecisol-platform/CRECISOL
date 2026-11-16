@@ -350,7 +350,7 @@ try {
   await page.getByLabel('Código de tu aplicación de autenticación').fill(approver.backups.pop());
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   await page.getByRole('link', { name: 'Aprobaciones', exact: true }).click();
-  await page.getByText('Revisar membresía con permiso administrativo', { exact: true }).click();
+  await page.getByRole('button', { name: 'Revisar membresía con permiso administrativo', exact: true }).click();
   await page.getByLabel('Membresía pendiente', { exact: true }).fill(memberId);
   await page.getByLabel('Motivo', { exact: true }).fill('Synthetic local approval');
   await page.getByLabel('Código MFA del aprobador', { exact: true }).fill(approver.backups.pop());
@@ -376,6 +376,7 @@ try {
   check((await api('sessions', {}, approver.token)).status === 401, 'explicitly revoked session cannot be reused');
   // Browser sessions now survive reload in an HttpOnly cookie. Explicitly log
   // out the approver's distinct UI session before switching to the member.
+  await page.keyboard.press('Escape'); // Cerrar el modal de revisión antes de cerrar la sesión.
   const approverLogout = page.waitForResponse(r => r.url().endsWith('/logout'));
   await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
   check((await approverLogout).status() === 200, 'browser logout completes server revocation and cookie deletion before navigation');
@@ -426,10 +427,12 @@ try {
   sql(`INSERT INTO c05_identity_branch VALUES(UNHEX('${A}'),UUID_TO_BIN('${branch}',0),TRUE),(UNHEX('${A}'),UUID_TO_BIN('${otherBranch}',0),TRUE);
     INSERT INTO c05_identity_private_resource VALUES(UNHEX('${A}'),UUID_TO_BIN('${branch}',0),UUID_TO_BIN('${resource}',0),UNHEX('${actor}'),1,'LOCAL-PRIVATE-REFERENCE');
     INSERT INTO c05_identity_resource_grant VALUES(UNHEX('${A}'),UUID_TO_BIN(UUID(),0),UNHEX('${actor}'),UUID_TO_BIN('${branch}',0),UUID_TO_BIN('${resource}',0),1,'RESOURCE_READ',UNHEX('${accountId('approver@example.test')}'),UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)+INTERVAL 1 HOUR,NULL,1);`);
+  await page.getByRole('button', { name: 'Comprobar un acceso privado', exact: true }).click();
   await page.getByLabel('Sucursal del recurso').fill(branch); await page.getByLabel('Identificador del recurso').fill(resource);
   await page.getByRole('button', { name: 'Consultar recurso autorizado' }).click();
   await page.getByLabel('Referencia privada').waitFor();
   assert.equal(await page.getByLabel('Referencia privada').innerText(), 'LOCAL-PRIVATE-REFERENCE');
+  await page.keyboard.press('Escape'); // Recuperar acceso al resumen tras cerrar el modal.
   check(true, 'Angular private resource authorized by tenant, branch and owner');
   check((await api('private/read', { branchId: branch, resourceId: resource }, token, 'tenant-b.example.test')).status === 401, 'tenant B cannot use session A');
   check((await api('private/read', { branchId: otherBranch, resourceId: resource }, token)).status === 401, 'cross-branch IDOR denied');
@@ -511,7 +514,7 @@ try {
   token = await uiLogin('member@example.test', newPassword);
   check((await api('mfa/verify', { challenge: (await api('login', { mailbox: 'member@example.test', password: newPassword })).data.challenge, code: resetCode })).status === 401, 'consumed MFA backup cannot be reused for login');
   await page.getByRole('link', { name: 'Seguridad', exact: true }).click();
-  await page.getByText('Cambiar correo', { exact: true }).click();
+  await page.getByRole('button', { name: 'Cambiar correo', exact: true }).click();
   await page.getByLabel('Nuevo correo', { exact: true }).fill('member.changed@example.test');
   await page.getByLabel('Código MFA para solicitar correo').fill(backupCodes.pop());
   const mailboxRequest = page.waitForResponse(r => r.url().endsWith('/mailbox/request'));
@@ -527,7 +530,7 @@ try {
   check((await api('login', { mailbox: 'member@example.test', password: newPassword })).status === 401, 'old mailbox no longer authenticates');
   token = await uiLogin('member.changed@example.test', newPassword);
   await page.getByRole('link', { name: 'Seguridad', exact: true }).click();
-  await page.getByText('Cambiar contraseña', { exact: true }).click();
+  await page.getByRole('button', { name: 'Cambiar contraseña', exact: true }).click();
   await page.getByLabel('Contraseña actual', { exact: true }).fill(newPassword);
   await page.getByLabel('Nueva contraseña', { exact: true }).fill(password);
   await page.getByLabel('Código MFA para contraseña', { exact: true }).fill(backupCodes.pop());
@@ -548,7 +551,7 @@ try {
   check((await api('sessions', {}, logoutToken)).status === 401, 'logout session replay denied');
   token = await uiLogin('member.changed@example.test', password);
   await page.getByRole('link', { name: 'Seguridad', exact: true }).click();
-  await page.getByText('Reemplazar segundo factor', { exact: true }).click();
+  await page.getByRole('button', { name: 'Reemplazar segundo factor', exact: true }).click();
   await page.getByLabel('Contraseña para reemplazar MFA').fill(password);
   await page.getByLabel('Código actual o respaldo MFA').fill(backupCodes.pop());
   const factorReplacement = page.waitForResponse(r => r.url().endsWith('/factor/replace'));

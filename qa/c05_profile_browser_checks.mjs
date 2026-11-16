@@ -10,7 +10,8 @@ export async function verifyProfile({ browser, api, check, confidential, owner, 
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
   const token = (await context.cookies()).find(c => c.name === '__Host-crecisol-c05').value; confidential.push(token);
-  await page.getByText('Mi perfil en esta empresa', { exact: true }).click();
+  await page.getByRole('link', { name: 'Mi perfil en esta empresa', exact: true }).click();
+  await page.getByRole('button', { name: 'Editar perfil de mi empresa', exact: true }).click();
   const hostileName = '<img src=x onerror=alert("profile-xss")>';
   await page.getByLabel('Nombre visible en esta empresa', { exact: true }).fill(hostileName);
   const saved = page.waitForResponse(r => r.url().endsWith('/profile/save'));
@@ -20,6 +21,10 @@ export async function verifyProfile({ browser, api, check, confidential, owner, 
   check(await page.getByLabel('Nombre de mi perfil', { exact: true }).innerText() === hostileName && dialogs === 0 &&
     await page.getByLabel('Nombre de mi perfil', { exact: true }).locator('img').count() === 0,
     'hostile profile markup renders as literal text and cannot execute script');
+  await page.getByRole('dialog', { name: 'Editar perfil de mi empresa', exact: true })
+    .getByRole('button', { name: 'Cerrar ventana', exact: true }).click();
+  await page.locator('dialog.cs-modal:modal').waitFor({ state: 'hidden' });
+  await page.getByRole('button', { name: 'Actualizar foto de perfil', exact: true }).click();
   const pngBase64 = await page.evaluate(() => {
     const canvas = document.createElement('canvas'); canvas.width = 8; canvas.height = 8;
     const ctx = canvas.getContext('2d'); ctx.fillStyle = '#3366aa'; ctx.fillRect(0, 0, 8, 8);
@@ -33,6 +38,9 @@ export async function verifyProfile({ browser, api, check, confidential, owner, 
   const uploaded = page.waitForResponse(r => r.url().endsWith('/profile/photo-upload'));
   await page.getByRole('button', { name: 'Guardar mi foto de perfil', exact: true }).click();
   check((await uploaded).status() === 200, 'browser rasterizes an uploaded image and server reconstructs a bounded canonical PNG');
+  await page.getByRole('dialog', { name: 'Actualizar foto de perfil', exact: true })
+    .getByRole('button', { name: 'Cerrar ventana', exact: true }).click();
+  await page.locator('dialog.cs-modal:modal').waitFor({ state: 'hidden' });
   const image = page.getByRole('img', { name: 'Mi foto de perfil en esta empresa', exact: true });
   await image.waitFor();
   check(await image.evaluate(async img => { await img.decode(); return img.naturalWidth === 64 && img.naturalHeight === 64; }),
@@ -92,7 +100,8 @@ export async function verifyProfile({ browser, api, check, confidential, owner, 
     'even privileged copying of encrypted profile A into B fails authentication of tenant-bound AAD');
   sql(`DELETE FROM c05_identity_scoped_profile WHERE tenant_id=UNHEX('${B}') AND account_id=UNHEX('${accountId(owner.mailbox)}')`);
   const removed = page.waitForResponse(r => r.url().endsWith('/profile/photo-remove'));
-  await page.getByRole('button', { name: 'Eliminar mi foto', exact: true }).click();
+  await page.getByRole('button', { name: 'Eliminar foto de perfil', exact: true }).click();
+  await page.getByRole('button', { name: 'Confirmar eliminación de mi foto', exact: true }).click();
   check((await removed).status() === 200, 'Angular completes own-avatar removal on the server');
   check((await api('profile/photo', {}, token)).status === 401, 'removing an own avatar removes subsequent authorized reads');
   await context.close();

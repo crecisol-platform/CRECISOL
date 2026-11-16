@@ -1,14 +1,18 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { PlatformIdentityApiService } from '../identity/platform-identity-api.service';
 import { IdentityApiService } from '../identity/identity-api.service';
+import { InstitutionalModalComponent } from '../ui/institutional-modal/institutional-modal.component';
+import { PlatformOperatorSessionsComponent, PlatformOperatorProfileComponent, PlatformOperatorMonitorComponent, PlatformOperatorSecurityComponent, PlatformOperatorCasesComponent } from './platform-operator-views.component';
 
 @Component({
   selector: 'cs-platform-identity-panel', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [InstitutionalModalComponent, PlatformOperatorSessionsComponent, PlatformOperatorProfileComponent, PlatformOperatorMonitorComponent, PlatformOperatorSecurityComponent, PlatformOperatorCasesComponent],
   templateUrl: './platform-identity-panel.component.html',
   styleUrl: './identity-flow.component.css'
 })
 export class PlatformIdentityPanelComponent {
   readonly platform = inject(PlatformIdentityApiService);
+  readonly panel = signal<'casos' | 'sesiones' | 'perfil' | 'seguridad' | 'monitor'>('casos');
   readonly busy = signal(false); readonly message = signal(''); readonly error = signal('');
   async action(event: Event, action: string): Promise<void> {
     event.preventDefault(); const form = event.currentTarget as HTMLFormElement; const data = new FormData(form);

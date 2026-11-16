@@ -1,0 +1,5 @@
+<section class="operator-readonly-panel" aria-label="Señales de abuso"><h3>Señales de abuso de identidad</h3>
+          <p>Solo cantidades agregadas; no expone correos, direcciones IP ni datos de otros negocios.</p>
+          <button type="button" [disabled]="busy()" (click)="loadAbuseRequested.emit()">Consultar señales agregadas</button>
+          <ul>@for (signal of platform.abuse(); track signal.kind) { <li>{{ signal.kind }}: {{ signal.count }}</li> }</ul>
+        </section>

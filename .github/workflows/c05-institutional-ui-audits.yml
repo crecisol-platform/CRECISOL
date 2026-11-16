@@ -1,0 +1,132 @@
+name: CRECISOL C05 institutional modals A-B-C UX security
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'frontend/**'
+      - 'qa/c05_institutional_modal_audits.py'
+      - 'qa/c05_*_checks.mjs'
+      - 'qa/c05_operational_flow_e2e.mjs'
+      - '.github/workflows/c05-institutional-ui-audits.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'frontend/**'
+      - 'qa/c05_institutional_modal_audits.py'
+      - 'qa/c05_*_checks.mjs'
+      - 'qa/c05_operational_flow_e2e.mjs'
+      - '.github/workflows/c05-institutional-ui-audits.yml'
+permissions:
+  contents: read
+
+jobs:
+  functional-a:
+    name: "A | Requisitos, 18+15 formularios, maestro y tareas"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Source of truth + functional task coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_institutional_modal_audits.py A
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/validate_foundation.py
+
+  adversarial-b:
+    name: "B | Privacidad, focus, transacciones y mutaciones negativas"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: B adversarial modal contracts and tenant-identity boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_institutional_modal_audits.py B
+          python3 qa/c04_12_integral_audits.py B
+
+  architecture-c:
+    name: "C | Angular22, Chromium móvil/escritorio, axe y presupuesto"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: C architectural and change-scope review
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_institutional_modal_audits.py C
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+            git diff --name-only "$BASE"...HEAD | while IFS= read -r file; do
+              case "$file" in
+                backend/*|database/*) echo "NO-GO product security/data scope changed: $file"; exit 1 ;;
+              esac
+            done
+          fi
+      - name: TypeScript, Angular production and public visual regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+          cd frontend
+          npx playwright install --with-deps chromium
+          npx playwright test tests/c05-institutional-modals.spec.ts tests/c05-identity-responsive.spec.ts --reporter=line
+
+  accessibility-d:
+    name: "D | Accesibilidad profunda, reflow, foco y preferencias"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: D real Chromium responsive and assistive regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          cd frontend
+          npx playwright install --with-deps chromium
+          npx playwright test tests/c05-modal-accessibility-deep.spec.ts --reporter=line
+
+  certificate-gate:
+    name: "C05 UX | A+B+C+D obligatorias, fail-closed"
+    if: always()
+    needs: [functional-a, adversarial-b, architecture-c, accessibility-d]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: No SUCCEEDED unless all real jobs succeeded
+        shell: bash
+        env:
+          A: ${{ needs.functional-a.result }}
+          B: ${{ needs.adversarial-b.result }}
+          C: ${{ needs.architecture-c.result }}
+          D: ${{ needs.accessibility-d.result }}
+        run: |
+          set -euo pipefail
+          test "$A" = "success"
+          test "$B" = "success"
+          test "$C" = "success"
+          test "$D" = "success"
+          printf 'PASS C05 UX A/B/C/D on SHA=%s RUN=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID"
+          echo 'Only UX foundation: real C05 operational Angular -> API -> MySQL CI remains a separate blocking gate.'
