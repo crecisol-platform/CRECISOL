@@ -129,7 +129,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal33.open()">
     <span>Recuperar MFA con una llave de acceso</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal33 title="Recuperar MFA con una llave de acceso"
+  <cs-institutional-modal #workspaceModal33 title="Recuperación del segundo factor con llave"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <p>Requiere haber entrado con una llave de acceso en los últimos dos minutos y un token del correo verificado. Revoca todos los autenticadores y exige configurar MFA de nuevo.</p>
             <form (submit)="securityActionRequested.emit({ event: $event, action: 'recovery-request' })">
