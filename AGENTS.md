@@ -1,5 +1,9 @@
 # Agentes y colaboradores — CRECISOL
 
+<!-- CRECISOL-DOC163-ESTADO-ACTUAL:INICIO -->
+**AUTORIDAD OPERATIVA ACTUAL (16-11-2026, DOC-P2 #163):** Para decidir qué capítulo se puede trabajar, consultar exclusivamente el encabezado más reciente de `docs/ESTADO_VIGENTE_CAPITULOS.md` en `dev`. **5/37 capítulos certificados únicamente en sus alcances documentados (C01–C05)**; **C03 10/10** (arquitectura), **C04 12/12** (contratos y fixtures sintéticos de multitenancy) y **C05** (identidad local aislada). **C06 permanece BLOQUEADO**. Todas las declaraciones posteriores de 11-11-2026 que se autodenominan «vigentes» se preservan *literalmente como antecedentes históricos*, sin autoridad para retroceder estados ni abrir capítulos. Esta aclaración no modifica el Documento Maestro Word/PDF, actas, contratos ni producción.
+<!-- CRECISOL-DOC163-ESTADO-ACTUAL:FIN -->
+
 **AUTORIDAD INSTITUCIONAL PROSPECTIVA (11-11-2026):** [Ratificación C03 postmigración](docs/c03/C03_RATIFICACION_INSTITUCIONAL_POSTMIGRACION_2026_11_11.md), respaldada por 10/10 microfases y 17/17 CI SUCCESS sobre `bac3c58dc4bdab7f098f86ed249b249636c11d88`. El gate original de PR #79 permanece `queued` históricamente. La **nueva** ratificación solo entra en vigor con su CI PREMERGE/POSTMERGE propia y SHA/run IDs registrados: entonces C03 CERTIFICADO (3/37), C04-01 solo PREPARACIÓN; hasta entonces C03 PENDIENTE/C04 BLOQUEADO. Las líneas de estado anteriores de este archivo son históricas y se preservan. Nada de producción ni SOLQARYN.
 
 **UBICACIÓN OPERATIVA VIGENTE (11-11-2026):** repositorio original ID `1450414592`, ahora `crecisol-platform/CRECISOL` (rama `dev`). [Registro de migración](docs/MIGRACION_ORGANIZACION_GITHUB_2026_11_11.md). El propietario anterior solo figura como origen histórico y no autoriza nuevos cambios. El gate de C03 tras PR #79 sigue en cola (`43097016405`): **C03 NO CERTIFICADO; C04 BLOQUEADO**. No escribir a SOLQARYN.
