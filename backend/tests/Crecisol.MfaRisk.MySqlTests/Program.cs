@@ -554,9 +554,12 @@ Check(await ProveTotp(hostA.Value,initial,"999999")==HttpStatusCode.Unauthorized
       await ProveTotp(hostB.Value,initial,fixtureSecrets.TotpCode(initial.FactorId))==
         HttpStatusCode.Unauthorized,
     "Wrong TOTP and cross-tenant verification denied");
-Check(await ProveTotp(hostA.Value,initial,fixtureSecrets.TotpCode(initial.FactorId))==
+// Issue #160: replay MUST reuse the exact committed code. Regenerating from
+// UTC can cross a 30-second boundary and produce a different, valid TOTP.
+var enrolledTotpCode=fixtureSecrets.TotpCode(initial.FactorId);
+Check(await ProveTotp(hostA.Value,initial,enrolledTotpCode)==
       HttpStatusCode.NoContent &&
-      await ProveTotp(hostA.Value,initial,fixtureSecrets.TotpCode(initial.FactorId))==
+      await ProveTotp(hostA.Value,initial,enrolledTotpCode)==
         HttpStatusCode.Unauthorized,
     "Enrollment requires fresh genuine TOTP and cannot be replayed");
 Check((await ledger.ReadCounterAsync(tenantA,actor,initial.FactorId,CancellationToken.None))
@@ -576,9 +579,9 @@ Check(await Stepup(hostA.Value,currentPassword,initial.FactorId)==HttpStatusCode
       queue.Count==before+2,
     "Fresh password with active factor issues operation-bound step-up only");
 var oldStep=Last();
-Check(await ProveTotp(hostA.Value,oldStep,fixtureSecrets.TotpCode(initial.FactorId))==
+Check(await ProveTotp(hostA.Value,oldStep,enrolledTotpCode)==
       HttpStatusCode.Unauthorized,
-    "Even distinct challenge cannot replay TOTP in previously committed tick");
+    "Even distinct challenge cannot replay the exact previously committed TOTP");
 fixtureSecrets.MoveTrustedTimeForward(TimeSpan.FromSeconds(40));
 var validCode=fixtureSecrets.TotpCode(initial.FactorId);
 var sixteen=await Task.WhenAll(Enumerable.Range(0,16).Select(_=>
