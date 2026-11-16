@@ -31,3 +31,13 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
 
 .operator-feedback { position: sticky; top: .65rem; z-index: 2; margin: 1rem 0; border: 1px solid #c8ddec; padding: .8rem 1rem; border-radius: .7rem; background: #f2f8fc; color: #17476c; overflow-wrap: anywhere; }
 .operator-feedback--error { background: #fff4f1; color: #852e22; border-color: #e5c9c3; }
+
+/* C05 — Consola de identidad: navegación por tareas, nunca todos los formularios a la vez. */
+.operator-nav { display: flex; flex-wrap: wrap; gap: .4rem; padding: .35rem; margin: 1.2rem 0 1.5rem; border-radius: .85rem; background: #eef4fb; }
+.operator-nav button { min-height: 2.75rem; flex: 1 1 auto; padding: .65rem .8rem; border: 0; border-radius: .65rem; background: transparent; color: #254a70; font-size: .9rem; }
+.operator-nav button:hover { background: #dceaf8; color: #103c68; }
+.operator-nav button[aria-current='page'] { color: #103f75; background: #fff; box-shadow: 0 2px 9px #183c6317; }
+.operator-content { min-width: 0; }
+.operator-content details { border-top: 1px solid #e3ebf4; }
+.operator-content :is(form, output) { max-width: 100%; overflow-wrap: anywhere; }
+@media (max-width: 520px) { .operator-nav button { flex: 1 1 calc(50% - .4rem); } }
