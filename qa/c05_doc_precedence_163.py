@@ -31,7 +31,11 @@ def require(condition: bool, reason: str) -> None:
 
 def check(path: str, value: str) -> None:
     heading, old_open = FILES[path]
-    require(value.startswith(heading + "\n\n"), path + " changed heading/Skill frontmatter")
+    if path.startswith(".agents/"):
+        require(value.startswith("---\nname: crecisol-project-governance\n") and
+                value.count(heading) == 1, path + " changed Skill frontmatter")
+    else:
+        require(value.startswith(heading + "\n\n"), path + " changed heading")
     require(value.count(BEGIN) == 1 and value.count(END) == 1,
             path + " missing/duplicate current-state boundary")
     prefix, after_begin = value.split(BEGIN, 1)
