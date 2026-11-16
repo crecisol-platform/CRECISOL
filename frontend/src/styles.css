@@ -13,6 +13,8 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 7rem; }
 body { margin: 0; min-width: 320px; }
+/* C05: scroll bloqueado solo mientras haya un modal institucional abierto. */
+body:has(dialog.cs-modal[open]) { overflow: hidden; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { font: inherit; }
 a { color: inherit; }
