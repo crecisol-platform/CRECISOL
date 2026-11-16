@@ -339,6 +339,8 @@ try {
   check((await api('memberships/decide', { membershipId: memberId, decision: 'approve', reason: 'Wrong authority scope', code: approver.backups.pop() }, approver.token)).status === 401,
     'branch-scoped approval permission cannot become tenant-wide administrative authority');
   sql(`UPDATE c05_identity_resource_grant SET branch_id=tenant_id WHERE permission_code='MEMBERSHIP_APPROVE'`);
+  // Registration completion is now an independent screen; return to the login view.
+  await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
   await page.getByRole('region', { name: 'Iniciar sesión', exact: true }).getByLabel('Correo electrónico', { exact: true }).fill('approver@example.test');
   await page.getByLabel('Contraseña', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
