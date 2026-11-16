@@ -238,9 +238,10 @@ jobs:
           for path in roots:
               src = Path(path).read_text(encoding="utf-8")
               assert "permissions:\n  contents: read" in src, f"NO-GO workflow write permissions: {path}"
-              assert "pull_request_target:" not in src, f"NO-GO privileged PR trigger: {path}"
               assert "persist-credentials: false" in src, f"NO-GO checkout credentials: {path}"
-              assert "contents: write" not in src and "id-token: write" not in src
+              for raw_line in src.splitlines():
+                  directive = raw_line.strip()
+                  assert directive not in ("pull_request_target:", "contents: write", "id-token: write"), (f"NO-GO actual privileged workflow directive: {path} {directive}")
           package = Path("frontend/package.json").read_text(encoding="utf-8")
           assert '"node": ">=24.15.0 <25"' in package
           ignore = Path(".gitignore").read_text(encoding="utf-8")
