@@ -33,6 +33,8 @@
     </aside>
 
     <div class="account-main" id="account-content">
+      @if (message()) { <p class="feedback feedback--success" role="status" aria-live="polite">{{ message() }}</p> }
+      @if (error()) { <p class="feedback feedback--error" role="alert">{{ error() }}</p> }
       @if (view() === 'operadores') {
         <div class="page-heading"><p class="eyebrow">ÁREA RESTRINGIDA</p><h2>Identidad de plataforma</h2>
           <p>Exclusiva para personal autorizado y previamente provisionado.</p></div>
@@ -96,8 +98,7 @@
           <a routerLink="/cuenta" [queryParams]="{vista:'operadores'}">Acceso de personal autorizado</a>
         </div>
       }
-      @if (message()) { <p class="feedback feedback--success" role="status" aria-live="polite">{{ message() }}</p> }
-      @if (error()) { <p class="feedback feedback--error" role="alert">{{ error() }}</p> }
+
     </div>
   </div>
 </main>
