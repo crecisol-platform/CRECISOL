@@ -1,0 +1,27 @@
+<section class="operator-readonly-panel" aria-label="Sesiones de operador"><h3>Mis sesiones de plataforma</h3>
+          <button type="button" [disabled]="busy()" (click)="loadSessionsRequested.emit()">Consultar sesiones de operador</button>
+          <button type="button" [disabled]="busy()" (click)="rotateSessionRequested.emit()">Rotar sesión de operador</button>
+          @for (session of platform.sessions(); track session.id) {
+            <p>{{ session.device }} · última actividad UTC {{ session.lastSeenAtUtc }} · vence {{ session.expiresAtUtc }}</p>
+            <button type="button" [disabled]="busy()" (click)="revokeDialog.open()">Revocar sesión de operador {{ session.id }}</button>
+  <cs-institutional-modal #revokeDialog title="Revocar sesión de operador"
+    description="Confirma la revocación de esta sesión. No modifica otras sesiones."
+    [busy]="busy()" [feedback]="feedback()" [error]="error()">
+    <p>Dispositivo: {{ session.device }}</p>
+    <button type="button" [disabled]="busy()" (click)="revokeSessionRequested.emit(session.id)">Confirmar revocación de sesión</button>
+  </cs-institutional-modal>
+          }
+          
+        </section>
+<div class="institutional-task">
+  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog47.open()">
+    <span>Cerrar todas mis sesiones de plataforma</span><span aria-hidden="true">›</span>
+  </button>
+  <cs-institutional-modal #opDialog47 title="Cerrar todas mis sesiones de plataforma" description="Esta acción cierra todas tus sesiones activas y requiere MFA."
+    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="false">
+    <form (submit)="actionRequested.emit({ event: $event, action: 'revoke-all' })">
+            <label for="operator-sessions-code">Código MFA para cerrar sesiones de plataforma</label><input id="operator-sessions-code" name="code" required maxlength="32" autocomplete="one-time-code">
+            <button [disabled]="busy()">Cerrar todas mis sesiones de plataforma</button>
+          </form>
+  </cs-institutional-modal>
+</div>
