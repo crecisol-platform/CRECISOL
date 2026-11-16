@@ -1,5 +1,9 @@
 # Documento Maestro Único — referencia canónica CRECISOL
 
+<!-- CRECISOL-DOC163-ESTADO-ACTUAL:INICIO -->
+**AUTORIDAD OPERATIVA ACTUAL (16-11-2026, DOC-P2 #163):** Para decidir qué capítulo se puede trabajar, consultar exclusivamente el encabezado más reciente de `docs/ESTADO_VIGENTE_CAPITULOS.md` en `dev`. **5/37 capítulos certificados únicamente en sus alcances documentados (C01–C05)**; **C03 10/10** (arquitectura), **C04 12/12** (contratos y fixtures sintéticos de multitenancy) y **C05** (identidad local aislada). **C06 permanece BLOQUEADO**. Todas las declaraciones posteriores de 11-11-2026 que se autodenominan «vigentes» se preservan *literalmente como antecedentes históricos*, sin autoridad para retroceder estados ni abrir capítulos. Esta aclaración no modifica el Documento Maestro Word/PDF, actas, contratos ni producción.
+<!-- CRECISOL-DOC163-ESTADO-ACTUAL:FIN -->
+
 **REGISTRO POSTERIOR DE ESTADO INSTITUCIONAL (11-11-2026):** [Ratificación nueva de capítulo 03](c03/C03_RATIFICACION_INSTITUCIONAL_POSTMIGRACION_2026_11_11.md) y [registro operativo](ESTADO_VIGENTE_CAPITULOS.md), tras verificar 17/17 workflows del SHA `bac3c58dc4bdab7f098f86ed249b249636c11d88`. Las CI del PR #79 quedaron bloqueadas y **no** se reinterpretan como PASS. La nueva certificación C03 será eficaz exclusivamente tras comprobar PREMERGE/POSTMERGE del PR de ratificación en su SHA exacto. C04-01 solo se habilita para **preparación** después de ese gate. El Word/PDF del Documento Maestro Único y sus huellas permanecen intactos.
 
 **Identidad operativa (11-11-2026):** `crecisol-platform/CRECISOL` (repositorio original ID `1450414592`, rama `dev`). [Registro de migración](MIGRACION_ORGANIZACION_GITHUB_2026_11_11.md). La documentación y enlaces del propietario anterior solo preservan el historial. El CI del PR #79 no ha terminado; C03 sigue pendiente y C04 bloqueado. Word y PDF maestros y huellas intactos.
