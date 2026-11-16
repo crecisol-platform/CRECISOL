@@ -62,6 +62,10 @@ def audit_a() -> None:
         require(f"panel.set('{tab}')" in panel, "operator task tab missing: " + tab)
     require("panel-operator" not in workspace, "business account leaked platform view")
     require("Registrar decisión" in workspace, "private approval lost")
+    require("Comprobar un acceso privado" in workspace and
+            '(click)="privateAccessModal.open()"' in workspace and
+            "action: 'private'" in workspace,
+            "private resource action must have an accessible modal trigger")
     require("Revisar identidad del titular" in operator, "operator reviewer flow lost")
     require("Emitir parte de recuperación" in operator, "handoff flow lost")
     require("C06" not in panel, "unauthorized future chapter exposed in C05")
