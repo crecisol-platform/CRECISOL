@@ -20,3 +20,39 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1366, height: 768 
     await expect(page.getByLabel('Contraseña', { exact: true })).toHaveCount(0);
   });
 }
+
+test('C05 account header uses only the validated published platform brand', async ({ page }) => {
+  const headers: Array<{ auth?: string; tenant?: string }> = [];
+  await page.route('**/api/v1/public/branding/platform', async route => {
+    const req = route.request();
+    headers.push({ auth: req.headers()['authorization'], tenant: req.headers()['x-tenant-id'] });
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'cache-control': 'no-store' },
+      body: JSON.stringify({
+        revision: 2,
+        name: 'CRECISOL',
+        slogan: 'Tu negocio, a tu manera.',
+        descriptor: 'Comercio · Servicios · Membresías · Crecimiento',
+        primaryColor: '#062E65',
+        accentColor: '#078FE8',
+        logoUrl: '/assets/crecisol-oficial.png',
+        websiteUrl: null,
+        publishedAt: '2026-11-08T12:00:00+00:00',
+        presentation: {
+          faviconUrl: '/assets/crecisol-emblem.png',
+          typographyToken: 'system', iconSetToken: 'outline',
+          seoTitle: 'CRECISOL · Tu negocio, a tu manera.',
+          seoDescription: 'Comercio, servicios y membresías con identidad de plataforma.',
+          copyrightNotice: 'Copyright institucional de prueba.'
+        }
+      })
+    });
+  });
+  await page.goto('/cuenta');
+  const header = page.getByRole('link', { name: 'Volver al inicio de CRECISOL' });
+  await expect(header).toContainText('CRECISOL');
+  await expect(header.locator('img.brand-mark')).toHaveAttribute('src', '/assets/crecisol-oficial.png');
+  expect(headers).toEqual([{ auth: undefined, tenant: undefined }]);
+});
