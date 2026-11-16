@@ -52,6 +52,7 @@ jobs:
           python3 qa/master_source_guard.py --self-test
           python3 qa/c04_01_normative_inventory.py verify
           python3 qa/c04_12_integral_audits.py A
+          python3 qa/c03_10_current_state_audits.py A
           python3 qa/c04_01_contracts_audits.py A
           python3 qa/c04_02_implementation_audits.py A
           python3 qa/c04_03_contracts_audits.py A
@@ -68,6 +69,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 qa/c04_12_integral_audits.py B
+          python3 qa/c03_10_current_state_audits.py B
           python3 qa/c04_01_contracts_audits.py B
           python3 qa/c04_02_implementation_audits.py B
           python3 qa/c04_03_contracts_audits.py B
@@ -183,6 +185,7 @@ jobs:
           python3 qa/c04_10_artifact_audits.py C
           python3 qa/c04_11_offensive_audits.py C
           python3 qa/c04_12_integral_audits.py C
+          python3 qa/c03_10_current_state_audits.py C
           printf 'PASS C sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c04-12-proof/C
       - name: Final same SHA run A B C dotnet MySQL frontend Chromium NO-GO on missing proof
         run: |
