@@ -5,7 +5,7 @@
 
 **5/37 capítulos certificados en sus alcances documentados (C01–C05)**, conforme a [estado vigente institucional](docs/ESTADO_VIGENTE_CAPITULOS.md). **C03: 10/10**, arquitectura y contratos; **C04: 12/12**, arquitectura multitenant y fixtures sintéticos; **C05**, identidad operativa en entorno local aislado. **C06 permanece BLOQUEADO**. La certificación histórica no elimina las revisiones correctivas de calidad abiertas.
 
-**Código presente:** Angular 22 mantiene las páginas públicas C01/C02 y la ruta de cuenta de C05; ASP.NET Core 10 utiliza módulos y activaciones explícitas para identidad local; MySQL 8.4 se verifica con pruebas desechables y 16 migraciones/reversiones documentadas. No describir la API vigente como «una sola ruta pública» ni afirmar que no existe identidad privada local.
+**Código presente:** Angular 22 mantiene las páginas públicas C01/C02 y la ruta de cuenta de C05; ASP.NET Core 10 utiliza módulos y activaciones explícitas para identidad local; MySQL 8.4 se verifica con pruebas desechables y 16 migraciones/reversiones documentadas. La API vigente incluye operaciones aisladas de identidad local además del primer endpoint público de marca.
 
 **Límites reales:** pruebas locales y sintéticas no demuestran preparación productiva, un pentest integral ni aceptación visual comercial. Sin despliegues, VPS, dominios productivos, cobros o servicios externos activados. El Documento Maestro Único continúa siendo la autoridad funcional; este resumen solo orienta sobre el código y su evidencia.
 
