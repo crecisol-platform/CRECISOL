@@ -21,7 +21,9 @@ export async function verifyProfile({ browser, api, check, confidential, owner, 
   check(await page.getByLabel('Nombre de mi perfil', { exact: true }).innerText() === hostileName && dialogs === 0 &&
     await page.getByLabel('Nombre de mi perfil', { exact: true }).locator('img').count() === 0,
     'hostile profile markup renders as literal text and cannot execute script');
-  await page.keyboard.press('Escape');
+  await page.getByRole('dialog', { name: 'Editar perfil de mi empresa', exact: true })
+    .getByRole('button', { name: 'Cerrar ventana', exact: true }).click();
+  await page.locator('dialog.cs-modal:modal').waitFor({ state: 'hidden' });
   await page.getByRole('button', { name: 'Actualizar foto de perfil', exact: true }).click();
   const pngBase64 = await page.evaluate(() => {
     const canvas = document.createElement('canvas'); canvas.width = 8; canvas.height = 8;
@@ -36,7 +38,9 @@ export async function verifyProfile({ browser, api, check, confidential, owner, 
   const uploaded = page.waitForResponse(r => r.url().endsWith('/profile/photo-upload'));
   await page.getByRole('button', { name: 'Guardar mi foto de perfil', exact: true }).click();
   check((await uploaded).status() === 200, 'browser rasterizes an uploaded image and server reconstructs a bounded canonical PNG');
-  await page.keyboard.press('Escape');
+  await page.getByRole('dialog', { name: 'Actualizar foto de perfil', exact: true })
+    .getByRole('button', { name: 'Cerrar ventana', exact: true }).click();
+  await page.locator('dialog.cs-modal:modal').waitFor({ state: 'hidden' });
   const image = page.getByRole('img', { name: 'Mi foto de perfil en esta empresa', exact: true });
   await image.waitFor();
   check(await image.evaluate(async img => { await img.decode(); return img.naturalWidth === 64 && img.naturalHeight === 64; }),
