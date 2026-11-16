@@ -45,6 +45,9 @@ export async function verifyPasskeys({ browser, api, check, confidential, passwo
   await page.getByRole('button', { name: 'Entrar con llave de acceso', exact: true }).click();
   check((await login).status() === 200, 'Angular discoverable passkey login verifies user presence, verification and signature without password');
   await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  // The previous passkey setup leaves the client on its dedicated keys view.
+  // A session inventory belongs to the separate account summary screen.
+  await page.getByRole('link', { name: 'Resumen', exact: true }).click();
   const sessionRequest = page.waitForRequest(r => r.url().endsWith('/sessions'));
   await page.getByRole('button', { name: 'Consultar sesiones', exact: true }).click();
   await sessionRequest;
