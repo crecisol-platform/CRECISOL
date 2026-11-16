@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, effect, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, effect, input, output } from '@angular/core';
 
 /**
  * Modal institucional C05. Usa la top layer nativa (<dialog>.showModal):
@@ -24,6 +24,7 @@ export class InstitutionalModalComponent implements OnDestroy {
   readonly error = input('');
   readonly wide = input(false);
   readonly closeOnSuccess = input(false);
+  readonly dismissed = output<void>();
   @ViewChild('surface', { static: true }) private surface?: ElementRef<HTMLDialogElement>;
   private previouslyFocused: HTMLElement | null = null;
   private submittedWhileOpen = false;
@@ -57,6 +58,9 @@ export class InstitutionalModalComponent implements OnDestroy {
   }
 
   onClosed(): void {
+    // No retener contraseñas/códigos de formularios cancelados en el DOM.
+    this.surface?.nativeElement.querySelectorAll('form').forEach(form => form.reset());
+    this.dismissed.emit();
     // Restituir el punto de lectura y navegación a teclado.
     if (this.previouslyFocused?.isConnected) this.previouslyFocused.focus();
     this.previouslyFocused = null;
