@@ -58,6 +58,7 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
     check((await reviewed).status() === 200, 'distinct platform reviewer approves an operator case after independent identity attestation');
   }
   const profilePage = reviewers[0];
+  await profilePage.getByRole('button', { name: 'Perfil', exact: true }).click();
   await profilePage.getByText('Mi perfil de operador', { exact: true }).click();
   await profilePage.getByLabel('Nombre visible del operador', { exact: true }).fill('Fictional platform profile');
   const saved = profilePage.waitForResponse(r => r.url().endsWith('/platform-identity/profile/save'));
@@ -114,6 +115,7 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
     check((await response).status() === 200, 'recovered operator authenticates through the normal password-plus-MFA browser flow');
   }
   await uiLogin(target.mailbox, newPassword, backups.pop());
+  await page.getByRole('button', { name: 'Sesiones', exact: true }).click();
   await page.getByText('Mis sesiones de plataforma', { exact: true }).click();
   const listed = page.waitForResponse(r => r.url().endsWith('/platform-identity/sessions'));
   await page.getByRole('button', { name: 'Consultar sesiones de operador', exact: true }).click();
@@ -137,6 +139,7 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   check((await allRevoked).status() === 200 && (await platform('session', {}, afterRotation)).status === 401,
     'fresh platform MFA revokes all own platform sessions without changing tenant identities');
   await uiLogin(target.mailbox, newPassword, backups.pop());
+  await page.getByRole('button', { name: 'Seguridad', exact: true }).click();
   await page.getByText('Reemplazar MFA de operador', { exact: true }).click();
   await page.getByLabel('Contraseña para reemplazar MFA de operador').fill(newPassword);
   await page.getByLabel('Código MFA o respaldo para reemplazar factor de operador').fill(backups.pop());
@@ -153,6 +156,7 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   const finalBackups = await page.getByLabel('Códigos de respaldo del operador').locator('code').allTextContents(); confidential.push(...finalBackups);
   await reservePlatformWindow(30);
   await uiLogin(target.mailbox, newPassword, finalBackups.pop());
+  await page.getByRole('button', { name: 'Seguridad', exact: true }).click();
   await page.getByText('Cambiar contraseña de operador', { exact: true }).click();
   const finalPassword = 'Fictional-platform-password-change-5!'; confidential.push(finalPassword);
   await page.getByLabel('Contraseña actual del operador').fill(newPassword);
@@ -162,6 +166,7 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   await page.getByRole('button', { name: 'Cambiar contraseña de plataforma', exact: true }).click();
   check((await changed).status() === 200, 'operator password change requires current password and fresh independent factor');
   await uiLogin(target.mailbox, finalPassword, finalBackups.pop());
+  await page.getByRole('button', { name: 'Seguridad', exact: true }).click();
   await page.getByText('Cambiar correo de operador', { exact: true }).click();
   const changedMailbox = 'identity.changed@example.test';
   await page.getByLabel('Nuevo correo del operador', { exact: true }).fill(changedMailbox);
