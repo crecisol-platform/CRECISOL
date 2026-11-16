@@ -175,6 +175,9 @@ async function browserSession(page) {
   // Observe the bearer actually used by Angular, and the DOM codes shown once.
   // Chromium can evict a response body before CDP Network.getResponseBody;
   // request observation avoids that race without intercepting/mocking traffic.
+  // Account actions now live in separate authenticated views. Enter the
+  // overview before observing the actual POST, without mocking the response.
+  await page.getByRole('link', { name: 'Resumen', exact: true }).click();
   const request = page.waitForRequest(r => r.url().endsWith('/sessions') && r.method() === 'POST');
   const response = page.waitForResponse(r => r.url().endsWith('/sessions'));
   await page.getByRole('button', { name: 'Consultar sesiones', exact: true }).click();
