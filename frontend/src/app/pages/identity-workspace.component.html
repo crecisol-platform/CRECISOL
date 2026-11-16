@@ -63,7 +63,7 @@
           </section>
           
 } @else if (view() === 'llaves') {
-<section class="operator-readonly-panel" aria-label="Llaves de acceso"><h3>Llaves de acceso</h3>
+<section class="operator-readonly-panel" aria-label="Llaves de acceso"><h3>Mis llaves registradas</h3>
             <p>Registra una llave con verificación de usuario. Se necesita un código MFA o de respaldo para agregarla o revocarla.</p>
             
             <button type="button" [disabled]="busy() || identity.restoring()" (click)="passkeyListRequested.emit()">Consultar llaves</button>
@@ -72,9 +72,9 @@
           </section>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal21.open()">
-    <span>Registrar nueva llave de acceso</span><span aria-hidden="true">›</span>
+    <span>Llaves de acceso</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal21 title="Registrar nueva llave de acceso" description="Requiere MFA vigente y verificación de usuario en el navegador."
+  <cs-institutional-modal #workspaceModal21 title="Registrar nueva llave de acceso" [closeOnSuccess]="true" description="Requiere MFA vigente y verificación de usuario en el navegador."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="securityActionRequested.emit({ event: $event, action: 'passkey-add' })">
               <label for="passkey-code">Código MFA para registrar llave</label><input id="passkey-code" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
