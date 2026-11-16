@@ -201,7 +201,8 @@ jobs:
           name: c01-c02-eight-public-visual-snapshots
           path: .c04-visual-proof/*.png
           retention-days: 7
-          if-no-files-found: ignore
+          include-hidden-files: true
+          if-no-files-found: error
 
   audit-5-integration:
     name: "5/5 | Stack real C01-C04, CI segura, supply-chain y cierre"
@@ -249,8 +250,12 @@ jobs:
               assert sensitive in ignore
           print("PASS workflow security and release dependency configuration")
           PY
-          test "$(node --version | cut -c 1-4)" = "v24."
-          test "$(dotnet --version | cut -c 1-3)" = "10."
+          NODE_VERSION="$(node --version)"
+          DOTNET_SDKS="$(dotnet --list-sdks)"
+          printf 'Node: %s\n' "$NODE_VERSION"
+          printf 'Dotnet SDKs: %s\n' "$DOTNET_SDKS"
+          case "$NODE_VERSION" in v24.*) ;; *) echo "NO-GO: Node24 missing"; exit 1 ;; esac
+          case "$DOTNET_SDKS" in 10.0.*) ;; *) echo "NO-GO: .NET10 SDK missing"; exit 1 ;; esac
       - name: Real C01 published-brand API + disposable MySQL8.4 + Angular22/Chromium
         shell: bash
         run: |
