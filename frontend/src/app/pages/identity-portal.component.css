@@ -33,7 +33,7 @@
 .page-heading h2 { margin: 0 0 .6rem; font-size: clamp(1.6rem, 3vw, 2.3rem); letter-spacing: -.035em; }
 .page-heading p:last-child { color: #65778b; line-height: 1.6; }
 .back-link { display: inline-block; margin-top: 1.2rem; }
-.feedback { padding: 1rem; border: 1px solid #ccd8e8; margin-top: 1.2rem; border-radius: .65rem; overflow-wrap: anywhere; }
+.feedback { position: sticky; top: .65rem; z-index: 2; padding: 1rem; border: 1px solid #ccd8e8; margin: 0 0 1.5rem; border-radius: .65rem; overflow-wrap: anywhere; box-shadow: 0 6px 20px #10345b0d; }
 .feedback--success { background: #f2f8fc; color: #12436c; }
 .feedback--error { background: #fff4f1; color: #852e22; border-color: #e5c9c3; }
 :host :focus-visible { outline: 3px solid #0e68ae; outline-offset: 3px; }
