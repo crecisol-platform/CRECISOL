@@ -88,10 +88,31 @@ jobs:
           npx playwright install --with-deps chromium
           npx playwright test tests/c05-institutional-modals.spec.ts tests/c05-identity-responsive.spec.ts --reporter=line
 
+  accessibility-d:
+    name: "D | Accesibilidad profunda, reflow, foco y preferencias"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: D real Chromium responsive and assistive regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          cd frontend
+          npx playwright install --with-deps chromium
+          npx playwright test tests/c05-modal-accessibility-deep.spec.ts --reporter=line
+
   certificate-gate:
-    name: "C05 UX | A+B+C obligatorias, fail-closed"
+    name: "C05 UX | A+B+C+D obligatorias, fail-closed"
     if: always()
-    needs: [functional-a, adversarial-b, architecture-c]
+    needs: [functional-a, adversarial-b, architecture-c, accessibility-d]
     runs-on: ubuntu-24.04
     steps:
       - name: No SUCCEEDED unless all real jobs succeeded
@@ -100,10 +121,12 @@ jobs:
           A: ${{ needs.functional-a.result }}
           B: ${{ needs.adversarial-b.result }}
           C: ${{ needs.architecture-c.result }}
+          D: ${{ needs.accessibility-d.result }}
         run: |
           set -euo pipefail
           test "$A" = "success"
           test "$B" = "success"
           test "$C" = "success"
-          printf 'PASS C05 UX A/B/C on SHA=%s RUN=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID"
+          test "$D" = "success"
+          printf 'PASS C05 UX A/B/C/D on SHA=%s RUN=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID"
           echo 'Only UX foundation: real C05 operational Angular -> API -> MySQL CI remains a separate blocking gate.'

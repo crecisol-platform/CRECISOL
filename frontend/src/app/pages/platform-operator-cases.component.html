@@ -52,10 +52,12 @@
           <label for="share-code">Código MFA para emitir mi parte</label><input id="share-code" name="code" required pattern="([0-9]{6}|[0-9a-fA-F]{32})" autocomplete="one-time-code">
           <button [disabled]="busy()">Emitir mi parte de recuperación</button>
         </form>
+    @if (platform.handoffShare()) {
+      <div class="operator-readonly-panel">
+        <p>Entrega esta parte solo al titular cuya identidad verificaste, por un canal independiente del otro operador. Vence en 30 minutos; una nueva emisión invalida la anterior.</p>
+        <output aria-label="Parte de recuperación del operador">{{ platform.handoffShare() }}</output>
+        <button type="button" [disabled]="busy()" (click)="platform.handoffShare.set('')">Ocultar mi parte</button>
+      </div>
+    }
   </cs-institutional-modal>
 </div>
-        @if (platform.handoffShare()) {
-          <p>Entrega esta parte solo al titular cuya identidad verificaste, por un canal independiente del otro operador. Vence en 30 minutos; una nueva emisión invalida la anterior.</p>
-          <output aria-label="Parte de recuperación del operador">{{ platform.handoffShare() }}</output>
-          <button type="button" (click)="platform.handoffShare.set('')">Ocultar mi parte</button>
-        }

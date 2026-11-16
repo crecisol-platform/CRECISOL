@@ -57,7 +57,9 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
     const reviewed = p.waitForResponse(r => r.url().endsWith('/platform-identity/review'));
     await p.getByRole('button', { name: 'Registrar revisión de identidad', exact: true }).click();
     check((await reviewed).status() === 200, 'distinct platform reviewer approves an operator case after independent identity attestation');
-    await p.keyboard.press('Escape');
+    await p.getByRole('dialog', { name: 'Revisar identidad del titular', exact: true })
+      .getByRole('button', { name: 'Cerrar ventana', exact: true }).click();
+    await p.locator('dialog.cs-modal:modal').waitFor({ state: 'hidden' });
   }
   const profilePage = reviewers[0];
   await profilePage.getByRole('button', { name: 'Perfil', exact: true }).click();
@@ -66,6 +68,9 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   const saved = profilePage.waitForResponse(r => r.url().endsWith('/platform-identity/profile/save'));
   await profilePage.getByRole('button', { name: 'Guardar perfil de operador', exact: true }).click();
   check((await saved).status() === 200, 'operator profile persists in its independent platform table and encryption realm');
+  await profilePage.getByRole('dialog', { name: 'Editar perfil de operador', exact: true })
+    .getByRole('button', { name: 'Cerrar ventana', exact: true }).click();
+  await profilePage.locator('dialog.cs-modal:modal').waitFor({ state: 'hidden' });
   check((await platform('profile/read', {}, tokens[1])).data.displayName === '', 'one operator cannot inherit another operator profile');
   check((await api('profile/read', {}, tokens[0])).status === 401, 'platform profile credential cannot read any tenant profile');
   check(Number(sql(`SELECT TIMESTAMPDIFF(SECOND,UTC_TIMESTAMP(6),ready_at_utc) FROM c05_platform_recovery_case WHERE case_id=UUID_TO_BIN('${caseId}',0)`)) > 86300,
@@ -77,7 +82,7 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   const shares = [];
   for (let index = 0; index < reviewers.length; index++) {
     const p = reviewers[index], operator = operators[index + 1];
-    if (await p.locator('dialog.cs-modal[open]').count()) await p.keyboard.press('Escape');
+    await p.locator('dialog.cs-modal:modal').waitFor({ state: 'hidden' });
     await p.getByRole('button', { name: 'Casos', exact: true }).click();
     await p.getByRole('button', { name: 'Emitir parte de recuperación', exact: true }).click();
     await p.getByLabel('Caso para entrega segura', { exact: true }).fill(caseId);
@@ -85,7 +90,12 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
     const release = p.waitForResponse(r => r.url().endsWith('/platform-identity/release-share'));
     await p.getByRole('button', { name: 'Emitir mi parte de recuperación', exact: true }).click();
     check((await release).status() === 200, 'reviewer releases only their own operator-recovery share after the security deadline');
-    shares.push(await p.getByLabel('Parte de recuperación del operador').innerText()); confidential.push(shares[index]);
+    const shareDialog = p.getByRole('dialog', { name: 'Emitir parte de recuperación', exact: true });
+    shares.push(await shareDialog.getByLabel('Parte de recuperación del operador').innerText()); confidential.push(shares[index]);
+    await shareDialog.getByRole('button', { name: 'Cerrar ventana', exact: true }).click();
+    await p.locator('dialog.cs-modal:modal').waitFor({ state: 'hidden' });
+    await p.getByLabel('Parte de recuperación del operador').waitFor({ state: 'hidden' });
+    check(true, 'reviewer secret appears only inside its modal and clears on dismissal');
   }
   const newPassword = 'Fictional-recovered-platform-strong-4!'; confidential.push(newPassword);
   await reservePlatformWindow(25);

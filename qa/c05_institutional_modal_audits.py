@@ -84,6 +84,12 @@ def audit_b() -> None:
     cases = read(PAGES / "platform-operator-cases.component.html")
     require("(dismissed)=\"platform.handoffShare.set('')\"" in cases,
             "operator recovery secret not cleared when its modal closes")
+    share = cases.split('<cs-institutional-modal #opDialog22', 1)
+    require(len(share) == 2 and 'aria-label="Parte de recuperación del operador"' in
+            share[1].split('</cs-institutional-modal>', 1)[0],
+            "operator share must stay in active dialog")
+    require(cases.count('aria-label="Parte de recuperación del operador"') == 1,
+            "operator share must not leak outside dialog")
     for src in (
         modal.replace("dialog.showModal()", "dialog.show()", 1),
         modal.replace("if (this.busy()) event.preventDefault();", "void event;", 1),
