@@ -1,0 +1,12 @@
+<details><summary>Mis sesiones de plataforma</summary>
+          <button type="button" [disabled]="busy()" (click)="loadSessionsRequested.emit()">Consultar sesiones de operador</button>
+          <button type="button" [disabled]="busy()" (click)="rotateSessionRequested.emit()">Rotar sesión de operador</button>
+          @for (session of platform.sessions(); track session.id) {
+            <p>{{ session.device }} · última actividad UTC {{ session.lastSeenAtUtc }} · vence {{ session.expiresAtUtc }}</p>
+            <button type="button" [disabled]="busy()" (click)="revokeSessionRequested.emit(session.id)">Revocar sesión de operador {{ session.id }}</button>
+          }
+          <form (submit)="actionRequested.emit({ event: $event, action: 'revoke-all' })">
+            <label for="operator-sessions-code">Código MFA para cerrar sesiones de plataforma</label><input id="operator-sessions-code" name="code" required maxlength="32" autocomplete="one-time-code">
+            <button [disabled]="busy()">Cerrar todas mis sesiones de plataforma</button>
+          </form>
+        </details>
