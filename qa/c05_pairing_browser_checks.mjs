@@ -51,6 +51,11 @@ export async function verifyPairing({ browser, api, check, confidential, mailbox
   check((await api('sessions', {}, pairedToken)).status === 200, 'paired session is persisted and revocable in the same tenant');
   check((await api('pairings/complete', { token, signature: '00'.repeat(64) })).status === 401,
     'consumed pairing cannot create a second session');
+  // The successful browser approval intentionally leaves its institutional dialog
+  // visible for review. Dismiss it through the user's keyboard path before
+  // navigating to the separate session-revocation action (no forced clicks).
+  await page.keyboard.press('Escape');
+  await page.getByRole('dialog', { name: 'Aprobar otro navegador' }).waitFor({ state: 'hidden' });
   await page.getByRole('button', { name: 'Revocar todas mis sesiones', exact: true }).click();
   await page.getByLabel('Código MFA para cerrar todas las sesiones').fill(backups.pop());
   const revoked = page.waitForResponse(r => r.url().endsWith('/sessions/revoke-all'));
