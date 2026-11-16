@@ -22,7 +22,7 @@ test('account portal submits only bounded mailbox proof data and keeps a neutral
     });
   });
 
-  await page.goto('/cuenta');
+  await page.goto('/cuenta?vista=confirmar');
   await page.getByLabel('Identificador de confirmación').fill(proofId);
   await page.getByLabel('Código de confirmación').fill(code);
   await page.getByLabel('Correo de la solicitud').fill(mailbox);
@@ -43,7 +43,7 @@ test('account portal rejects malformed mailbox proof locally', async ({ page }) 
     await route.fulfill({ status: 202, contentType: 'application/json', body: '{"accepted":true}' });
   });
 
-  await page.goto('/cuenta');
+  await page.goto('/cuenta?vista=confirmar');
   await page.getByLabel('Identificador de confirmación').fill('not-a-guid');
   await page.getByLabel('Código de confirmación').fill('short');
   await page.getByLabel('Correo de la solicitud').fill(mailbox);
@@ -62,7 +62,7 @@ test('Angular proxy completes a real registration against the disposable API and
   expect(id).toMatch(/^[0-9a-f-]{36}$/i);
   expect(proofCode).toMatch(/^[0-9a-f]{64}$/i);
 
-  await page.goto('/cuenta');
+  await page.goto('/cuenta?vista=confirmar');
   await page.getByLabel('Identificador de confirmación').fill(id!);
   await page.getByLabel('Código de confirmación').fill(proofCode!);
   await page.getByLabel('Correo de la solicitud').fill(mailbox);
@@ -71,4 +71,23 @@ test('Angular proxy completes a real registration against the disposable API and
   await expect(page.getByRole('status').last()).toContainText(
     'pendiente de aprobación'
   );
+});
+
+test('identity flows expose individual navigable views', async ({ page }) => {
+  await page.goto('/cuenta');
+  await expect(page.getByRole('heading', { name: 'Iniciar sesión', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Confirmar correo', exact: true })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Solicitar cuenta', exact: true }).click();
+  await expect(page).toHaveURL(/vista=registro/);
+  await expect(page.getByRole('heading', { name: 'Solicitar una cuenta', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Iniciar sesión', exact: true })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Confirmar correo', exact: true }).click();
+  await expect(page.getByLabel('Identificador de confirmación')).toBeVisible();
+  await page.getByRole('link', { name: 'Recuperar acceso', exact: true }).click();
+  await expect(page.getByLabel('Correo para recuperación')).toBeVisible();
+  await expect(page.getByLabel('Identificador de confirmación')).toHaveCount(0);
+  await page.getByRole('link', { name: 'Acceso de personal autorizado' }).click();
+  await expect(page).toHaveURL(/vista=operadores/);
+  await expect(page.getByLabel('Correo del operador de identidad')).toBeVisible();
+  await expect(page.getByLabel('Correo para recuperación')).toHaveCount(0);
 });

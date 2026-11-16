@@ -145,7 +145,7 @@ async function register(mailbox, page) {
   const token = await mailFor(mailbox); confidential.push(token);
   const proof = sql(`SELECT BIN_TO_UUID(proof_id,0) FROM c05_identity_mailbox_proof WHERE tenant_id=UNHEX('${A}') AND proof_state=0 ORDER BY created_at_utc DESC LIMIT 1`);
   if (page) {
-    await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
+    await page.goto(`http://127.0.0.1:${uiPort}/cuenta?vista=confirmar`);
     await page.getByLabel('Identificador de confirmación', { exact: true }).fill(proof);
     await page.getByLabel('Código de confirmación', { exact: true }).fill(token);
     await page.getByLabel('Correo de la solicitud').fill(mailbox);
@@ -175,6 +175,9 @@ async function browserSession(page) {
   // Observe the bearer actually used by Angular, and the DOM codes shown once.
   // Chromium can evict a response body before CDP Network.getResponseBody;
   // request observation avoids that race without intercepting/mocking traffic.
+  // Account actions now live in separate authenticated views. Enter the
+  // overview before observing the actual POST, without mocking the response.
+  await page.getByRole('link', { name: 'Resumen', exact: true }).click();
   const request = page.waitForRequest(r => r.url().endsWith('/sessions') && r.method() === 'POST');
   const response = page.waitForResponse(r => r.url().endsWith('/sessions'));
   await page.getByRole('button', { name: 'Consultar sesiones', exact: true }).click();
@@ -339,11 +342,14 @@ try {
   check((await api('memberships/decide', { membershipId: memberId, decision: 'approve', reason: 'Wrong authority scope', code: approver.backups.pop() }, approver.token)).status === 401,
     'branch-scoped approval permission cannot become tenant-wide administrative authority');
   sql(`UPDATE c05_identity_resource_grant SET branch_id=tenant_id WHERE permission_code='MEMBERSHIP_APPROVE'`);
+  // Registration completion is now an independent screen; return to the login view.
+  await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
   await page.getByRole('region', { name: 'Iniciar sesión', exact: true }).getByLabel('Correo electrónico', { exact: true }).fill('approver@example.test');
   await page.getByLabel('Contraseña', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await page.getByLabel('Código de tu aplicación de autenticación').fill(approver.backups.pop());
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
+  await page.getByRole('link', { name: 'Aprobaciones', exact: true }).click();
   await page.getByText('Revisar membresía con permiso administrativo', { exact: true }).click();
   await page.getByLabel('Membresía pendiente', { exact: true }).fill(memberId);
   await page.getByLabel('Motivo', { exact: true }).fill('Synthetic local approval');
@@ -408,7 +414,13 @@ try {
   await page.getByRole('button', { name: 'Registrar aceptación', exact: true }).click();
   check((await termsAccepted).status() === 200, 'Angular records deliberate acceptance of the exact published terms version and hash');
   const axe = await new AxeBuilder({ page }).analyze();
-  check(axe.violations.filter(v => ['critical', 'serious'].includes(v.impact)).length === 0, 'authenticated Angular accessibility has no serious/critical axe findings');
+  const severeAxe = axe.violations.filter(v => ['critical', 'serious'].includes(v.impact));
+  if (severeAxe.length) {
+    // Expose only rule IDs and node counts; never log form values, MFA or secrets.
+    console.error('C05 accessibility rule diagnostics: ' +
+      severeAxe.map(v => v.id + ':nodes=' + v.nodes.length).join(', '));
+  }
+  check(severeAxe.length === 0, 'authenticated Angular accessibility has no serious/critical axe findings');
   check(await page.evaluate(() => localStorage.length === 0 && sessionStorage.length === 0), 'no bearer stored in browser storage');
   const actor = accountId('member@example.test');
   sql(`INSERT INTO c05_identity_branch VALUES(UNHEX('${A}'),UUID_TO_BIN('${branch}',0),TRUE),(UNHEX('${A}'),UUID_TO_BIN('${otherBranch}',0),TRUE);
@@ -457,6 +469,7 @@ try {
   await page.getByRole('heading', { name: 'Iniciar sesión', exact: true }).waitFor();
   check(true, 'Angular clears revoked session on server validation');
   await reserveTestWindow(35);
+  await page.goto(`http://127.0.0.1:${uiPort}/cuenta?vista=recuperar`);
   await page.getByLabel('Correo para recuperación').fill('member@example.test');
   const recoveryReceipt = page.waitForResponse(r => r.url().endsWith('/recovery/request'));
   await page.getByRole('button', { name: 'Solicitar recuperación', exact: true }).click();
@@ -476,6 +489,7 @@ try {
   check((await api('login', { mailbox: 'member@example.test', password })).status === 401, 'old password denied after recovery');
   check((await api('login', { mailbox: 'member@example.test', password: newPassword })).status === 200, 'new password works after recovery');
   async function uiLogin(mailbox, currentPassword) {
+    await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
     const factorBucket = createHmac('sha256', Buffer.from(keys.CRECISOL_C05_TOKEN_HMAC_KEY, 'hex'))
       .update('C05/quota:mfa:' + accountId(mailbox)).digest('hex');
     const currentAttempts = Number(sql(`SELECT COALESCE(MAX(attempts),0) FROM c05_identity_attempt_quota WHERE tenant_id=UNHEX('${A}') AND bucket_hmac=UNHEX('${factorBucket}') AND window_utc=FLOOR(UNIX_TIMESTAMP()/60)`));
@@ -495,6 +509,7 @@ try {
   }
   token = await uiLogin('member@example.test', newPassword);
   check((await api('mfa/verify', { challenge: (await api('login', { mailbox: 'member@example.test', password: newPassword })).data.challenge, code: resetCode })).status === 401, 'consumed MFA backup cannot be reused for login');
+  await page.getByRole('link', { name: 'Seguridad', exact: true }).click();
   await page.getByText('Cambiar correo', { exact: true }).click();
   await page.getByLabel('Nuevo correo', { exact: true }).fill('member.changed@example.test');
   await page.getByLabel('Código MFA para solicitar correo').fill(backupCodes.pop());
@@ -510,6 +525,7 @@ try {
   check((await api('sessions', {}, token)).status === 401, 'mailbox change revokes old session');
   check((await api('login', { mailbox: 'member@example.test', password: newPassword })).status === 401, 'old mailbox no longer authenticates');
   token = await uiLogin('member.changed@example.test', newPassword);
+  await page.getByRole('link', { name: 'Seguridad', exact: true }).click();
   await page.getByText('Cambiar contraseña', { exact: true }).click();
   await page.getByLabel('Contraseña actual', { exact: true }).fill(newPassword);
   await page.getByLabel('Nueva contraseña', { exact: true }).fill(password);
@@ -530,6 +546,7 @@ try {
   check((await logoutUi).status() === 200, 'Angular logout revokes server session');
   check((await api('sessions', {}, logoutToken)).status === 401, 'logout session replay denied');
   token = await uiLogin('member.changed@example.test', password);
+  await page.getByRole('link', { name: 'Seguridad', exact: true }).click();
   await page.getByText('Reemplazar segundo factor', { exact: true }).click();
   await page.getByLabel('Contraseña para reemplazar MFA').fill(password);
   await page.getByLabel('Código actual o respaldo MFA').fill(backupCodes.pop());

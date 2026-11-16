@@ -10,7 +10,7 @@ export async function verifyAssisted({ browser, api, platform, check, confidenti
   check((await api('platform/login', { mailbox: operators[0].mailbox, password: operators[0].password })).status === 401,
     'platform authentication is denied under a tenant Host');
   const subject = await browser.newContext(); const page = await subject.newPage();
-  await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
+  await page.goto(`http://127.0.0.1:${uiPort}/cuenta?vista=recuperar`);
   await page.getByText('Perdí todos mis métodos de acceso', { exact: true }).click();
   await page.getByLabel('Correo de la cuenta que necesita asistencia').fill(mailbox);
   await page.getByLabel('Mis métodos automáticos seguros no están disponibles', { exact: true }).check();
@@ -26,7 +26,7 @@ export async function verifyAssisted({ browser, api, platform, check, confidenti
   const contexts = [], pages = [], tokens = [];
   for (const operator of operators) {
     const context = await browser.newContext(); const operatorPage = await context.newPage(); contexts.push(context); pages.push(operatorPage);
-    await operatorPage.goto(`http://127.0.0.1:${uiPort}/cuenta`);
+    await operatorPage.goto(`http://127.0.0.1:${uiPort}/cuenta?vista=operadores`);
     await operatorPage.getByText('Personal autorizado de identidad CRECISOL', { exact: true }).click();
     await operatorPage.getByLabel('Correo del operador de identidad').fill(operator.mailbox);
     await operatorPage.getByLabel('Contraseña del operador', { exact: true }).fill(operator.password);
