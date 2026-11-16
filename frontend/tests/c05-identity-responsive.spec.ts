@@ -17,6 +17,9 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1366, height: 768 
     expect(results.violations.filter(v => v.impact === 'critical' || v.impact === 'serious')).toEqual([]);
     await page.getByRole('link', { name: 'Recuperar acceso', exact: true }).click();
     await expect(page.getByLabel('Correo para recuperación')).toBeVisible();
+    await expect(page.getByLabel('Token de recuperación')).not.toBeVisible();
+    await page.getByText('Ya tengo mi código de recuperación', { exact: true }).click();
+    await expect(page.getByLabel('Token de recuperación')).toBeVisible();
     await expect(page.getByLabel('Contraseña', { exact: true })).toHaveCount(0);
   });
 }
