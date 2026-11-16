@@ -478,6 +478,7 @@ try {
   check((await api('recovery/request', { mailbox: 'unknown@example.test' })).status === 202, 'unknown recovery returns same receipt');
   check((await api('recovery/complete', { token: recovery, code: '000000', newPassword })).status === 401, 'mailbox recovery cannot bypass MFA');
   const resetCode = backupCodes.pop();
+  await page.getByText('Ya tengo mi código de recuperación', { exact: true }).click();
   await page.getByLabel('Token de recuperación').fill(recovery);
   await page.getByLabel('Código MFA para recuperación').fill(resetCode);
   await page.getByLabel('Contraseña recuperada').fill(newPassword);

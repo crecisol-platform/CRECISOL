@@ -17,6 +17,9 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1366, height: 768 
     expect(results.violations.filter(v => v.impact === 'critical' || v.impact === 'serious')).toEqual([]);
     await page.getByRole('link', { name: 'Recuperar acceso', exact: true }).click();
     await expect(page.getByLabel('Correo para recuperación')).toBeVisible();
+    await expect(page.getByLabel('Token de recuperación')).not.toBeVisible();
+    await page.getByText('Ya tengo mi código de recuperación', { exact: true }).click();
+    await expect(page.getByLabel('Token de recuperación')).toBeVisible();
     await expect(page.getByLabel('Contraseña', { exact: true })).toHaveCount(0);
   });
 }
@@ -55,4 +58,27 @@ test('C05 account header uses only the validated published platform brand', asyn
   await expect(header).toContainText('CRECISOL');
   await expect(header.locator('img.brand-mark')).toHaveAttribute('src', '/assets/crecisol-oficial.png');
   expect(headers).toEqual([{ auth: undefined, tenant: undefined }]);
+});
+
+test('C05 focused operator realm contains no consumer account navigation', async ({ page }) => {
+  await page.goto('/cuenta?vista=operadores');
+  await expect(page.getByRole('heading', { name: 'Identidad de plataforma', exact: true })).toBeVisible();
+  await expect(page.getByLabel('Correo del operador de identidad')).toBeVisible();
+  await expect(page.locator('.account-aside')).toHaveCount(0);
+  await expect(page.getByRole('navigation', { name: 'Opciones de identidad' })).toHaveCount(0);
+  await expect(page.getByLabel('Correo para recuperación')).toHaveCount(0);
+  const width = await page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(width).toBeLessThanOrEqual(2);
+});
+
+test('C05 public entry presents two primary choices and secondary recovery actions', async ({ page }) => {
+  await page.goto('/cuenta');
+  const primary = page.getByRole('navigation', { name: 'Opciones de identidad' });
+  await expect(primary.getByRole('link')).toHaveCount(2);
+  await expect(primary.getByRole('link', { name: 'Iniciar sesión', exact: true })).toBeVisible();
+  await expect(primary.getByRole('link', { name: 'Solicitar cuenta', exact: true })).toBeVisible();
+  const secondary = page.getByRole('navigation', { name: 'Otras opciones de cuenta' });
+  await expect(secondary.getByRole('link', { name: 'Recuperar acceso', exact: true })).toBeVisible();
+  await expect(secondary.getByRole('link', { name: 'Confirmar correo', exact: true })).toBeVisible();
 });
