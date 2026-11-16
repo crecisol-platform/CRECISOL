@@ -42,6 +42,7 @@ export async function verifyAssisted({ browser, api, platform, check, confidenti
   }
   async function review(index) {
     const operatorPage = pages[index], operator = operators[index];
+    await operatorPage.getByRole('button', { name: 'Revisar identidad del titular', exact: true }).click();
     await operatorPage.getByLabel('Caso a revisar', { exact: true }).fill(caseId);
     await operatorPage.getByLabel('SHA-256 del expediente de verificación').fill(createHash('sha256').update(`FICTIONAL independent identity evidence ${index}`).digest('hex'));
     await operatorPage.getByLabel('Motivo de la revisión de identidad').fill('Independent fictional verification, no real personal documents');
@@ -50,6 +51,7 @@ export async function verifyAssisted({ browser, api, platform, check, confidenti
     const reviewed = operatorPage.waitForResponse(r => r.url().endsWith('/platform-identity/review'));
     await operatorPage.getByRole('button', { name: 'Registrar revisión de identidad', exact: true }).click();
     check((await reviewed).status() === 200, 'platform reviewer commits a fresh-MFA identity attestation and evidence digest');
+    await operatorPage.keyboard.press('Escape');
   }
   await review(0);
   check(sql(`SELECT COUNT(*) FROM c05_identity_assisted_review WHERE case_id=UUID_TO_BIN('${caseId}',0) AND approved=1`) === '1', 'one verified operator is insufficient for assisted recovery');
@@ -75,6 +77,7 @@ export async function verifyAssisted({ browser, api, platform, check, confidenti
   const shares = [];
   for (let index = 0; index < operators.length; index++) {
     const operatorPage = pages[index];
+    await operatorPage.getByRole('button', { name: 'Emitir parte de recuperación', exact: true }).click();
     await operatorPage.getByLabel('Caso para entrega segura', { exact: true }).fill(caseId);
     await operatorPage.getByLabel('Código MFA para emitir mi parte').fill(await nextCode(operators[index].seed));
     const released = operatorPage.waitForResponse(r => r.url().endsWith('/platform-identity/release-share'));
