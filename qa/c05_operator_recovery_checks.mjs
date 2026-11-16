@@ -152,7 +152,8 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   await page.getByRole('button', { name: 'Cerrar todas mis sesiones de plataforma', exact: true }).click();
   await page.getByLabel('Código MFA para cerrar sesiones de plataforma').fill(backups.pop());
   const allRevoked = page.waitForResponse(r => r.url().endsWith('/platform-identity/sessions/revoke-all'));
-  await page.getByRole('button', { name: 'Cerrar todas mis sesiones de plataforma', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Cerrar todas mis sesiones de plataforma', exact: true })
+    .getByRole('button', { name: 'Confirmar cierre de todas mis sesiones de plataforma', exact: true }).click();
   check((await allRevoked).status() === 200 && (await platform('session', {}, afterRotation)).status === 401,
     'fresh platform MFA revokes all own platform sessions without changing tenant identities');
   await uiLogin(target.mailbox, newPassword, backups.pop());

@@ -21,7 +21,7 @@
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="false">
     <form (submit)="actionRequested.emit({ event: $event, action: 'revoke-all' })">
             <label for="operator-sessions-code">Código MFA para cerrar sesiones de plataforma</label><input id="operator-sessions-code" name="code" required maxlength="32" autocomplete="one-time-code">
-            <button [disabled]="busy()">Cerrar todas mis sesiones de plataforma</button>
+            <button [disabled]="busy()">Confirmar cierre de todas mis sesiones de plataforma</button>
           </form>
   </cs-institutional-modal>
 </div>

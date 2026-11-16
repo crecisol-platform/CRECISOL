@@ -69,6 +69,10 @@ def audit_a() -> None:
     require("Revisar identidad del titular" in operator, "operator reviewer flow lost")
     require("Emitir parte de recuperación" in operator, "handoff flow lost")
     require("C06" not in panel, "unauthorized future chapter exposed in C05")
+    sessions = read(PAGES / "platform-operator-sessions.component.html")
+    require(sessions.count('Cerrar todas mis sesiones de plataforma') == 3 and
+            'Confirmar cierre de todas mis sesiones de plataforma' in sessions,
+            "operator session action must distinguish trigger from confirmation")
     print("PASS C05-UI-A: 18 operator forms, 15 account forms, task navigation and authority boundaries")
 
 
