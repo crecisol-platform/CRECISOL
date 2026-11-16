@@ -45,7 +45,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog22.open()">
     <span>Emitir parte de recuperación</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #opDialog22 title="Emitir parte de recuperación" description="Entrega la parte únicamente por un canal seguro al titular verificado."
+  <cs-institutional-modal #opDialog22 title="Emitir parte de recuperación" (dismissed)="platform.handoffShare.set('')" description="Entrega la parte únicamente por un canal seguro al titular verificado."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="actionRequested.emit({ event: $event, action: 'share' })">
           <label for="share-case">Caso para entrega segura</label><input id="share-case" name="caseId" required maxlength="36">
