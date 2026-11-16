@@ -18,21 +18,19 @@
     <span class="header-context">Identidad y acceso</span>
   </header>
 
-  <div class="account-layout">
+  <div class="account-layout" [class.account-layout--single]="identity.state() !== 'anonymous' || view() === 'operadores'">
+    @if (identity.state() === 'anonymous' && view() !== 'operadores') {
     <aside class="account-aside" aria-label="Acerca del acceso">
       <div class="aside-top">
         <p class="eyebrow">CRECISOL · IDENTIDAD</p>
         <h1>Tu cuenta, a tu manera.</h1>
         <p>Una experiencia privada, clara y controlada. Cada empresa se identifica por su dominio verificado, nunca por un selector de acceso.</p>
       </div>
-      <div class="aside-bottom">
-        <p><span class="aside-mark" aria-hidden="true">✓</span> Verificación en dos pasos</p>
-        <p><span class="aside-mark" aria-hidden="true">✓</span> Sesiones que puedes revocar</p>
-        <p><span class="aside-mark" aria-hidden="true">✓</span> Tu información pertenece a tu contexto</p>
-      </div>
+      <div class="aside-bottom"><span class="aside-rule" aria-hidden="true"></span><p>Protección con segundo factor y control de tus sesiones.</p></div>
     </aside>
+    }
 
-    <div class="account-main" id="account-content">
+    <div class="account-main" id="account-content" tabindex="-1">
       @if (message()) { <p class="feedback feedback--success" role="status" aria-live="polite">{{ message() }}</p> }
       @if (error()) { <p class="feedback feedback--error" role="alert">{{ error() }}</p> }
       @if (view() === 'operadores') {
@@ -45,8 +43,6 @@
           <nav class="account-nav" aria-label="Opciones de identidad">
             <a routerLink="/cuenta" [queryParams]="{ vista: 'ingresar' }" [attr.aria-current]="view() === 'ingresar' ? 'page' : null">Iniciar sesión</a>
             <a routerLink="/cuenta" [queryParams]="{ vista: 'registro' }" [attr.aria-current]="view() === 'registro' ? 'page' : null">Solicitar cuenta</a>
-            <a routerLink="/cuenta" [queryParams]="{ vista: 'confirmar' }" [attr.aria-current]="view() === 'confirmar' ? 'page' : null">Confirmar correo</a>
-            <a routerLink="/cuenta" [queryParams]="{ vista: 'recuperar' }" [attr.aria-current]="view() === 'recuperar' ? 'page' : null">Recuperar acceso</a>
           </nav>
           @if (view() === 'recuperar') {
             <cs-identity-recovery [busy]="busy()" (securityActionRequested)="securityAction($event.event, $event.action)" />
@@ -58,10 +54,12 @@
               (passkeyLoginRequested)="passkeyLogin()" (startPairingRequested)="startPairing()"
               (completePairingRequested)="completePairing()" />
           }
-          <div class="account-subnav">
-            <a routerLink="/cuenta" [queryParams]="{vista:'invitacion'}">Aceptar invitación</a>
-            <a routerLink="/cuenta" [queryParams]="{vista:'acceso-existente'}">Ya tengo cuenta</a>
-          </div>
+          <nav class="account-subnav" aria-label="Otras opciones de cuenta">
+            <a routerLink="/cuenta" [queryParams]="{vista:'confirmar'}" [attr.aria-current]="view() === 'confirmar' ? 'page' : null">Confirmar correo</a>
+            <a routerLink="/cuenta" [queryParams]="{vista:'recuperar'}" [attr.aria-current]="view() === 'recuperar' ? 'page' : null">Recuperar acceso</a>
+            <a routerLink="/cuenta" [queryParams]="{vista:'invitacion'}" [attr.aria-current]="view() === 'invitacion' ? 'page' : null">Aceptar invitación</a>
+            <a routerLink="/cuenta" [queryParams]="{vista:'acceso-existente'}" [attr.aria-current]="view() === 'acceso-existente' ? 'page' : null">Ya tengo cuenta</a>
+          </nav>
         } @else if (identity.state() === 'challenge') {
           <cs-identity-mfa [busy]="busy()" (verifyRequested)="verify($event)"
             (enrollRequested)="enroll()" />
