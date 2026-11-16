@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { IdentityApiService } from '../identity/identity-api.service';
+import { InstitutionalModalComponent } from '../ui/institutional-modal/institutional-modal.component';
 
 @Component({
   selector: 'cs-identity-guest', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,10 +32,12 @@ export class IdentityMfaComponent {
 
 @Component({
   selector: 'cs-identity-workspace', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [InstitutionalModalComponent],
   templateUrl: './identity-workspace.component.html', styleUrl: './identity-flow.component.css'
 })
 export class IdentityWorkspaceComponent {
   readonly identity = inject(IdentityApiService);
+  readonly feedback = input(''); readonly error = input('');
   readonly view = input('resumen');
   readonly busy = input(false);
   readonly incomingPairToken = input('');
