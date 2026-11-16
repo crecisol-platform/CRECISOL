@@ -4,7 +4,7 @@
 .skip-link:focus { top: 1rem; }
 .account-header { max-width: 1220px; margin: auto; padding: 1.4rem clamp(1rem, 4vw, 3rem); display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .brand { font-size: 1.1rem; font-weight: 850; letter-spacing: .075em; text-decoration: none; color: #103f7e; }
-.header-context { color: #65788e; font-size: .87rem; font-weight: 650; }
+.header-context { color: #465d74; font-size: .87rem; font-weight: 650; }
 .account-layout { max-width: 1220px; margin: 0 auto; padding: clamp(.5rem, 3vw, 2rem) clamp(1rem, 4vw, 3rem) 4rem; display: grid; grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr); align-items: stretch; gap: clamp(1rem, 2vw, 2rem); }
 .account-aside { display: flex; flex-direction: column; justify-content: space-between; gap: 2.5rem; padding: clamp(1.7rem, 4vw, 4rem); background: #10345b; color: white; border-radius: 1.5rem; min-height: 680px; }
 .eyebrow { margin: 0 0 1rem; letter-spacing: .13em; font-size: .72rem; font-weight: 800; color: #2d6fb2; }
