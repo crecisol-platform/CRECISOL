@@ -8,6 +8,7 @@ on:
       - 'database/migrations/**'
       - 'database/operations/**'
       - 'qa/c05_operational_flow_e2e.mjs'
+      - 'qa/c05_*_checks.mjs'
       - '.github/workflows/c05-operational-flow.yml'
   push:
     branches: [dev, feature/c05-identity-integration-gate-20261114]
@@ -17,6 +18,7 @@ on:
       - 'database/migrations/**'
       - 'database/operations/**'
       - 'qa/c05_operational_flow_e2e.mjs'
+      - 'qa/c05_*_checks.mjs'
       - '.github/workflows/c05-operational-flow.yml'
 permissions:
   contents: read
@@ -42,6 +44,7 @@ jobs:
         run: |
           dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release -warnaserror
           dotnet build backend/tests/Crecisol.LoopbackSmtpReceiver/Crecisol.LoopbackSmtpReceiver.csproj -c Release -warnaserror
+          dotnet build backend/tools/Crecisol.LocalIdentityProvisioner/Crecisol.LocalIdentityProvisioner.csproj -c Release -warnaserror
       - name: Build Angular and install Chromium
         run: |
           npm ci --prefix frontend --ignore-scripts --no-audit --no-fund

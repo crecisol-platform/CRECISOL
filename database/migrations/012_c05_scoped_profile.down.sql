@@ -1,0 +1,1 @@
+DROP TABLE c05_identity_scoped_profile;

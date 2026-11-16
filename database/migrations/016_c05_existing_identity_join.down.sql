@@ -1,0 +1,1 @@
+DROP PROCEDURE c05_operational_consume_join_proof;

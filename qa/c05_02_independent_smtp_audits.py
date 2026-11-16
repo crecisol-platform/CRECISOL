@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+from c05_integral_scope import INTEGRAL_BRANCH, CORE_FLOW, validate_integral_diff
 from c05_01_preparation_audits import ROOT
 from c05_02_proof_outbox_audits import audit_a as predecessor_a
 
@@ -58,7 +59,7 @@ GUARDS = {
         "candidate.Count(ch => ch == '@') != 1",
         "total < 4096",
         'Regex.IsMatch(data, @"\\A[A-F0-9]{64}\\z"',
-        "Console.Out.WriteLine($\"MAIL {recipient} {hex}\")",
+        "Console.Out.WriteLine(notice is not null ? $\"NOTICE {recipient} {hex} {notice}\" : capabilityPurpose is not null\n                    ? $\"CAPABILITY {recipient} {hex} {capabilityPurpose}\" : $\"MAIL {recipient} {hex}\");",
         "catch (Exception)",
         "No secret is written to disk",
     ),
@@ -207,13 +208,15 @@ def audit_c() -> None:
         need(p.is_file() and p.read_text(encoding="utf-8").strip() ==
              f"PASS {stage} sha={sha} run={run}",
              "Stage absent or stale: "+stage)
+    integral_scope = False
     event = os.environ.get("GITHUB_EVENT_NAME")
     if event == "pull_request":
         path = Path(os.environ.get("GITHUB_EVENT_PATH",""))
         need(path.is_file(), "PR event payload missing")
         pr=json.loads(path.read_text(encoding="utf-8"))["pull_request"]
         base,head=pr["base"],pr["head"]
-        need(base["ref"]=="dev" and head["ref"]==FEATURE and
+        integral_scope = head["ref"] == INTEGRAL_BRANCH
+        need(base["ref"]=="dev" and head["ref"] in (FEATURE, INTEGRAL_BRANCH) and
              base["repo"]["full_name"]==REPO and
              head["repo"]["full_name"]==REPO,
              "Unauthorized feature branch, fork or base")
@@ -225,10 +228,13 @@ def audit_c() -> None:
         need(event=="push" and os.environ.get("GITHUB_REF")=="refs/heads/dev",
              "Only dev POSTMERGE can pass")
         changed=git("show","--format=","--name-only",sha).splitlines()
-    need(bool(changed) and set(changed).issubset(ALLOWED) and
-         FILES["sender"] in changed and FILES["receiver"] in changed and
-         FILES["test"] in changed,
-         "Out-of-scope or incomplete PR: "+repr(changed))
+    if integral_scope or (event == "push" and CORE_FLOW in changed):
+        validate_integral_diff(changed)
+    else:
+        need(bool(changed) and set(changed).issubset(ALLOWED) and
+             FILES["sender"] in changed and FILES["receiver"] in changed and
+             FILES["test"] in changed,
+             "Out-of-scope or incomplete PR: "+repr(changed))
     invariants(sources())
     print(f"PASS independent SMTP C: A/B/.NET10/MySQL8.4 same SHA={sha} run={run}")
     print("NOT CERTIFIED: external inbox, identity, invited actor or membership/session")

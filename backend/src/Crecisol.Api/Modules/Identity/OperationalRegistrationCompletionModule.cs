@@ -48,7 +48,7 @@ public static class OperationalRegistrationCompletionModule
             smtpPort is < 1024 or > 65535)
             throw new InvalidOperationException("Local proof dispatch settings are invalid.");
         services.AddSingleton<ITrustedCompromisedPasswordScreen,
-            LocalTestCompromisedPasswordScreen>();
+            KnownCompromisedPasswordScreen>();
         services.AddSingleton(sp => new Argon2idPasswordHasher(
             PasswordHashingPolicy.Default,
             sp.GetRequiredService<ITrustedCompromisedPasswordScreen>()));
@@ -211,22 +211,4 @@ internal sealed class LocalProofOutboxHostedService(
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
         dispatcher.RunAsync(stoppingToken);
-}
-
-internal sealed class LocalTestCompromisedPasswordScreen : ITrustedCompromisedPasswordScreen
-{
-    private static readonly HashSet<string> CommonCompromised = new(
-        ["password123456", "123456789012345", "qwerty123456789", "letmein12345678"],
-        StringComparer.OrdinalIgnoreCase);
-
-    public PasswordCompromiseVerdict Check(ReadOnlySpan<char> candidate)
-    {
-        if (candidate.Length < PasswordHashingPolicy.MinAcceptedRunes)
-            return PasswordCompromiseVerdict.Compromised;
-        return CommonCompromised.Contains(candidate.ToString())
-            ? PasswordCompromiseVerdict.Compromised
-            : PasswordCompromiseVerdict.Allowed;
-    }
-
-    public override string ToString() => "LocalTestCompromisedPasswordScreen[redacted]";
 }
