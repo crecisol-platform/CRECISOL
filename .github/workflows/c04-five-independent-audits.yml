@@ -1,0 +1,293 @@
+name: CRECISOL C01-C04 five independent technical audits
+
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - '.github/workflows/c04-five-independent-audits.yml'
+      - 'docs/c04/C04_C01_C04_CINCO_AUDITORIAS_2026_11_16.md'
+      - 'frontend/tests/c04-five-audits-public-visual.spec.ts'
+  push:
+    branches: [dev]
+    paths:
+      - '.github/workflows/c04-five-independent-audits.yml'
+      - 'docs/c04/C04_C01_C04_CINCO_AUDITORIAS_2026_11_16.md'
+      - 'frontend/tests/c04-five-audits-public-visual.spec.ts'
+
+permissions:
+  contents: read
+
+jobs:
+  audit-1-requirements:
+    name: "1/5 | Fuente maestra, funcionalidad y trazabilidad C01-C04"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Master Word/PDF, institutional status and four independent chapter boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/validate_foundation.py
+          python3 qa/master_source_guard.py --self-test
+          python3 qa/c01_verify_source.py
+          python3 qa/c01_01_three_audits.py A
+          python3 qa/c02_01_source.py A
+          python3 qa/c03_10_current_state_audits.py A
+          python3 qa/c04_01_normative_inventory.py verify
+          python3 qa/c04_12_integral_audits.py A
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("docs")
+          acts = {
+              "C01": ("c01/C01_08_AUDITORIA_Y_ACTA.md", "CERTIFICADO"),
+              "C02": ("c02/C02_09_AUDITORIA_Y_ACTA.md", "CERTIFICADO"),
+              "C03": ("c03/C03_CERTIFICACION_INTEGRAL_2026_11_11.md", "CERTIFICADO"),
+              "C04": ("c04/C04_12_CERTIFICACION_AUTONOMA_2026_11_15.md", "CERTIFICADO"),
+          }
+          for name, (path, marker) in acts.items():
+              text = (p / path).read_text(encoding="utf-8")
+              assert marker in text, f"NO-GO missing chapter acta: {name}"
+          status = (p / "ESTADO_VIGENTE_CAPITULOS.md").read_text(encoding="utf-8")
+          current = status.split("**INTEGRACIÓN OPERATIVA LOCAL C05", 1)[0]
+          assert "**5/37**" in current and "**C06 permanece BLOQUEADO**" in current
+          print("PASS audit 1/5: four original acts and non-promoted C06")
+          PY
+          printf 'PASS 1/5 HEAD=%s RUN=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID"
+
+  audit-2-backend:
+    name: "2/5 | Backend, arquitectura, autorizacion y negativas"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 95
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Static adversarial review C03-C04 and API entrypoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c03_10_current_state_audits.py B
+          python3 qa/c04_12_integral_audits.py B
+          python3 qa/c04_11_offensive_audits.py B
+          python3 - <<'PY'
+          from pathlib import Path
+          api = Path("backend/src/Crecisol.Api/Program.cs").read_text()
+          for marker in ("trustedHosts.Contains(context.Request.Host.Host)",
+                         'ContainsKey("X-Forwarded-Host")',
+                         'ContainsKey("Forwarded")',
+                         'ContainsKey("X-Tenant-Id")',
+                         'GetEnvironmentVariable("CRECISOL_C01_READONLY_DSN")',
+                         'if (operationalIdentityEnabled)'):
+              assert marker in api, f"NO-GO API trust boundary: {marker}"
+          assert "UseForwardedHeaders" not in api
+          print("PASS audit 2/5: host, spoofing, local activation and server DSN boundary")
+          PY
+      - name: Compile API and run real positive/negative .NET10 contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          for suite in \
+            Crecisol.Branding.ContractsTests \
+            Crecisol.Branding.ApplicationTests \
+            Crecisol.Domain.ContractsTests \
+            Crecisol.Application.ContractsTests \
+            Crecisol.Api.ContractsTests \
+            Crecisol.Api.ModuleTests \
+            Crecisol.LocalConfig.ContractsTests \
+            Crecisol.TenantCatalog.ContractsTests \
+            Crecisol.SharedTenancy.ContractsTests \
+            Crecisol.TenantStorage.ContractsTests \
+            Crecisol.VerifiedHosts.ContractsTests \
+            Crecisol.TenantIdentity.ContractsTests \
+            Crecisol.BranchResource.ContractsTests \
+            Crecisol.TenantProvisioning.ContractsTests \
+            Crecisol.TenantLifecycle.ContractsTests \
+            Crecisol.TenantMigrations.ContractsTests \
+            Crecisol.TenantArtifacts.ContractsTests \
+            Crecisol.TenantOffensive.ContractsTests; do
+            dotnet run -c Release --project "backend/tests/$suite/$suite.csproj"
+          done
+          dotnet run -c Release --project backend/tests/Crecisol.Infrastructure.ContractsTests/Crecisol.Infrastructure.ContractsTests.csproj -- contracts
+          dotnet run -c Release --project backend/tests/Crecisol.Outbox.ContractsTests/Crecisol.Outbox.ContractsTests.csproj -- contracts
+          printf 'PASS 2/5 HEAD=%s RUN=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID"
+
+  audit-3-database:
+    name: "3/5 | MySQL8.4, aislamiento A/B, rollback y concurrencia"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 110
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build database-connected contract adapters in Release
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.SharedTenancy.ContractsTests/Crecisol.SharedTenancy.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.Outbox.ContractsTests/Crecisol.Outbox.ContractsTests.csproj -c Release --nologo -warnaserror
+      - name: Nine independent disposable MySQL8.4 C04 suites plus C03 outbox and C01 HTTP
+        shell: bash
+        run: |
+          set -euo pipefail
+          for suite in \
+            c04_02_shared_integrity_smoke.sh \
+            c04_02_application_schema_smoke.sh \
+            c04_02_backend_reader_smoke.sh \
+            c04_07_idempotency_smoke.sh \
+            c04_08_lifecycle_smoke.sh \
+            c04_09_migration_smoke.sh \
+            c04_09_guarded_smoke.sh \
+            c04_10_isolation_smoke.sh \
+            c04_11_offensive_sql.sh; do
+            bash -n "database/tests/$suite"
+            bash "database/tests/$suite"
+          done
+          bash database/tests/c03_07_outbox_mysql_smoke.sh
+          CRECISOL_C03_05_CONTRACT_SMOKE=1 CRECISOL_C03_08_LOCAL_PROFILE_SMOKE=1 \
+            bash database/tests/c01_04_api_mysql_smoke.sh
+          printf 'PASS 3/5 HEAD=%s RUN=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID"
+
+  audit-4-visual:
+    name: "4/5 | Angular22, Chromium, WCAG, responsive y evidencias visuales"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 110
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Lockfile integrity, dependency vulnerabilities, Angular release/type/budgets/assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
+          npm audit --prefix frontend --omit=dev --audit-level=high
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+          npm run test:assets --prefix frontend
+      - name: Browser C01+C02 regression, isolated patterns and eight new snapshots with axe
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .c04-visual-proof
+          cd frontend
+          npx playwright install --with-deps chromium
+          npx playwright test tests/c01-05.public-brand.spec.ts tests/c01-06.official-integration.spec.ts tests/c01-08.brand-revision.spec.ts tests/c02-03.public-information.spec.ts tests/c02-04.private-paths.spec.ts tests/c02-05.interaction-states.spec.ts tests/c02-07.mobile-accessibility.spec.ts tests/c02-08.journeys-public.spec.ts --reporter=line
+          npm run test:c02-06
+          npx playwright test --config=playwright.patterns-a11y.config.ts --reporter=line
+          npx playwright test --config=playwright.journeys-patterns.config.ts --reporter=line
+          npx playwright test tests/c04-five-audits-public-visual.spec.ts --reporter=line
+          cd ..
+          test "$(find .c04-visual-proof -maxdepth 1 -type f -name '*.png' | wc -l)" -eq 8
+          printf 'PASS 4/5 HEAD=%s RUN=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID"
+      - name: Upload synthetic C01/C02 visual evidence without credentials
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: c01-c02-eight-public-visual-snapshots
+          path: .c04-visual-proof/*.png
+          retention-days: 7
+          if-no-files-found: ignore
+
+  audit-5-integration:
+    name: "5/5 | Stack real C01-C04, CI segura, supply-chain y cierre"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 110
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Cross-chapter contracts, real toolchains and protected runner permissions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c03_local_preflight.py
+          python3 -m unittest discover -s qa -p 'test_c03_09_*.py' -v
+          python3 qa/c03_10_current_state_audits.py C
+          python3 - <<'PY'
+          from pathlib import Path
+          roots = (
+            ".github/workflows/foundation-check.yml",
+            ".github/workflows/c01-08-integral.yml",
+            ".github/workflows/c02-09-integral.yml",
+            ".github/workflows/c03-10-integral.yml",
+            ".github/workflows/c04-12-integral.yml",
+            ".github/workflows/c04-five-independent-audits.yml",
+          )
+          for path in roots:
+              src = Path(path).read_text(encoding="utf-8")
+              assert "permissions:\n  contents: read" in src, f"NO-GO workflow write permissions: {path}"
+              assert "pull_request_target:" not in src, f"NO-GO privileged PR trigger: {path}"
+              assert "persist-credentials: false" in src, f"NO-GO checkout credentials: {path}"
+              assert "contents: write" not in src and "id-token: write" not in src
+          package = Path("frontend/package.json").read_text(encoding="utf-8")
+          assert '"node": ">=24.15.0 <25"' in package
+          ignore = Path(".gitignore").read_text(encoding="utf-8")
+          for sensitive in (".env", "*.pem", "*.key", "node_modules/", "bin/", "obj/"):
+              assert sensitive in ignore
+          print("PASS workflow security and release dependency configuration")
+          PY
+          test "$(node --version | cut -c 1-4)" = "v24."
+          test "$(dotnet --version | cut -c 1-3)" = "10."
+      - name: Real C01 published-brand API + disposable MySQL8.4 + Angular22/Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          npm ci --prefix frontend --no-audit --no-fund --ignore-scripts
+          npm run build --prefix frontend
+          cd frontend
+          npx playwright install --with-deps chromium
+          cd ..
+          bash qa/c01_07_real_stack.sh
+          printf 'PASS 5/5 HEAD=%s RUN=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID"
+
+  five-independent-passes:
+    name: "INTEGRAL | Solo cinco auditorias reales 5/5 SUCCESS"
+    if: always()
+    needs:
+      - audit-1-requirements
+      - audit-2-backend
+      - audit-3-database
+      - audit-4-visual
+      - audit-5-integration
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Fail closed if any one of five independent dimensions fails or skips
+        env:
+          REQUIREMENTS: ${{ needs.audit-1-requirements.result }}
+          BACKEND: ${{ needs.audit-2-backend.result }}
+          DATABASE: ${{ needs.audit-3-database.result }}
+          VISUAL: ${{ needs.audit-4-visual.result }}
+          INTEGRATION: ${{ needs.audit-5-integration.result }}
+        run: |
+          set -euo pipefail
+          for result in "$REQUIREMENTS" "$BACKEND" "$DATABASE" "$VISUAL" "$INTEGRATION"; do
+            test "$result" = "success" || {
+              echo "NO-GO: independent cross-chapter audit missing or failed: $result"
+              exit 1
+            }
+          done
+          printf 'PASS FIVE-INDEPENDENT-AUDITS sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID"
+          echo 'LIMIT: automated and synthetic local testing is not production security or manual visual acceptance'
