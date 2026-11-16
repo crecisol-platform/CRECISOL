@@ -71,7 +71,7 @@
             <a routerLink="/cuenta" [queryParams]="{vista:'seguridad'}" [attr.aria-current]="view() === 'seguridad' ? 'page' : null">Seguridad</a>
             <a routerLink="/cuenta" [queryParams]="{vista:'administracion'}" [attr.aria-current]="view() === 'administracion' ? 'page' : null">Aprobaciones</a>
           </nav>
-          <cs-identity-workspace [busy]="busy()" [view]="view()" [incomingPairToken]="incomingPairToken"
+          <cs-identity-workspace [busy]="busy()" [feedback]="message()" [error]="error()" [view]="view()" [incomingPairToken]="incomingPairToken"
             [incomingPairFingerprint]="incomingPairFingerprint"
             (securityActionRequested)="securityAction($event.event, $event.action)"
             (uploadPhotoRequested)="uploadPhoto($event)"
