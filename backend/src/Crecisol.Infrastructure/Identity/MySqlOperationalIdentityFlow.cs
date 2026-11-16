@@ -12,38 +12,75 @@ namespace Crecisol.Infrastructure.Identity;
 /// membership, factor and session are revalidated under locks, never from claims.
 /// The opt-in composition is restricted to isolated loopback/example.test use.
 /// </summary>
-public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDisposable
+public sealed partial class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDisposable
 {
     private readonly string dsn;
-    private readonly byte[] tokenKey, encryptionKey, loginKey;
+    private readonly byte[] tokenKey, encryptionKey, loginKey, mailboxHmacKey;
     private readonly IOperationalIdentityCrypto crypto;
+    private readonly IOperationalPasskeyCrypto passkeys;
+    private readonly string quotaDsn;
     private readonly string dummyPhc;
+    private readonly SemaphoreSlim requestSlots = new(8, 8);
+    private int queuedRequests;
 
     public MySqlOperationalIdentityFlow(string trustedDsn, byte[] tokenKey,
-        byte[] encryptionKey, byte[] loginKey, IOperationalIdentityCrypto crypto)
+        byte[] encryptionKey, byte[] loginKey, IOperationalIdentityCrypto crypto, IOperationalPasskeyCrypto passkeys, byte[] mailboxHmacKey)
     {
         var options = new MySqlConnectionStringBuilder(trustedDsn);
         if (options.Server is not ("127.0.0.1" or "localhost" or "::1") ||
             options.Database != "crecisol_c05" || options.AllowLoadLocalInfile ||
-            options.AllowUserVariables || new[] { tokenKey, encryptionKey, loginKey }.Any(k => k.Length != 32))
+            options.AllowUserVariables || new[] { tokenKey, encryptionKey, loginKey, mailboxHmacKey }.Any(k => k.Length != 32))
             throw new InvalidOperationException("Isolated identity configuration required.");
         options.ConnectionTimeout = 3;
         options.DefaultCommandTimeout = 8;
         options.MaximumPoolSize = 20;
         dsn = options.ConnectionString;
+        // Quota reservations commit independently of denied transitions. They
+        // must not wait for a connection held by every concurrent outer request.
+        options.ApplicationName = "CRECISOL-C05-quota";
+        quotaDsn = options.ConnectionString;
         this.tokenKey = tokenKey.ToArray();
         this.encryptionKey = encryptionKey.ToArray();
         this.loginKey = loginKey.ToArray();
+        this.mailboxHmacKey = mailboxHmacKey.ToArray();
         this.crypto = crypto;
+        this.passkeys = passkeys;
         dummyPhc = crypto.HashPassword(Convert.ToHexString(RandomNumberGenerator.GetBytes(32)));
     }
 
     public async Task<OperationalIdentityResult> ExecuteAsync(OperationalIdentityRequest request, CancellationToken ct)
     {
+        if (Interlocked.Increment(ref queuedRequests) > 64)
+        {
+            Interlocked.Decrement(ref queuedRequests);
+            return new(false);
+        }
+        try
+        {
+            await requestSlots.WaitAsync(ct);
+            try { return await ExecuteCoreAsync(request, ct); }
+            finally { requestSlots.Release(); }
+        }
+        finally { Interlocked.Decrement(ref queuedRequests); }
+    }
+
+    private async Task<OperationalIdentityResult> ExecuteCoreAsync(OperationalIdentityRequest request, CancellationToken ct)
+    {
         await using var db = new MySqlConnection(dsn);
         await db.OpenAsync(ct);
         await using var tx = await db.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct);
-        var unit = new Unit(db, tx, ct);
+        var unit = new Unit(db, tx, ct) { DeviceLabel = request.DeviceLabel is "Chromium" or "Firefox" or "Safari" ? request.DeviceLabel : "API",
+            PeerHash = Digest("session-peer:" + request.Host, request.Peer) };
+        if (request.Operation.StartsWith("platform/", StringComparison.Ordinal))
+        {
+            if (request.Host != "platform-admin.example.test") return new(false);
+            var platformResult = await Platform(unit, request, ct);
+            await unit.Run("INSERT INTO c05_platform_identity_audit(audit_id,operator_id,case_id,action_code,allowed,created_at_utc,purpose_hmac) VALUES(@id,@a,@case,@op,@ok,UTC_TIMESTAMP(6),@purpose)",
+                ("id", Id()), ("a", unit.VerifiedActor ? (object?)unit.Actor ?? DBNull.Value : DBNull.Value), ("case", (object?)unit.Subject ?? DBNull.Value),
+                ("op", request.Operation), ("ok", platformResult.Allowed), ("purpose", (object?)unit.PurposeHash ?? DBNull.Value));
+            await tx.CommitAsync(ct);
+            return platformResult;
+        }
         var host = await unit.One("""
             SELECT h.tenant_id FROM c04_verified_tenant_host h
             JOIN c04_tenant_catalog t ON t.tenant_id=h.tenant_id
@@ -54,9 +91,19 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
         if (host is null) return new(false);
         var tenant = Bytes(host, "tenant_id");
         // Persist quota before costly crypto, even when the operation is denied.
-        if (!await Reserve(tenant, "peer:" + request.Peer, 80, ct)) return new(false);
+        if (!await Reserve(tenant, "peer:" + request.Peer, 80, ct) ||
+            !await Reserve(tenant, "tenant", 400, ct) ||
+            !await Reserve(tenant, "route:" + request.Operation + ":" + request.Peer, 40, ct)) return new(false);
         OperationalIdentityResult result;
         if (request.Operation == "login") result = await Login(unit, tenant, request, ct);
+        else if (request.Operation is "passkeys/options" or "passkeys/login")
+            result = await PasskeyLogin(unit, tenant, request, ct);
+        else if (request.Operation == "terms") result = await Terms(unit, tenant);
+        else if (request.Operation == "invitations/accept") result = await AcceptInvitation(unit, tenant, request, ct);
+        else if (request.Operation == "memberships/request") result = await RequestAdditionalMembership(unit, tenant, request, ct);
+        else if (request.Operation is "pairings/start" or "pairings/complete") result = await Pairing(unit, tenant, request, ct);
+        else if (request.Operation == "incidents/report") result = await ReportIncident(unit, tenant, request);
+        else if (request.Operation.StartsWith("assisted/", StringComparison.Ordinal)) result = await Assisted(unit, tenant, request, ct);
         else if (request.Operation.StartsWith("mfa/", StringComparison.Ordinal))
             result = await Mfa(unit, tenant, request, ct);
         else if (request.Operation == "recovery/request")
@@ -71,7 +118,7 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
 
     private async Task<bool> Reserve(byte[] tenant, string bucket, int maximum, CancellationToken ct)
     {
-        await using var db = new MySqlConnection(dsn);
+        await using var db = new MySqlConnection(quotaDsn);
         await db.OpenAsync(ct);
         await using var tx = await db.BeginTransactionAsync(ct);
         var u = new Unit(db, tx, ct);
@@ -83,6 +130,13 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
             """, ("t", tenant), ("b", digest), ("w", window));
         var row = await u.One("SELECT attempts FROM c05_identity_attempt_quota WHERE tenant_id=@t AND bucket_hmac=@b AND window_utc=@w",
             ("t", tenant), ("b", digest), ("w", window));
+        if (Number(row!, "attempts") == maximum + 1)
+        {
+            var kind = bucket == "tenant" ? "TENANT" : bucket.StartsWith("peer:", StringComparison.Ordinal) ? "PEER" :
+                bucket.StartsWith("route:", StringComparison.Ordinal) ? "ROUTE" : "ACCOUNT";
+            await u.Run("INSERT IGNORE INTO c05_identity_abuse_signal VALUES(@t,@b,@w,@kind,UTC_TIMESTAMP(6))",
+                ("t", tenant), ("b", digest), ("w", window), ("kind", kind));
+        }
         await tx.CommitAsync(ct);
         return Number(row!, "attempts") <= maximum;
     }
@@ -99,27 +153,33 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
             account["mailbox_verified_at_utc"] is DBNull) return new(false);
         var actor = Bytes(account, "account_id");
         u.Actor = actor;
+        await InitializeContact(u, actor, mailbox);
         var member = await Membership(u, tenant, actor);
         if (member is null) return new(false);
-        var factor = await u.One("SELECT factor_id FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_state=1 AND revoked_at_utc IS NULL FOR UPDATE", ("a", actor));
+        var factor = await u.One("SELECT factor_id FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_kind=1 AND factor_state=1 AND revoked_at_utc IS NULL FOR UPDATE", ("a", actor));
         // Revoking an enrolled factor must never downgrade an account back to
         // password-only enrollment. Replacement has its own step-up challenge.
-        if (factor is null && await u.One("SELECT factor_id FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_state=2 LIMIT 1 FOR UPDATE", ("a", actor)) is not null)
-            return new(false);
-        return await Challenge(u, tenant, account, member, factor is null);
+        var resetRequired = false;
+        if (factor is null && await u.One("SELECT factor_id FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_kind=1 AND factor_state=2 LIMIT 1 FOR UPDATE", ("a", actor)) is not null)
+        {
+            var reset = await u.One("SELECT account_revision FROM c05_identity_mfa_reset_authorization WHERE account_id=@a AND tenant_id=@t AND consumed_at_utc IS NULL AND expires_at_utc>UTC_TIMESTAMP(6) FOR UPDATE", ("a", actor), ("t", tenant));
+            if (reset is null || Number(reset, "account_revision") != Number(account, "security_revision")) return new(false);
+            resetRequired = true;
+        }
+        return await Challenge(u, tenant, account, member, factor is null, resetRequired: resetRequired);
     }
 
     private async Task<OperationalIdentityResult> Challenge(Unit u, byte[] tenant,
-        Dictionary<string, object> account, Dictionary<string, object> member, bool enrollmentRequired, byte[]? replaceFactor = null)
+        Dictionary<string, object> account, Dictionary<string, object> member, bool enrollmentRequired, byte[]? replaceFactor = null, bool resetRequired = false)
     {
         var challenge = Token();
         await u.Run("""
             INSERT INTO c05_identity_challenge
-            (tenant_id,token_hmac,account_id,membership_id,account_revision,membership_revision,replace_factor_id,expires_at_utc)
-            VALUES(@t,@h,@a,@m,@ar,@mr,@replace,UTC_TIMESTAMP(6)+INTERVAL 5 MINUTE)
+            (tenant_id,token_hmac,account_id,membership_id,account_revision,membership_revision,replace_factor_id,expires_at_utc,reset_required)
+            VALUES(@t,@h,@a,@m,@ar,@mr,@replace,UTC_TIMESTAMP(6)+INTERVAL 5 MINUTE,@reset)
             """, ("t", tenant), ("h", Digest("challenge", challenge)), ("a", Bytes(account, "account_id")),
             ("m", Bytes(member, "membership_id")), ("ar", Number(account, "security_revision")),
-            ("mr", Number(member, "approval_revision")), ("replace", (object?)replaceFactor ?? DBNull.Value));
+            ("mr", Number(member, "approval_revision")), ("replace", (object?)replaceFactor ?? DBNull.Value), ("reset", resetRequired));
         return new(true, new { stepUpRequired = true, challenge, enrollmentRequired });
     }
 
@@ -139,9 +199,14 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
         if (account is null || member is null || challenge is null ||
             Number(account, "security_revision") != Number(challenge, "account_revision") ||
             Number(member, "approval_revision") != Number(challenge, "membership_revision")) return new(false);
+        if (Number(challenge, "reset_required") == 1)
+        {
+            var reset = await u.One("SELECT account_revision FROM c05_identity_mfa_reset_authorization WHERE account_id=@a AND tenant_id=@t AND consumed_at_utc IS NULL AND expires_at_utc>UTC_TIMESTAMP(6) FOR UPDATE", ("a", actor), ("t", tenant));
+            if (reset is null || Number(reset, "account_revision") != Number(account, "security_revision")) return new(false);
+        }
         if (r.Operation == "mfa/enroll")
         {
-            var activeFactor = await u.One("SELECT factor_id FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_state=1 AND revoked_at_utc IS NULL FOR UPDATE", ("a", actor));
+            var activeFactor = await u.One("SELECT factor_id FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_kind=1 AND factor_state=1 AND revoked_at_utc IS NULL FOR UPDATE", ("a", actor));
             var replacement = challenge["replace_factor_id"] is not DBNull;
             if (challenge["factor_id"] is not DBNull ||
                 (!replacement && activeFactor is not null) ||
@@ -165,17 +230,19 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
         }
         await u.Run("UPDATE c05_identity_challenge SET attempts=attempts+1 WHERE tenant_id=@t AND token_hmac=@h", ("t", tenant), ("h", hash));
         var factor = challenge["factor_id"] is DBNull
-            ? await u.One("SELECT * FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_state=1 AND revoked_at_utc IS NULL FOR UPDATE", ("a", actor))
+            ? await u.One("SELECT * FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_kind=1 AND factor_state=1 AND revoked_at_utc IS NULL FOR UPDATE", ("a", actor))
             : await u.One("SELECT * FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_id=@f AND factor_state=0 FOR UPDATE",
                 ("a", actor), ("f", Bytes(challenge, "factor_id")));
         var replacing = challenge["replace_factor_id"] is not DBNull;
         if (challenge["factor_id"] is not DBNull)
         {
-            var active = await u.One("SELECT factor_id FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_state=1 AND revoked_at_utc IS NULL FOR UPDATE", ("a", actor));
+            var active = await u.One("SELECT factor_id FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_kind=1 AND factor_state=1 AND revoked_at_utc IS NULL FOR UPDATE", ("a", actor));
             if ((!replacing && active is not null) || (replacing &&
                 (active is null || !Bytes(active, "factor_id").SequenceEqual(Bytes(challenge, "replace_factor_id"))))) return new(false);
         }
         if (factor is null || !await AcceptTotp(u, actor, factor, Field(r, "code"), !replacing)) return new(false);
+        u.VerifiedActor = true;
+        u.SessionMethod = Field(r, "code").Length == 32 ? "BACKUP" : "TOTP";
         if (replacing)
         {
             await u.Run("UPDATE c05_identity_mfa_factor SET factor_state=2,revoked_at_utc=UTC_TIMESTAMP(6),factor_revision=factor_revision+1 WHERE account_id=@a AND factor_id=@f", ("a", actor), ("f", Bytes(challenge, "replace_factor_id")));
@@ -188,6 +255,7 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
         List<string>? recoveryCodes = null;
         if (challenge["factor_id"] is not DBNull)
         {
+            await u.Run("UPDATE c05_identity_mfa_reset_authorization SET consumed_at_utc=UTC_TIMESTAMP(6) WHERE account_id=@a AND consumed_at_utc IS NULL", ("a", actor));
             recoveryCodes = [];
             for (int i = 0; i < 10; i++)
             {
@@ -199,6 +267,7 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
         }
         await u.Run("UPDATE c05_identity_challenge SET consumed_at_utc=UTC_TIMESTAMP(6) WHERE tenant_id=@t AND token_hmac=@h", ("t", tenant), ("h", hash));
         var issued = await IssueSession(u, tenant, account, member, Bytes(factor, "factor_id"), null);
+        if (challenge["factor_id"] is not DBNull) await NotifySecurity(u, tenant, actor, replacing ? "MFA_REPLACED" : "MFA_ENROLLED");
         return recoveryCodes is null ? issued : new(true,
             ((OperationalSessionReceipt)issued.Value!) with { RecoveryCodes = recoveryCodes });
     }
@@ -239,12 +308,12 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
         await u.Run("""
             INSERT INTO c05_identity_session
             (tenant_id,session_id,account_id,membership_id,token_hmac,session_family,mfa_factor_id,mfa_verified_at_utc,
-             issued_at_utc,expires_at_utc,account_revision,membership_revision,last_seen_at_utc)
-            VALUES(@t,@id,@a,@m,@h,@family,@f,@mfa,UTC_TIMESTAMP(6),@expiry,@ar,@mr,UTC_TIMESTAMP(6))
+             issued_at_utc,expires_at_utc,account_revision,membership_revision,last_seen_at_utc,device_label,peer_hmac,auth_method)
+            VALUES(@t,@id,@a,@m,@h,@family,@f,@mfa,UTC_TIMESTAMP(6),@expiry,@ar,@mr,UTC_TIMESTAMP(6),@device,@peer,@method)
             """, ("t", tenant), ("id", id), ("a", Bytes(account, "account_id")), ("m", Bytes(member, "membership_id")),
             ("h", Digest("session", token)), ("family", family ?? id), ("f", factor),
             ("ar", Number(account, "security_revision")), ("mr", Number(member, "approval_revision")),
-            ("expiry", expiry.UtcDateTime), ("mfa", originalMfa ?? DateTime.UtcNow));
+            ("expiry", expiry.UtcDateTime), ("mfa", originalMfa ?? DateTime.UtcNow), ("device", u.DeviceLabel), ("peer", u.PeerHash), ("method", u.SessionMethod));
         return new(true, new OperationalSessionReceipt(token, expiry));
     }
 
@@ -269,11 +338,32 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
         var factor = await u.One("SELECT * FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_id=@f AND factor_state=1 AND revoked_at_utc IS NULL FOR UPDATE",
             ("a", actor), ("f", Bytes(session, "mfa_factor_id")));
         if (factor is null) return new(false);
+        u.VerifiedActor = true;
         await u.Run("UPDATE c05_identity_session SET last_seen_at_utc=UTC_TIMESTAMP(6) WHERE tenant_id=@t AND token_hmac=@h", ("t", tenant), ("h", hash));
+        if (r.Operation == "terms/accept")
+            return new(await AcceptTerms(u, tenant, actor, r), new { accepted = true });
+        if (r.Operation == "security/events")
+        {
+            var events = await u.All("SELECT action_code,outcome_code,created_at_utc FROM c05_identity_audit WHERE tenant_id=@t AND (actor_account_id=@a OR (subject_account_id=@a AND actor_account_id IS NULL)) ORDER BY created_at_utc DESC LIMIT 50", ("t", tenant), ("a", actor));
+            return new(true, new { events = events.Select(e => new { action = e["action_code"], outcome = e["outcome_code"], atUtc = e["created_at_utc"] }) });
+        }
+        if (r.Operation == "factor/recover-passkey")
+            return await RecoverUsingPasskey(u, tenant, account, session, factor, r);
+        if (r.Operation.StartsWith("profile/", StringComparison.Ordinal)) return await Profile(u, tenant, actor, r);
+        if ((r.Operation is "private/read" or "memberships/decide" or "invitations/issue") &&
+            !await HasCurrentTerms(u, tenant, actor)) return new(false);
         if (r.Operation == "sessions")
         {
-            var rows = await u.All("SELECT session_id,issued_at_utc,expires_at_utc FROM c05_identity_session WHERE tenant_id=@t AND account_id=@a AND revoked_at_utc IS NULL AND expires_at_utc>UTC_TIMESTAMP(6)", ("t", tenant), ("a", actor));
-            return new(true, new { sessions = rows.Select(row => new { id = new Guid(Bytes(row, "session_id"), true), issuedAtUtc = row["issued_at_utc"], expiresAtUtc = row["expires_at_utc"] }) });
+            var rows = await u.All("""
+                SELECT s.session_id,s.issued_at_utc,s.expires_at_utc,s.last_seen_at_utc,s.device_label,s.auth_method
+                FROM c05_identity_session s JOIN c05_identity_mfa_factor f ON f.account_id=s.account_id AND f.factor_id=s.mfa_factor_id
+                WHERE s.tenant_id=@t AND s.account_id=@a AND s.revoked_at_utc IS NULL AND s.expires_at_utc>UTC_TIMESTAMP(6)
+                AND s.last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL 15 MINUTE AND s.account_revision=@ar AND s.membership_revision=@mr
+                AND f.factor_state=1 AND f.revoked_at_utc IS NULL ORDER BY s.last_seen_at_utc DESC
+                """, ("t", tenant), ("a", actor), ("ar", Number(account, "security_revision")), ("mr", Number(member, "approval_revision")));
+            return new(true, new OperationalSessionInventory(Utc(session, "expires_at_utc"), rows.Select(row => new OperationalSessionSummary(
+                new Guid(Bytes(row, "session_id"), true), Utc(row, "issued_at_utc"), Utc(row, "expires_at_utc"), Utc(row, "last_seen_at_utc"),
+                Text(row, "device_label"), Text(row, "auth_method"))).ToArray()));
         }
         if (r.Operation is "logout" or "sessions/revoke" or "sessions/rotate")
         {
@@ -283,6 +373,7 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
             if (changed != 1) return new(false);
             if (r.Operation != "sessions/rotate") return new(true, new { accepted = true });
             // Rotation never refreshes the absolute MFA lifetime.
+            u.SessionMethod = Text(session, "auth_method");
             return await IssueSession(u, tenant, account, member, Bytes(factor, "factor_id"), Bytes(session, "session_family"),
                 (DateTime)session["expires_at_utc"], (DateTime)session["mfa_verified_at_utc"]);
         }
@@ -302,10 +393,26 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
                 """, ("t", tenant), ("a", actor), ("b", branch), ("r", resourceId), ("owner", Bytes(resource, "owner_account_id")));
             return grant is null ? new(false) : new(true, new { reference = Text(resource, "display_reference") });
         }
+        if (r.Operation is "passkeys" or "passkeys/register")
+            return await AuthenticatedPasskey(u, tenant, r, account, session, ct);
+        // A passkey-authenticated session still uses the enrolled TOTP/backup
+        // for independent step-up on changes of security settings.
+        factor = await u.One("SELECT * FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_kind=1 AND factor_state=1 AND revoked_at_utc IS NULL FOR UPDATE", ("a", actor));
+        if (factor is null) return new(false);
         // All mutations below require a fresh factor proof; the browser cannot
         // declare step-up, approve itself, change roles, or choose a grant.
         if (!await Reserve(tenant, "stepup:" + Hex(actor), 8, ct) ||
             !await AcceptTotp(u, actor, factor, Field(r, "code"))) return new(false);
+        if (r.Operation is "passkeys/register-options" or "passkeys/revoke")
+            return await AuthenticatedPasskey(u, tenant, r, account, session, ct);
+        if (r.Operation == "invitations/issue") return await IssueInvitation(u, tenant, account, r);
+        if (r.Operation == "sessions/revoke-all")
+        {
+            await RevokeAll(u, actor);
+            await NotifySecurity(u, tenant, actor, "SESSIONS_REVOKED");
+            return new(true, new { accepted = true });
+        }
+        if (r.Operation == "pairings/approve") return await ApprovePairing(u, tenant, account, member, session, r);
         if (r.Operation == "factor/replace")
         {
             if (!crypto.VerifyPassword(Field(r, "currentPassword"), Text(account, "password_phc"))) return new(false);
@@ -317,7 +424,7 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
         if (r.Operation == "password/change")
         {
             if (!crypto.VerifyPassword(Field(r, "currentPassword"), Text(account, "password_phc"))) return new(false);
-            await ReplacePassword(u, actor, crypto.HashPassword(Field(r, "newPassword")));
+            await ReplacePassword(u, tenant, actor, crypto.HashPassword(Field(r, "newPassword")));
             return new(true, new { accepted = true });
         }
         if (r.Operation == "mailbox/request")
@@ -325,6 +432,7 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
             var mailbox = CanonicalLoginHandle.Parse(Field(r, "mailbox")).Value;
             if (!mailbox.EndsWith("@example.test", StringComparison.Ordinal)) return new(false);
             await StageProof(u, tenant, account, "MAILBOX", mailbox, Hex(Bytes(session, "session_id")));
+            await NotifySecurity(u, tenant, actor, "MAILBOX_CHANGE_REQUESTED");
             return new(true, new { accepted = true });
         }
         if (r.Operation == "mailbox/complete")
@@ -337,9 +445,12 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
             var envelope = Protect(Encoding.UTF8.GetBytes(payload.Mailbox), "mailbox:" + Hex(actor));
             await u.Run("""
                 UPDATE c05_identity_account SET login_lookup_hmac=@l,mailbox_ciphertext=@c,mailbox_nonce=@n,mailbox_tag=@tag,
-                mailbox_key_version=1,mailbox_verified_at_utc=UTC_TIMESTAMP(6),security_revision=security_revision+1,updated_at_utc=UTC_TIMESTAMP(6) WHERE account_id=@a
+                mailbox_key_version=1,mailbox_crypto_scheme='OPERATIONAL_V1',mailbox_verified_at_utc=UTC_TIMESTAMP(6),security_revision=security_revision+1,updated_at_utc=UTC_TIMESTAMP(6) WHERE account_id=@a
                 """, ("l", LoginDigest(payload.Mailbox)), ("c", envelope[28..]), ("n", envelope[..12]), ("tag", envelope[12..28]), ("a", actor));
             await RevokeAll(u, actor);
+            await NotifySecurity(u, tenant, actor, "MAILBOX_CHANGED");
+            await ChangeContact(u, actor, payload.Mailbox);
+            await NotifySecurity(u, tenant, actor, "MAILBOX_CONFIRMED");
             return new(true, new { accepted = true });
         }
         if (r.Operation == "memberships/decide")
@@ -383,7 +494,10 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
         if (!await Reserve(tenant, "recovery:" + mailbox, 3, ct)) return new(true, new { accepted = true });
         var account = await u.One("SELECT * FROM c05_identity_account WHERE login_lookup_hmac=@l AND account_state=1 AND mailbox_verified_at_utc IS NOT NULL FOR UPDATE", ("l", LoginDigest(mailbox)));
         if (account is not null && await Membership(u, tenant, Bytes(account, "account_id")) is not null)
+        {
+            await InitializeContact(u, Bytes(account, "account_id"), mailbox);
             await StageProof(u, tenant, account, "RECOVERY", mailbox, "");
+        }
         return new(true, new { accepted = true });
     }
 
@@ -399,10 +513,10 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
         var proof = await Proof(u, tenant, token, "RECOVERY");
         if (account is null || member is null || proof is null ||
             Number(proof, "account_revision") != Number(account, "security_revision")) return new(false);
-        var factor = await u.One("SELECT * FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_state=1 AND revoked_at_utc IS NULL FOR UPDATE", ("a", actor));
+        var factor = await u.One("SELECT * FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_kind=1 AND factor_state=1 AND revoked_at_utc IS NULL FOR UPDATE", ("a", actor));
         // Recovery never bypasses MFA, including privileged accounts.
         if (factor is null || !await AcceptTotp(u, actor, factor, Field(r, "code"))) return new(false);
-        await ReplacePassword(u, actor, crypto.HashPassword(Field(r, "newPassword")));
+        await ReplacePassword(u, tenant, actor, crypto.HashPassword(Field(r, "newPassword")));
         return new(true, new { accepted = true });
     }
 
@@ -431,10 +545,11 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
         finally { CryptographicOperations.ZeroMemory(bytes); }
     }
 
-    private async Task ReplacePassword(Unit u, byte[] actor, string phc)
+    private async Task ReplacePassword(Unit u, byte[] tenant, byte[] actor, string phc)
     {
         await u.Run("UPDATE c05_identity_account SET password_phc=@p,security_revision=security_revision+1,updated_at_utc=UTC_TIMESTAMP(6) WHERE account_id=@a", ("p", phc), ("a", actor));
         await RevokeAll(u, actor);
+        await NotifySecurity(u, tenant, actor, "PASSWORD_CHANGED");
     }
 
     private static async Task RevokeAll(Unit u, byte[] actor)
@@ -442,6 +557,8 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
         await u.Run("UPDATE c05_identity_session SET revoked_at_utc=UTC_TIMESTAMP(6) WHERE account_id=@a AND revoked_at_utc IS NULL", ("a", actor));
         await u.Run("UPDATE c05_identity_challenge SET consumed_at_utc=UTC_TIMESTAMP(6) WHERE account_id=@a AND consumed_at_utc IS NULL", ("a", actor));
         await u.Run("UPDATE c05_identity_recovery SET consumed_at_utc=UTC_TIMESTAMP(6) WHERE account_id=@a AND consumed_at_utc IS NULL", ("a", actor));
+        await u.Run("UPDATE c05_identity_pairing SET consumed_at_utc=UTC_TIMESTAMP(6) WHERE account_id=@a AND consumed_at_utc IS NULL", ("a", actor));
+        await u.Run("UPDATE c05_identity_mfa_reset_authorization SET consumed_at_utc=UTC_TIMESTAMP(6) WHERE account_id=@a AND consumed_at_utc IS NULL", ("a", actor));
     }
 
     private static Task<Dictionary<string, object>?> Account(Unit u, byte[] actor)
@@ -454,8 +571,8 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
 
     private Task<int> Audit(Unit u, byte[] tenant, string action, bool allowed) =>
         u.Run("INSERT INTO c05_identity_audit VALUES(@t,@id,@actor,@subject,@action,@outcome,@ctx,UTC_TIMESTAMP(6))",
-            ("t", tenant), ("id", Id()), ("actor", (object?)u.Actor ?? DBNull.Value),
-            ("subject", (object?)u.Subject ?? DBNull.Value), ("action", action), ("outcome", allowed ? 1 : 0), ("ctx", Digest("audit", Token())));
+            ("t", tenant), ("id", Id()), ("actor", u.VerifiedActor ? (object?)u.Actor ?? DBNull.Value : DBNull.Value),
+            ("subject", (object?)u.Subject ?? (!u.VerifiedActor ? (object?)u.Actor : null) ?? DBNull.Value), ("action", action), ("outcome", allowed ? 1 : 0), ("ctx", Digest("audit", Token())));
 
     // Local SMTP delivery is durable and at-least-once. Proof consumption is
     // one-shot even if SMTP accepted a message before a dispatcher crash.
@@ -471,7 +588,10 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
         try
         {
             var payload = JsonSerializer.Deserialize<DeliveryPayload>(bytes) ?? throw new InvalidOperationException("Invalid outbox.");
-            await new LoopbackOnlySmtpProofSink(smtpPort).DeliverInTestOnlyAsync(payload.Mailbox, Convert.FromHexString(payload.Token), ct);
+            var sink = new LoopbackOnlySmtpProofSink(smtpPort);
+            if (payload.Purpose.StartsWith("NOTICE_", StringComparison.Ordinal))
+                await sink.DeliverSecurityInTestOnlyAsync(payload.Mailbox, Convert.FromHexString(payload.Token), payload.Purpose, ct);
+            else await sink.DeliverCapabilityInTestOnlyAsync(payload.Mailbox, Convert.FromHexString(payload.Token), payload.Purpose, ct);
             await u.Run("UPDATE c05_identity_sensitive_outbox SET delivered_at_utc=UTC_TIMESTAMP(6) WHERE message_id=@id", ("id", Bytes(row, "message_id")));
             await tx.CommitAsync(ct);
         }
@@ -499,10 +619,11 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
     private static byte[] Id() => Guid.NewGuid().ToByteArray(true);
     private static byte[] GuidBytes(string value) => Guid.TryParse(value, out var id) && id != Guid.Empty ? id.ToByteArray(true) : throw new InvalidOperationException("Invalid identifier.");
     private static string Hex(byte[] bytes) => Convert.ToHexString(bytes);
-    private static string Field(OperationalIdentityRequest r, string name) => r.Fields.TryGetValue(name, out var value) && value.Length is > 0 and <= 512 ? value : throw new InvalidOperationException("Invalid request.");
+    private static string Field(OperationalIdentityRequest r, string name) => r.Fields.TryGetValue(name, out var value) && value.Length > 0 && value.Length <= (name is "response" or "pixels" ? 24000 : 512) ? value : throw new InvalidOperationException("Invalid request.");
     private static byte[] Bytes(Dictionary<string, object> row, string key) => (byte[])row[key];
     private static string Text(Dictionary<string, object> row, string key) => (string)row[key];
     private static long Number(Dictionary<string, object> row, string key) => Convert.ToInt64(row[key]);
+    private static DateTimeOffset Utc(Dictionary<string, object> row, string key) => new(DateTime.SpecifyKind((DateTime)row[key], DateTimeKind.Utc));
     private static string Base32(byte[] bytes)
     {
         const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -521,6 +642,7 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
         CryptographicOperations.ZeroMemory(tokenKey);
         CryptographicOperations.ZeroMemory(encryptionKey);
         CryptographicOperations.ZeroMemory(loginKey);
+        CryptographicOperations.ZeroMemory(mailboxHmacKey);
     }
     public override string ToString() => "MySqlOperationalIdentityFlow[redacted]";
     private sealed record ProofPayload(string Mailbox, string Binding);
@@ -530,6 +652,11 @@ public sealed class MySqlOperationalIdentityFlow : IOperationalIdentityFlow, IDi
     {
         public byte[]? Actor { get; set; }
         public byte[]? Subject { get; set; }
+        public bool VerifiedActor { get; set; }
+        public byte[]? PurposeHash { get; set; }
+        public string DeviceLabel { get; set; } = "API";
+        public byte[] PeerHash { get; set; } = [];
+        public string SessionMethod { get; set; } = "LEGACY";
         private MySqlCommand Command(string sql, (string, object)[] parameters)
         {
             var command = new MySqlCommand(sql, db, tx);

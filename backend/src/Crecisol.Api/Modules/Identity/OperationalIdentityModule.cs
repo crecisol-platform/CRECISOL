@@ -23,7 +23,45 @@ public static class OperationalIdentityModule
         ["mailbox/request"] = ["mailbox", "code"],
         ["mailbox/complete"] = ["token", "code"],
         ["memberships/decide"] = ["membershipId", "decision", "reason", "code"],
+        ["memberships/request"] = ["mailbox", "password", "code", "proofId", "proofCode", "version", "hash", "accepted"],
         ["private/read"] = ["branchId", "resourceId"]
+        , ["passkeys/options"] = [], ["passkeys/login"] = ["challenge", "response"],
+        ["passkeys/register-options"] = ["code"],
+        ["passkeys/register"] = ["challenge", "response"],
+        ["passkeys"] = [], ["passkeys/revoke"] = ["factorId", "code"],
+        ["terms"] = [], ["terms/accept"] = ["version", "hash", "accepted"],
+        ["invitations/issue"] = ["mailbox", "code"],
+        ["invitations/accept"] = ["mailbox", "password", "code", "token", "version", "hash", "accepted"],
+        ["browser/restore"] = [], ["sessions/revoke-all"] = ["code"],
+        ["pairings/start"] = ["publicKey", "signature"],
+        ["pairings/approve"] = ["token", "fingerprint", "confirmed", "code"],
+        ["pairings/complete"] = ["token", "signature"],
+        ["incidents/report"] = ["token"], ["security/events"] = [],
+        ["platform/login"] = ["mailbox", "password"], ["platform/mfa"] = ["challenge", "code"],
+        ["platform/session"] = [], ["platform/restore"] = [], ["platform/logout"] = [],
+        ["platform/sessions"] = [], ["platform/sessions/rotate"] = [],
+        ["platform/sessions/revoke"] = ["sessionId"], ["platform/sessions/revoke-all"] = ["code"],
+        ["platform/case"] = ["caseId"],
+        ["platform/cases/find"] = ["mailbox", "realm", "reason", "code"],
+        ["platform/abuse-summary"] = [],
+        ["platform/profile/read"] = [], ["platform/profile/save"] = ["displayName", "language", "timeZone"],
+        ["platform/profile/photo"] = [], ["platform/profile/photo-upload"] = ["pixels"], ["platform/profile/photo-remove"] = [],
+        ["platform/release-share"] = ["caseId", "code"],
+        ["platform/password/change"] = ["currentPassword", "newPassword", "code"],
+        ["platform/factor/replace"] = ["currentPassword", "code"],
+        ["platform/factor/confirm"] = ["challenge", "code"],
+        ["platform/mailbox/request"] = ["mailbox", "code"], ["platform/mailbox/complete"] = ["token", "code"],
+        ["platform/operator-recovery/request"] = ["mailbox", "automaticMethodsUnavailable"],
+        ["platform/operator-recovery/complete"] = ["caseId", "shareA", "shareB", "newPassword"],
+        ["platform/operator-recovery/enroll"] = ["caseId", "token", "code"],
+        ["platform/incidents/report"] = ["token"],
+        ["platform/review"] = ["caseId", "decision", "identityVerified", "evidenceHash", "reason", "code"],
+        ["assisted/request"] = ["mailbox", "automaticMethodsUnavailable"],
+        ["assisted/complete"] = ["caseId", "token", "newPassword"],
+        ["assisted/handoff-complete"] = ["caseId", "shareA", "shareB", "newPassword"],
+        ["factor/recover-passkey"] = ["token", "newPassword"],
+        ["profile/read"] = [], ["profile/save"] = ["displayName", "language", "timeZone"],
+        ["profile/photo"] = [], ["profile/photo-upload"] = ["pixels"], ["profile/photo-remove"] = []
     };
 
     public static IServiceCollection AddLocalOperationalIdentity(this IServiceCollection services, string dsn)
@@ -37,17 +75,23 @@ public static class OperationalIdentityModule
             return bytes;
         }
         services.AddSingleton<IOperationalIdentityCrypto, OperationalIdentityCrypto>();
+        services.AddSingleton<IOperationalPasskeyCrypto, OperationalPasskeyCrypto>();
+        services.AddSingleton(_ => new OperationalBrowserSessionTransport(Key("CRECISOL_C05_TOKEN_HMAC_KEY")));
+        services.AddSingleton(_ => new OperationalPlatformBrowserTransport(new OperationalBrowserSessionTransport(
+            Key("CRECISOL_C05_TOKEN_HMAC_KEY"), "__Host-crecisol-platform-c05")));
         services.AddSingleton(sp =>
         {
             var tokenKey = Key("CRECISOL_C05_TOKEN_HMAC_KEY");
             var encryptionKey = Key("CRECISOL_C05_FACTOR_ENCRYPTION_KEY");
             var loginKey = Key("CRECISOL_C05_LOGIN_LOOKUP_HMAC_KEY");
-            try { return new MySqlOperationalIdentityFlow(dsn, tokenKey, encryptionKey, loginKey, sp.GetRequiredService<IOperationalIdentityCrypto>()); }
+            var mailboxKey = Key("CRECISOL_C05_MAILBOX_HMAC_KEY");
+            try { return new MySqlOperationalIdentityFlow(dsn, tokenKey, encryptionKey, loginKey, sp.GetRequiredService<IOperationalIdentityCrypto>(), sp.GetRequiredService<IOperationalPasskeyCrypto>(), mailboxKey); }
             finally
             {
                 CryptographicOperations.ZeroMemory(tokenKey);
                 CryptographicOperations.ZeroMemory(encryptionKey);
                 CryptographicOperations.ZeroMemory(loginKey);
+                CryptographicOperations.ZeroMemory(mailboxKey);
             }
         });
         services.AddSingleton<IOperationalIdentityFlow>(sp => sp.GetRequiredService<MySqlOperationalIdentityFlow>());
@@ -62,7 +106,8 @@ public static class OperationalIdentityModule
         foreach (var operation in Operations.Keys)
         {
             var selected = operation;
-            endpoints.MapPost("/api/v1/identity/" + selected,
+            endpoints.MapPost(selected.StartsWith("platform/", StringComparison.Ordinal)
+                ? "/api/v1/platform-identity/" + selected[9..] : "/api/v1/identity/" + selected,
                 (HttpContext context, IOperationalIdentityFlow flow, CancellationToken ct) => Handle(context, flow, selected, ct));
         }
     }
@@ -70,26 +115,42 @@ public static class OperationalIdentityModule
     private static async Task<IResult> Handle(HttpContext context, IOperationalIdentityFlow flow, string operation, CancellationToken ct)
     {
         var request = context.Request;
+        var browser = OperationalBrowserSessionTransport.IsBrowser(request);
         try
         {
             if (context.Connection.RemoteIpAddress is null || !System.Net.IPAddress.IsLoopback(context.Connection.RemoteIpAddress) ||
                 !StrictVerifiedHostTransport.TryReadDirectHost(request, out var host) || host is null ||
                 !host.Value.EndsWith(".example.test", StringComparison.Ordinal) ||
-                request.QueryString.HasValue || request.ContentLength is null or < 2 or > 4096 ||
+                request.QueryString.HasValue || request.ContentLength is null or < 2 or > 32768 ||
                 !string.Equals(request.ContentType, "application/json", StringComparison.OrdinalIgnoreCase) ||
                 request.Headers.Keys.Any(h => h.StartsWith("X-Tenant", StringComparison.OrdinalIgnoreCase) ||
                     h.StartsWith("X-Actor", StringComparison.OrdinalIgnoreCase) || h.Equals("X-Role", StringComparison.OrdinalIgnoreCase) ||
                     h.Contains("Method", StringComparison.OrdinalIgnoreCase)) ||
-                request.Headers.ContainsKey("Cookie") || request.Headers.ContainsKey("Transfer-Encoding") ||
+                (!browser && request.Headers.ContainsKey("Cookie")) || request.Headers.ContainsKey("Transfer-Encoding") ||
                 (request.Headers.TryGetValue("Sec-Fetch-Site", out var site) && site == "cross-site"))
                 return Results.BadRequest();
             // No CORS and no ambient credentials. Origin is checked separately
             // from the server-verified host because Angular's local dev proxy
             // uses a loopback origin and a reserved test Host on its backend hop.
             if (request.Headers.TryGetValue("Origin", out var origin) &&
-                origin != "http://127.0.0.1:4200" && origin != "http://" + host.Value && origin != "https://" + host.Value)
+                origin != "http://127.0.0.1:4200" && origin != "http://localhost:4200" &&
+                origin != "http://127.0.0.1:4201" && origin != "http://localhost:4201" &&
+                origin != "http://" + host.Value && origin != "https://" + host.Value)
                 return Results.BadRequest();
             var bearer = request.Headers.Authorization.ToString();
+            var browserTransport = operation.StartsWith("platform/", StringComparison.Ordinal)
+                ? context.RequestServices.GetRequiredService<OperationalPlatformBrowserTransport>().Value
+                : context.RequestServices.GetRequiredService<OperationalBrowserSessionTransport>();
+            string? browserSession = null;
+            if (browser)
+            {
+                if (!browserTransport.TryRead(context, operation, out browserSession)) return Results.BadRequest();
+                bearer = browserSession is null ? "" : "Bearer " + browserSession;
+                // The local cookie is removed even if the database is down or
+                // the session expired; server revocation still runs below.
+                if (operation is "logout" or "platform/logout") browserTransport.Clear(context);
+            }
+            else if (operation is "browser/restore" or "platform/restore") return Results.BadRequest();
             if (bearer.Length > 0 && (!bearer.StartsWith("Bearer ", StringComparison.Ordinal) || bearer.Length != 71 || !bearer[7..].All(Uri.IsHexDigit)))
                 return Results.BadRequest();
             var bytes = new byte[checked((int)request.ContentLength.Value)];
@@ -104,12 +165,13 @@ public static class OperationalIdentityModule
                     if (property.Value.ValueKind != JsonValueKind.String ||
                         !Operations[operation].Contains(property.Name) ||
                         !fields.TryAdd(property.Name, property.Value.GetString()!) ||
-                        fields[property.Name].Length is < 1 or > 512) return Results.BadRequest();
+                        fields[property.Name].Length < 1 ||
+                        fields[property.Name].Length > (property.Name is "response" or "pixels" ? 24000 : 512)) return Results.BadRequest();
                 if (fields.Count != Operations[operation].Length) return Results.BadRequest();
                 foreach (var (name, value) in fields)
                 {
                     if ((name is "challenge" or "token") && (value.Length != 64 || !value.All(Uri.IsHexDigit))) return Results.BadRequest();
-                    if (name == "code" && !((value.Length == 6 && value.All(char.IsAsciiDigit)) ||
+                    if (name == "code" && !(operation == "invitations/accept" && value == "enroll") && !((value.Length == 6 && value.All(char.IsAsciiDigit)) ||
                         (value.Length == 32 && value.All(Uri.IsHexDigit)))) return Results.BadRequest();
                     if (name.Contains("Password", StringComparison.OrdinalIgnoreCase) && value.Length > 128) return Results.BadRequest();
                 }
@@ -117,9 +179,13 @@ public static class OperationalIdentityModule
             finally { CryptographicOperations.ZeroMemory(bytes); }
             var peer = context.Connection.RemoteIpAddress?.MapToIPv6().ToString();
             if (peer is null) return Results.BadRequest();
-            var result = await flow.ExecuteAsync(new(host.Value, peer, operation, fields,
-                bearer.Length == 0 ? null : bearer[7..]), ct);
-            if (operation == "recovery/request") return Results.Accepted(value: new { accepted = true });
+            var result = await flow.ExecuteAsync(new(host.Value, peer, operation == "browser/restore" ? "sessions" : operation, fields,
+                bearer.Length == 0 ? null : bearer[7..], DeviceLabel(request.Headers.UserAgent.ToString())), ct);
+            if (operation is "recovery/request" or "incidents/report" or "memberships/request") return Results.Accepted(value: new { accepted = true });
+            if (operation == "assisted/request") return Results.Accepted(value: result.Value ?? new OperationalAssistedReceipt(Guid.NewGuid()));
+            if (operation == "platform/operator-recovery/request") return Results.Accepted(value: result.Value ?? new OperationalAssistedReceipt(Guid.NewGuid()));
+            if (operation == "platform/incidents/report") return Results.Accepted(value: new { accepted = true });
+            if (browser) return browserTransport.Receipt(context, operation, result, browserSession);
             return result.Allowed ? Results.Ok(result.Value ?? new { accepted = true }) : Results.Unauthorized();
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
@@ -128,9 +194,14 @@ public static class OperationalIdentityModule
         catch (Exception)
         {
             // No exception, SQL, secret, mailbox or private payload enters logs.
-            return operation == "recovery/request" ? Results.Accepted(value: new { accepted = true }) : Results.Unauthorized();
+            if (operation is "assisted/request" or "platform/operator-recovery/request") return Results.Accepted(value: new OperationalAssistedReceipt(Guid.NewGuid()));
+            if (operation == "platform/incidents/report") return Results.Accepted(value: new { accepted = true });
+            return operation is "recovery/request" or "incidents/report" or "memberships/request" ? Results.Accepted(value: new { accepted = true }) : Results.Unauthorized();
         }
     }
+
+    private static string DeviceLabel(string agent) => agent.Contains("Chrome/", StringComparison.Ordinal) || agent.Contains("Chromium/", StringComparison.Ordinal)
+        ? "Chromium" : agent.Contains("Firefox/", StringComparison.Ordinal) ? "Firefox" : agent.Contains("Safari/", StringComparison.Ordinal) ? "Safari" : "API";
 }
 
 internal sealed class LocalSensitiveProofDelivery(MySqlOperationalIdentityFlow flow) : BackgroundService

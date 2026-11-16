@@ -7,6 +7,7 @@
 *.cs text eol=lf
 *.ts text eol=lf
 *.sql text eol=lf
+backend/src/Crecisol.CredentialSecurity/Resources/compromised-password-sha256.txt text eol=lf
 *.docx binary
 *.pdf binary
 *.png binary

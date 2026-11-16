@@ -91,6 +91,8 @@ while (true)
                 var total = 0;
                 var inBody = false;
                 string? hex = null;
+                string? notice = null;
+                string? capabilityPurpose = null;
                 var completed = false;
                 while (total < 4096)
                 {
@@ -98,6 +100,16 @@ while (true)
                         TimeSpan.FromSeconds(8));
                     if (data is null) break;
                     total += data.Length + 2;
+                    if (!inBody && data.StartsWith("Subject: CRECISOL local security NOTICE_", StringComparison.Ordinal))
+                    {
+                        var value = data["Subject: CRECISOL local security NOTICE_".Length..];
+                        if (Regex.IsMatch(value, @"\A[A-Z_]{1,40}\z", RegexOptions.CultureInvariant)) notice = value;
+                    }
+                    if (!inBody && data.StartsWith("Subject: CRECISOL local capability ", StringComparison.Ordinal))
+                    {
+                        var value = data["Subject: CRECISOL local capability ".Length..];
+                        if (Regex.IsMatch(value, @"\A[A-Z_]{1,24}\z", RegexOptions.CultureInvariant)) capabilityPurpose = value;
+                    }
                     if (data == ".")
                     {
                         completed = true;
@@ -123,7 +135,8 @@ while (true)
                 await writer.WriteLineAsync("250 accepted in independent test receiver");
                 // This capability leaves the sender process through actual
                 // SMTP over TCP. Only the parent harness receives stdout.
-                Console.Out.WriteLine($"MAIL {recipient} {hex}");
+                Console.Out.WriteLine(notice is not null ? $"NOTICE {recipient} {hex} {notice}" : capabilityPurpose is not null
+                    ? $"CAPABILITY {recipient} {hex} {capabilityPurpose}" : $"MAIL {recipient} {hex}");
                 Console.Out.Flush();
                 recipient = null;
                 fromAccepted = false;

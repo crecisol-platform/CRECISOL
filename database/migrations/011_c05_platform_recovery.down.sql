@@ -1,0 +1,10 @@
+ALTER TABLE c05_identity_challenge DROP COLUMN reset_required;
+DROP TABLE c05_identity_assisted_handoff;
+DROP TABLE c05_identity_mfa_reset_authorization;
+DROP TABLE c05_identity_assisted_review;
+DROP TABLE c05_identity_assisted_case;
+DROP TABLE c05_platform_identity_audit;
+DROP TABLE c05_platform_attempt_quota;
+DROP TABLE c05_platform_session;
+DROP TABLE c05_platform_challenge;
+DROP TABLE c05_platform_operator;

@@ -9,7 +9,14 @@ CREATE PROCEDURE c05_bootstrap_local_authority_once()
 SQL SECURITY INVOKER
 BEGIN
  DECLARE selected_count INT DEFAULT 0;
- DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
+ DECLARE acquired INT DEFAULT 0;
+ DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN
+  ROLLBACK;
+  IF acquired=1 THEN DO RELEASE_LOCK('crecisol_c05_initial_authority'); END IF;
+  RESIGNAL;
+ END;
+ SELECT GET_LOCK('crecisol_c05_initial_authority',0) INTO acquired;
+ IF acquired<>1 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Initial authority bootstrap already running'; END IF;
  START TRANSACTION;
  IF DATABASE()<>'crecisol_c05' OR @bootstrap_account IS NULL OR @bootstrap_tenant IS NULL THEN
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Explicit isolated bootstrap context required';
@@ -42,6 +49,7 @@ BEGIN
  (@bootstrap_tenant,UUID_TO_BIN(UUID(),0),@bootstrap_account,@bootstrap_account,
  'OFFLINE_INITIAL_AUTHORITY',1,UNHEX(SHA2(UUID(),256)),UTC_TIMESTAMP(6));
  COMMIT;
+ DO RELEASE_LOCK('crecisol_c05_initial_authority');
 END$$
 DELIMITER ;
 CALL c05_bootstrap_local_authority_once();

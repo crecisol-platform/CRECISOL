@@ -27,6 +27,25 @@ public sealed class LoopbackOnlySmtpProofSink : ITrustedLocalProofMailboxSink
     public async Task DeliverInTestOnlyAsync(
         string storedCanonicalMailbox, ReadOnlyMemory<byte> capability,
         CancellationToken cancellationToken)
+        => await DeliverAsync(storedCanonicalMailbox, capability, null, cancellationToken);
+
+    public async Task DeliverSecurityInTestOnlyAsync(string storedCanonicalMailbox, ReadOnlyMemory<byte> capability,
+        string purpose, CancellationToken cancellationToken)
+    {
+        if (purpose.Length is < 1 or > 48 || purpose.Any(c => !(c is >= 'A' and <= 'Z' or '_')))
+            throw new InvalidOperationException("Invalid local security notice.");
+        await DeliverAsync(storedCanonicalMailbox, capability, purpose, cancellationToken);
+    }
+
+    public async Task DeliverCapabilityInTestOnlyAsync(string mailbox, ReadOnlyMemory<byte> capability, string purpose, CancellationToken ct)
+    {
+        if (purpose is not ("RECOVERY" or "MAILBOX" or "INVITATION" or "ASSISTED" or "PLATFORM_MAILBOX"))
+            throw new InvalidOperationException("Invalid local capability purpose.");
+        await DeliverAsync(mailbox, capability, "CAPABILITY_" + purpose, ct);
+    }
+
+    private async Task DeliverAsync(string storedCanonicalMailbox, ReadOnlyMemory<byte> capability,
+        string? purpose, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         // The mailbox must have come from the authenticated encrypted intent,
@@ -46,7 +65,8 @@ public sealed class LoopbackOnlySmtpProofSink : ITrustedLocalProofMailboxSink
             new MailAddress("no-reply@crecisol.example.test"),
             new MailAddress(storedCanonicalMailbox))
         {
-            Subject = "CRECISOL disposable mailbox proof",
+            Subject = purpose is null ? "CRECISOL disposable mailbox proof" :
+                purpose.StartsWith("CAPABILITY_", StringComparison.Ordinal) ? "CRECISOL local capability " + purpose[11..] : "CRECISOL local security " + purpose,
             Body = Convert.ToHexString(capability.Span),
             IsBodyHtml = false,
             SubjectEncoding = Encoding.ASCII,
