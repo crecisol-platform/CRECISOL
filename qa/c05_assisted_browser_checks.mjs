@@ -51,7 +51,12 @@ export async function verifyAssisted({ browser, api, platform, check, confidenti
     const reviewed = operatorPage.waitForResponse(r => r.url().endsWith('/platform-identity/review'));
     await operatorPage.getByRole('button', { name: 'Registrar revisión de identidad', exact: true }).click();
     check((await reviewed).status() === 200, 'platform reviewer commits a fresh-MFA identity attestation and evidence digest');
-    await operatorPage.keyboard.press('Escape');
+    // The server response can arrive before Angular clears busy().
+    // Escape is correctly blocked while busy; use the enabled close control
+    // and assert the modal is no longer in the native top layer before moving on.
+    await operatorPage.getByRole('dialog', { name: 'Revisar identidad del titular', exact: true })
+      .getByRole('button', { name: 'Cerrar ventana', exact: true }).click();
+    await operatorPage.locator('dialog.cs-modal:modal').waitFor({ state: 'hidden' });
   }
   await review(0);
   check(sql(`SELECT COUNT(*) FROM c05_identity_assisted_review WHERE case_id=UUID_TO_BIN('${caseId}',0) AND approved=1`) === '1', 'one verified operator is insufficient for assisted recovery');
@@ -83,8 +88,12 @@ export async function verifyAssisted({ browser, api, platform, check, confidenti
     const released = operatorPage.waitForResponse(r => r.url().endsWith('/platform-identity/release-share'));
     await operatorPage.getByRole('button', { name: 'Emitir mi parte de recuperación', exact: true }).click();
     check((await released).status() === 200, 'each independently authenticated reviewer releases only their own expiring handoff share');
-    shares.push(await operatorPage.getByLabel('Parte de recuperación del operador', { exact: true }).innerText());
+    const shareDialog = operatorPage.getByRole('dialog', { name: 'Emitir parte de recuperación', exact: true });
+    shares.push(await shareDialog.getByLabel('Parte de recuperación del operador', { exact: true }).innerText());
     confidential.push(shares[index]);
+    await shareDialog.getByRole('button', { name: 'Cerrar ventana', exact: true }).click();
+    await operatorPage.locator('dialog.cs-modal:modal').waitFor({ state: 'hidden' });
+    await operatorPage.getByLabel('Parte de recuperación del operador').waitFor({ state: 'hidden' });
   }
   check(shares[0] !== shares[1], 'two-operator handoff shares are independent random capabilities');
   await reserveTestWindow(20);
