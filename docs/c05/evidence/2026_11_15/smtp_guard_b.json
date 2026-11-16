@@ -1,0 +1,10 @@
+{
+  "raw_log_sha256": "119a386ae64fa99987804feb3aba5d7d785ea475f50f6ebe41f8378604274f32",
+  "source_log": ".cache/c05-smtp-audit-b.log",
+  "lines": [
+    "C:\\PROYECTOS\\CRECISOL\\qa\\c05_02_independent_smtp_audits.py:154: SyntaxWarning: invalid escape sequence '\\`'",
+    "  \"GRANT UPDATE ON \\`$DB\\`.c05_02_delivery_outbox TO 'c05_02_outbox_worker'\" not in data[\"mysql\"],",
+    "PASS independent SMTP B: 82 negative guard mutations rejected",
+    "LIMIT: real socket/SQL assertions are separately executed, not proved by mutation"
+  ]
+}

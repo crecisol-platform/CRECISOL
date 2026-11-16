@@ -1,0 +1,117 @@
+{
+  "generated_at_utc": "2026-11-16T04:59:29.884126+00:00",
+  "tested_source_local": "52f8321dc3dfbb9986b5f4c0392bf7e4daf5b8b9",
+  "additional_audit_qa_local": "7d30693",
+  "integrated_product_commit": "f3673f65c4f641b0afb509464aa41a3aad5b1bd7",
+  "tested_source_remote": "fba41381c28e7bdd5d6891fa111fb27be9a16da2",
+  "tested_source_tree": "b714212703a8163c48bf227059ad384d63f2a58c",
+  "product_directory_trees": {
+    "backend": "0a8b72430359d7a0745eeeb7e53e0e49fb9c84fe",
+    "frontend": "fc70ec4472a3225c5baa59b61da71cad755c8ccb",
+    "database": "b8c70150f2acbef3a6fec2d97043638a4f69055b"
+  },
+  "normalization": [
+    "ANSI escapes removed",
+    "line endings normalized to JSON lines; original bytes separately hashed"
+  ],
+  "observations": {
+    "mysql_windows": "First line records actual b67d922 execution. Second line is a stale label embedded in a previously generated local runner; it is preserved, not used as source attribution. Product backend/database files are unchanged between b67d922 and final 52f8321.",
+    "public_chromium_windows": "Executed from frontend at original port 4200 with the original assertions, reusing the isolated preview server. QR-only identity import change does not alter these public routes.",
+    "dependency_audits": "Package manifests are unchanged from fcc5473 to tested 52f8321; earlier final dependency scan remains applicable."
+  },
+  "files": {
+    "integral_windows.json": {
+      "raw_sha256": "bcaa91a22be056a7de3947216739cd13114976e468d3b5c887add201ed2c3ad2",
+      "published_sha256": "4fdf41f1104e4d00640d7f5e4a2f4cd83098d059501ff09bded951d54d3fe909",
+      "line_count": 301
+    },
+    "tenant_audit_boundaries.json": {
+      "raw_sha256": "ba891443db49be8f2bbb7aef5758fd7b2efe4fa3b27649fb8345416cede1279d",
+      "published_sha256": "029647fccd06663e33454cb8b8f3ca5c20d7d5c31b7c8218c8528eae6a0626de",
+      "line_count": 19
+    },
+    "contracts_windows.json": {
+      "raw_sha256": "bbd07b3313e9e33d415e9f21d597605e9fa5cf2d3c19d0ebd70fcd2727b4b86a",
+      "published_sha256": "a0b857dfb7dcb7e5d8a3befd4e3bcd48859d3307e753b709359ef40d66a7140a",
+      "line_count": 64
+    },
+    "mysql_windows.json": {
+      "raw_sha256": "49048128d61e6dbadeff22cecfa3245961d8a45b73c2177507f4b85a679ff3b1",
+      "published_sha256": "9edc9c01849d31f7d57a6565348ced952bdb787cb5be2605d363951204e7425b",
+      "line_count": 1382
+    },
+    "public_chromium_windows.json": {
+      "raw_sha256": "3e6ca29e7d4d5efb2aac6c94512f131bc5f7864fc78e4e6d36512efac753310e",
+      "published_sha256": "2d721a1fc686ec0b80449503bf28f9759aa8d6b53d1167d7764fde0e70025f98",
+      "line_count": 78
+    },
+    "build_windows.json": {
+      "raw_sha256": "47de8e373d66c4299a28678eaedb58718d218d8d7279f9175f020db20b8721e8",
+      "published_sha256": "a4599ad8b24b1c697afdb68f594612a0fabc2143ae143ed0dbb457c9a6d81724",
+      "line_count": 85
+    },
+    "master_guard.json": {
+      "raw_sha256": "acc33ac20e11fa0c12644af915b509aa28626f1d34266ac7c84ac8ddec2da203",
+      "published_sha256": "3f372219b217ca9229cd7be8d9cfc3fc3bfd48d8cec087215471489891349d52",
+      "line_count": 2
+    },
+    "scope_guard.json": {
+      "raw_sha256": "2a59454aa4c4782f760b0c18705d97a239e30ed0415b8b5d38feae210e68b595",
+      "published_sha256": "9a19ba0329fec2e5fce2c7c8549430361c7b9a244428c4b366b7a047ac8d9591",
+      "line_count": 1
+    },
+    "smtp_guard_a.json": {
+      "raw_sha256": "2061b738b1f326f10b7a11f95388f660311f3fc32e22f1a7239b1c1baa349304",
+      "published_sha256": "bec3134658974e3432db589426955483d0e53c955a8998de544f6571eaf9ce08",
+      "line_count": 10
+    },
+    "smtp_guard_b.json": {
+      "raw_sha256": "119a386ae64fa99987804feb3aba5d7d785ea475f50f6ebe41f8378604274f32",
+      "published_sha256": "5dc4d04dfac6359de7eb3cf4f1cc207eacd4ab99269582801d143dbe3e690047",
+      "line_count": 4
+    },
+    "password_guard_a.json": {
+      "raw_sha256": "a035107252b0698abd6f9bb7402c334e64cebca71b434b5af1ec7db08547aaac",
+      "published_sha256": "95ccdd024ed7e9749458ab277890e4ba32a9bf2cea929962c72d0398af6f4cc1",
+      "line_count": 100
+    },
+    "password_guard_b.json": {
+      "raw_sha256": "18493af7e229ef972952b58e9f3324648a131ba5b1f55e0f10d2b194365c512d",
+      "published_sha256": "6800fa6ec5ad4b8eabd300b1dffa47a3a8e52d2036604ef251b87f037fe1ebae",
+      "line_count": 2
+    },
+    "qr_cold_before.json": {
+      "raw_sha256": "2b27cd1e860fef4df1bb6a86fcd965b642d59f59dcf542c0dde263fb8a585cc2",
+      "published_sha256": "39222d947caedc83a015085cfaa2abd42e58c77946c1c5f306b350ff072c36a8",
+      "line_count": 5
+    },
+    "qr_cold_after.json": {
+      "raw_sha256": "df933745e0b6fd989ae241f80d571e8057b4e1174a6d496fb5a7746c4d4ba92e",
+      "published_sha256": "8b616df6a1dfa4d4987cecc9956411e2430ca4a5bc98e889a06358a57214a7e9",
+      "line_count": 2
+    },
+    "qr_warm_after.json": {
+      "raw_sha256": "3cf8e5f31a1879813e41b6707e309fb6daf0c511fc33cad770aacce5bc51f281",
+      "published_sha256": "d7230d8e359bf18ca2c6585c7179e72b283df029290de31429a52750ba6e61b6",
+      "line_count": 2
+    },
+    "runtime_versions.json": {
+      "published_sha256": "203ce09f9c0fe9b0836f498175cac32399d2a35bb06859ee0313036b109529b7"
+    },
+    "ci_premerge.json": {
+      "published_sha256": "9dcbaf9e854a6169ad03f221bae475f5d8bc52e69f625a391351922ba631751c"
+    },
+    "ci_postmerge.json": {
+      "published_sha256": "6fcfbe74b16e54c8896b34be2b461f8e68ad2ec761c34f0311a09eaa7f98c77f"
+    },
+    "nuget_audit.json": {
+      "published_sha256": "4de9d7711ff29e2589e74cfa751da391bee6467e7e7501a0b22236645696c358"
+    },
+    "npm_audit.json": {
+      "published_sha256": "5d5f95f97d357ece44a72d04fb4fd6aa3be43619d4dd08113f5590abd99ff35e"
+    },
+    "file_inventory.json": {
+      "published_sha256": "6d7e65a23cdc3543a37bde84c91e1c71803864cfa22ba99788b84e8a35d80266"
+    }
+  }
+}

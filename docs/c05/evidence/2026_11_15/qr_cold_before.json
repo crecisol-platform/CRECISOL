@@ -1,0 +1,11 @@
+{
+  "raw_log_sha256": "2b27cd1e860fef4df1bb6a86fcd965b642d59f59dcf542c0dde263fb8a585cc2",
+  "source_log": ".cache/c05-qr-cold-before.log",
+  "lines": [
+    "Real pairing endpoint status=200",
+    "FAIL locator.waitFor: Timeout 8000ms exceeded.",
+    "Call log:",
+    "  - waiting for getByLabel('Solicitud de vinculación', { exact: true }) to be visible",
+    ""
+  ]
+}

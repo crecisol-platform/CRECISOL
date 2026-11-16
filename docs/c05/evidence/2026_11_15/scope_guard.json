@@ -1,0 +1,7 @@
+{
+  "raw_log_sha256": "2a59454aa4c4782f760b0c18705d97a239e30ed0415b8b5d38feae210e68b595",
+  "source_log": ".cache/c05-final-scope-guard.log",
+  "lines": [
+    "PASS prospective C05 integral scope: actual diff accepted; seven forbidden/missing-core mutations rejected"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "recorded_at_utc": "2026-11-16T04:36:09.653725+00:00",
+  "source_sha": "52f8321dc3dfbb9986b5f4c0392bf7e4daf5b8b9",
+  "source_tree": "b714212703a8163c48bf227059ad384d63f2a58c",
+  "node": "v24.15.0",
+  "dotnet_sdk": "10.0.404",
+  "dotnet_runtimes": [
+    "Microsoft.AspNetCore.App 6.0.36 [C:\\Program Files\\dotnet\\shared\\Microsoft.AspNetCore.App]",
+    "Microsoft.AspNetCore.App 7.0.20 [C:\\Program Files\\dotnet\\shared\\Microsoft.AspNetCore.App]",
+    "Microsoft.AspNetCore.App 8.0.34 [C:\\Program Files\\dotnet\\shared\\Microsoft.AspNetCore.App]",
+    "Microsoft.AspNetCore.App 9.0.23 [C:\\Program Files\\dotnet\\shared\\Microsoft.AspNetCore.App]",
+    "Microsoft.AspNetCore.App 10.0.15 [C:\\Program Files\\dotnet\\shared\\Microsoft.AspNetCore.App]",
+    "Microsoft.NETCore.App 6.0.36 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+    "Microsoft.NETCore.App 7.0.20 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+    "Microsoft.NETCore.App 8.0.34 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+    "Microsoft.NETCore.App 9.0.23 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+    "Microsoft.NETCore.App 10.0.15 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+    "Microsoft.WindowsDesktop.App 6.0.36 [C:\\Program Files\\dotnet\\shared\\Microsoft.WindowsDesktop.App]",
+    "Microsoft.WindowsDesktop.App 7.0.20 [C:\\Program Files\\dotnet\\shared\\Microsoft.WindowsDesktop.App]",
+    "Microsoft.WindowsDesktop.App 8.0.34 [C:\\Program Files\\dotnet\\shared\\Microsoft.WindowsDesktop.App]",
+    "Microsoft.WindowsDesktop.App 9.0.23 [C:\\Program Files\\dotnet\\shared\\Microsoft.WindowsDesktop.App]",
+    "Microsoft.WindowsDesktop.App 10.0.15 [C:\\Program Files\\dotnet\\shared\\Microsoft.WindowsDesktop.App]"
+  ],
+  "mysql": "8.4.13",
+  "angular": "22.2.4",
+  "artifact_sha256": {
+    ".cache\\c05-certified-api\\Crecisol.Api.dll": "cfa066b5f0bb742c24f74705a115939f8930ee652e00ddad7ac3851af58f50a5",
+    ".cache\\c05-certified-api\\Crecisol.Infrastructure.dll": "3680b276ab3a322b82f35a090772885ecf0038832bda58501ca2358ca8cf656d",
+    ".cache\\c05-certified-smtp\\Crecisol.LoopbackSmtpReceiver.dll": "62d43852bafee8d48e5463549a2a8279abd45ce1d44c96c04e4d5564230257df"
+  }
+}

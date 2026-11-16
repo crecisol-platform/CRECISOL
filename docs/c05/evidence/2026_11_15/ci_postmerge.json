@@ -1,0 +1,20 @@
+{
+  "jobs": [
+    {
+      "conclusion": "success",
+      "head_sha": "f3673f65c4f641b0afb509464aa41a3aad5b1bd7",
+      "html_url": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43805719804/job/133095922626",
+      "id": 133095922626,
+      "name": "operational",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "head_sha": "f3673f65c4f641b0afb509464aa41a3aad5b1bd7",
+      "html_url": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43805719804/job/133095922970",
+      "id": 133095922970,
+      "name": "regressions",
+      "status": "completed"
+    }
+  ]
+}

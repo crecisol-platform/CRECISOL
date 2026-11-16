@@ -1,0 +1,112 @@
+[
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408096/job/133091758839",
+    "name": "regressions",
+    "state": "SUCCESS"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408162/job/133091757896",
+    "name": "Real MFA enrollment, passkey ES256, step-up and recovery CAS on MySQL8.4",
+    "state": "SUCCESS"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408294/job/133091810691",
+    "name": "C01-05 audits A B C",
+    "state": "SKIPPED"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408097/job/133091814110",
+    "name": "c03-05-api-contracts",
+    "state": "SKIPPED"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408089/job/133091803999",
+    "name": "C01-04 three independent audits",
+    "state": "SKIPPED"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408294/job/133091807807",
+    "name": "C01-05 Chromium real browser and WCAG 2.2 AA",
+    "state": "SKIPPED"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408089/job/133091804550",
+    "name": "C01-04 .NET10 build and domain/application regressions",
+    "state": "SKIPPED"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408294/job/133091801110",
+    "name": "C01-05 Angular 22 strict production build",
+    "state": "SKIPPED"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408102/job/133091791403",
+    "name": "C01-06 integrated Angular logo header, regression and final A B C audits",
+    "state": "SKIPPED"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408263/job/133091758387",
+    "name": "Argon2id real .NET10 security A-B-C and C05-01/02 regression",
+    "state": "SUCCESS"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408216/job/133091758245",
+    "name": "C03-10 real A/B/C .NET10 Angular22 MySQL8.4 Chromium",
+    "state": "SUCCESS"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408103/job/133091758123",
+    "name": "Local SMTP receiver process + one-use MySQL8.4 challenge",
+    "state": "SUCCESS"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408096/job/133091758430",
+    "name": "operational",
+    "state": "SUCCESS"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408207/job/133091758435",
+    "name": "Foundation scope and secrets baseline",
+    "state": "SUCCESS"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408119/job/133091759724",
+    "name": "C05 transport-only .NET10 contract build and negatives",
+    "state": "SKIPPED"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408227/job/133091760275",
+    "name": "c03-06-explicit-di",
+    "state": "SKIPPED"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408144/job/133091760076",
+    "name": "c03-04-infrastructure",
+    "state": "SKIPPED"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408268/job/133091760571",
+    "name": "c03-03-application",
+    "state": "SKIPPED"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408207/job/133091759854",
+    "name": "C01-02 .NET10 contract build and 3 microphase audits",
+    "state": "SKIPPED"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408113/job/133091760006",
+    "name": "C02-06 Word + A/B/C + 27 Chromium + prod isolation + Angular22/.NET10",
+    "state": "SKIPPED"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408089/job/133091760089",
+    "name": "C01-04 real MySQL 8.4 and HTTP deny-by-default tests",
+    "state": "SKIPPED"
+  },
+  {
+    "link": "https://github.com/crecisol-platform/CRECISOL/actions/runs/43804408102/job/133091759985",
+    "name": "C01-06 canonical extraction and preliminary security checks",
+    "state": "SKIPPED"
+  }
+]

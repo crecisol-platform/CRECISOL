@@ -1,0 +1,25 @@
+{
+  "raw_log_sha256": "ba891443db49be8f2bbb7aef5758fd7b2efe4fa3b27649fb8345416cede1279d",
+  "source_log": ".cache/c05-tenant-audit-final.log",
+  "lines": [
+    "7d306934d1ffd90cb8f30cab003f0f44276f8194",
+    "C05 isolated operational flow: starting",
+    "PASS sixteen forward migrations on real MySQL 8.4",
+    "PASS neutral registration receipt",
+    "PASS Angular -> registration completion API",
+    "PASS Argon2id account persisted",
+    "PASS registration never grants membership",
+    "PASS pending account cannot log in",
+    "PASS contextual password login",
+    "PASS MFA enrollment uses password-bound challenge",
+    "PASS real TOTP verification issues session",
+    "PASS verified approver explicitly accepts the published tenant terms",
+    "PASS tenant identity can read only its own contextual security history",
+    "PASS TEN-008: tenant A session cannot read security history in tenant B",
+    "PASS TEN-010: a tenant session cannot read platform audit-monitor metadata",
+    "PASS TEN-009: browser-selected audit tenant is rejected before any database operation",
+    "PASS TEN-009: forged audit scope leaves tenant B history unchanged",
+    "PASS sixteen reverse migrations leave no schema tables",
+    "PASS C05 audit focused assertions=16; A/B/C evidence is limited to executed cases; no production certification"
+  ]
+}

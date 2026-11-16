@@ -1,0 +1,16 @@
+{
+  "raw_log_sha256": "2061b738b1f326f10b7a11f95388f660311f3fc32e22f1a7239b1c1baa349304",
+  "source_log": ".cache/c05-smtp-audit-a.log",
+  "lines": [
+    "C:\\PROYECTOS\\CRECISOL\\qa\\c05_02_independent_smtp_audits.py:154: SyntaxWarning: invalid escape sequence '\\`'",
+    "  \"GRANT UPDATE ON \\`$DB\\`.c05_02_delivery_outbox TO 'c05_02_outbox_worker'\" not in data[\"mysql\"],",
+    "C:\\PROYECTOS\\CRECISOL\\qa\\c05_02_proof_outbox_audits.py:166: SyntaxWarning: invalid escape sequence '\\`'",
+    "  \"GRANT UPDATE ON \\`$DB\\`.c05_02_delivery_outbox TO 'c05_02_outbox_worker'\" not in data[\"smoke\"],",
+    "C:\\PROYECTOS\\CRECISOL\\qa\\c05_02_mailbox_proof_audits.py:223: SyntaxWarning: invalid escape sequence '\\`'",
+    "  \"GRANT UPDATE ON \\`$DB\\`.c05_02_mailbox_proofs TO 'c05_02_proof_limited'\" not in data[\"script\"],",
+    "PASS C05-02 neutral A: canonical Word/PDF/C05, no account enumeration and isolated layers",
+    "PASS C05-02 proof A: canonical Word/PDF/C05, boundaries, protected challenge lifecycle",
+    "PASS outbox A: Word/C05 predecessor, tenant safety, protected only test transport",
+    "PASS independent SMTP A: canonical sources and strict local process boundary"
+  ]
+}

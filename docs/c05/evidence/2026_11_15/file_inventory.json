@@ -1,0 +1,381 @@
+{
+  "baseline": "9aea43a7b516778390e7620aeaaa22e28a463052",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "status": "M"
+    },
+    {
+      "path": ".github/workflows/c05-operational-flow.yml",
+      "status": "M"
+    },
+    {
+      "path": "backend/src/Crecisol.Api/Modules/Identity/OperationalBrowserSessionTransport.cs",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs",
+      "status": "M"
+    },
+    {
+      "path": "backend/src/Crecisol.Api/Modules/Identity/OperationalRegistrationCompletionModule.cs",
+      "status": "M"
+    },
+    {
+      "path": "backend/src/Crecisol.Application/Identity/OperationalIdentityContracts.cs",
+      "status": "M"
+    },
+    {
+      "path": "backend/src/Crecisol.CredentialSecurity/Crecisol.CredentialSecurity.csproj",
+      "status": "M"
+    },
+    {
+      "path": "backend/src/Crecisol.CredentialSecurity/KnownCompromisedPasswordScreen.cs",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.CredentialSecurity/OperationalIdentityCrypto.cs",
+      "status": "M"
+    },
+    {
+      "path": "backend/src/Crecisol.CredentialSecurity/OperationalPasskeyCrypto.cs",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.CredentialSecurity/Resources/SecLists-LICENSE.txt",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.CredentialSecurity/Resources/compromised-password-sha256.txt",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.CredentialSecurity/Resources/compromised-password-source.json",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.Infrastructure/Identity/CanonicalProfilePng.cs",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.Infrastructure/Identity/LoopbackOnlySmtpProofSink.cs",
+      "status": "M"
+    },
+    {
+      "path": "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Assisted.cs",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Invitations.cs",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.MembershipRequest.cs",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Notices.cs",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.OperatorRecovery.cs",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Pairing.cs",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Passkeys.cs",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Platform.cs",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.PlatformMailbox.cs",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Profile.cs",
+      "status": "A"
+    },
+    {
+      "path": "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs",
+      "status": "M"
+    },
+    {
+      "path": "backend/tests/Crecisol.LoopbackSmtpReceiver/Program.cs",
+      "status": "M"
+    },
+    {
+      "path": "backend/tools/Crecisol.LocalIdentityProvisioner/Crecisol.LocalIdentityProvisioner.csproj",
+      "status": "A"
+    },
+    {
+      "path": "backend/tools/Crecisol.LocalIdentityProvisioner/Program.cs",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/007_c05_passkeys.down.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/007_c05_passkeys.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/008_c05_terms_invitations.down.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/008_c05_terms_invitations.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/009_c05_pairing.down.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/009_c05_pairing.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/010_c05_security_notices.down.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/010_c05_security_notices.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/011_c05_platform_recovery.down.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/011_c05_platform_recovery.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/012_c05_scoped_profile.down.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/012_c05_scoped_profile.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/013_c05_abuse_signals.down.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/013_c05_abuse_signals.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/014_c05_operator_recovery.down.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/014_c05_operator_recovery.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/015_c05_session_devices.down.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/015_c05_session_devices.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/016_c05_existing_identity_join.down.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/migrations/016_c05_existing_identity_join.sql",
+      "status": "A"
+    },
+    {
+      "path": "database/operations/c05_bootstrap_local_authority.sql",
+      "status": "M"
+    },
+    {
+      "path": "database/operations/c05_local_runtime_role.sql",
+      "status": "M"
+    },
+    {
+      "path": "docs/ESTADO_VIGENTE_CAPITULOS.md",
+      "status": "M"
+    },
+    {
+      "path": "docs/c05/C05_INTEGRAL_OPERATIVO_2026_11_15.md",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/build_windows.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/ci_postmerge.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/ci_premerge.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/contracts_windows.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/evidence_manifest.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/file_inventory.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/integral_windows.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/master_guard.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/mysql_windows.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/npm_audit.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/nuget_audit.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/password_guard_a.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/password_guard_b.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/public_chromium_windows.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/qr_cold_after.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/qr_cold_before.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/qr_warm_after.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/runtime_versions.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/scope_guard.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/smtp_guard_a.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/smtp_guard_b.json",
+      "status": "A"
+    },
+    {
+      "path": "docs/c05/evidence/2026_11_15/tenant_audit_boundaries.json",
+      "status": "A"
+    },
+    {
+      "path": "frontend/package-lock.json",
+      "status": "M"
+    },
+    {
+      "path": "frontend/package.json",
+      "status": "M"
+    },
+    {
+      "path": "frontend/src/app/identity/browser-session-window.ts",
+      "status": "A"
+    },
+    {
+      "path": "frontend/src/app/identity/canonical-photo-pixels.ts",
+      "status": "A"
+    },
+    {
+      "path": "frontend/src/app/identity/identity-api.service.ts",
+      "status": "M"
+    },
+    {
+      "path": "frontend/src/app/identity/platform-identity-api.service.ts",
+      "status": "A"
+    },
+    {
+      "path": "frontend/src/app/pages/identity-portal.component.ts",
+      "status": "M"
+    },
+    {
+      "path": "frontend/src/app/pages/platform-identity-panel.component.ts",
+      "status": "A"
+    },
+    {
+      "path": "qa/c05_02_independent_smtp_audits.py",
+      "status": "M"
+    },
+    {
+      "path": "qa/c05_03_password_audits.py",
+      "status": "M"
+    },
+    {
+      "path": "qa/c05_assisted_browser_checks.mjs",
+      "status": "A"
+    },
+    {
+      "path": "qa/c05_integral_scope.py",
+      "status": "A"
+    },
+    {
+      "path": "qa/c05_invitation_checks.mjs",
+      "status": "A"
+    },
+    {
+      "path": "qa/c05_operational_flow_e2e.mjs",
+      "status": "M"
+    },
+    {
+      "path": "qa/c05_operator_recovery_checks.mjs",
+      "status": "A"
+    },
+    {
+      "path": "qa/c05_pairing_browser_checks.mjs",
+      "status": "A"
+    },
+    {
+      "path": "qa/c05_passkey_browser_checks.mjs",
+      "status": "A"
+    },
+    {
+      "path": "qa/c05_profile_browser_checks.mjs",
+      "status": "A"
+    },
+    {
+      "path": "qa/c05_tenant_audit_checks.mjs",
+      "status": "A"
+    }
+  ]
+}

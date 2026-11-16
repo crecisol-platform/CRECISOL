@@ -15,6 +15,7 @@ import { verifyInvitations } from './c05_invitation_checks.mjs';
 import { verifyPairing } from './c05_pairing_browser_checks.mjs';
 import { verifyAssisted } from './c05_assisted_browser_checks.mjs';
 import { verifyProfile } from './c05_profile_browser_checks.mjs';
+import { verifyTenantAuditBoundary } from './c05_tenant_audit_checks.mjs';
 import { verifyOperatorRecovery } from './c05_operator_recovery_checks.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -22,10 +23,10 @@ mkdirSync(path.join(root, '.cache'), { recursive: true });
 const require = createRequire(path.join(root, 'frontend/package.json'));
 const { chromium } = require('@playwright/test');
 const AxeBuilder = require('@axe-core/playwright').default;
-if (process.argv.includes('--help')) { console.log('Usage: node qa/c05_operational_flow_e2e.mjs [--preview | --focus=operator]'); process.exit(0); }
-if (process.argv.slice(2).some(a => !['--preview', '--focus=operator'].includes(a))) throw new Error('Unknown isolated runner argument');
+if (process.argv.includes('--help')) { console.log('Usage: node qa/c05_operational_flow_e2e.mjs [--preview | --focus=operator | --focus=audit]'); process.exit(0); }
+if (process.argv.slice(2).some(a => !['--preview', '--focus=operator', '--focus=audit'].includes(a))) throw new Error('Unknown isolated runner argument');
 const preview = process.argv.includes('--preview');
-const focus = process.argv.includes('--focus=operator') ? 'operator' : null;
+const focus = process.argv.includes('--focus=operator') ? 'operator' : process.argv.includes('--focus=audit') ? 'audit' : null;
 if (preview && focus) throw new Error('Preview and focused verification are separate modes');
 const offset = Number(process.env.CRECISOL_C05_TEST_PORT_OFFSET || '0');
 if (![0, 1].includes(offset) || (preview && offset !== 0)) throw new Error('Invalid isolated port offset');
@@ -328,6 +329,8 @@ try {
   const terms = (await api('terms')).data;
   check((await api('terms/accept', { version: terms.version, hash: terms.hash, accepted: 'true' }, approver.token)).status === 200,
     'verified approver explicitly accepts the published tenant terms');
+  await verifyTenantAuditBoundary({ api, platform, check, token: approver.token, sql, B });
+  if (focus !== 'audit') {
   await verifyInvitations({ api, check, register, mailFor, password, approver, terms, sql, A, B, accountId });
   await reserveTestWindow(65);
   await register('member@example.test', page);
@@ -596,6 +599,7 @@ try {
   check(!confidential.filter(s => typeof s === 'string' && s.length >= 12).some(s => apiLogs.includes(s)), 'API logs contain no password, seed, token or key');
   check(!apiLogs.includes('member@example.test') && !apiLogs.includes('LOCAL-PRIVATE-REFERENCE'), 'API logs contain no mailbox or private resource');
   }
+  }
   await browser.close(); browser = undefined;
   for (const p of children.reverse()) { p.kill(); }
   await delay(1500);
@@ -604,7 +608,7 @@ try {
     '003_c05_pending_account_completion', '002_c05_registration_proof_outbox', '001_c05_identity_operational'])
     sql(readFileSync(path.join(root, 'database/migrations', migration + '.down.sql'), 'utf8'));
   check(sql('SHOW TABLES') === '', 'sixteen reverse migrations leave no schema tables');
-  console.log(`PASS C05 ${focus ? 'operator focused' : 'operational integrated'} assertions=${assertions}; A/B/C evidence is limited to executed cases; no production certification`);
+  console.log(`PASS C05 ${focus ? focus + ' focused' : 'operational integrated'} assertions=${assertions}; A/B/C evidence is limited to executed cases; no production certification`);
   }
 } catch (error) {
   // Assertions identify the failed requirement without disclosing request bodies.

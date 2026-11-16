@@ -1,0 +1,8 @@
+{
+  "raw_log_sha256": "acc33ac20e11fa0c12644af915b509aa28626f1d34266ac7c84ac8ddec2da203",
+  "source_log": ".cache/c05-final-master-guard.log",
+  "lines": [
+    "PASS current CRECISOL master: Word/PDF SHA-256 + blob; original 1,876 body elements unchanged",
+    "PASS master guard negatives: historical mutation, missing test and Git blob forging rejected"
+  ]
+}

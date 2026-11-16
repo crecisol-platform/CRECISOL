@@ -1,0 +1,8 @@
+{
+  "raw_log_sha256": "3cf8e5f31a1879813e41b6707e309fb6daf0c511fc33cad770aacce5bc51f281",
+  "source_log": ".cache/c05-qr-warm-after.log",
+  "lines": [
+    "Real pairing endpoint status=200",
+    "PASS cached Angular development-mode QR creation and actual image decoding"
+  ]
+}
