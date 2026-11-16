@@ -1,6 +1,8 @@
 <section class="operator-panel"><p class="eyebrow">Personal autorizado de identidad CRECISOL</p>
       <h2>Identidad de plataforma</h2>
       <p>Acceso exclusivo de operadores previamente provisionados. Una cuenta de negocio no concede acceso a esta consola ni permite recuperar identidades globales.</p>
+      @if (message()) { <p class="operator-feedback" role="status" aria-live="polite">{{ message() }}</p> }
+      @if (error()) { <p class="operator-feedback operator-feedback--error" role="alert">{{ error() }}</p> }
       @if (platform.state() === 'anonymous') {
         <form (submit)="action($event, 'login')">
           <label for="platform-mailbox">Correo del operador de identidad</label><input id="platform-mailbox" name="mailbox" type="email" autocomplete="username" required maxlength="254">
@@ -157,6 +159,5 @@
           <button type="button" (click)="platform.recoveryCodes.set([])">Ocultar respaldos de operador</button>
         </aside>
       }
-      @if (message()) { <p role="status">{{ message() }}</p> }
-      @if (error()) { <p role="alert">{{ error() }}</p> }
+
     </section>
