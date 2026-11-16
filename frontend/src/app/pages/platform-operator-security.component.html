@@ -1,0 +1,34 @@
+<details><summary>Cambiar contraseña de operador</summary>
+          <form (submit)="actionRequested.emit({ event: $event, action: 'password' })">
+            <label for="operator-current-password">Contraseña actual del operador</label><input id="operator-current-password" name="currentPassword" type="password" required maxlength="128" autocomplete="current-password">
+            <label for="operator-new-password">Nueva contraseña de operador</label><input id="operator-new-password" name="newPassword" type="password" required minlength="15" maxlength="128" autocomplete="new-password">
+            <label for="operator-password-code">Código MFA para cambiar contraseña de operador</label><input id="operator-password-code" name="code" required maxlength="32" autocomplete="one-time-code">
+            <button [disabled]="busy()">Cambiar contraseña de plataforma</button>
+          </form>
+        </details>
+        <details><summary>Cambiar correo de operador</summary>
+          <form (submit)="actionRequested.emit({ event: $event, action: 'mailbox-request' })">
+            <label for="operator-new-mailbox">Nuevo correo del operador</label><input id="operator-new-mailbox" name="mailbox" type="email" required maxlength="254" autocomplete="email">
+            <label for="operator-mailbox-code">Código MFA para solicitar correo de operador</label><input id="operator-mailbox-code" name="code" required maxlength="32" autocomplete="one-time-code">
+            <button [disabled]="busy()">Solicitar nuevo correo de operador</button>
+          </form>
+          <form (submit)="actionRequested.emit({ event: $event, action: 'mailbox-complete' })">
+            <label for="operator-mailbox-token">Token del nuevo correo de operador</label><input id="operator-mailbox-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
+            <label for="operator-mailbox-confirm-code">Código MFA para confirmar correo de operador</label><input id="operator-mailbox-confirm-code" name="code" required maxlength="32" autocomplete="one-time-code">
+            <button [disabled]="busy()">Confirmar correo de operador</button>
+          </form>
+        </details>
+        <details><summary>Reemplazar MFA de operador</summary>
+          <form (submit)="actionRequested.emit({ event: $event, action: 'factor' })">
+            <label for="operator-factor-password">Contraseña para reemplazar MFA de operador</label><input id="operator-factor-password" name="currentPassword" type="password" required maxlength="128" autocomplete="current-password">
+            <label for="operator-factor-code">Código MFA o respaldo para reemplazar factor de operador</label><input id="operator-factor-code" name="code" required maxlength="32" autocomplete="one-time-code">
+            <button [disabled]="busy()">Preparar nuevo factor de operador</button>
+          </form>
+          @if (platform.factorSecret()) {
+            <output aria-label="Semilla del factor de operador a reemplazar">{{ platform.factorSecret() }}</output>
+            <form (submit)="actionRequested.emit({ event: $event, action: 'factor-confirm' })">
+              <label for="operator-factor-confirm-code">Código del factor nuevo de operador</label><input id="operator-factor-confirm-code" name="code" required pattern="[0-9]{6}" autocomplete="one-time-code">
+              <button [disabled]="busy()">Activar nuevo factor de operador</button>
+            </form>
+          }
+        </details>
