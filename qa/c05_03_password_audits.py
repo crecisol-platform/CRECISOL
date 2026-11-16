@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+from c05_integral_scope import INTEGRAL_BRANCH, CORE_FLOW, validate_integral_diff
 
 from c05_01_preparation_audits import ROOT
 
@@ -254,13 +255,15 @@ def audit_c() -> None:
              f"PASS {stage} sha={sha} run={run}",
              "Missing same SHA/run runtime evidence: " + stage)
 
+    integral_scope = False
     event = os.getenv("GITHUB_EVENT_NAME")
     if event == "pull_request":
         event_path = Path(os.getenv("GITHUB_EVENT_PATH", ""))
         need(event_path.is_file(), "Missing PR payload")
         pr = json.loads(event_path.read_text(encoding="utf-8"))["pull_request"]
         base, head = pr["base"], pr["head"]
-        need(base["ref"] == "dev" and head["ref"] == FEATURE and
+        integral_scope = head["ref"] == INTEGRAL_BRANCH
+        need(base["ref"] == "dev" and head["ref"] in (FEATURE, INTEGRAL_BRANCH) and
              base["repo"]["full_name"] == REPO and
              head["repo"]["full_name"] == REPO,
              "PR branch/repository context invalid")
@@ -272,8 +275,11 @@ def audit_c() -> None:
         need(event == "push" and os.getenv("GITHUB_REF") == "refs/heads/dev",
              "Certification must be based on dev only")
         changed = git("show", "--format=", "--name-only", sha).splitlines()
-    need(set(changed) == ALLOWED and len(changed) == len(ALLOWED),
-         "Unexpected or missing changed files: " + repr(changed))
+    if integral_scope or (event == "push" and CORE_FLOW in changed):
+        validate_integral_diff(changed)
+    else:
+        need(set(changed) == ALLOWED and len(changed) == len(ALLOWED),
+             "Unexpected or missing changed files: " + repr(changed))
     invariants(sources())
     print(f"PASS C05-03 audit C: same SHA/run A/B NET10 and predecessor regression sha={sha} run={run}")
     print("NO production credentials, real breach screen, login, session or tenant grants")

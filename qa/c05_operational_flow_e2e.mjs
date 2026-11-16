@@ -18,6 +18,7 @@ import { verifyProfile } from './c05_profile_browser_checks.mjs';
 import { verifyOperatorRecovery } from './c05_operator_recovery_checks.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+mkdirSync(path.join(root, '.cache'), { recursive: true });
 const require = createRequire(path.join(root, 'frontend/package.json'));
 const { chromium } = require('@playwright/test');
 const AxeBuilder = require('@axe-core/playwright').default;
