@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { IdentityApiService } from '../identity/identity-api.service';
+import { PublicBrandService } from '../branding/public-brand.service';
 import { PlatformIdentityPanelComponent } from './platform-identity-panel.component';
 import { IdentityGuestComponent, IdentityMfaComponent, IdentityRecoveryComponent, IdentityWorkspaceComponent } from './identity-flow-views.component';
 
@@ -13,6 +14,9 @@ import { IdentityGuestComponent, IdentityMfaComponent, IdentityRecoveryComponent
   styleUrl: './identity-portal.component.css'
 })
 export class IdentityPortalComponent {
+  private readonly publishedBrand = inject(PublicBrandService);
+  readonly brandState = this.publishedBrand.state;
+  readonly brandImageFailed = signal(false);
   private readonly route = inject(ActivatedRoute);
   private readonly params = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
   readonly view = computed(() => {
@@ -25,6 +29,12 @@ export class IdentityPortalComponent {
   readonly busy = signal(false);
   readonly message = signal('');
   readonly error = signal('');
+
+  constructor() {
+    // Read only validated published PLATFORM branding. Identity never consumes
+    // a tenant picker, preview, candidate asset, or browser-stored brand.
+    if (this.brandState().kind === 'loading') void this.publishedBrand.load();
+  }
 
   async login(event: Event): Promise<void> {
     event.preventDefault();
