@@ -1,7 +1,20 @@
 <main class="account-page" id="contenido" tabindex="-1">
   <a class="skip-link" href="#account-content">Ir al formulario de cuenta</a>
   <header class="account-header">
-    <a routerLink="/" class="brand" aria-label="CRECISOL, volver al inicio">CRECISOL</a>
+    <a routerLink="/" class="brand" aria-label="Volver al inicio de CRECISOL">
+      @if (brandState(); as published) {
+        @if (published.kind === 'ready') {
+          @if (!brandImageFailed()) {
+            <img class="brand-mark" [src]="published.brand.logoUrl" alt=""
+              width="38" height="38" loading="eager" decoding="async"
+              (error)="brandImageFailed.set(true)">
+          }
+          <span>{{ published.brand.name }}</span>
+        } @else {
+          <span>CRECISOL</span>
+        }
+      }
+    </a>
     <span class="header-context">Identidad y acceso</span>
   </header>
 
