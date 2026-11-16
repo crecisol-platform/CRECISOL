@@ -38,4 +38,22 @@
 - **NO-GO:** no fusionar PR #155 si quedan fallos P0/P1, tests relevantes omitidos, formularios inaccesibles, permisos debilitados o evidencias no ejecutadas. Mantener DRAFT y documentar cualquier fallo inicial sin reescribir historia.
 - **Rollback:** descartar rama/PR #155 sin migraciones ni datos modificados. Si se fusiona tras aprobación, revertir sus commits de interfaz y refactor sin modificar SQL; rerun QA previa.
 
-**Resultado actual:** reparación implementada en rama de trabajo, pruebas del nuevo SHA pendientes de aprobación. No declarar certificación adicional.
+**Resultado PREMERGE verificado:** reparación técnica y UX automática aprobadas sobre el SHA de código `0981486cf04cf6b17f7e83272ccbfad7960c6153`. CI operacional y regresiones completas en SUCCESS; la fusión y su POSTMERGE aún no se presumen. No se afirma certificación de producción ni auditoría visual manual universal.
+
+## Dictamen A/B/C PREMERGE del incremento (16-11-2026)
+
+**SHA técnico exacto:** `0981486cf04cf6b17f7e83272ccbfad7960c6153`. PR #155 con destino `dev`; el acta de C05 de 15-11-2026 sigue siendo la certificación histórica original, no se reescribe.
+
+| Puerta | Resultado | Evidencia |
+| --- | --- | --- |
+| A — funcional, identidad y navegación separada | **PASS en entorno local aislado/CI** | [C05 #43873336249](https://github.com/crecisol-platform/CRECISOL/actions/runs/43873336249), trabajo `operational`: **294 comprobaciones integradas PASS**; registro, aprobación MFA, login, recuperación, sesiones, perfiles, passkeys, autorizaciones |
+| B — seguridad y multitenancy | **PASS en alcance probado, cero P0/P1 vigentes observados** | Misma CI y regresiones; IDOR, Host/tenant A/B, cookies HttpOnly/CSRF, concurrencia, token revocado, MFA y XSS. Los tres bloques trasladados a `MySqlOperationalIdentityFlow.*.cs` se compararon con el original: contenido exacto, ninguna consulta SQL cambiada. |
+| C — arquitectura, regresiones y UX automatizada | **PASS para las pruebas ejecutadas** | Misma CI trabajo `regressions`: compilaciones .NET 10/Angular 22, regresiones C01–C05, Chromium público, viewport móvil/escritorio, axe, navegación separada, marca publicada y sin desbordamiento horizontal; [Foundation #43873336536](https://github.com/crecisol-platform/CRECISOL/actions/runs/43873336536) SUCCESS y [C03 #43873336232](https://github.com/crecisol-platform/CRECISOL/actions/runs/43873336232) SUCCESS |
+
+**Auditoría de preservación del código:** el archivo central `MySqlOperationalIdentityFlow.cs` posterior al refactor coincide exactamente con el original tras excluir los tres fragmentos extraídos, y dichos fragmentos mantienen el contenido idéntico a los métodos antiguos. Las aserciones `check` del arnés principal permanecen **96**, las aserciones directas **2**, los checks de passkeys **32**, recuperación asistida **31** y operadores **39**. No se suprimieron negativos para que el test pasara.
+
+**Persistencia:** ninguna migración 001–016, down, esquema, dato del propietario o recurso de producción fue modificado. El arnés ejecutó las dieciséis reversiones; cero tablas operativas residuales tras rollback del entorno desechable.
+
+**Alcance UX:** es una mejora sustancial respecto a la página única anterior; las verificaciones automáticas de WCAG/viewport no constituyen una auditoría visual humana universal ni prueba de rendimiento de producción. El propietario puede valorar la composición visual en la vista previa local antes de elevar estas pantallas a diseño comercial definitivo. No afirmar C09 ejecutado.
+
+**Cierre Git pendiente al registrar este dictamen PREMERGE:** confirmar integración a `dev` y la CI POSTMERGE del SHA de fusión, sin escribir en `main` ni habilitar C06, producción o COM-T08/09/10. Si ese gate falla, corregir y repetir antes de llamar cerrado al incremento.
