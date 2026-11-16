@@ -135,12 +135,15 @@
             <p>Sesión {{ session.id }} · {{ session.device }} · {{ session.factor }} · última actividad UTC {{ session.lastSeenAtUtc }} · vence {{ session.expiresAtUtc }}</p>
             <button type="button" [disabled]="busy() || identity.restoring()" (click)="revokeRequested.emit(session.id)">Revocar sesión {{ session.id }}</button>
           }
-          <form (submit)="securityActionRequested.emit({ event: $event, action: 'private' })">
+          <details><summary>Comprobar un acceso privado</summary>
+            <p>Herramienta de comprobación técnica. Los permisos y la pertenencia se verifican en el servidor; escribir identificadores no concede acceso.</p>
+            <form (submit)="securityActionRequested.emit({ event: $event, action: 'private' })">
             <label for="private-branch">Sucursal del recurso</label><input id="private-branch" name="branchId" required maxlength="36">
             <label for="private-resource">Identificador del recurso</label><input id="private-resource" name="resourceId" required maxlength="36">
             <button [disabled]="busy() || identity.restoring()">Consultar recurso autorizado</button>
           </form>
-          @if (identity.privateReference()) { <p aria-label="Referencia privada">{{ identity.privateReference() }}</p> }
+          </details>
+                    @if (identity.privateReference()) { <p aria-label="Referencia privada">{{ identity.privateReference() }}</p> }
           
 }
 <button type="button" [disabled]="busy() || identity.restoring()" (click)="logoutRequested.emit()">Cerrar sesión</button>
