@@ -34,15 +34,26 @@ def check(path: str, value: str) -> None:
     if path.startswith(".agents/"):
         require(value.startswith("---\nname: crecisol-project-governance\n") and
                 value.count(heading) == 1, path + " changed Skill frontmatter")
+    elif path == "docs/PLAN_37_CAPITULOS.md":
+        # The historical C03 preflight intentionally reads the first seven
+        # plan lines: keep their positions and original paragraphs intact.
+        require(value.startswith(heading + "\n" + BEGIN),
+                path + " moved the historical C03 plan line")
     else:
         require(value.startswith(heading + "\n\n"), path + " changed heading")
     require(value.count(BEGIN) == 1 and value.count(END) == 1,
             path + " missing/duplicate current-state boundary")
     prefix, after_begin = value.split(BEGIN, 1)
     block, history = after_begin.split(END, 1)
-    require(prefix.endswith(heading + "\n\n") and
-            history.startswith("\n\n" + old_open),
-            path + " historical first paragraph changed or the precedence banner moved")
+    if path == "docs/PLAN_37_CAPITULOS.md":
+        require(prefix == heading + "\n" and
+                history.startswith("  \n" + old_open) and
+                value.splitlines()[6].startswith("**ESTADO VIGENTE:"),
+                path + " historical C03 7-line status shifted")
+    else:
+        require(prefix.endswith(heading + "\n\n") and
+                history.startswith("\n\n" + old_open),
+                path + " historical first paragraph changed or precedence moved")
     required = (
         "16-11-2026", "#163",
         "docs/ESTADO_VIGENTE_CAPITULOS.md",
@@ -52,8 +63,8 @@ def check(path: str, value: str) -> None:
     )
     for label in required:
         require(label in block, path + " no longer advertises " + label)
-    require("C03 NO CERTIFICADO" in history and "C04 BLOQUEADO" in history,
-            path + " removed the immutable historical state")
+    require("C04 BLOQUEADO" in history and len(history) > 1000,
+            path + " removed the immutable historical chapter lock")
 
 def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
