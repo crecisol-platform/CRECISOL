@@ -1,6 +1,6 @@
 # CRECISOL — C05 · Acta suplementaria del rediseño institucional de identidad
 
-**Fecha:** 16-11-2026. **Estado inicial del acta:** CONDICIONADO A CI POSTMERGE. **Capítulos:** se preserva el estado vigente C01–C05 5/37, exclusivamente en sus alcances documentados; **C06 BLOQUEADO**.
+**Fecha:** 16-11-2026 (hora institucional de Honduras). **Estado final del dictamen técnico:** A/B/C/D/E PREMERGE Y POSTMERGE APROBADOS; eficacia documental tras fusión de este acta a dev. **Capítulos:** se preserva el estado vigente C01–C05 5/37, exclusivamente en sus alcances documentados; **C06 BLOQUEADO**.
 
 ## 1. Autoridad, origen y alcance
 
@@ -42,4 +42,20 @@ Comprobaciones complementarias: [C03 regresión integral 43980822674](https://gi
 
 El PR #121 (documentación preparatoria antigua) y el PR #156 (propuesta UX sustituida) se **cerraron sin fusionar**, conservando su historial. El PR #166 se fusionó a `dev` tras cinco auditorías PREMERGE aprobadas y revisión de alcance.
 
-**Este acta solo podrá declararse CERTIFICADA TÉCNICAMENTE EN ALCANCE LOCAL AISLADO** después de comprobar las ejecuciones POSTMERGE aplicables del squash exacto, actualizar este apartado con sus resultados y fusionar el PR documental únicamente a `dev`. Hasta entonces: **ACTA CONDICIONADA / NO CERTIFICADA COMO SUPLEMENTO UX**.
+### Verificación POSTMERGE del squash exacto
+
+Sobre `dev` SHA `3d132ace38f07cf73aede518037f2bca6f70e80d`, GitHub confirmó **cinco de cinco workflows aplicables completados en SUCCESS**, sin jobs críticos fallidos:
+
+| Puerta POSTMERGE | Ejecución y resultado |
+| --- | --- |
+| A/B/C/D institucionales y puerta conjunta | [43982501175](https://github.com/crecisol-platform/CRECISOL/actions/runs/43982501175) — SUCCESS |
+| Regresión pública real C02 | [43982501058](https://github.com/crecisol-platform/CRECISOL/actions/runs/43982501058) — SUCCESS |
+| Foundation, scope y secretos | [43982501067](https://github.com/crecisol-platform/CRECISOL/actions/runs/43982501067) — SUCCESS |
+| Regresión integral C03 | [43982501091](https://github.com/crecisol-platform/CRECISOL/actions/runs/43982501091) — SUCCESS |
+| E Angular → API → MySQL | [43982501163](https://github.com/crecisol-platform/CRECISOL/actions/runs/43982501163) — **regressions SUCCESS + operational SUCCESS**; **296 aserciones operativas PASS** y **dieciséis scripts `.down.sql`** aplicados hasta dejar el esquema descartable sin tablas |
+
+**Dictamen final:** **CERTIFICACIÓN TÉCNICA SUPLEMENTARIA DEL REDISEÑO INSTITUCIONAL C05, LIMITADA A CÓDIGO, REGRESIONES EJECUTADAS Y ENTORNO LOCAL AISLADO**. La eficacia documental del dictamen comienza exclusivamente al aprobar la revisión del PR documental #167 y fusionar esta acta a `dev`. Mantiene íntegra la certificación histórica C05 local, **5/37** capítulos en sus alcances propios; **C06 BLOQUEADO**. No se alteran las huellas del Documento Maestro ni los controles multitenant.
+
+**No certifica** inspección visual humana completa, pruebas manuales con lectores de pantalla reales, producción, prestaciones comerciales futuras, proveedores externos ni ausencia absoluta de defectos. Estos límites no se convierten en PASS por la aprobación de CI. Los fallos históricos previos quedan trazables y los reintentos exitosos están referidos a sus SHAs exactos.
+
+**Reversibilidad y cierre:** revertir el squash técnico de C05 mediante PR específico y repetir los gates si surgiera una regresión; la única adición documental es esta acta, y no hay nuevas migraciones. Esta formalización no habilita C06 ni despliegues.
