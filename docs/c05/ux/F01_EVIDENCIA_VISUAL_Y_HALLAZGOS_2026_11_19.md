@@ -38,7 +38,7 @@ Estos resultados son regresiones históricas del código base, **no ejecutadas p
 
 ## Ampliación de cobertura F01
 
-La prueba Playwright de F01 fue extendida **solo dentro de `frontend/tests/`** para incluir desafío MFA cuenta/plataforma, QR TOTP y claves **ficticias**, respaldo ficticio, error y expiración simulada de operador, monitor/sesiones vacíos, política global sin permiso de editar y tomas del pie interno de modales largos.
+La prueba Playwright de F01 fue extendida **solo dentro de `frontend/tests/`** para incluir desafío MFA cuenta/plataforma, QR TOTP y claves **ficticias**, respaldo ficticio, error y expiración simulada de operador, monitor/sesiones vacíos, política global sin permiso de editar, vinculación de navegador ficticia, estados de alerta en modal y tomas del pie interno de modales largos.
 
 El validador adicional `qa/c05_ux_f01_evidence_audits.py` exige pares PNG/JSON reales, `runnerSha`, `sourceSha`, 4 tamaños, 27 modales por tamaño, estados MFA/error/vacío/expiración y evidencia de scroll. Este verificador tampoco reemplaza controles de backend.
 
@@ -46,7 +46,7 @@ La ampliación se entenderá **ejecutada** solo si un nuevo run termina SUCCESS,
 
 ## Política de calificación y cierre
 
-- Promedio heurístico **4,29/10** de **31** muestras referenciadas por el propietario; las otras **34** filas se preservan inicialmente como *sin nota independiente* por ausencia de captura verificada en la primera muestra. Es una media parcial, no una calificación global 65/65.
+- **Matriz actualizada 65/65 calificaciones heurísticas**: media total provisional **4,02/10**, rango **3,0–5,0/10**, con **51** registros de confianza media y **14** de confianza baja. Las **31** muestras iniciales del propietario tenían media **4,29/10**; los otros **34** valores se incorporaron por analogía explícita con familias de interfaz y capturas sintéticas, **no por una inspección independiente de cada transacción backend**. El CSV conserva `fundamento_calificacion_visual` y `nivel_confianza_inicial`; no declarar estas notas «verificadas».
 - F01 puede documentar hallazgos negativos; no se corrigen visualmente ni se suavizan para declarar 9/10. Ese es el objetivo exigido al diseño posterior.
 - Certificar **únicamente la integridad del inventario y de una línea base reproducible** si A/B/C cumplen evidencia. No afirmar que con ello se certifican la seguridad productiva, usabilidad humana completa ni la nota 9/10.
 - No fusionar PR #173, no modificar backend/database, no escribir en SOLQARYN ni avanzar a F02 sin autorización y gate.
