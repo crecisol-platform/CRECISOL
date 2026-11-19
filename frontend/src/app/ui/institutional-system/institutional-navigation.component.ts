@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { safeDisplayText, safeKey } from '../patterns/pattern-contract';
-import { InstitutionalIconComponent } from './institutional-icon.component';
 
 export interface InstitutionalNavigationItem {
   readonly id: string;
@@ -14,7 +13,6 @@ export interface InstitutionalNavigationItem {
 @Component({
   selector: 'cs-ui-navigation',
   standalone: true,
-  imports: [InstitutionalIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './institutional-navigation.component.html',
   styleUrl: './institutional-navigation.component.css'
