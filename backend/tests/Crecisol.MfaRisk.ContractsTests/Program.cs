@@ -51,6 +51,9 @@ Check(!TotpSha1Verifier.TryVerify(rfcSeed," 287082",clock59,-1,out _) &&
     "Only exact 6-digit ASCII TOTP accepted; no Unicode or padding");
 Check(!TotpSha1Verifier.TryVerify(new byte[20],stepOne,clock59,-1,out _),
     "Zero secret cannot be used as enrolled TOTP factor");
+byte[] legacySha256Seed = Encoding.ASCII.GetBytes("12345678901234567890123456789012");
+Check(!TotpSha1Verifier.TryVerify(legacySha256Seed, "119246", clock59, -1, out _),
+    "Retired RFC6238 SHA256 credential of 32 bytes is rejected with no fallback");
 Check(!TotpSha1Verifier.TryVerify(rfcSeed,stepOne,clock59,10,out _),
     "Counter rollback/replay impossible");
 byte[] randomSeed=TotpSha1Verifier.GenerateSeed();
