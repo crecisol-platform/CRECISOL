@@ -80,7 +80,7 @@ def main(root: Path) -> None:
                 and row["dialogsOpen"] == 1 and "-scrolled-footer" not in row["id"]]
         # In addition to the 27 base dialogs, state snapshots such as feedback,
         # TOTP QR and readonly settings can also have dialogsOpen=1.
-        base = [row for row in tops if re.search(r"-modal-\\d+", row["id"])
+        base = [row for row in tops if re.search(r"-modal-\d+", row["id"])
                 or row["id"].startswith(("operator-recovery-dialog",
                                          "account-revoke-single-session",
                                          "operator-revoke-single-session"))]
