@@ -26,12 +26,19 @@ const actionNames: Readonly<Record<string, string>> = {
   REGISTRATION_PENDING: 'Solicitud de registro'
 };
 
-export function identityDateLabel(value: string): string {
+export function identityDateLabel(value: string, timeZone?: string | null): string {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return 'Fecha no disponible';
-  return new Intl.DateTimeFormat('es-HN', {
+  const options: Intl.DateTimeFormatOptions = {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-  }).format(date);
+  };
+  // A validated profile zone takes precedence over the browser's locale zone.
+  // Invalid or unavailable profile settings must not break account security.
+  try {
+    return new Intl.DateTimeFormat('es-HN', timeZone ? { ...options, timeZone } : options).format(date);
+  } catch {
+    return new Intl.DateTimeFormat('es-HN', options).format(date);
+  }
 }
 
 export function identityEventLabel(action: string): string {
