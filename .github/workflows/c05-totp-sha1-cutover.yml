@@ -61,6 +61,13 @@ jobs:
         with:
           node-version: '24.15.0'
           package-manager-cache: false
+      - name: Verify integrated C05 persistent supervisor safety guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/c05_local_persistent.mjs
+          node --check qa/c05_sha1_persistent_guards.mjs
+          node --test qa/c05_sha1_persistent_guards.test.mjs
       - name: Exact protected scope and active policy
         run: |
           set -euo pipefail
