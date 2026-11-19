@@ -178,6 +178,21 @@ for (const size of sizes) {
       await expect(page.locator('#account-content')).toBeVisible();
       await capture(page, testInfo, 'public-' + view + '-' + size.name);
     }
+    await page.goto('/cuenta?vista=ingresar');
+    await page.getByText('Entrar vinculando un navegador', { exact: true }).click();
+    await capture(page, testInfo, 'public-pairing-disclosure-synthetic-' + size.name);
+    const { default: pairingQr } = await import('qrcode');
+    const fakePairingQr = await pairingQr.toDataURL('https://qa.example.test/c05/f01/pairing-NOT-VALID');
+    await page.evaluate((qrData: string) => {
+      const el = document.querySelector('cs-identity-portal')!;
+      const owner = (window as DebugWindow).ng!.getComponent(el);
+      owner.identity.pairing.set({
+        token: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+        fingerprint: 'AAAAAAAAAAAA', qr: qrData
+      });
+    }, fakePairingQr);
+    await capture(page, testInfo, 'public-pairing-qr-FAKE-ONLY-' + size.name);
+
     await page.goto('/cuenta?vista=operadores');
     await expect(page.getByRole('heading', { name: 'Identidad de plataforma' })).toBeVisible();
     await capture(page, testInfo, 'operator-login-' + size.name);
@@ -209,6 +224,25 @@ for (const size of sizes) {
         });
       }
       await captureModals(page, testInfo, 'account-' + view + '-' + size.name);
+      if (view === 'seguridad') {
+        await page.getByRole('button', { name: 'Cambiar contraseña', exact: true }).click();
+        const dialog = page.getByRole('dialog', { name: 'Cambiar contraseña' });
+        await page.evaluate(() => {
+          const el = document.querySelector('cs-identity-portal')!;
+          const owner = (window as DebugWindow).ng!.getComponent(el);
+          owner.error.set('Solicitud rechazada. Revisa los datos sintéticos.');
+        });
+        await capture(page, testInfo, 'account-modal-error-synthetic-' + size.name);
+        await page.evaluate(() => {
+          const el = document.querySelector('cs-identity-portal')!;
+          const owner = (window as DebugWindow).ng!.getComponent(el);
+          owner.error.set('');
+          owner.message.set('Solicitud de prueba procesada.');
+        });
+        await capture(page, testInfo, 'account-modal-feedback-synthetic-' + size.name);
+        await dialog.getByRole('button', { name: 'Cerrar', exact: true }).click();
+        await expect(dialog).toHaveCount(0);
+      }
       if (view === 'resumen') {
         const revoke = page.getByRole('button', { name: /Revocar sesión / }).first();
         if (await revoke.count()) {
