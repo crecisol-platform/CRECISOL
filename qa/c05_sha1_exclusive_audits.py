@@ -42,6 +42,9 @@ F={
  "establish(expiresAtUtc: string, idleMinutes: number)",
  "this.expiryTimer = setTimeout",
  "this.clear();"],
+"qa/c05_local_persistent.mjs":[
+ "C05-local-backup-v2","backupManifestMac","authenticatedManifest",
+ "timingSafeEqual","assertProtectedFile","legacy manifest is insufficient"],
 "qa/c05_sha1_local_operator_rekey.mjs":["--rekey-after-verified-017",
  "CRECISOL_C05_LOCAL_SHA1_REKEY_APPROVED", "START TRANSACTION;",
  "c05_rekey_guard", "access.md.sha1-pending",
@@ -83,6 +86,15 @@ def verify(d):
   for marker in markers: ensure(marker in d[p],"missing mandatory SHA1 guard: "+p+" "+marker)
  ensure(not (ROOT/"backend/src/Crecisol.CredentialSecurity/TotpSha256Verifier.cs").exists(),"legacy verifier present")
  ensure("HMACSHA256" not in d["backend/src/Crecisol.CredentialSecurity/TotpSha1Verifier.cs"],"TOTP downgrade")
+ policy=d["backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.SessionPolicy.cs"]
+ ensure(policy.count("AND expires_at_utc>UTC_TIMESTAMP(6)") >= 2,
+        "tenant and operator renewals must revalidate server-clock expiry at UPDATE")
+ ensure(policy.count("AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE") >= 2,
+        "tenant and operator renewals must recheck inactivity at UPDATE")
+ supervisor=d["qa/c05_local_persistent.mjs"]
+ ensure("`MYSQL_PWD=${" not in supervisor,"MySQL credentials must never be interpolated into Docker CLI argv")
+ workflow=(ROOT/".github/workflows/c05-sha1-persistent-backup.yml").read_text()
+ ensure('-e "MYSQL_PWD=$ROOT_PWD"' not in workflow,"workflow exposes MySQL password in argv")
  sql=d["database/migrations/017_c05_totp_sha1_exclusive.sql"]
  ensure("DELETE FROM c05_identity_account" not in sql and "DROP TABLE c04_tenant_catalog" not in sql,"unscoped destructive migration")
  qr=d["frontend/src/app/identity/totp-setup-qr.ts"]
