@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { identityDateLabel, identityEventLabel, identityOutcomeLabel, identityReferenceLabel } from '../identity/identity-presentation';
 import { IdentityApiService } from '../identity/identity-api.service';
 import { InstitutionalModalComponent } from '../ui/institutional-modal/institutional-modal.component';
 
@@ -37,6 +38,27 @@ export class IdentityMfaComponent {
 })
 export class IdentityWorkspaceComponent {
   readonly identity = inject(IdentityApiService);
+  readonly showAllEvents = signal(false);
+  readonly securityEventRows = computed(() => this.identity.securityEvents()
+    .slice(0, this.showAllEvents() ? 50 : 8)
+    .map(event => ({
+      ...event,
+      dateLabel: identityDateLabel(event.atUtc),
+      actionLabel: identityEventLabel(event.action),
+      outcomeLabel: identityOutcomeLabel(event.outcome)
+    })));
+  readonly sessionRows = computed(() => this.identity.sessions().map(session => ({
+    ...session,
+    lastActivityLabel: identityDateLabel(session.lastSeenAtUtc),
+    expiryLabel: identityDateLabel(session.expiresAtUtc),
+    referenceLabel: identityReferenceLabel(session.id)
+  })));
+  readonly passkeyRows = computed(() => this.identity.passkeys().map(key => ({
+    ...key,
+    registrationLabel: identityDateLabel(key.createdAtUtc),
+    referenceLabel: identityReferenceLabel(key.id)
+  })));
+
   readonly feedback = input(''); readonly error = input('');
   readonly view = input('resumen');
   readonly busy = input(false);
