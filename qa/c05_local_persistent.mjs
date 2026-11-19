@@ -6,6 +6,7 @@
 // composition. It does not add authentication routes or production behavior.
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import { createServer, request as httpRequest } from 'node:http';
+import { connect } from 'node:net';
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import { mkdirSync, existsSync, readFileSync, writeFileSync, chmodSync, openSync, statSync } from 'node:fs';
@@ -17,9 +18,9 @@ import { assertC05ContainerIdentity, assertSafeMigrationLedger } from './c05_sha
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = new Set(process.argv.slice(2));
 const mode = process.argv.slice(2).find(value => !value.startsWith('--')) ?? 'status';
-const allowedModes = new Set(['init', 'provision-tenants', 'approve-member', 'smoke', 'start', 'status', 'backup', 'verify-backup', 'stop']);
+const allowedModes = new Set(['init', 'provision-tenants', 'approve-member', 'smoke', 'start', 'status', 'backup', 'verify-backup', 'upgrade-session-policy', 'stop']);
 if (args.has('--help') || !allowedModes.has(mode)) {
-  console.log('Usage: node qa/c05_local_persistent.mjs <init|provision-tenants|approve-member|smoke|start|status|backup|verify-backup|stop>');
+  console.log('Usage: node qa/c05_local_persistent.mjs <init|provision-tenants|approve-member|smoke|start|status|backup|verify-backup|upgrade-session-policy|stop>');
   process.exit(args.has('--help') ? 0 : 2);
 }
 
@@ -809,6 +810,71 @@ function verifyBackup() {
   }
 }
 
+
+function apiIsListening() {
+  return new Promise(resolve => {
+    const socket = connect({ host: '127.0.0.1', port: apiPort }, () => {
+      socket.destroy(); resolve(true);
+    });
+    socket.setTimeout(750, () => { socket.destroy(); resolve(false); });
+    socket.on('error', () => resolve(false));
+  });
+}
+
+/** Explicit offline 017->018 upgrade. No implicit migration of existing volumes.
+ * The owner's private SQL and encryption-key recovery must first be validated.
+ */
+async function upgradeSessionPolicy() {
+  if (process.env.CRECISOL_C05_LOCAL_IDLE_POLICY_UPGRADE_APPROVED !== 'YES' ||
+      process.env.CRECISOL_C05_LOCAL_POLICY_ADMIN_APPROVED !== 'YES')
+    throw new Error('Explicit separate local idle-policy upgrade and security-admin approvals required.');
+  if (await apiIsListening()) throw new Error('Stop C05 API before offline session-policy upgrade.');
+  if (!hasContainer() || !containerRunning())
+    throw new Error('Existing isolated C05 database must be running; will not create one.');
+  assertExistingC05Container();
+  assertNoUnresolvedRekey();
+  requireSha1OperatorsReady();
+  // Verifies SQL recovery in an ephemeral container plus external file hashes.
+  // The manifest does not contain independent copies of the keys themselves.
+  verifyBackup();
+  const expected = migrationNames.length - 1;
+  const history = mysqlSql('SELECT version,sha256 FROM c05_schema_migrations ORDER BY version')
+    .split(/\r?\n/).filter(Boolean);
+  if (history.length !== expected || history.some((line, index) => {
+    const [version, stored] = line.split('\t');
+    const migrationFile = path.join(root, 'database', 'migrations', migrationNames[index] + '.sql');
+    return Number(version) !== index + 1 || stored !== sha256(migrationFile);
+  })) throw new Error('Historic C05 ledger does not match 001-017; refusing offline upgrade.');
+  if (mysqlSql('SELECT status FROM c05_totp_sha1_policy WHERE policy_id=1') !== '1')
+    throw new Error('Only completed TOTP-SHA1 installations may be upgraded.');
+  const migration = path.join(root, 'database/migrations/018_c05_session_idle_policy.sql');
+  const exists = mysqlSql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='c05_session_idle_policy'");
+  const column = mysqlSql("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='c05_platform_operator' AND column_name='can_manage_session_policy'");
+  if (exists !== '0' || column !== '0')
+    throw new Error('Partially applied session-policy migration: restore verified backup before retrying.');
+  const key = loadEnvFile().CRECISOL_C05_TOKEN_HMAC_KEY || '';
+  if (!/^[0-9a-f]{64}$/i.test(key)) throw new Error('Protected token key unavailable.');
+  const adminHash = createHmac('sha256', Buffer.from(key, 'hex'))
+    .update('C05/platform-login:' + operatorMailboxes[0]).digest('hex');
+  const admin = mysqlSql("SELECT COUNT(*) FROM c05_platform_operator WHERE login_hmac=UNHEX('" +
+    adminHash + "') AND active=1 AND recovery_pending=0 AND LENGTH(protected_seed)=48");
+  if (admin !== '1') throw new Error('Explicit synthetic administrator identity not verified.');
+  // Historical sessions are revoked to prevent a fixed 5/15-minute credential
+  // being carried into the new sliding 30-minute policy.
+  mysqlSql(readFileSync(migration, 'utf8'));
+  mysqlSql("INSERT INTO c05_schema_migrations(version,migration_name,sha256,applied_at_utc)" +
+    " VALUES(18,'018_c05_session_idle_policy','" + sha256(migration) + "',UTC_TIMESTAMP(6))");
+  const changed = mysqlSql("UPDATE c05_platform_operator SET can_manage_session_policy=1 WHERE login_hmac=UNHEX('" +
+    adminHash + "') AND active=1 AND recovery_pending=0; SELECT ROW_COUNT()");
+  if (changed !== '1' ||
+      mysqlSql('SELECT COUNT(*) FROM c05_platform_operator WHERE can_manage_session_policy=1') !== '1')
+    throw new Error('Administrator privilege upgrade incomplete; do not restart API.');
+  if (mysqlSql('SELECT idle_minutes FROM c05_session_idle_policy WHERE policy_id=1') !== '30')
+    throw new Error('Initial 30-minute idle policy missing.');
+  console.log('PASS isolated C05-018: 30-minute idle default, one approved synthetic administrator; old sessions revoked.');
+  console.log('Owner-held external key recovery and real authenticators remain separate gates.');
+}
+
 function stop() {
   if (hasContainer() && containerRunning()) {
     assertExistingC05Container();
@@ -826,6 +892,7 @@ try {
   else if (mode === 'status') status();
   else if (mode === 'backup') backup();
   else if (mode === 'verify-backup') verifyBackup();
+  else if (mode === 'upgrade-session-policy') await upgradeSessionPolicy();
   else if (mode === 'stop') stop();
 } catch (error) {
   console.error(`C05 persistent operation failed: ${error.message}`);
