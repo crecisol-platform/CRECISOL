@@ -42,6 +42,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          umask 077
           # Refuse to reuse or delete any unrelated preexisting resource.
           test -z "$(docker ps -a --filter 'name=^/crecisol-c05-mysql-persistent$' --format '{{.Names}}')"
           test -z "$(docker volume ls --filter 'name=^crecisol-c05-mysql-data$' --format '{{.Name}}')"
@@ -55,8 +56,8 @@ jobs:
           }
           trap cleanup EXIT
           node qa/c05_local_persistent.mjs init
-          test "$(docker exec crecisol-c05-mysql-persistent mysql -uroot -Nse 'SELECT 1' 2>/dev/null || true)" != "1" || true
           cp "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md" "$RUNNER_TEMP/c05-access-reference"
+          cp "$CRECISOL_C05_PERSISTENT_SECRET_DIR/runtime.env" "$RUNNER_TEMP/c05-runtime-reference"
           node qa/c05_local_persistent.mjs backup
           node qa/c05_local_persistent.mjs verify-backup
           LATEST="$(cat "$CRECISOL_C05_PERSISTENT_SECRET_DIR/backups/.latest")"
@@ -68,7 +69,7 @@ jobs:
             exit 1
           fi
           # Restore protected runtime environment exactly, without logging its contents.
-          sed -i '$d' "$CRECISOL_C05_PERSISTENT_SECRET_DIR/runtime.env"
+          cp "$RUNNER_TEMP/c05-runtime-reference" "$CRECISOL_C05_PERSISTENT_SECRET_DIR/runtime.env"
           printf 'tamper' >> "$ARCHIVE"
           if node qa/c05_local_persistent.mjs verify-backup > "$RUNNER_TEMP/c05-negative-archive.log" 2>&1; then
             echo 'FAIL: modified SQL backup was accepted' >&2
