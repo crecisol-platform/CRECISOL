@@ -6,6 +6,7 @@
  */
 import { test, expect, type Page, type TestInfo } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 
 const BASELINE = 'f61a79d242288c686a88a7c3dd711f2be9a48c18';
 const sizes = [
@@ -19,9 +20,15 @@ type DebugWindow = Window & {
   ng?: { getComponent(element: Element): any };
 };
 
-const slug = (value: string): string => value.normalize('NFD')
-  .replace(/[\u0300-\u036f]/g, '').toLowerCase()
-  .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 75);
+// Preserve a distinctive cryptographic suffix: a long title and its
+// '-scrolled-footer' image must NEVER overwrite each other when slugged.
+const slug = (value: string): string => {
+  const prefix = value.normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 58);
+  const suffix = createHash('sha256').update(value, 'utf8').digest('hex').slice(0, 12);
+  return prefix + '-' + suffix;
+};
 
 async function capture(page: Page, testInfo: TestInfo, id: string): Promise<void> {
   const name = slug(id);
