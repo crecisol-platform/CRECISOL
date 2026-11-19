@@ -862,6 +862,8 @@ async function upgradeSessionPolicy() {
   // Historical sessions are revoked to prevent a fixed 5/15-minute credential
   // being carried into the new sliding 30-minute policy.
   mysqlSql(readFileSync(migration, 'utf8'));
+  // New table privileges are not inherited by the existing runtime role.
+  mysqlSql(readFileSync(path.join(root, 'database/operations/c05_local_runtime_role.sql'), 'utf8'));
   mysqlSql("INSERT INTO c05_schema_migrations(version,migration_name,sha256,applied_at_utc)" +
     " VALUES(18,'018_c05_session_idle_policy','" + sha256(migration) + "',UTC_TIMESTAMP(6))");
   const changed = mysqlSql("UPDATE c05_platform_operator SET can_manage_session_policy=1 WHERE login_hmac=UNHEX('" +

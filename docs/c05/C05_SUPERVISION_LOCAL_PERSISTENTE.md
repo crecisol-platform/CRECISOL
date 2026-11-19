@@ -145,3 +145,49 @@ credenciales y no reemplaza la comprobación real de acceso de cada operador.
 
 Los comandos `status`, `backup` y `verify-backup` siguen habilitados
 para diagnóstico y recuperación sin necesidad de activar un login.
+
+## Configuración de sesiones C05-018 (30 minutos de inactividad)
+
+Para instalaciones nuevas, el supervisor aplica las **18 migraciones** con
+`c05_session_idle_policy.idle_minutes=30`. No se trata de un token
+absoluto de 30 minutos: cada solicitud autenticada y validada renueva el
+vencimiento deslizante y la actividad real de teclado/puntero genera
+una comprobación de continuidad sin autorizarse desde el navegador.
+Un token inactivo durante 30 minutos se invalida en MySQL; el navegador
+solo presenta el vencimiento confirmado por el backend.
+
+La consola de operadores incluye **Seguridad → Caducidad por inactividad
+de sesiones**. Todos los operadores pueden consultar el plazo;
+únicamente el operador de seguridad con `can_manage_session_policy=1`
+puede cambiarlo entre 5 y 120 minutos, con MFA vigente, cuota de
+seguridad, revisión optimista y auditoría. El valor inicial es **30**.
+En el nuevo entorno sintético de QA, exclusivamente
+`identity.one@example.test` obtiene el permiso offline durante
+el aprovisionamiento. Los otros dos operadores y todas las cuentas
+empresariales carecen de ese permiso. Ningún campo del formulario
+confiere privilegios; el permiso se valida en backend.
+
+### Volúmenes C05-017 existentes: operación aditiva, no automática
+
+`init` y `start` **rechazan** un volumen con ledger 001–017.
+**No se debe repetir C05-017 ni borrar un volumen para avanzar**.
+Para preparar C05-018, Codex en el equipo propietario debe comprobar
+copia SQL y copia **independiente cifrada** de todas las llaves, ensayar
+su restauración completa en otro contenedor, detener la API C05,
+constatar que los tres operadores SHA1 estén recuperados y obtener
+autorización explícita del propietario. Entonces existe el modo
+`upgrade-session-policy`, que exige las dos variables de confirmación
+`CRECISOL_C05_LOCAL_IDLE_POLICY_UPGRADE_APPROVED=YES` y
+`CRECISOL_C05_LOCAL_POLICY_ADMIN_APPROVED=YES`. Sin ambas,
+sin API detenida o sin ledger íntegro, **NO EJECUTA**. Verifica backup,
+historial 001–017, esquema, operador sintético y aplica solo 018;
+revoca sesiones viejas de límites absolutos 5/15, asigna a la primera
+identidad sintética el permiso administrativo y completa el ledger.
+**Este comando no se ha ejecutado sobre el volumen del propietario.**
+
+Los tokens transitorios de verificación MFA, correo y recuperación
+conservan sus límites breves independientes por motivos de seguridad;
+la nueva configuración regula **sesiones autenticadas** y cookies
+asociadas, no autoriza ampliar enlaces de recuperación ni OTP de 30 s.
+La política es global en la consola de identidad C05, aislada de C01/C02,
+sin selector de tenant y sin acceso delegado a cada empresa.
