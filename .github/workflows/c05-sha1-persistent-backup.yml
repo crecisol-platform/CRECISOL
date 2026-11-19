@@ -1,0 +1,84 @@
+name: CRECISOL C05 SHA1 persistent backup restore isolated QA
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'qa/c05_local_persistent.mjs'
+      - 'qa/c05_sha1_persistent_guards.mjs'
+      - 'qa/c05_sha1_persistent_guards.test.mjs'
+      - 'docs/c05/C05_SUPERVISION_LOCAL_PERSISTENTE.md'
+      - '.github/workflows/c05-sha1-persistent-backup.yml'
+permissions:
+  contents: read
+
+jobs:
+  isolated-backup-restore:
+    name: Verify C05 isolated schema-017 persistence, SQL restore and external keys
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact PR commit, read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Audit inputs and compile only local synthetic provisioning helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/validate_foundation.py
+          node --check qa/c05_local_persistent.mjs
+          node --test qa/c05_sha1_persistent_guards.test.mjs
+          dotnet build backend/tools/Crecisol.LocalIdentityProvisioner/Crecisol.LocalIdentityProvisioner.csproj -c Release --nologo -warnaserror
+      - name: Real disposable MySQL8.4 init, backup, restore and negative recovery tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Refuse to reuse or delete any unrelated preexisting resource.
+          test -z "$(docker ps -a --filter 'name=^/crecisol-c05-mysql-persistent$' --format '{{.Names}}')"
+          test -z "$(docker volume ls --filter 'name=^crecisol-c05-mysql-data$' --format '{{.Name}}')"
+          export CRECISOL_C05_PERSISTENT_SECRET_DIR
+          CRECISOL_C05_PERSISTENT_SECRET_DIR="$(mktemp -d "$RUNNER_TEMP/c05-sha1-qa-XXXXXXXX")"
+          chmod 700 "$CRECISOL_C05_PERSISTENT_SECRET_DIR"
+          cleanup() {
+            docker rm -f crecisol-c05-mysql-persistent >/dev/null 2>&1 || true
+            docker volume rm crecisol-c05-mysql-data >/dev/null 2>&1 || true
+            rm -rf -- "$CRECISOL_C05_PERSISTENT_SECRET_DIR"
+          }
+          trap cleanup EXIT
+          node qa/c05_local_persistent.mjs init
+          test "$(docker exec crecisol-c05-mysql-persistent mysql -uroot -Nse 'SELECT 1' 2>/dev/null || true)" != "1" || true
+          cp "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md" "$RUNNER_TEMP/c05-access-reference"
+          node qa/c05_local_persistent.mjs backup
+          node qa/c05_local_persistent.mjs verify-backup
+          LATEST="$(cat "$CRECISOL_C05_PERSISTENT_SECRET_DIR/backups/.latest")"
+          ARCHIVE="$CRECISOL_C05_PERSISTENT_SECRET_DIR/backups/$LATEST"
+          cp "$ARCHIVE" "$RUNNER_TEMP/c05-archive-reference"
+          printf '# simulate replaced secret\n' >> "$CRECISOL_C05_PERSISTENT_SECRET_DIR/runtime.env"
+          if node qa/c05_local_persistent.mjs verify-backup > "$RUNNER_TEMP/c05-negative-key.log" 2>&1; then
+            echo 'FAIL: modified external key/config was accepted' >&2
+            exit 1
+          fi
+          # Restore protected runtime environment exactly, without logging its contents.
+          sed -i '$d' "$CRECISOL_C05_PERSISTENT_SECRET_DIR/runtime.env"
+          printf 'tamper' >> "$ARCHIVE"
+          if node qa/c05_local_persistent.mjs verify-backup > "$RUNNER_TEMP/c05-negative-archive.log" 2>&1; then
+            echo 'FAIL: modified SQL backup was accepted' >&2
+            exit 1
+          fi
+          cp "$RUNNER_TEMP/c05-archive-reference" "$ARCHIVE"
+          node qa/c05_local_persistent.mjs verify-backup
+          node qa/c05_local_persistent.mjs stop
+          node qa/c05_local_persistent.mjs init
+          cmp "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md" "$RUNNER_TEMP/c05-access-reference"
+          node qa/c05_local_persistent.mjs backup
+          node qa/c05_local_persistent.mjs verify-backup
+          echo "PASS isolated C05 SHA1 database, secrets fingerprint, backup/restore, tamper rejection and persistent restart on commit $GITHUB_SHA"
