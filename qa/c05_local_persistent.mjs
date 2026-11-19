@@ -182,7 +182,8 @@ function ensureRuntime() {
 
 function assertExistingC05Container() {
   const mounts = JSON.parse(run('docker', ['inspect', '--format', '{{json .Mounts}}', container]));
-  const ports = JSON.parse(run('docker', ['inspect', '--format', '{{json .NetworkSettings.Ports}}', container]));
+  // HostConfig persists across docker stop; NetworkSettings.Ports becomes null when stopped.
+  const ports = JSON.parse(run('docker', ['inspect', '--format', '{{json .HostConfig.PortBindings}}', container]));
   const configuredImage = run('docker', ['inspect', '--format', '{{.Config.Image}}', container]);
   assertC05ContainerIdentity(mounts, ports, configuredImage, volume, rootPasswordFile, image);
 }
