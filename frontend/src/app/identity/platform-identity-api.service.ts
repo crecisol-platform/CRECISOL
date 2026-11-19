@@ -29,6 +29,9 @@ export class PlatformIdentityApiService {
   private recoveryChallenge = '';
   private recoveryCase = '';
   private factorChallenge = '';
+  // Revision gates prevent a cancelled/expired async QR from restoring a secret.
+  private factorQrRevision = 0;
+  private recoveryQrRevision = 0;
   private backupTimeout: ReturnType<typeof setTimeout> | undefined;
   private factorTimeout: ReturnType<typeof setTimeout> | undefined;
   private recoveryTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -70,6 +73,8 @@ export class PlatformIdentityApiService {
     this.shareTimeout = setTimeout(() => this.handoffShare.set(''), 30 * 60_000);
   }
   async logout(): Promise<void> {
+    this.discardFactorSetup();
+    this.discardRecoverySetup();
     this.restoring.set(true);
     try { await this.post('logout', {}); } catch { /* Local privacy teardown still completes. */ }
     finally { this.clear(); this.restoring.set(false); }
@@ -101,8 +106,11 @@ export class PlatformIdentityApiService {
   async requestMailbox(mailbox: string, code: string): Promise<void> { await this.post('mailbox/request', { mailbox, code }); }
   async completeMailbox(token: string, code: string): Promise<void> { await this.post('mailbox/complete', { token, code }); this.clear(); }
   async replaceFactor(currentPassword: string, code: string): Promise<void> {
+    const revision = ++this.factorQrRevision;
     const result = await this.post<{ challenge: string; secret: string; uri: string }>('factor/replace', { currentPassword, code });
+    if (revision !== this.factorQrRevision || this.state() !== 'authenticated') return;
     const qr = await createTotpQr(result.secret, result.uri);
+    if (revision !== this.factorQrRevision || this.state() !== 'authenticated') return;
     this.factorChallenge = result.challenge; this.factorSecret.set(result.secret); this.factorQr.set(qr);
     if (this.factorTimeout) clearTimeout(this.factorTimeout);
     this.factorTimeout = setTimeout(() => { this.discardFactorSetup(); }, 5 * 60_000);
@@ -116,8 +124,11 @@ export class PlatformIdentityApiService {
     this.recoveryReference.set(result.reference);
   }
   async completeRecovery(caseId: string, shareA: string, shareB: string, newPassword: string): Promise<void> {
+    const revision = ++this.recoveryQrRevision;
     const result = await this.post<{ challenge: string; secret: string; uri: string }>('operator-recovery/complete', { caseId, shareA, shareB, newPassword });
+    if (revision !== this.recoveryQrRevision) return;
     const qr = await createTotpQr(result.secret, result.uri);
+    if (revision !== this.recoveryQrRevision) return;
     this.recoveryCase = caseId; this.recoveryChallenge = result.challenge;
     this.operatorRecoverySeed.set(result.secret); this.operatorRecoveryQr.set(qr);
     if (this.recoveryTimeout) clearTimeout(this.recoveryTimeout);
@@ -142,16 +153,20 @@ export class PlatformIdentityApiService {
     }
   }
   discardFactorSetup(): void {
+    ++this.factorQrRevision;
     if (this.factorTimeout) clearTimeout(this.factorTimeout);
     this.factorTimeout = undefined; this.factorChallenge = '';
     this.factorSecret.set(''); this.factorQr.set('');
   }
   discardRecoverySetup(): void {
+    ++this.recoveryQrRevision;
     if (this.recoveryTimeout) clearTimeout(this.recoveryTimeout);
     this.recoveryTimeout = undefined; this.recoveryCase = ''; this.recoveryChallenge = '';
     this.operatorRecoverySeed.set(''); this.operatorRecoveryQr.set('');
   }
   clear(): void {
+    ++this.factorQrRevision;
+    ++this.recoveryQrRevision;
     for (const timer of [this.backupTimeout, this.factorTimeout, this.recoveryTimeout, this.shareTimeout]) if (timer) clearTimeout(timer);
     this.backupTimeout = undefined; this.factorTimeout = undefined; this.recoveryTimeout = undefined; this.shareTimeout = undefined;
     this.csrf = ''; this.challenge = ''; this.state.set('anonymous'); this.case.set(null); this.handoffShare.set(''); this.profile.set(null); this.photo.set(''); this.abuse.set([]);
