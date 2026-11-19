@@ -22,6 +22,7 @@
               }
             ],
             "styles": [
+              "src/app/ui/institutional-system/institutional-tokens.css",
               "src/styles.css"
             ],
             "budgets": []
@@ -54,6 +55,15 @@
               "tsConfig": "tsconfig.patterns.json",
               "outputPath": "dist/crecisol-pattern-harness",
               "assets": []
+            },
+            "institutional-harness": {
+              "optimization": false,
+              "sourceMap": true,
+              "browser": "tests/institutional-harness/main.ts",
+              "index": "tests/institutional-harness/index.html",
+              "tsConfig": "tsconfig.institutional.json",
+              "outputPath": "dist/crecisol-institutional-harness",
+              "assets": []
             }
           },
           "defaultConfiguration": "production"
@@ -67,6 +77,9 @@
             },
             "pattern-harness": {
               "buildTarget": "crecisol-web:build:pattern-harness"
+            },
+            "institutional-harness": {
+              "buildTarget": "crecisol-web:build:institutional-harness"
             }
           },
           "defaultConfiguration": "development"
