@@ -74,7 +74,11 @@ Las sesiones, códigos de recuperación y permisos temporales caducan o pueden r
 
 ## Copias y recuperación
 
-`backup` escribe el volcado comprimido fuera del repositorio. `verify-backup` restaura la copia más reciente en un contenedor temporal aislado y comprueba 16 migraciones para copias previas al corte o 17 posteriores. Las claves runtime permanecen en el directorio externo y no deben regenerarse al reiniciar. Una recuperación real debe restaurar conjuntamente el volcado y las claves en un entorno C05 temporal antes de reemplazar el volumen, siempre con una decisión explícita.
+`backup` exige una base C05 existente y encendida: no crea silenciosamente contenedores, volúmenes, cuentas ni llaves. Guarda un SQL comprimido y un manifiesto protegido (SHA-256 de archivo SQL, huella del historial 001–016 o 001–017, recuentos de operadores, cuentas, factores, sesiones, membresías y tenants, y SHA-256 de llaves/archivos externos existentes). `verify-backup` valida el manifiesto, comprueba que esas llaves todavía existen sin cambios y restaura SQL en un contenedor nuevo de red aislada, sin puerto publicado ni volumen persistente; compara historial y recuentos con el origen. Al salir elimina exclusivamente el contenedor temporal creado en esa ejecución.
+
+**Importante:** el manifiesto contiene huellas, **no copia, protege ni restaura las llaves mismas**. Además de las copias SQL, el propietario debe conservar una copia independiente, cifrada y verificable de `runtime.env`, `mysql-root.password`, `access.md`, `mailbox.password` y el archivo privado de cuentas tenant si existe; debe poder recuperarla en un entorno C05 distinto. Es una barrera de aceptación antes del corte irreversible. Verificar los hashes de las llaves originales no demuestra que exista un respaldo recuperable de ellas. La base `crecisol_local` de C01/C02 nunca participa en este procedimiento.
+
+Los respaldos históricos sin manifiesto no se convierten automáticamente en verificados: requieren revisión de restauración separada. No efectuar la migración 017 de un volumen anterior sin respaldos SQL **y llaves**, restauración comprobada y recuperación offline de operadores con la API detenida.
 
 ## Reversión segura
 
