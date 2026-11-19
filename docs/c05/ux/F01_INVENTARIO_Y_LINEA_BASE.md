@@ -49,7 +49,7 @@ La UI captura mensajes de `IdentityPortalComponent.run`, `PlatformIdentityPanelC
 
 ## Calificación inicial (heurística de muestras del propietario, no del SHA congelado)
 
-**Origen:** capturas aportadas en este chat el 19-11-2026; no incluyen SHA, metadata de viewport normalizado, ni evidencia de integración con backend. Por ello las notas en el CSV son **orientativas** y **no son una certificación visual sobre `f61a79d...`**. Hay **31 entradas** con una nota aproximada y **34 sin nota por evidencia insuficiente**.
+**Origen:** capturas aportadas en este chat el 19-11-2026; no incluyen SHA, metadata de viewport normalizado, ni evidencia de integración con backend. Por ello las notas en el CSV son **orientativas** y **no son una certificación visual sobre `f61a79d...`**. La matriz se actualizó con **65/65 calificaciones iniciales provisionales** (promedio estimado **4,02/10**): **51 con confianza media** por referencia visual o familia y **14 con confianza baja** por inferencia/comportamiento aún no observado de manera independiente. La media histórica inicial de las 31 muestras originales era 4,29/10. Ninguna cifra supone calificación premium o certificación de permisos.
 
 | Grupo de imágenes observado | Línea base orientativa /10 | Evidencia visual que motiva la nota |
 | --- | ---: | --- |
@@ -65,10 +65,10 @@ No medir visualmente solo con el número de formularios, el color azul ni el éx
 
 ## Riesgos y deuda de evidencia F01
 
-- **Riesgo P1 de auditabilidad:** ninguna de las capturas suministradas relaciona inequívocamente el archivo PNG con el SHA `f61...`; se necesita la matriz de capturas automáticas y la inspección del resultado real.
+- **Riesgo de auditabilidad acotado:** las fotos aportadas por el propietario no contienen SHA, pero el run F01 44619062318 produjo **212 PNG+212 JSON** sintéticos vinculados a base `f61...`, ver `F01_EVIDENCIA_VISUAL_Y_HALLAZGOS_2026_11_19.md`. La ampliación de estados y las capturas inferiores de modal requieren aún su propia validación.
 - **Riesgo de sobreafirmación:** el workflow previo `c05-institutional-ui-audits.yml` del candidato #172 terminó SUCCESS (run 44601679085, 5 jobs), pero **no subió capturas**; su SUCCESS **no constituye** evaluación estética humana, ni certifica los 65 estados inventariados.
 - **Cobertura manual obligatoria:** TOTP QR, WebAuthn con autenticador físico, expiración real, role mismatch, denied y casos de 24 h no deben considerarse satisfechos con señales de Angular alteradas sintéticamente.
-- **Dependencias operativas:** para Angular 22, `frontend/package.json` exige Node `>=24.15.0 <25`; las capturas requieren npm, Chromium y app local en `127.0.0.1:4200`. En el contenedor de autoría hay Chromium pero Node 22 y falta código descargable/servidor C05 local, por lo que **no se ejecutan aquí** las capturas reales.
+- **Dependencias operativas:** Angular 22 exige Node `>=24.15.0 <25`, npm, Chromium y dev-server `127.0.0.1:4200`. El run GitHub 44619062318 sí compiló y ejecutó Playwright con éxito, generando capturas sintéticas. Es una ejecución en runner GitHub, no una ejecución local del propietario ni un backend/MySQL vivo.
 - **Capturas de material sensible:** nunca registrar contraseñas, semillas, QR MFA reales, tokens, códigos de respaldo o PII en artefactos públicos; solo fixtures ficticios no reutilizables.
 
-**Veredicto documental F01 en su estado inicial:** matriz redactada, contratos extraídos, pruebas preparadas; **certificación NO-GO hasta evidencia visual ejecutada y auditorías completas en el SHA de esta fase**. No avanzar a F02.
+**Veredicto de inventario:** trazabilidad y primeras capturas verificadas; la **certificación F01 permanece sujeta al gate ampliado de PNG/JSON, auditorías A/B/C y acta con SHA final**. No avanzar a F02.
