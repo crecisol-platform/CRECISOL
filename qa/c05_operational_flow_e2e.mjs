@@ -17,6 +17,7 @@ import { verifyAssisted } from './c05_assisted_browser_checks.mjs';
 import { verifyProfile } from './c05_profile_browser_checks.mjs';
 import { verifyTenantAuditBoundary } from './c05_tenant_audit_checks.mjs';
 import { verifyOperatorRecovery } from './c05_operator_recovery_checks.mjs';
+import { verifySha1EnrollmentQr } from './c05_totp_qr_checks.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 mkdirSync(path.join(root, '.cache'), { recursive: true });
@@ -396,6 +397,7 @@ try {
   await page.getByRole('button', { name: 'Configurar segundo factor' }).click();
   await page.getByText('No puedo escanear: mostrar clave manual', { exact: true }).click();
   const seed = await page.getByLabel('Clave de configuración MFA').innerText(); confidential.push(seed);
+  await verifySha1EnrollmentQr(page, 'Código QR privado para vincular CRECISOL con tu aplicación de autenticación', seed, check);
   await page.getByLabel('Código de tu aplicación de autenticación').fill(totp(seed, true));
   const verified = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
@@ -569,6 +571,7 @@ try {
   await page.getByRole('button', { name: 'Configurar segundo factor' }).click();
   await page.getByText('No puedo escanear: mostrar clave manual', { exact: true }).click();
   const replacedSeed = await page.getByLabel('Clave de configuración MFA').innerText(); confidential.push(replacedSeed);
+  await verifySha1EnrollmentQr(page, 'Código QR privado para vincular CRECISOL con tu aplicación de autenticación', replacedSeed, check);
   await page.getByLabel('Código de tu aplicación de autenticación').fill(totp(replacedSeed, true));
   const reverified = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
