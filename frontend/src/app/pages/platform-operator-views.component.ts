@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { identityDateLabel, identityReferenceLabel } from '../identity/identity-presentation';
 import { PlatformIdentityApiService } from '../identity/platform-identity-api.service';
 import { InstitutionalModalComponent } from '../ui/institutional-modal/institutional-modal.component';
 
@@ -11,6 +12,12 @@ type OperatorAction = { event: Event; action: string };
 })
 export class PlatformOperatorSessionsComponent {
   readonly platform = inject(PlatformIdentityApiService);
+  readonly sessionRows = computed(() => this.platform.sessions().map(session => ({
+    ...session,
+    lastActivityLabel: identityDateLabel(session.lastSeenAtUtc),
+    expiryLabel: identityDateLabel(session.expiresAtUtc),
+    referenceLabel: identityReferenceLabel(session.id)
+  })));
   readonly busy = input(false);
   readonly feedback = input(''); readonly error = input('');
   readonly actionRequested = output<OperatorAction>();
