@@ -12,6 +12,7 @@ export class PlatformIdentityApiService {
   private readonly http = inject(HttpClient);
   private csrf = '';
   private challenge = '';
+  private sessionRevision = 0;
   readonly state = signal<'anonymous' | 'challenge' | 'authenticated'>('anonymous');
   readonly restoring = signal(true);
   readonly handoffShare = signal('');
@@ -40,16 +41,25 @@ export class PlatformIdentityApiService {
   readonly case = signal<{ caseId: string; readyAtUtc: string | null; blocked: boolean; consumed: boolean } | null>(null);
   constructor() { void this.restore(); }
   private async restore(): Promise<void> {
-    try { const result = await this.post<{ csrfToken: string; expiresAtUtc: string }>('restore', {}); this.csrf = result.csrfToken;
-      this.sessionWindow.establish(result.expiresAtUtc); this.state.set('authenticated'); }
-    catch { this.clear(); } finally { this.restoring.set(false); }
+    const revision = this.sessionRevision;
+    try {
+      const result = await this.post<{ csrfToken: string; expiresAtUtc: string }>('restore', {});
+      if (revision !== this.sessionRevision) return;
+      this.csrf = result.csrfToken;
+      this.sessionWindow.establish(result.expiresAtUtc); this.state.set('authenticated');
+    } catch { if (revision === this.sessionRevision) this.clear(); }
+    finally { this.restoring.set(false); }
   }
   async login(mailbox: string, password: string): Promise<void> {
+    const revision = ++this.sessionRevision;
     const result = await this.post<{ challenge: string }>('login', { mailbox, password });
+    if (revision !== this.sessionRevision) return;
     this.challenge = result.challenge; this.state.set('challenge');
   }
   async mfa(code: string): Promise<void> {
-    const result = await this.post<{ csrfToken: string; expiresAtUtc: string }>('mfa', { challenge: this.challenge, code });
+    const revision = this.sessionRevision, challenge = this.challenge;
+    const result = await this.post<{ csrfToken: string; expiresAtUtc: string }>('mfa', { challenge, code });
+    if (revision !== this.sessionRevision || challenge !== this.challenge) return;
     if (!/^[A-F0-9]{64}$/i.test(result.csrfToken)) throw new Error('identity_unavailable');
     this.challenge = ''; this.csrf = result.csrfToken; this.sessionWindow.establish(result.expiresAtUtc); this.state.set('authenticated');
   }
@@ -66,24 +76,35 @@ export class PlatformIdentityApiService {
     await this.lookup(caseId);
   }
   async releaseShare(caseId: string, code: string): Promise<void> {
+    const revision = this.sessionRevision;
     this.handoffShare.set('');
     const result = await this.post<{ share: string }>('release-share', { caseId, code });
+    if (revision !== this.sessionRevision || this.state() !== 'authenticated') return;
     this.handoffShare.set(result.share);
     if (this.shareTimeout) clearTimeout(this.shareTimeout);
     this.shareTimeout = setTimeout(() => this.handoffShare.set(''), 30 * 60_000);
   }
   async logout(): Promise<void> {
-    this.discardFactorSetup();
-    this.discardRecoverySetup();
+    // Tear down private state before waiting on an untrusted network response.
+    const csrf = this.csrf;
     this.restoring.set(true);
-    try { await this.post('logout', {}); } catch { /* Local privacy teardown still completes. */ }
-    finally { this.clear(); this.restoring.set(false); }
+    this.clear();
+    try {
+      await firstValueFrom(this.http.post<void>('/api/v1/platform-identity/logout', {}, {
+        headers: csrf ? { 'X-Crecisol-Browser': '1', 'X-Crecisol-CSRF': csrf } : { 'X-Crecisol-Browser': '1' },
+        keepalive: true
+      }).pipe(timeout({ first: 8000 })));
+    } catch { /* Local privacy teardown is already complete. */ }
+    finally { this.restoring.set(false); }
   }
   async loadProfile(): Promise<void> {
+    const revision = this.sessionRevision;
     const profile = await this.post<{ displayName: string; language: string; timeZone: string; hasPhoto: boolean }>('profile/read', {});
+    if (revision !== this.sessionRevision || this.state() !== 'authenticated') return;
     this.profile.set(profile); this.photo.set('');
     if (profile.hasPhoto) {
       const photo = await this.post<{ png: string }>('profile/photo', {});
+      if (revision !== this.sessionRevision || this.state() !== 'authenticated') return;
       if (!/^[A-Za-z0-9+/=]+$/.test(photo.png) || photo.png.length > 32768) throw new Error('identity_unavailable');
       this.photo.set('data:image/png;base64,' + photo.png);
     }
@@ -94,10 +115,22 @@ export class PlatformIdentityApiService {
   async uploadPhoto(file: File): Promise<void> {
     await this.post('profile/photo-upload', { pixels: await canonicalPhotoPixels(file) }); await this.loadProfile();
   }
-  async loadAbuse(): Promise<void> { this.abuse.set((await this.post<{ signals: Array<{ kind: string; count: number }> }>('abuse-summary', {})).signals); }
-  async loadSessions(): Promise<void> { this.sessions.set((await this.post<{ sessions: Array<{ id: string; device: string; lastSeenAtUtc: string; expiresAtUtc: string }> }>('sessions', {})).sessions); }
-  async rotateSession(): Promise<void> { const result = await this.post<{ csrfToken: string; expiresAtUtc: string }>('sessions/rotate', {});
-    this.csrf = result.csrfToken; this.sessionWindow.establish(result.expiresAtUtc); await this.loadSessions(); }
+  async loadAbuse(): Promise<void> {
+    const revision = this.sessionRevision;
+    const result = await this.post<{ signals: Array<{ kind: string; count: number }> }>('abuse-summary', {});
+    if (revision === this.sessionRevision && this.state() === 'authenticated') this.abuse.set(result.signals);
+  }
+  async loadSessions(): Promise<void> {
+    const revision = this.sessionRevision;
+    const result = await this.post<{ sessions: Array<{ id: string; device: string; lastSeenAtUtc: string; expiresAtUtc: string }> }>('sessions', {});
+    if (revision === this.sessionRevision && this.state() === 'authenticated') this.sessions.set(result.sessions);
+  }
+  async rotateSession(): Promise<void> {
+    const revision = this.sessionRevision;
+    const result = await this.post<{ csrfToken: string; expiresAtUtc: string }>('sessions/rotate', {});
+    if (revision !== this.sessionRevision || this.state() !== 'authenticated') return;
+    this.csrf = result.csrfToken; this.sessionWindow.establish(result.expiresAtUtc); await this.loadSessions();
+  }
   async revokeSession(sessionId: string): Promise<void> { await this.post('sessions/revoke', { sessionId }); await this.loadSessions(); }
   async revokeAll(code: string): Promise<void> { await this.post('sessions/revoke-all', { code }); this.clear(); }
   async changePassword(currentPassword: string, newPassword: string, code: string): Promise<void> {
@@ -116,7 +149,10 @@ export class PlatformIdentityApiService {
     this.factorTimeout = setTimeout(() => { this.discardFactorSetup(); }, 5 * 60_000);
   }
   async confirmFactor(code: string): Promise<void> {
-    const result = await this.post<{ recoveryCodes: string[] }>('factor/confirm', { challenge: this.factorChallenge, code });
+    const revision = this.factorQrRevision, challenge = this.factorChallenge;
+    if (!challenge) throw new Error('identity_unavailable');
+    const result = await this.post<{ recoveryCodes: string[] }>('factor/confirm', { challenge, code });
+    if (revision !== this.factorQrRevision || challenge !== this.factorChallenge) return;
     this.clear(); this.showBackups(result.recoveryCodes);
   }
   async requestRecovery(mailbox: string): Promise<void> {
@@ -135,7 +171,10 @@ export class PlatformIdentityApiService {
     this.recoveryTimeout = setTimeout(() => { this.discardRecoverySetup(); }, 5 * 60_000);
   }
   async confirmRecovery(code: string): Promise<void> {
-    const result = await this.post<{ recoveryCodes: string[] }>('operator-recovery/enroll', { caseId: this.recoveryCase, token: this.recoveryChallenge, code });
+    const revision = this.recoveryQrRevision, caseId = this.recoveryCase, token = this.recoveryChallenge;
+    if (!caseId || !token) throw new Error('identity_unavailable');
+    const result = await this.post<{ recoveryCodes: string[] }>('operator-recovery/enroll', { caseId, token, code });
+    if (revision !== this.recoveryQrRevision || token !== this.recoveryChallenge) return;
     this.clear(); this.showBackups(result.recoveryCodes);
   }
   async reportIncident(token: string): Promise<void> { await this.post('incidents/report', { token }); this.clear(); }
@@ -165,6 +204,7 @@ export class PlatformIdentityApiService {
     this.operatorRecoverySeed.set(''); this.operatorRecoveryQr.set('');
   }
   clear(): void {
+    ++this.sessionRevision;
     ++this.factorQrRevision;
     ++this.recoveryQrRevision;
     for (const timer of [this.backupTimeout, this.factorTimeout, this.recoveryTimeout, this.shareTimeout]) if (timer) clearTimeout(timer);

@@ -25,6 +25,9 @@ export class IdentityApiService {
   private readonly stateValue = signal<IdentityState>('anonymous');
   private challengeValue: string | null = null;
   private csrfValue: string | null = null;
+  // Invalidate responses created under an older session or MFA enrollment.
+  private sessionRevision = 0;
+  private enrollmentRevision = 0;
 
   readonly state = this.stateValue.asReadonly();
   readonly restoring = signal(true);
@@ -32,16 +35,18 @@ export class IdentityApiService {
   constructor() { void this.restore(); }
 
   private async restore(): Promise<void> {
+    const revision = this.sessionRevision;
     try {
       const result = await firstValueFrom(this.http.post<{ csrfToken: string; expiresAtUtc: string }>(`${API}/browser/restore`, {}, {
         headers: { 'X-Crecisol-Browser': '1' }
       }).pipe(timeout({ first: 8000 })));
+      if (revision !== this.sessionRevision) return;
       if (/^[0-9a-f]{64}$/i.test(result.csrfToken)) {
         this.csrfValue = result.csrfToken;
         this.sessionWindow.establish(result.expiresAtUtc);
         this.stateValue.set('authenticated');
       }
-    } catch { this.clear(); }
+    } catch { if (revision === this.sessionRevision) this.clear(); }
     finally { this.restoring.set(false); }
   }
   readonly enrollmentRequired = signal(false);
@@ -106,7 +111,9 @@ export class IdentityApiService {
   }
 
   async loadSecurityEvents(): Promise<void> {
-    this.securityEvents.set((await this.post<{ events: Array<{ action: string; outcome: number; atUtc: string }> }>('security/events', {})).events);
+    const revision = this.sessionRevision;
+    const result = await this.post<{ events: Array<{ action: string; outcome: number; atUtc: string }> }>('security/events', {});
+    if (revision === this.sessionRevision && this.state() === 'authenticated') this.securityEvents.set(result.events);
   }
 
   async reportIncident(token: string): Promise<void> {
@@ -128,10 +135,13 @@ export class IdentityApiService {
     await this.post('factor/recover-passkey', { token, newPassword }); this.clear();
   }
   async loadProfile(): Promise<void> {
+    const revision = this.sessionRevision;
     const result = await this.post<{ displayName: string; language: string; timeZone: string; hasPhoto: boolean }>('profile/read', {});
+    if (revision !== this.sessionRevision || this.state() !== 'authenticated') return;
     this.profile.set(result); this.photo.set('');
     if (result.hasPhoto) {
       const image = await this.post<{ png: string; mime: string; width: number; height: number }>('profile/photo', {});
+      if (revision !== this.sessionRevision || this.state() !== 'authenticated') return;
       if (image.mime !== 'image/png' || image.width !== 64 || image.height !== 64 || image.png.length > 32768 || !/^[A-Za-z0-9+/=]+$/.test(image.png))
         throw new Error('identity_unavailable');
       this.photo.set('data:image/png;base64,' + image.png);
@@ -182,12 +192,14 @@ export class IdentityApiService {
   }
 
   async beginLogin(mailbox: string, password: string): Promise<void> {
+    const revision = ++this.sessionRevision;
     let receipt: LoginReceipt;
     try {
       receipt = await this.post<LoginReceipt>('login', { mailbox, password }, false);
     } finally {
       password = '';
     }
+    if (revision !== this.sessionRevision) return;
     if (!receipt.stepUpRequired || !receipt.challenge || receipt.sessionToken) {
       this.clear();
       throw new Error('identity_unavailable');
@@ -199,9 +211,11 @@ export class IdentityApiService {
   }
 
   async verifyMfa(code: string): Promise<void> {
+    const revision = this.sessionRevision;
     const challenge = this.challengeValue;
     if (!challenge) throw new Error('identity_unavailable');
     const result = await this.post<MfaReceipt>('mfa/verify', { challenge, code }, false);
+    if (revision !== this.sessionRevision || challenge !== this.challengeValue) return;
     this.acceptSession(result);
   }
 
@@ -245,8 +259,9 @@ export class IdentityApiService {
   }
 
   async refreshPasskeys(): Promise<void> {
+    const revision = this.sessionRevision;
     const result = await this.post<{ passkeys: Array<{ id: string; createdAtUtc: string }> }>('passkeys', {});
-    this.passkeys.set(result.passkeys);
+    if (revision === this.sessionRevision && this.state() === 'authenticated') this.passkeys.set(result.passkeys);
   }
 
   async revokePasskey(factorId: string, code: string): Promise<void> {
@@ -258,26 +273,32 @@ export class IdentityApiService {
     const challenge = this.challengeValue;
     if (!challenge || !this.enrollmentRequired() || this.stateValue() !== 'challenge')
       throw new Error('identity_unavailable');
+    const revision = ++this.enrollmentRevision;
+    this.enrollmentSecret.set('');
+    this.enrollmentQr.set('');
     const result = await this.post<{ secret: string; uri: string }>('mfa/enroll', { challenge }, false);
     // A session timeout or logout can invalidate enrollment while the HTTP
     // request or local QR encoder is still running. Never re-display a stale
     // seed after a new session/challenge has replaced this one.
-    if (this.challengeValue !== challenge || !this.enrollmentRequired() ||
-        this.stateValue() !== 'challenge') return;
+    if (revision !== this.enrollmentRevision || this.challengeValue !== challenge ||
+        !this.enrollmentRequired() || this.stateValue() !== 'challenge') return;
     const qr = await createTotpQr(result.secret, result.uri);
-    if (this.challengeValue !== challenge || !this.enrollmentRequired() ||
-        this.stateValue() !== 'challenge') return;
+    if (revision !== this.enrollmentRevision || this.challengeValue !== challenge ||
+        !this.enrollmentRequired() || this.stateValue() !== 'challenge') return;
     this.enrollmentSecret.set(result.secret);
     this.enrollmentQr.set(qr);
   }
 
   async refreshSessions(): Promise<void> {
+    const revision = this.sessionRevision;
     const result = await this.post<{ sessions: Array<{ id: string; expiresAtUtc: string; device: string; factor: string; lastSeenAtUtc: string }> }>('sessions', {});
-    this.sessions.set(result.sessions);
+    if (revision === this.sessionRevision && this.state() === 'authenticated') this.sessions.set(result.sessions);
   }
 
   async rotateSession(): Promise<void> {
+    const revision = this.sessionRevision;
     const result = await this.post<{ csrfToken: string; expiresAtUtc: string }>('sessions/rotate', {});
+    if (revision !== this.sessionRevision || this.state() !== 'authenticated') return;
     this.csrfValue = result.csrfToken;
     this.sessionWindow.establish(result.expiresAtUtc);
     await this.refreshSessions();
@@ -303,7 +324,9 @@ export class IdentityApiService {
   }
 
   async replaceFactor(currentPassword: string, code: string): Promise<void> {
+    const revision = this.sessionRevision;
     const result = await this.post<LoginReceipt>('factor/replace', { currentPassword, code });
+    if (revision !== this.sessionRevision) return;
     this.clear();
     if (!result.challenge || !result.enrollmentRequired) throw new Error('identity_unavailable');
     this.challengeValue = result.challenge;
@@ -326,9 +349,10 @@ export class IdentityApiService {
   }
 
   async readPrivate(branchId: string, resourceId: string): Promise<void> {
+    const revision = this.sessionRevision;
     this.privateReference.set('');
     const result = await this.post<{ reference: string }>('private/read', { branchId, resourceId });
-    this.privateReference.set(result.reference);
+    if (revision === this.sessionRevision && this.state() === 'authenticated') this.privateReference.set(result.reference);
   }
 
   private async post<T = unknown>(operation: string, body: object, authenticated = true): Promise<T> {
@@ -365,6 +389,8 @@ export class IdentityApiService {
   }
 
   clear(): void {
+    ++this.sessionRevision;
+    ++this.enrollmentRevision;
     if (this.challengeTimer) clearTimeout(this.challengeTimer);
     this.challengeTimer = undefined;
     this.sessionWindow.clear();

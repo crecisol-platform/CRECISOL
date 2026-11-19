@@ -112,3 +112,174 @@ test('B/D | factor replacement cannot reveal a QR after logout', async ({ page }
     return { seed: panel.platform.factorSecret(), qr: panel.platform.factorQr() };
   })).toEqual({ seed: '', qr: '' });
 });
+
+
+test('B/D | two tenant enroll requests cannot publish an older QR out of order', async ({ page }) => {
+  await page.route('**/api/v1/identity/browser/restore', route => route.fulfill({ status: 401, body: '{}' }));
+  await page.route('**/api/v1/identity/login', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ stepUpRequired: true, challenge: 'synthetic-c05-dual', enrollmentRequired: true })
+  }));
+  const newerSeed = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+  const newerUri = uri.replace(SEED, newerSeed);
+  let calls = 0, startFirst!: () => void, releaseFirst!: () => void;
+  const firstSeen = new Promise<void>(resolve => { startFirst = resolve; });
+  const firstHeld = new Promise<void>(resolve => { releaseFirst = resolve; });
+  await page.route('**/api/v1/identity/mfa/enroll', async route => {
+    if (++calls === 1) {
+      startFirst(); await firstHeld;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ secret: SEED, uri }) });
+    } else {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ secret: newerSeed, uri: newerUri }) });
+    }
+  });
+  await page.goto('/cuenta');
+  await expect.poll(() => page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    return portal.identity.restoring();
+  })).toBe(false);
+  await page.evaluate(async () => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    await portal.identity.beginLogin('synthetic@example.test', 'test-only-password');
+    (window as unknown as { c05Tasks?: Promise<void>[] }).c05Tasks = [portal.identity.enrollMfa()];
+  });
+  await firstSeen;
+  await page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    (window as unknown as { c05Tasks?: Promise<void>[] }).c05Tasks!.push(portal.identity.enrollMfa());
+  });
+  await expect.poll(() => page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    return portal.identity.enrollmentSecret();
+  })).toBe(newerSeed);
+  releaseFirst();
+  await page.evaluate(async () => { await Promise.all((window as unknown as { c05Tasks?: Promise<void>[] }).c05Tasks!); });
+  expect(await page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    return { secret: portal.identity.enrollmentSecret(), hasQr: portal.identity.enrollmentQr().startsWith('data:image/png;base64,') };
+  })).toEqual({ secret: newerSeed, hasQr: true });
+});
+
+test('B | tenant restoration cannot reauthenticate after local clear', async ({ page }) => {
+  let start!: () => void, resume!: () => void;
+  const seen = new Promise<void>(resolve => { start = resolve; });
+  const held = new Promise<void>(resolve => { resume = resolve; });
+  await page.route('**/api/v1/identity/browser/restore', async route => {
+    start(); await held;
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ csrfToken: 'a'.repeat(64), expiresAtUtc: '2099-01-01T00:00:00Z' }) });
+  });
+  await page.goto('/cuenta');
+  await seen;
+  await page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    portal.identity.clear();
+  });
+  resume();
+  await expect.poll(() => page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    return portal.identity.restoring();
+  })).toBe(false);
+  expect(await page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    return portal.identity.state();
+  })).toBe('anonymous');
+});
+
+test('B | operator confirmation cancelled during HTTP does not reveal backup codes', async ({ page }) => {
+  await page.route('**/api/v1/platform-identity/restore', route => route.fulfill({ status: 401, body: '{}' }));
+  let start!: () => void, resume!: () => void;
+  const seen = new Promise<void>(resolve => { start = resolve; });
+  const held = new Promise<void>(resolve => { resume = resolve; });
+  await page.route('**/api/v1/platform-identity/factor/confirm', async route => {
+    start(); await held;
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ recoveryCodes: ['synthetic-backup-not-real'] }) });
+  });
+  await page.goto('/cuenta?vista=operadores');
+  await expect.poll(() => page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    return panel.platform.restoring();
+  })).toBe(false);
+  await page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    panel.platform.factorChallenge = 'synthetic-factor';
+    (window as unknown as { c05Task?: Promise<void> }).c05Task = panel.platform.confirmFactor('123456');
+  });
+  await seen;
+  await page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    panel.platform.clear();
+  });
+  resume();
+  await page.evaluate(async () => { await (window as unknown as { c05Task?: Promise<void> }).c05Task; });
+  expect(await page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    return panel.platform.recoveryCodes();
+  })).toEqual([]);
+});
+
+test('B | recovery enrollment cancelled during HTTP does not reveal operator backup codes', async ({ page }) => {
+  await page.route('**/api/v1/platform-identity/restore', route => route.fulfill({ status: 401, body: '{}' }));
+  let start!: () => void, resume!: () => void;
+  const seen = new Promise<void>(resolve => { start = resolve; });
+  const held = new Promise<void>(resolve => { resume = resolve; });
+  await page.route('**/api/v1/platform-identity/operator-recovery/enroll', async route => {
+    start(); await held;
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ recoveryCodes: ['synthetic-backup-not-real'] }) });
+  });
+  await page.goto('/cuenta?vista=operadores');
+  await expect.poll(() => page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    return panel.platform.restoring();
+  })).toBe(false);
+  await page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    panel.platform.recoveryCase = 'synthetic-case'; panel.platform.recoveryChallenge = 'synthetic-token';
+    (window as unknown as { c05Task?: Promise<void> }).c05Task = panel.platform.confirmRecovery('123456');
+  });
+  await seen;
+  await page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    panel.platform.discardRecoverySetup();
+  });
+  resume();
+  await page.evaluate(async () => { await (window as unknown as { c05Task?: Promise<void> }).c05Task; });
+  expect(await page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    return panel.platform.recoveryCodes();
+  })).toEqual([]);
+});
+
+test('B | late operator recovery share is never restored after logout', async ({ page }) => {
+  await page.route('**/api/v1/platform-identity/restore', route => route.fulfill({ status: 401, body: '{}' }));
+  let start!: () => void, resume!: () => void;
+  const seen = new Promise<void>(resolve => { start = resolve; });
+  const held = new Promise<void>(resolve => { resume = resolve; });
+  await page.route('**/api/v1/platform-identity/release-share', async route => {
+    start(); await held;
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ share: 'synthetic-share' }) });
+  });
+  await page.goto('/cuenta?vista=operadores');
+  await expect.poll(() => page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    return panel.platform.restoring();
+  })).toBe(false);
+  await page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    panel.platform.state.set('authenticated');
+    (window as unknown as { c05Task?: Promise<void> }).c05Task = panel.platform.releaseShare('synthetic-case', '123456');
+  });
+  await seen;
+  await page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    panel.platform.clear();
+  });
+  resume();
+  await page.evaluate(async () => { await (window as unknown as { c05Task?: Promise<void> }).c05Task; });
+  expect(await page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    return panel.platform.handoffShare();
+  })).toBe('');
+});
