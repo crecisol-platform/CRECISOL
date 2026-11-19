@@ -2,6 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { InstitutionalIconComponent, type InstitutionalIconName } from './institutional-icon.component';
 
 export type InstitutionalNoticeKind = 'info' | 'success' | 'warning' | 'error';
+const NOTICE_ICONS: Readonly<Record<InstitutionalNoticeKind, InstitutionalIconName>> = {
+  info: 'info', success: 'check', warning: 'warning', error: 'error'
+};
 
 /** A presentation receipt, never proof that the backend accepted an action. */
 @Component({
@@ -16,7 +19,5 @@ export class InstitutionalNoticeComponent {
   readonly kind = input<InstitutionalNoticeKind>('info');
   readonly heading = input.required<string>();
   readonly message = input.required<string>();
-  readonly icon = computed<InstitutionalIconName>(() => ({
-    info: 'info', success: 'check', warning: 'warning', error: 'error'
-  })[this.kind()]);
+  readonly icon = computed<InstitutionalIconName>(() => NOTICE_ICONS[this.kind()]);
 }
