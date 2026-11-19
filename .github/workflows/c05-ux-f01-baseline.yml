@@ -1,0 +1,48 @@
+name: CRECISOL C05 UX F01 inventoried visual baseline
+on:
+  push:
+    branches: [feature/c05-ux-f01-inventario-20261119]
+    paths:
+      - 'docs/c05/ux/**'
+      - 'frontend/tests/c05-f01-visual-baseline.spec.ts'
+      - '.github/workflows/c05-ux-f01-baseline.yml'
+permissions:
+  contents: read
+concurrency:
+  group: c05-ux-f01-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  visual-baseline:
+    name: F01 | capture synthetic desktop/tablet/mobile before UX redesign
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v4.4.0
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Types and production build (NO deployment)
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+      - name: Chromium baseline capture with fictitious states
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright install --with-deps chromium
+          npx playwright test tests/c05-f01-visual-baseline.spec.ts --reporter=line
+      - name: Preserve visual evidence even when Chromium fails
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: c05-f01-synthetic-visual-baseline-${{ github.sha }}
+          path: frontend/test-results/
+          retention-days: 7
+          if-no-files-found: warn
