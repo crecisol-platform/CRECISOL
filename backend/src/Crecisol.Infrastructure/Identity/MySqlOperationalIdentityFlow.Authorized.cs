@@ -29,7 +29,19 @@ public sealed partial class MySqlOperationalIdentityFlow
             AND revoked_at_utc IS NULL AND expires_at_utc>UTC_TIMESTAMP(6)
             AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE FOR UPDATE
             """, ("t", tenant), ("h", hash), ("idle", idle));
-        if (account is null || member is null || session is null ||
+        if (session is null)
+        {
+            // An expired session must never revive if an administrator later
+            // increases the global inactivity limit.
+            await u.Run("""
+                UPDATE c05_identity_session SET revoked_at_utc=UTC_TIMESTAMP(6)
+                WHERE tenant_id=@t AND token_hmac=@h AND revoked_at_utc IS NULL
+                  AND (expires_at_utc<=UTC_TIMESTAMP(6)
+                       OR last_seen_at_utc<=UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE)
+                """, ("t", tenant), ("h", hash), ("idle", idle));
+            return new(false);
+        }
+        if (account is null || member is null ||
             !Bytes(session, "membership_id").SequenceEqual(Bytes(member, "membership_id")) ||
             Number(session, "account_revision") != Number(account, "security_revision") ||
             Number(session, "membership_revision") != Number(member, "approval_revision")) return new(false);

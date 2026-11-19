@@ -75,6 +75,20 @@ public sealed partial class MySqlOperationalIdentityFlow
             WHERE policy_id=1 AND revision=@revision
             """, ("idle", requested), ("admin", u.Actor!), ("revision", revision)) != 1)
             return new(false);
+        // A shorter policy invalidates stale sessions now. Increasing the
+        // limit later cannot resurrect any of them, including other tenants.
+        await u.Run("""
+            UPDATE c05_identity_session SET revoked_at_utc=UTC_TIMESTAMP(6)
+            WHERE revoked_at_utc IS NULL AND
+                  (expires_at_utc<=UTC_TIMESTAMP(6) OR
+                   last_seen_at_utc<=UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE)
+            """, ("idle", requested));
+        await u.Run("""
+            UPDATE c05_platform_session SET revoked_at_utc=UTC_TIMESTAMP(6)
+            WHERE revoked_at_utc IS NULL AND
+                  (expires_at_utc<=UTC_TIMESTAMP(6) OR
+                   last_seen_at_utc<=UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE)
+            """, ("idle", requested));
         u.IdleMinutes = requested;
         u.PolicyRevision = revision + 1;
         await SlidePlatformSession(u, tokenHash, requested);

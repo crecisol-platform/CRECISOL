@@ -59,7 +59,17 @@ public sealed partial class MySqlOperationalIdentityFlow
         var principal = await u.One("SELECT * FROM c05_platform_operator WHERE operator_id=@a AND active=1 AND recovery_pending=0 FOR UPDATE", ("a", Bytes(identity, "operator_id")));
         var idle = await SessionIdleMinutes(u, r.Operation == "platform/session-policy/update");
         var session = await u.One("SELECT * FROM c05_platform_session WHERE token_hmac=@h AND revoked_at_utc IS NULL AND expires_at_utc>UTC_TIMESTAMP(6) AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE FOR UPDATE", ("h", tokenHash), ("idle", idle));
-        if (principal is null || session is null || Number(principal, "security_revision") != Number(session, "security_revision")) return new(false);
+        if (session is null)
+        {
+            await u.Run("""
+                UPDATE c05_platform_session SET revoked_at_utc=UTC_TIMESTAMP(6)
+                WHERE token_hmac=@h AND revoked_at_utc IS NULL
+                  AND (expires_at_utc<=UTC_TIMESTAMP(6)
+                       OR last_seen_at_utc<=UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE)
+                """, ("h", tokenHash), ("idle", idle));
+            return new(false);
+        }
+        if (principal is null || Number(principal, "security_revision") != Number(session, "security_revision")) return new(false);
         u.Actor = Bytes(principal, "operator_id");
         u.VerifiedActor = true;
         await SlidePlatformSession(u, tokenHash, idle);

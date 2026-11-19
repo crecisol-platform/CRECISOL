@@ -17,3 +17,9 @@ CREATE TABLE c05_session_idle_policy (
 ) ENGINE=InnoDB;
 INSERT INTO c05_session_idle_policy(policy_id,idle_minutes,revision,changed_at_utc,changed_by)
  VALUES(1,30,1,UTC_TIMESTAMP(6),NULL);
+
+-- Invalidate pre-policy sessions created with fixed lifetimes (15/5 minutes).
+-- Operators and tenants reauthenticate once under the new 30-minute rule;
+-- MFA seeds, passwords, and recovery tokens remain unchanged.
+UPDATE c05_identity_session SET revoked_at_utc=UTC_TIMESTAMP(6) WHERE revoked_at_utc IS NULL;
+UPDATE c05_platform_session SET revoked_at_utc=UTC_TIMESTAMP(6) WHERE revoked_at_utc IS NULL;
