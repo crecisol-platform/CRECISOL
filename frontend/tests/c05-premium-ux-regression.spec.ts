@@ -111,3 +111,41 @@ test('C05 UX | a newly opened dialog does not inherit another operation receipt'
   await expect(modal).toBeVisible();
   await expect(modal).not.toContainText('Resultado anterior de otra operación');
 });
+
+
+test('C05 UX | profile edit keeps loaded defaults after cancel and reopening', async ({ page }) => {
+  await mockAccountRestore(page);
+  await page.goto('/cuenta?vista=perfil');
+  await expect(page.getByRole('navigation', { name: 'Mi cuenta' })).toBeVisible();
+  await page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    portal.identity.profile.set({
+      displayName: 'Perfil de prueba', language: 'en', timeZone: 'America/Tegucigalpa'
+    });
+  });
+  const open = page.getByRole('button', { name: 'Editar perfil de mi empresa', exact: true });
+  await open.click();
+  const dialog = page.getByRole('dialog', { name: 'Editar perfil de mi empresa', exact: true });
+  await expect(dialog.getByLabel('Nombre visible en esta empresa')).toHaveValue('Perfil de prueba');
+  await expect(dialog.getByLabel('Idioma preferido')).toHaveValue('en');
+  await dialog.getByLabel('Nombre visible en esta empresa').fill('Cambio descartado');
+  await dialog.getByRole('button', { name: 'Cerrar', exact: true }).click();
+  await expect(open).toBeFocused();
+  await open.click();
+  await expect(dialog.getByLabel('Nombre visible en esta empresa')).toHaveValue('Perfil de prueba');
+  await expect(dialog.getByLabel('Idioma preferido')).toHaveValue('en');
+});
+
+for (const viewport of [{ width: 320, height: 720 }, { width: 390, height: 844 }, { width: 1440, height: 900 }]) {
+  test(`C05 UX | coherent login and recovery at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/cuenta');
+    await expect(page.getByRole('heading', { name: 'Iniciar sesión', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Entrar con una llave de acceso', exact: true })).toBeVisible();
+    await expect(page.locator('a[href="http://localhost:4200/cuenta"]')).toHaveCount(0);
+    await page.getByRole('link', { name: 'Recuperar acceso', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Recuperar contraseña', exact: true })).toBeVisible();
+    await expect(page.getByLabel('Correo para recuperación')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+  });
+}
