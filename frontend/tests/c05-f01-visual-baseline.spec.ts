@@ -196,6 +196,18 @@ for (const size of sizes) {
       await capture(page, testInfo, 'account-' + view + '-empty-' + size.name);
       await seedAccount(page);
       await capture(page, testInfo, 'account-' + view + '-populated-' + size.name);
+      if (view === 'resumen') {
+        await page.evaluate(() => {
+          const el = document.querySelector('cs-identity-portal')!;
+          const owner = (window as DebugWindow).ng!.getComponent(el);
+          owner.identity.recoveryCodes.set(['AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA']);
+        });
+        await capture(page, testInfo, 'account-backup-codes-FAKE-ONLY-' + size.name);
+        await page.evaluate(() => {
+          const el = document.querySelector('cs-identity-portal')!;
+          (window as DebugWindow).ng!.getComponent(el).identity.recoveryCodes.set([]);
+        });
+      }
       await captureModals(page, testInfo, 'account-' + view + '-' + size.name);
       if (view === 'resumen') {
         const revoke = page.getByRole('button', { name: /Revocar sesión / }).first();
@@ -319,12 +331,52 @@ for (const size of sizes) {
     await page.goto('/cuenta?vista=operadores');
     const nav = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
     await expect(nav).toBeVisible();
+    await capture(page, testInfo, 'operator-cases-empty-synthetic-' + size.name);
+    await page.evaluate(() => {
+      const el = document.querySelector('cs-platform-identity-panel')!;
+      (window as DebugWindow).ng!.getComponent(el).platform.restoring.set(true);
+    });
+    await capture(page, testInfo, 'operator-restoring-synthetic-' + size.name);
+    await page.evaluate(() => {
+      const el = document.querySelector('cs-platform-identity-panel')!;
+      (window as DebugWindow).ng!.getComponent(el).platform.restoring.set(false);
+    });
     await nav.getByRole('button', { name: 'Sesiones' }).click();
     await capture(page, testInfo, 'operator-sessions-empty-synthetic-' + size.name);
     await nav.getByRole('button', { name: 'Monitor' }).click();
     await capture(page, testInfo, 'operator-monitor-empty-synthetic-' + size.name);
     await nav.getByRole('button', { name: 'Seguridad' }).click();
     await expect(page.getByRole('button', { name: /Caducidad por inactividad/ })).toBeVisible();
+    await page.evaluate(() => {
+      const el = document.querySelector('cs-platform-identity-panel')!;
+      (window as DebugWindow).ng!.getComponent(el).platform.recoveryCodes.set(['BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB']);
+    });
+    await capture(page, testInfo, 'operator-backup-codes-FAKE-ONLY-' + size.name);
+    await page.evaluate(() => {
+      const el = document.querySelector('cs-platform-identity-panel')!;
+      (window as DebugWindow).ng!.getComponent(el).platform.recoveryCodes.set([]);
+    });
+    await page.getByRole('button', { name: 'Reemplazar MFA de operador', exact: true }).click();
+    const operatorDialog = page.getByRole('dialog', { name: 'Reemplazar MFA de operador' });
+    await expect(operatorDialog).toBeVisible();
+    const { default: operatorQr } = await import('qrcode');
+    const operatorFakeQr = await operatorQr.toDataURL(
+      'otpauth://totp/CRECISOL:operator-f01%40example.test?secret=BBBBBBBBBBBBBBBB' +
+      '&issuer=CRECISOL&algorithm=SHA1&digits=6&period=30'
+    );
+    await page.evaluate((fakeQr: string) => {
+      const el = document.querySelector('cs-platform-identity-panel')!;
+      const owner = (window as DebugWindow).ng!.getComponent(el);
+      owner.platform.factorSecret.set('BBBBBBBBBBBBBBBB');
+      owner.platform.factorQr.set(fakeQr);
+    }, operatorFakeQr);
+    await expect(operatorDialog.getByRole('img', { name: /QR privado para vincular/ })).toBeVisible();
+    await capture(page, testInfo, 'operator-factor-enrollment-qr-FAKE-ONLY-' + size.name);
+    await captureDialogBottom(page, testInfo, 'operator-factor-enrollment-qr-FAKE-ONLY-' + size.name);
+    await operatorDialog.getByText('No puedo escanear: mostrar clave manual').click();
+    await capture(page, testInfo, 'operator-factor-enrollment-manual-FAKE-ONLY-' + size.name);
+    await operatorDialog.getByRole('button', { name: 'Cerrar', exact: true }).click();
+    await expect(operatorDialog).toHaveCount(0);
     await page.evaluate(() => {
       const el = document.querySelector('cs-platform-identity-panel')!;
       const owner = (window as DebugWindow).ng!.getComponent(el);
