@@ -208,8 +208,12 @@ function applyMigrations() {
   // Existing persistent SHA256 factors must NEVER be retired automatically by
   // 'init' or 'start': the operator offline rekey and verified backup must be
   // performed first in a separate explicit maintenance window.
-  if (applied.has(16) && !applied.has(17))
-    throw new Error('C05-017 requires verified backup/restore, API shutdown and approved offline SHA1 operator rekey; refusing implicit migration.');
+  // Only a truly empty database may initialize the 001-017 chain here.
+  // A partially migrated existing database (including 001-015 or interrupted
+  // 017 without a ledger record) must NEVER reach the destructive 017 script.
+  // A fully migrated database is checked against every recorded checksum below.
+  if (applied.size > 0 && (applied.size !== migrationNames.length || !applied.has(17)))
+    throw new Error('Existing or partially migrated C05 database requires verified backup/restore, API shutdown and approved offline SHA1 operator rekey; refusing implicit migration.');
   for (let index = 0; index < migrationNames.length; index++) {
     const version = index + 1;
     const name = migrationNames[index];
