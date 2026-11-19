@@ -63,8 +63,9 @@ function child(command, args, env = process.env, cwd = root) {
   return p;
 }
 function sql(text, app = false) {
-  return run('docker', ['exec', '-i', '-e', `MYSQL_PWD=${app ? appPassword : rootPassword}`, name,
-    'mysql', app ? '-uc05_flow' : '-uroot', '-N', '-B', 'crecisol_c05'], { input: text });
+  return run('docker', ['exec', '-i', '-e', 'MYSQL_PWD', name,
+    'mysql', app ? '-uc05_flow' : '-uroot', '-N', '-B', 'crecisol_c05'],
+    { input: text, env: { ...process.env, MYSQL_PWD: app ? appPassword : rootPassword } });
 }
 function check(condition, label) {
   assert.ok(condition, label); assertions++; console.log(`PASS ${label}`);
@@ -197,10 +198,12 @@ async function browserSession(page) {
 
 try {
   console.log('C05 isolated operational flow: starting');
-  run('docker', ['run', '--rm', '-d', '--name', name, '-p', '127.0.0.1::3306', '-e', `MYSQL_ROOT_PASSWORD=${rootPassword}`,
-    '-e', 'MYSQL_DATABASE=crecisol_c05', 'mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902']);
+  run('docker', ['run', '--rm', '-d', '--name', name, '-p', '127.0.0.1::3306', '-e', 'MYSQL_ROOT_PASSWORD',
+    '-e', 'MYSQL_DATABASE=crecisol_c05', 'mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902'],
+    { env: { ...process.env, MYSQL_ROOT_PASSWORD: rootPassword } });
   await until(() => {
-    const p = spawnSync('docker', ['exec', '-e', `MYSQL_PWD=${rootPassword}`, name, 'mysql', '-uroot', '-Nse', 'SELECT 1'], { encoding: 'utf8', windowsHide: true });
+    const p = spawnSync('docker', ['exec', '-e', 'MYSQL_PWD', name, 'mysql', '-uroot', '-Nse', 'SELECT 1'],
+      { encoding: 'utf8', windowsHide: true, env: { ...process.env, MYSQL_PWD: rootPassword } });
     return p.status === 0 && run('docker', ['logs', name]).includes('MySQL init process done');
   }, 'MySQL 8.4 readiness', 120000);
   const port = run('docker', ['port', name, '3306/tcp']).split(':').at(-1);

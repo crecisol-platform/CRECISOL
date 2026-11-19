@@ -140,8 +140,8 @@ function loadOrCreateSecret(file) {
 
 function mysqlSql(sql, user = 'root', password = readFileSync(rootPasswordFile, 'utf8').trim()) {
   return run('docker', [
-    'exec', '-i', '-e', `MYSQL_PWD=${password}`, container, 'mysql', `-u${user}`, '-N', '-B', database
-  ], { input: sql });
+    'exec', '-i', '-e', 'MYSQL_PWD', container, 'mysql', `-u${user}`, '-N', '-B', database
+  ], { input: sql, env: { ...process.env, MYSQL_PWD: password } });
 }
 
 function sha256(file) {

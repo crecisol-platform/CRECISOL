@@ -30,6 +30,8 @@ public sealed partial class MySqlOperationalIdentityFlow
             SET last_seen_at_utc=UTC_TIMESTAMP(6),
                 expires_at_utc=DATE_ADD(UTC_TIMESTAMP(6),INTERVAL @idle MINUTE)
             WHERE tenant_id=@t AND token_hmac=@h AND revoked_at_utc IS NULL
+              AND expires_at_utc>UTC_TIMESTAMP(6)
+              AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE
             """, ("t", tenant), ("h", hash), ("idle", minutes)) != 1)
             throw new InvalidOperationException("Session renewal declined.");
         var row = await u.One("SELECT expires_at_utc FROM c05_identity_session WHERE tenant_id=@t AND token_hmac=@h",
@@ -45,6 +47,8 @@ public sealed partial class MySqlOperationalIdentityFlow
             SET last_seen_at_utc=UTC_TIMESTAMP(6),
                 expires_at_utc=DATE_ADD(UTC_TIMESTAMP(6),INTERVAL @idle MINUTE)
             WHERE token_hmac=@h AND revoked_at_utc IS NULL
+              AND expires_at_utc>UTC_TIMESTAMP(6)
+              AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE
             """, ("h", hash), ("idle", minutes)) != 1)
             throw new InvalidOperationException("Operator session renewal declined.");
         var row = await u.One("SELECT expires_at_utc FROM c05_platform_session WHERE token_hmac=@h", ("h", hash));
