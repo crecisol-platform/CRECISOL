@@ -108,6 +108,7 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   const staged = page.waitForResponse(r => r.url().endsWith('/operator-recovery/complete'));
   await page.getByRole('button', { name: 'Iniciar reenrolamiento de operador', exact: true }).click();
   check((await staged).status() === 200, 'two independent operator shares authorize only mandatory new MFA enrollment');
+  await page.getByText('No puedo escanear: mostrar clave manual', { exact: true }).click();
   const seed = await page.getByLabel('Semilla MFA del operador recuperado', { exact: true }).innerText(); confidential.push(seed);
   check((await platform('session', {}, oldToken)).status === 401, 'staging operator recovery revokes every preexisting platform session');
   check((await platform('login', { mailbox: target.mailbox, password: target.password })).status === 401,
@@ -164,6 +165,7 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   const replace = page.waitForResponse(r => r.url().endsWith('/platform-identity/factor/replace'));
   await page.getByRole('button', { name: 'Preparar nuevo factor de operador', exact: true }).click();
   check((await replace).status() === 200, 'operator can recover or replace MFA automatically with password and a fresh one-use backup');
+  await page.getByText('No puedo escanear: mostrar clave manual', { exact: true }).click();
   const newSeed = await page.getByLabel('Semilla del factor de operador a reemplazar').innerText(); confidential.push(newSeed);
   await page.getByLabel('Código del factor nuevo de operador').fill(totp(newSeed, true));
   const confirmed = page.waitForResponse(r => r.url().endsWith('/platform-identity/factor/confirm'));

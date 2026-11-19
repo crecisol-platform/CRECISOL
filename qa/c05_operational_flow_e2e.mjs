@@ -394,6 +394,7 @@ try {
   await page.getByLabel('Contraseña', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await page.getByRole('button', { name: 'Configurar segundo factor' }).click();
+  await page.getByText('No puedo escanear: mostrar clave manual', { exact: true }).click();
   const seed = await page.getByLabel('Clave de configuración MFA').innerText(); confidential.push(seed);
   await page.getByLabel('Código de tu aplicación de autenticación').fill(totp(seed, true));
   const verified = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
@@ -566,6 +567,7 @@ try {
   check((await factorReplacement).status() === 200, 'Angular factor replacement requires password plus a current one-use factor');
   check((await api('sessions', {}, token)).status === 401, 'factor replacement revokes existing sessions');
   await page.getByRole('button', { name: 'Configurar segundo factor' }).click();
+  await page.getByText('No puedo escanear: mostrar clave manual', { exact: true }).click();
   const replacedSeed = await page.getByLabel('Clave de configuración MFA').innerText(); confidential.push(replacedSeed);
   await page.getByLabel('Código de tu aplicación de autenticación').fill(totp(replacedSeed, true));
   const reverified = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
