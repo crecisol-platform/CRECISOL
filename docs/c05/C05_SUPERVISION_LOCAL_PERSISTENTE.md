@@ -100,6 +100,29 @@ mediante recuperación legítima, nunca por acceso solo con contraseña.
 La semilla nueva de cada cuenta se escanea una única vez; la sesión sigue
 caducando y las acciones sensibles siguen requiriendo MFA.
 
+### Defensas adicionales del supervisor persistente (mantenimiento C05 SHA1)
+
+Antes de crear una tabla de migraciones, `init/start` comprueba las tablas
+existentes en la base aislada: una base reutilizada con datos pero sin ledger
+valido se rechaza sin intentar el corte. Una instalacion completamente vacia
+puede ejecutar 001–017; una base existente solo puede continuar con las
+17 versiones consecutivas y sus hashes SHA-256 validos. Versiones omitidas,
+hashes alterados, corte parcial o version 017 ausente son NO-GO.
+
+Antes de arrancar, consultar o detener el contenedor nombrado por el supervisor,
+se verifica la imagen MySQL8.4 fijada, el volumen
+`crecisol-c05-mysql-data` montado en `/var/lib/mysql`, la clave privada
+montada en modo solo lectura y el puerto 3310 expuesto exclusivamente en
+`127.0.0.1`. No se confia solo en el nombre del contenedor.
+
+`qa/c05_sha1_persistent_guards.test.mjs` incluye 17 pruebas unitarias,
+con casos positivos y negativos para ledgers parciales, datos preexistentes,
+checksums incorrectos, imagen/volumen/puerto/claves impropios. Se ejecutaron
+con Node.js v22.16.0: **17 PASS, 0 FAIL**, exclusivamente como pruebas
+unitarias de los guardianes. En el entorno de esta revision no hay Docker
+ni .NET10 disponibles: los ensayos completos del supervisor con MySQL 8.4
+y el reenrolamiento fisico quedan **NO EJECUTADOS**, no certificados.
+
 El entorno previo C01/C02, `crecisol_local` y sus puertos no se modifican.
 Esta dependencia no implica haber migrado el volumen real del propietario ni
 haber probado físicamente Google o Microsoft Authenticator.
