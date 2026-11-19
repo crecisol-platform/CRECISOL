@@ -146,9 +146,12 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   const afterRotation = (await subject.cookies()).find(c => c.name === '__Host-crecisol-platform-c05').value; confidential.push(afterRotation);
   check((await platform('session', {}, beforeRotation)).status === 401 && (await platform('session', {}, afterRotation)).status === 200,
     'rotated platform cookie cannot be replayed and its replacement stays valid');
-  check(sql(`SELECT CONCAT(COUNT(DISTINCT expires_at_utc),':',COUNT(DISTINCT mfa_at_utc)) FROM c05_platform_session WHERE operator_id=UNHEX('${target.id}') AND security_revision=(SELECT security_revision FROM c05_platform_operator WHERE operator_id=UNHEX('${target.id}'))`) === '1:1',
-    'platform rotation preserves both the absolute deadline and original MFA time');
+  check(sql(`SELECT COUNT(DISTINCT mfa_at_utc) FROM c05_platform_session WHERE operator_id=UNHEX('${target.id}') AND security_revision=(SELECT security_revision FROM c05_platform_operator WHERE operator_id=UNHEX('${target.id}'))`) === '1',
+    'platform session rotation keeps the verified MFA time unchanged');
   const ownSession = (await platform('sessions', {}, afterRotation)).data.sessions[0];
+  const rotatedSeconds = Number(sql(`SELECT TIMESTAMPDIFF(SECOND,UTC_TIMESTAMP(6),expires_at_utc) FROM c05_platform_session WHERE operator_id=UNHEX('${target.id}') AND session_id=UUID_TO_BIN('${ownSession.id}',0)`));
+  check(rotatedSeconds >= 1740 && rotatedSeconds <= 1801,
+    'platform session rotation renews the 30-minute inactivity deadline from server time');
   check(ownSession.device === 'Chromium', 'session device label is a coarse browser family rather than a raw fingerprint or IP');
   check((await platform('sessions/revoke', { sessionId: ownSession.id }, tokens[1])).status === 401,
     'another platform operator cannot revoke the subject operator session by identifier');
