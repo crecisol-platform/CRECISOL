@@ -1,0 +1,27 @@
+:host { display: block; min-width: 0; }
+.cs-field { display: grid; gap: .45rem; min-width: 0; }
+.cs-field label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .4rem;
+  color: var(--cs-color-text-strong, #102e4c);
+  font-size: var(--cs-text-sm, .875rem);
+  font-weight: 760;
+  line-height: 1.48;
+}
+.cs-field__required {
+  color: var(--cs-color-muted, #455f79);
+  font-size: var(--cs-text-xs, .76rem);
+  font-weight: 560;
+}
+.cs-field__hint, .cs-field__error {
+  margin: 0;
+  line-height: 1.55;
+  font-size: var(--cs-text-sm, .875rem);
+  overflow-wrap: anywhere;
+}
+.cs-field__hint { color: var(--cs-color-muted, #455f79); }
+.cs-field__error { color: var(--cs-color-danger, #8b272e); }
+.cs-field__control { min-width: 0; }
+@media (forced-colors: active) { .cs-field__error { color: CanvasText; text-decoration: underline; } }
