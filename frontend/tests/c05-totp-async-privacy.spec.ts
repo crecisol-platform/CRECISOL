@@ -515,3 +515,96 @@ test('B | overlapping pairing attempts cannot publish a stale QR with a newer si
       qrIsPng: api.pairing()?.qr.startsWith('data:image/png;base64,') ?? false };
   })).toEqual({ token: 'new-pair', hasSigningKey: true, qrIsPng: true });
 });
+
+
+test('B/D | C05 30-minute server-bound activity renewal needs real user input and server response', async ({ page }) => {
+  const expiry = new Date(Date.now() + 30 * 60_000).toISOString();
+  let keepalives = 0, deny = false, logouts = 0;
+  await page.route('**/api/v1/identity/browser/restore', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ csrfToken: 'a'.repeat(64), expiresAtUtc: expiry, idleMinutes: 30 })
+  }));
+  await page.route('**/api/v1/identity/sessions/keepalive', route => {
+    keepalives += 1;
+    return route.fulfill(deny ? { status: 401, contentType: 'application/json', body: '{}' } : {
+      status: 200, contentType: 'application/json',
+      headers: { 'X-Crecisol-Session-Expires-At': new Date(Date.now() + 30 * 60_000).toISOString(),
+        'X-Crecisol-Idle-Minutes': '30' },
+      body: JSON.stringify({ idleMinutes: 30 })
+    });
+  });
+  await page.route('**/api/v1/identity/logout', route => { logouts += 1; return route.fulfill({ status: 200, body: '{}' }); });
+  await page.goto('/cuenta');
+  await expect.poll(() => page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    return portal.identity.restoring();
+  })).toBe(false);
+  expect(await page.evaluate(() => {
+    const api = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!).identity;
+    return { state: api.state(), minutes: api.idleMinutes() };
+  })).toEqual({ state: 'authenticated', minutes: 30 });
+  // A synthetic, untrusted event must not generate a heartbeat.
+  await page.evaluate(() => {
+    document.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+  });
+  expect(keepalives).toBe(0);
+  await page.evaluate(() => {
+    const api = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!).identity;
+    api.activityLastSent = Date.now() - 61_000;
+  });
+  await page.locator('body').click({ position: { x: 4, y: 4 } });
+  await expect.poll(() => keepalives).toBe(1);
+  // Even while authenticated, local timeout must NOT revoke another active
+  // tab's shared cookie; only the server can reject that credential.
+  await page.evaluate(() => {
+    const api = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!).identity;
+    api.sessionWindow.fire();
+  });
+  expect(logouts).toBe(0);
+  expect(await page.evaluate(() => {
+    const api = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!).identity;
+    return api.state();
+  })).toBe('anonymous');
+  // Restore tests do not grant network authority after a simulated server
+  // rejection. A fresh synthetic UI session is explicitly test-only.
+  await page.evaluate(() => {
+    const api = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!).identity;
+    api.stateValue.set('authenticated');
+    api.csrfValue = 'a'.repeat(64);
+    api.activityLastSent = Date.now() - 61_000;
+  });
+  deny = true;
+  await page.locator('body').click({ position: { x: 4, y: 4 } });
+  await expect.poll(() => keepalives).toBe(2);
+  await expect.poll(() => page.evaluate(() => {
+    const api = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!).identity;
+    return api.state();
+  })).toBe('anonymous');
+});
+
+test('A/D | operator policy modal is read-only without grant and requires MFA when editable', async ({ page }) => {
+  await page.route('**/api/v1/platform-identity/restore', route => route.fulfill({ status: 401, body: '{}' }));
+  await page.goto('/cuenta?vista=operadores');
+  await expect.poll(() => page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    return panel.platform.restoring();
+  })).toBe(false);
+  await page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    panel.platform.state.set('authenticated');
+    panel.platform.sessionPolicy.set({ idleMinutes: 30, revision: 1, canManage: false });
+    panel.panel.set('seguridad');
+  });
+  await page.getByRole('button', { name: 'Caducidad por inactividad de sesiones' }).click();
+  const modal = page.getByRole('dialog', { name: 'Vencimiento de sesiones por inactividad' });
+  await expect(modal).toBeVisible();
+  await expect(modal.getByText('30 minutos sin actividad')).toBeVisible();
+  await expect(modal.getByLabel('Minutos de inactividad permitidos (5 a 120)')).toHaveCount(0);
+  await page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    panel.platform.sessionPolicy.set({ idleMinutes: 30, revision: 1, canManage: true });
+  });
+  await expect(modal.getByLabel('Minutos de inactividad permitidos (5 a 120)')).toBeVisible();
+  await expect(modal.getByLabel('Código MFA del administrador para guardar el cambio')).toBeVisible();
+  await expect(modal.getByRole('button', { name: 'Guardar tiempo de inactividad' })).toBeVisible();
+});
