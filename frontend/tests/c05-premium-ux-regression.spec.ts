@@ -23,6 +23,7 @@ test('C05 UX | secure modal scroll stays contained at 320px, focus returns on cl
   await opener.click();
   const modal = page.getByRole('dialog', { name: 'Recuperación segura de operador' });
   await expect(modal).toBeVisible();
+  await expect(modal.locator('xpath=..')).not.toHaveAttribute('title', /.+/);
   await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
   expect(await modal.evaluate(dialog => {
     const root = dialog.getBoundingClientRect();
