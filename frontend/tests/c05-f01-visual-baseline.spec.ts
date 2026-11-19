@@ -317,6 +317,7 @@ for (const size of sizes) {
     await setup(page, 'anonymous');
     await page.goto('/cuenta');
     await expect(page.getByRole('heading', { name: 'Iniciar sesión' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continuar', exact: true })).toBeEnabled();
     await page.evaluate(() => {
       const el = document.querySelector('cs-identity-portal')!;
       const owner = (window as DebugWindow).ng?.getComponent(el);
@@ -349,6 +350,7 @@ for (const size of sizes) {
     await capture(page, testInfo, 'account-mfa-enrollment-manual-fake-seed-' + size.name);
 
     await page.goto('/cuenta?vista=operadores');
+    await expect(page.getByRole('button', { name: 'Acceder a identidad de plataforma' })).toBeEnabled();
     await page.evaluate(() => {
       const el = document.querySelector('cs-platform-identity-panel')!;
       const owner = (window as DebugWindow).ng!.getComponent(el);
@@ -411,12 +413,17 @@ for (const size of sizes) {
     await capture(page, testInfo, 'operator-factor-enrollment-manual-FAKE-ONLY-' + size.name);
     await operatorDialog.getByRole('button', { name: 'Cerrar', exact: true }).click();
     await expect(operatorDialog).toHaveCount(0);
+    await page.getByRole('button', { name: 'Caducidad por inactividad de sesiones' }).click();
+    const policyDialog = page.getByRole('dialog', { name: 'Vencimiento de sesiones por inactividad' });
+    await expect(policyDialog).toBeVisible();
     await page.evaluate(() => {
       const el = document.querySelector('cs-platform-identity-panel')!;
       const owner = (window as DebugWindow).ng!.getComponent(el);
       owner.platform.sessionPolicy.set({ idleMinutes: 30, revision: 1, canManage: false });
     });
+    await expect(policyDialog.getByText(/Consulta habilitada.*administrador de seguridad/)).toBeVisible();
     await capture(page, testInfo, 'operator-policy-readonly-synthetic-' + size.name);
+    await policyDialog.getByRole('button', { name: 'Cerrar', exact: true }).click();
     await page.evaluate(() => {
       const el = document.querySelector('cs-platform-identity-panel')!;
       const owner = (window as DebugWindow).ng!.getComponent(el);
