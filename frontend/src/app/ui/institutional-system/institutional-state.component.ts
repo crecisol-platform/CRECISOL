@@ -3,6 +3,9 @@ import { InstitutionalIconComponent, type InstitutionalIconName } from './instit
 import { InstitutionalActionComponent } from './institutional-action.component';
 
 export type InstitutionalStateKind = 'empty' | 'loading' | 'error' | 'success';
+const STATE_ICONS: Readonly<Record<InstitutionalStateKind, InstitutionalIconName>> = {
+  empty: 'inbox', loading: 'clock', error: 'error', success: 'check'
+};
 
 /** Universal empty/loading/error/success shell: a state does not grant access. */
 @Component({
@@ -19,9 +22,7 @@ export class InstitutionalStateComponent {
   readonly message = input.required<string>();
   readonly actionLabel = input('');
   readonly action = output<void>();
-  readonly icon = computed<InstitutionalIconName>(() => ({
-    empty: 'inbox', loading: 'clock', error: 'error', success: 'check'
-  })[this.kind()]);
+  readonly icon = computed<InstitutionalIconName>(() => STATE_ICONS[this.kind()]);
 
   requestAction(): void {
     if (this.kind() !== 'loading' && this.actionLabel()) this.action.emit();
