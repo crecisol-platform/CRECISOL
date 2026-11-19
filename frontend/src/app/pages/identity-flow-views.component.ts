@@ -9,6 +9,10 @@ import { InstitutionalModalComponent } from '../ui/institutional-modal/instituti
 })
 export class IdentityGuestComponent {
   readonly identity = inject(IdentityApiService);
+  readonly passkeyAvailable = typeof window !== 'undefined' && window.isSecureContext &&
+    typeof PublicKeyCredential !== 'undefined' &&
+    typeof PublicKeyCredential.parseRequestOptionsFromJSON === 'function' &&
+    !!navigator.credentials;
   readonly busy = input(false);
   readonly view = input('ingresar');
   readonly loginRequested = output<Event>();
