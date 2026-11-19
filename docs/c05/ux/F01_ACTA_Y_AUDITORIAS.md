@@ -1,52 +1,70 @@
-# CRECISOL C05 · UX Fase 01 — Acta de auditoría y certificación
+# CRECISOL · C05 UX · Acta de cierre técnico F01: inventario y línea base
 
-**ACTA: VALIDACIÓN EN CURSO / SIN CERTIFICACIÓN FINAL F01**  
-Fecha de apertura: 2026-11-19. Tipo: línea base documental y de captura, **no rediseño**.
+**Estado del alcance F01: CERTIFICADO TÉCNICAMENTE para INVENTARIO + LÍNEA BASE VISUAL SINTÉTICA.**  
+**Fecha de evidencia:** 2026-11-19 (UTC). **F02: BLOQUEADA hasta nueva instrucción y aceptación de la fase siguiente.**  
+**No se certifica** diseño premium, nota 9/10, permisos productivos, operación con identidades reales, ni servicios externos.
 
-## Alcance inmutable
+## 1. Identidad, fuente y cambios permitidos
 
-- Proyecto y repositorio autorizado verificado: `crecisol-platform/CRECISOL`, ID 1450414592, migración del antiguo owner.
-- Rama de trabajo: `feature/c05-ux-f01-inventario-20261119`.
-- Fuente exacta de la línea base: `f61a79d242288c686a88a7c3dd711f2be9a48c18` (PR #172).
-- PR #173 queda fuera de esta fase porque ya contiene cambios de F02 y siguientes; `dev`, `main`, `backend/`, `database/` sin mutación en F01.
-- Autoridad documental: `AGENTS.md`, Skill canónica GitHub, `docs/MASTER_REFERENCE.md`, `docs/ESTADO_VIGENTE_CAPITULOS.md`. C06 no habilitado.
+- Repositorio vigente: `crecisol-platform/CRECISOL`, ID `1450414592` (owner anterior `solqaryn-platform` solo histórico).
+- Fuente congelada de C05 antes del rediseño: `f61a79d242288c686a88a7c3dd711f2be9a48c18`, rama `feature/c05-totp-sha1-integrated-qa-20261118` (PR #172).
+- Propuesta de F01: rama `feature/c05-ux-f01-inventario-20261119`, [PR #174](https://github.com/crecisol-platform/CRECISOL/pull/174), inicialmente DRAFT, base de PR #172.
+- Gate técnico verificado de código/pruebas F01: **SHA `8b45d8663c1e74d94e9ae8760d6379f278b0ff67`**, [run #44638380802](https://github.com/crecisol-platform/CRECISOL/actions/runs/44638380802), **conclusión SUCCESS**.
+- El único cambio posterior al SHA auditado es esta acta documental; si se requiere una certificación del nuevo HEAD, verificar su workflow posterior. Ninguna aplicación cambia con esta acta.
+- `dev`, `main`, PR #173 (rediseño posterior), `frontend/src/`, `backend/`, `database/`, producción, VPS, SOLQARYN y C06 **sin modificaciones F01**. No mezclar autorizaciones ni documentos maestros.
 
-## A — Auditoría funcional / exhaustividad de inventario
+## 2. Entregables y trazabilidad
 
-**Inspección documental inicial efectuada:** `app.routes.ts` (ruta Angular `/cuenta`, 12 valores de vista), `identity-portal.component.{ts,html}`, componentes de identidad de empresa y operadores, 27 instancias de modal, 47 formularios, diccionario backend de 74 operaciones y 4 rutas adicionales.  
-**Entregables:** `F01_MATRIZ_INTERFACES_BASE.csv` (65 líneas de superficies), `F01_CONTRATOS_API_BASE.csv` (78 rutas), `F01_INVENTARIO_Y_LINEA_BASE.md`.  
-**Evidencia ya ejecutada:** auditor fuente `qa/c05_ux_f01_inventory_audits.py A` y verificación de rama/diff, PASS en run **44619062318**. El catálogo se actualizó a **65 notas iniciales provisionales**, rango 3,0–5,0, media 4,02/10; aún hace falta registrar la evidencia ampliada y clasificar las limitaciones de mocks.
+| Entregable | Evidencia / valoración |
+| --- | --- |
+| Inventario Angular/estados | [F01_MATRIZ_INTERFACES_BASE.csv](F01_MATRIZ_INTERFACES_BASE.csv): **65/65** superficies, 17 vistas, 18 estados, 3 complementos y 27 modales, IDs inmutables |
+| Formularios | **47** formularios HTML declarados en cuenta/operadores, cotejados con fuentes |
+| Contratos API | [F01_CONTRATOS_API_BASE.csv](F01_CONTRATOS_API_BASE.csv): **78** contratos/rutas, 43 operaciones C05 cuenta + 31 plataforma + 4 adicionales |
+| Perfiles/estados | `/cuenta`, 12 valores `vista`, 3 estados de sesión en cada realm, 5 pestañas de operadores, roles y acciones pendientes de permiso real |
+| Mensajes y transiciones | [F01_MENSAJES_Y_FLUJOS.md](F01_MENSAJES_Y_FLUJOS.md), mapeo a Angular y a backend |
+| Método de capturas | [F01_CAPTURAS_Y_GATE.md](F01_CAPTURAS_Y_GATE.md), script `frontend/tests/c05-f01-visual-baseline.spec.ts`, workflow y audit `qa/c05_ux_f01_evidence_audits.py` |
+| Hallazgos | [F01_EVIDENCIA_VISUAL_Y_HALLAZGOS_2026_11_19.md](F01_EVIDENCIA_VISUAL_Y_HALLAZGOS_2026_11_19.md), preservando defectos como entrada a F02+ |
 
-Veredicto A: **PASS DOCUMENTAL Y DE FUENTE** en run 44619062318; condicionada a no alterar el inventario sin repetir su guard. No equivale a la certificación UX completa.
+La nota inicial es **provisional 4,02/10** en **65/65** entradas, rango **3,0–5,0**, **51 confianza media** y **14 confianza baja**. No se presenta como medición científica, nota visual aprobada ni 9/10. El punto de partida original de 31 muestras aportadas por el propietario promediaba 4,29/10; las 34 adicionales son estimaciones identificadas como tales.
 
-## B — Auditoría privacidad, permisos y controles negativos
+## 3. Auditoría A — Inventario, funcionamiento representado y contratos
 
-**Inspección inicial efectuada:** la matriz separa estrictamente `identity/` y `platform-identity/`; clasifica redirecciones, recuperación, aprobaciones, pruebas MFA, sesiones, host verificado y datos de prueba. `c05-f01-visual-baseline.spec.ts` usa identidades ficticias y evita QR, códigos de respaldo o contraseñas reales.  
-**Evidencia:** auditor B de F01 PASS en run **44619062318**. Como regresión histórica de la **misma base f61a79d...**, los runs **44601678730** (Angular→API→MySQL), **44601679085** (A/B/C/D modal UX) y **44601678999** (MFA/MySQL) acabaron SUCCESS. **Límite:** los nuevos mocks visuales no vuelven a probar esas barreras de backend, ni autorizarán datos productivos.
+**PASS para F01 documental.** El run #44638380802 ejecutó `qa/c05_ux_f01_inventory_audits.py A`: recuento 65/27/47/78, existencia de componentes, coincidencia de contrato backend y diff restringido. Angular/TypeScript compiló con Node 24.15.0.
 
-Veredicto B: **PASS DOCUMENTAL/SCOPE** para la línea base, con regresiones reales históricas del código fuente identificadas; no es una certificación nueva de seguridad productiva.
+La prueba visual ejecutó **24/24 casos Playwright Chromium PASS**; los casos producen capturas, no transacciones contra una base de datos real.
 
-## C — Auditoría frontend/responsive/accesibilidad y evidencia
+## 4. Auditoría B — Privacidad y separación de ámbitos
 
-**Preparado:** 4 tamaños 320×720, 390×844, 768×1024, 1440×900, entorno sintético, capturas `fullPage` con JSON de contexto, prueba de apertura/cierre de modales, fixture de empty/loaded/error/success/expiración simulada, y workflow que compila Angular 22/TS con Node 24, instala Chromium y sube artefactos vinculados a SHA.
-**Evidencia inicial:** run **44619062318** SUCCESS; artefacto **14575742705** inspeccionado con **212 PNG + 212 JSON**, 53 estados por viewport, 27 aperturas de diálogo por viewport y 0 desbordamientos horizontales informados. **Pendiente:** nueva ejecución del validador de integridad de capturas ampliadas, revisión de estados y geometría de modales en SHA final; pruebas físicas/zoom/teclado de flujos reales no atribuidas a este run.
+**PASS para F01 documental y captura ficticia.** El run ejecutó `qa/c05_ux_f01_inventory_audits.py B`, verificando que los fixtures son ficticios, que el catálogo separa las rutas de cuenta de las de plataforma y que se documentan límites de host, token, cookie/CSRF y permisos por comprobar. El QR TOTP/llave, códigos de respaldo y datos de ejemplo son **conocidos, falsos y no reutilizables como credenciales reales**.
 
-Veredicto C: **PARCIAL — captura básica ejecutada, ampliación no certificada hasta run final**.
+**Regresión real histórica del mismo SHA de C05**, observada por lectura de Actions, no repetida por F01:
+- [run 44601678730](https://github.com/crecisol-platform/CRECISOL/actions/runs/44601678730) – Angular→API→MySQL y regresiones: SUCCESS.
+- [run 44601679085](https://github.com/crecisol-platform/CRECISOL/actions/runs/44601679085) – auditorías A/B/C/D UI/seguridad: SUCCESS.
+- [run 44601678999](https://github.com/crecisol-platform/CRECISOL/actions/runs/44601678999) – MFA recuperación HTTP/MySQL: SUCCESS.
 
-## Evidencias que NO se pueden reutilizar incorrectamente
+**Alcance no verificado por capturas sintéticas:** 401/403 reales, 30 minutos efectivamente vencidos en backend, aislamiento multitenant/IDOR, accesibilidad en lectores de pantalla físicos, WebAuthn físico y recuperación con demora de 24 horas. No se declara que esas pruebas se ejecutaron de nuevo ni que F01 certifica producción.
 
-- El run previo `44601679085` de PR #172 terminó SUCCESS en A/B/C/D+gate, pero **no contiene artefactos PNG** según consulta realizada el 19-11-2026. No certifica visualmente la F01.
-- Las capturas del propietario sustentan inicialmente 31 notas sin SHA; el CSV de 65 notas actualizadas distingue 51 puntuaciones de confianza media y 14 baja, y las capturas del runner sí conservan un SHA de fuente f61a79d...
-- El runner actual de autoría solo dispone de Node 22, Chromium, sin .NET 10 ni repositorio descargable; no atribuirle compilación Angular, pruebas E2E o MySQL.
-- Cualquier resultado de GitHub Actions en ejecución se registra con URL, SHA, run ID, conclusión y enlaces a capturas **después de verificarlo**, no antes.
+## 5. Auditoría C — Responsive, evidencia visual e integridad
 
-## Puerta de aceptación F01 (NO-GO actual)
+**PASS para la línea base sintética reproducible** en [run 44638380802](https://github.com/crecisol-platform/CRECISOL/actions/runs/44638380802):
 
-- [x] A: auditor de fuente ejecutado en run 44619062318, 65 superficies y 78 contratos inventariados; repetir si cambia el CSV.
-- [x] B: privacidad/roles documentados; auditor B PASS sobre F01, con regresiones históricas reales de f61 identificadas. N/A de pruebas físicas/producción explícito.
-- [ ] C: capturas básicas 212 y Angular/Chromium PASS en 44619062318; exige integridad ampliada y run SUCCESS en SHA final.
-- [x] Cada fila: 65 notas iniciales *provisionales*, 51 confianza media/14 baja con enlace de familia/API; ningún dato real. No reemplaza puntuación UX futura verificable 9/10.
-- [ ] Tres auditorías A/B/C sin fallos vigentes ni huecos P0/P1.
-- [ ] Acta de aceptación F01 con SHA, evidencias, responsable de revisión y fecha verificable.
+- Artefacto GitHub Actions **#14584253101**, `c05-f01-synthetic-visual-baseline-8b45d8663c1e74d94e9ae8760d6379f278b0ff67`; descargado e inspeccionado directamente.
+- **629 entradas ZIP:** **314 PNG**, **314 JSON individuales** y **1 JSON de síntesis**. Todos los PNG poseen JSON; IDs únicos, sin imágenes faltantes.
+- Conteo por viewport: **320×720: 85**, **390×844: 76**, **768×1024: 76**, **1440×900: 77**.
+- **27 tomas iniciales distintas de los modales originales por viewport**, total **108**. En cada viewport existen además cinco capturas con un modal abierto en estados adicionales. 22 tomas adicionales documentan scroll de diálogos largos.
+- Auditor `qa/c05_ux_f01_evidence_audits.py`: `PASS_evidence_integrity_only` con `runnerSha=8b45d866...`, `sourceSha=f61a79d...`, todas `synthetic=true`, **0** mediciones de overflow horizontal superior a 2 px.
+- Segunda inspección independiente del ZIP: **0 modales fuera del viewport**, **0 casos de overflow horizontal interno mayor de 2 px**, **0 finales de modal fuera de vista tras desplazamiento al final**. **27** tomas iniciales documentan pie de modal fuera de la primera vista, observación de UX no corregida aquí.
+- Hash SHA-256 de la copia ZIP inspeccionada: `24045c3b306050f2c6b842e174ce000b8fb44a722b5c504367497d02c1fbad13`.
+- La etapa de integridad corrigió un error histórico inicial del auditor al leer `.last-run.json` y una colisión de nombres que podía sobrescribir capturas. La ejecución final PASS usa nombres con sufijo SHA-256 y no falsifica los runs anteriores que fallaron.
 
-**Resolución:** `NO CERTIFICADA`. F02/F03 y la nota objetivo 9/10 continúan BLOQUEADAS. No realizar cambios de UI en F01; no fusionar sin cierre probatorio.
+## 6. Hallazgos visuales aceptados como línea base, NO como calidad premium
+
+Las interfaces todavía presentan espacios desproporcionados, filas de botones homogéneas, títulos repetidos, terminología técnica, mensajes genéricos, marca que se quiebra en 320 px, posibles superposiciones de skip-link y formularios cuya parte inferior requiere scroll. Esto **no bloquea certificar que el inventario y sus capturas son fieles**, pero **sí impide calificar el producto 9/10** o presentar el diseño C05 como premium.
+
+La calidad, accesibilidad física y aceptación visual del diseño mejorado corresponden a las fases posteriores. Las notas de confianza baja se conservan explícitamente como aproximaciones, no como observaciones de backend.
+
+## 7. Resolución de F01
+
+**GO: F01 certificada técnicamente en su alcance documental, de inventario trazable y línea base visual sintética**, respaldada por auditorías A/B/C de F01, 24 Playwright PASS, Angular PASS, ZIP inspeccionado y regresiones históricas de la misma fuente.
+
+**NO-GO: F02 permanece bloqueada**. Esta acta no certifica una puntuación 9/10, no reabre C06 ni declara pruebas reales nuevas de privilegios/tenants/sesiones. No fusionar automáticamente PR #174 ni PR #173; conservar el PR F01 como evidencia de revisión independiente. La certificación de alcance F01 no sustituye la aceptación del diseño mejorado por el propietario.
