@@ -21,6 +21,7 @@ test('A/B/D | a late tenant SHA1 enrollment response cannot resurrect a cleared 
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ secret: SEED, uri }) });
   });
   await page.goto('/cuenta');
+  await expect(page.locator('cs-identity-portal')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
     return portal.identity.restoring();
@@ -56,6 +57,7 @@ test('B/D | closed recovery modal never restores a late operator MFA QR', async 
       body: JSON.stringify({ challenge: 'synthetic-recovery', secret: SEED, uri }) });
   });
   await page.goto('/cuenta?vista=operadores');
+  await expect(page.locator('cs-platform-identity-panel')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
     return panel.platform.restoring();
@@ -90,6 +92,7 @@ test('B/D | factor replacement cannot reveal a QR after logout', async ({ page }
       body: JSON.stringify({ challenge: 'synthetic-factor', secret: SEED, uri }) });
   });
   await page.goto('/cuenta?vista=operadores');
+  await expect(page.locator('cs-platform-identity-panel')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
     return panel.platform.restoring();
@@ -134,6 +137,7 @@ test('B/D | two tenant enroll requests cannot publish an older QR out of order',
     }
   });
   await page.goto('/cuenta');
+  await expect(page.locator('cs-identity-portal')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
     return portal.identity.restoring();
@@ -170,6 +174,7 @@ test('B | tenant restoration cannot reauthenticate after local clear', async ({ 
       body: JSON.stringify({ csrfToken: 'a'.repeat(64), expiresAtUtc: '2099-01-01T00:00:00Z' }) });
   });
   await page.goto('/cuenta');
+  await expect(page.locator('cs-identity-portal')).toHaveCount(1);
   await seen;
   await page.evaluate(() => {
     const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
@@ -197,6 +202,7 @@ test('B | operator confirmation cancelled during HTTP does not reveal backup cod
       body: JSON.stringify({ recoveryCodes: ['synthetic-backup-not-real'] }) });
   });
   await page.goto('/cuenta?vista=operadores');
+  await expect(page.locator('cs-platform-identity-panel')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
     return panel.platform.restoring();
@@ -230,6 +236,7 @@ test('B | recovery enrollment cancelled during HTTP does not reveal operator bac
       body: JSON.stringify({ recoveryCodes: ['synthetic-backup-not-real'] }) });
   });
   await page.goto('/cuenta?vista=operadores');
+  await expect(page.locator('cs-platform-identity-panel')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
     return panel.platform.restoring();
@@ -262,6 +269,7 @@ test('B | late operator recovery share is never restored after logout', async ({
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ share: 'synthetic-share' }) });
   });
   await page.goto('/cuenta?vista=operadores');
+  await expect(page.locator('cs-platform-identity-panel')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
     return panel.platform.restoring();
@@ -296,6 +304,7 @@ test('B | a late pairing-start response cannot recreate a cleared private key or
       body: JSON.stringify({ token: 'synthetic-pair', nonce: 'synthetic-nonce', fingerprint: 'synthetic-fingerprint' }) });
   });
   await page.goto('/cuenta');
+  await expect(page.locator('cs-identity-portal')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
     return portal.identity.restoring();
@@ -328,6 +337,7 @@ test('B | late pairing completion cannot reauthenticate a closed tenant session'
       body: JSON.stringify({ csrfToken: 'c'.repeat(64), expiresAtUtc: '2099-01-01T00:00:00Z' }) });
   });
   await page.goto('/cuenta');
+  await expect(page.locator('cs-identity-portal')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
     return portal.identity.restoring();
@@ -364,6 +374,7 @@ test('B | a late operator case read cannot reveal case metadata after local logo
       body: JSON.stringify({ caseId: 'synthetic-case', readyAtUtc: null, blocked: false, consumed: false }) });
   });
   await page.goto('/cuenta?vista=operadores');
+  await expect(page.locator('cs-platform-identity-panel')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
     return panel.platform.restoring();
@@ -390,6 +401,7 @@ test('B | a late operator case read cannot reveal case metadata after local logo
 test('B | assisted recovery reference must be removed on session teardown', async ({ page }) => {
   await page.route('**/api/v1/identity/browser/restore', route => route.fulfill({ status: 401, body: '{}' }));
   await page.goto('/cuenta');
+  await expect(page.locator('cs-identity-portal')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
     return portal.identity.restoring();
@@ -413,6 +425,7 @@ test('B | late tenant session 401 cannot clear a newer authenticated session', a
     await route.fulfill({ status: 401, contentType: 'application/json', body: '{}' });
   });
   await page.goto('/cuenta');
+  await expect(page.locator('cs-identity-portal')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
     return portal.identity.restoring();
@@ -448,6 +461,7 @@ test('B | late operator session 401 cannot clear a newer authenticated session',
     await route.fulfill({ status: 401, contentType: 'application/json', body: '{}' });
   });
   await page.goto('/cuenta?vista=operadores');
+  await expect(page.locator('cs-platform-identity-panel')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
     return panel.platform.restoring();
@@ -490,6 +504,7 @@ test('B | overlapping pairing attempts cannot publish a stale QR with a newer si
     }
   });
   await page.goto('/cuenta');
+  await expect(page.locator('cs-identity-portal')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
     return portal.identity.restoring();
@@ -535,6 +550,7 @@ test('B/D | C05 30-minute server-bound activity renewal needs real user input an
   });
   await page.route('**/api/v1/identity/logout', route => { logouts += 1; return route.fulfill({ status: 200, body: '{}' }); });
   await page.goto('/cuenta');
+  await expect(page.locator('cs-identity-portal')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
     return portal.identity.restoring();
@@ -585,6 +601,7 @@ test('B/D | C05 30-minute server-bound activity renewal needs real user input an
 test('A/D | operator policy modal is read-only without grant and requires MFA when editable', async ({ page }) => {
   await page.route('**/api/v1/platform-identity/restore', route => route.fulfill({ status: 401, body: '{}' }));
   await page.goto('/cuenta?vista=operadores');
+  await expect(page.locator('cs-platform-identity-panel')).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => {
     const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
     return panel.platform.restoring();
