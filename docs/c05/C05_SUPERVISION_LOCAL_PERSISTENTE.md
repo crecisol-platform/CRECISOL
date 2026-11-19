@@ -90,9 +90,7 @@ TOTP-SHA256 anteriores se invalidarán explícitamente: **las cuentas pueden
 perder acceso**, por decisión del propietario; sus perfiles y tenants no se
 borran automáticamente.
 
-**No ejecutar `init` o `start` con una base de 16 migraciones esperando
-actualización automática**: el script ahora se niega a aplicar 017 sobre
-volúmenes existentes. Primero ejecutar `backup` y `verify-backup`, detener
+**No ejecutar `init` o `start` para completar automáticamente una base persistente anterior al corte**, incluso si el ledger está incompleto (por ejemplo, 001–015 o 001–016): el script rechaza cualquier base preexistente sin el historial 001–017 completo y verificable. Solo una base totalmente nueva puede inicializar 001–017 automáticamente. El script no aplica 017 sobre volúmenes existentes. Primero ejecutar `backup` y `verify-backup`, detener
 API C05, validar un plan de reversión y seguir el manual
 `docs/c05/C05_TOTP_SHA1_EXCLUSIVE_CUTOVER.md` del PR #170. A continuación
 un operador local con autorización ejecuta la migración 017 una sola vez,
