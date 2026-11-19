@@ -37,7 +37,6 @@
     </div>
   </div>
 </section>
-          </section>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal11.open()">
     <span>Editar perfil de mi empresa</span><span aria-hidden="true">›</span>
@@ -106,7 +105,6 @@
     <p class="identity-empty-copy">Consulta el historial para revisar los eventos de seguridad de esta cuenta.</p>
   }
 </section>
-          </section>
           
 } @else if (view() === 'llaves') {
 <section class="operator-readonly-panel identity-key-panel" aria-label="Llaves de acceso">
@@ -133,7 +131,6 @@
     <p class="identity-empty-copy">No hay llaves en la vista actual. Consulta la lista para comprobar tus métodos registrados.</p>
   }
 </section>
-          </section>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal21.open()">
     <span>Llaves de acceso</span><span aria-hidden="true">›</span>
