@@ -97,6 +97,10 @@ jobs:
         run: |
           set -euo pipefail
           bash database/tests/c05_sha1_cutover_mysql.sh
+      - name: Real offline rekey on a separate disposable MySQL8.4 volume
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_sha1_offline_rekey_mysql.sh
   certificate-gate:
     name: C05 SHA1 A-B-C | all mandatory outcomes
     if: always()

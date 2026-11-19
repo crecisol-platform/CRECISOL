@@ -40,6 +40,7 @@ PROTECTED={
 "database/migrations/017_c05_totp_sha1_exclusive.down.sql",
 "database/operations/c05_local_runtime_role.sql",
 "database/tests/c05_sha1_cutover_mysql.sh",
+"database/tests/c05_sha1_offline_rekey_mysql.sh",
 }
 def ensure(ok,msg):
  if not ok: raise AssertionError(msg)
