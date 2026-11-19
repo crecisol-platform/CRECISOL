@@ -56,9 +56,13 @@
   <cs-institutional-modal #workspaceModal11 title="Editar perfil de mi empresa" description="Solo se actualiza el perfil del contexto empresarial autenticado."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="securityActionRequested.emit({ event: $event, action: 'profile' })">
-              <label for="profile-name">Nombre visible en esta empresa</label><input id="profile-name" name="displayName" [value]="identity.profile()?.displayName ?? ''" required maxlength="80" autocomplete="nickname">
-              <label for="profile-language">Idioma preferido</label><select id="profile-language" name="language" [value]="identity.profile()?.language ?? 'es-HN'"><option value="es-HN">Español de Honduras</option><option value="es">Español</option><option value="en">English</option></select>
-              <label for="profile-zone">Zona horaria de tu perfil</label><input id="profile-zone" name="timeZone" [value]="identity.profile()?.timeZone ?? 'America/Tegucigalpa'" required maxlength="64" autocomplete="off">
+              <label for="profile-name">Nombre visible en esta empresa</label><input id="profile-name" name="displayName" [attr.value]="identity.profile()?.displayName ?? ''" required maxlength="80" autocomplete="nickname">
+              <label for="profile-language">Idioma preferido</label><select id="profile-language" name="language">
+                <option value="es-HN" [attr.selected]="(identity.profile()?.language ?? 'es-HN') === 'es-HN' ? '' : null">Español de Honduras</option>
+                <option value="es" [attr.selected]="identity.profile()?.language === 'es' ? '' : null">Español</option>
+                <option value="en" [attr.selected]="identity.profile()?.language === 'en' ? '' : null">English</option>
+              </select>
+              <label for="profile-zone">Zona horaria de tu perfil</label><input id="profile-zone" name="timeZone" [attr.value]="identity.profile()?.timeZone ?? 'America/Tegucigalpa'" required maxlength="64" autocomplete="off">
               <button [disabled]="busy()">Guardar mi perfil</button>
             </form>
   </cs-institutional-modal>
