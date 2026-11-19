@@ -29,9 +29,13 @@
   <cs-institutional-modal #opDialog51 title="Editar perfil de operador" description="Actualiza únicamente los datos visibles de tu perfil institucional."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="actionRequested.emit({ event: $event, action: 'profile' })">
-            <label for="operator-profile-name">Nombre visible del operador</label><input id="operator-profile-name" name="displayName" [value]="platform.profile()?.displayName ?? ''" required maxlength="80" autocomplete="nickname">
-            <label for="operator-profile-language">Idioma del perfil de operador</label><select id="operator-profile-language" name="language" [value]="platform.profile()?.language ?? 'es-HN'"><option value="es-HN">Español de Honduras</option><option value="es">Español</option><option value="en">English</option></select>
-            <label for="operator-profile-zone">Zona horaria del operador</label><input id="operator-profile-zone" name="timeZone" required maxlength="64" [value]="platform.profile()?.timeZone ?? 'America/Tegucigalpa'">
+            <label for="operator-profile-name">Nombre visible del operador</label><input id="operator-profile-name" name="displayName" [attr.value]="platform.profile()?.displayName ?? ''" required maxlength="80" autocomplete="nickname">
+            <label for="operator-profile-language">Idioma del perfil de operador</label><select id="operator-profile-language" name="language">
+                <option value="es-HN" [attr.selected]="(platform.profile()?.language ?? 'es-HN') === 'es-HN' ? '' : null">Español de Honduras</option>
+                <option value="es" [attr.selected]="platform.profile()?.language === 'es' ? '' : null">Español</option>
+                <option value="en" [attr.selected]="platform.profile()?.language === 'en' ? '' : null">English</option>
+              </select>
+            <label for="operator-profile-zone">Zona horaria del operador</label><input id="operator-profile-zone" name="timeZone" required maxlength="64" [attr.value]="platform.profile()?.timeZone ?? 'America/Tegucigalpa'">
             <button [disabled]="busy()">Guardar perfil de operador</button>
           </form>
   </cs-institutional-modal>
