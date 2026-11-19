@@ -1,7 +1,7 @@
 <dialog #surface class="cs-modal" [class.cs-modal--wide]="wide()"
   [attr.aria-labelledby]="titleId"
   [attr.aria-describedby]="description() ? descriptionId : null"
-  (cancel)="onCancel($event)" (close)="onClosed()">
+  (cancel)="onCancel($event)" (close)="onClosed()" (click)="onDialogClick($event)" (submit)="onDialogSubmit()">
   <header class="cs-modal__header">
     <div class="cs-modal__heading">
       <h2 #heading tabindex="-1" [id]="titleId">{{ title() }}</h2>
@@ -11,8 +11,8 @@
       [disabled]="busy()" (click)="close()">×</button>
   </header>
   <div #scrollBody class="cs-modal__content" role="region" aria-label="Contenido de la operación" tabindex="0">
-    @if (error()) { <p class="cs-modal__feedback cs-modal__feedback--error" role="alert">{{ error() }}</p> }
-    @if (feedback()) { <p class="cs-modal__feedback" role="status" aria-live="polite">{{ feedback() }}</p> }
+    @if (localError()) { <p class="cs-modal__feedback cs-modal__feedback--error" role="alert">{{ localError() }}</p> }
+    @if (localFeedback()) { <p class="cs-modal__feedback" role="status" aria-live="polite">{{ localFeedback() }}</p> }
     <ng-content></ng-content>
   </div>
   <footer class="cs-modal__footer">
