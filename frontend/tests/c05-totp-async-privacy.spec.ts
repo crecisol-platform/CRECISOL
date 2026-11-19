@@ -6,10 +6,6 @@ const uri = 'otpauth://totp/CRECISOL%3Acuenta-01234567?secret=' + SEED +
   '&issuer=CRECISOL&algorithm=SHA1&digits=6&period=30';
 
 type AngularDebug = { ng: { getComponent: (element: Element) => any } };
-function componentGetter(selector: string): string {
-  return selector; // Only used as a stable selector in page.evaluate.
-}
-
 test('A/B/D | a late tenant SHA1 enrollment response cannot resurrect a cleared QR', async ({ page }) => {
   await page.route('**/api/v1/identity/browser/restore', route => route.fulfill({ status: 401, body: '{}' }));
   await page.route('**/api/v1/identity/login', route => route.fulfill({
