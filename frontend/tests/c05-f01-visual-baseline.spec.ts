@@ -48,7 +48,7 @@ async function capture(page: Page, testInfo: TestInfo, id: string): Promise<void
       };
     })()
   }));
-  await page.screenshot({ path, fullPage: true, animations: 'disabled' });
+  await page.screenshot({ path, fullPage: measurements.dialogsOpen === 0, animations: 'disabled' });
   await writeFile(testInfo.outputPath(name + '.json'), JSON.stringify({
     id, sourceSha: BASELINE, runnerSha: process.env.GITHUB_SHA || 'local',
     synthetic: true, ...measurements,
