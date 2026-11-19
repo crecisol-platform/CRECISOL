@@ -34,6 +34,7 @@ PROTECTED={
 "database/migrations/017_c05_totp_sha1_exclusive.sql",
 "database/migrations/017_c05_totp_sha1_exclusive.down.sql",
 "database/operations/c05_local_runtime_role.sql",
+"database/tests/c05_sha1_cutover_mysql.sh",
 }
 def ensure(ok,msg):
  if not ok: raise AssertionError(msg)
@@ -58,7 +59,7 @@ def run(which):
   verify(d);n=0
   for p,markers in F.items():
    for marker in markers:
-    replaced=d.copy();replaced[p]=d[p].replace(marker,"[REMOVED]",1)
+    replaced=d.copy();replaced[p]=d[p].replace(marker,"[REMOVED]")
     ensure(replaced[p]!=d[p],"ineffective mutation")
     try: verify(replaced)
     except AssertionError: n+=1
