@@ -14,7 +14,7 @@ public static class OperationalIdentityModule
         ["login"] = ["mailbox", "password"],
         ["mfa/enroll"] = ["challenge"],
         ["mfa/verify"] = ["challenge", "code"],
-        ["sessions"] = [], ["sessions/rotate"] = [], ["logout"] = [],
+        ["sessions"] = [], ["sessions/keepalive"] = [], ["sessions/rotate"] = [], ["logout"] = [],
         ["sessions/revoke"] = ["sessionId"],
         ["recovery/request"] = ["mailbox"],
         ["recovery/complete"] = ["token", "code", "newPassword"],
@@ -39,7 +39,8 @@ public static class OperationalIdentityModule
         ["incidents/report"] = ["token"], ["security/events"] = [],
         ["platform/login"] = ["mailbox", "password"], ["platform/mfa"] = ["challenge", "code"],
         ["platform/session"] = [], ["platform/restore"] = [], ["platform/logout"] = [],
-        ["platform/sessions"] = [], ["platform/sessions/rotate"] = [],
+        ["platform/sessions"] = [], ["platform/sessions/keepalive"] = [], ["platform/sessions/rotate"] = [],
+        ["platform/session-policy"] = [], ["platform/session-policy/update"] = ["minutes", "expectedRevision", "code"],
         ["platform/sessions/revoke"] = ["sessionId"], ["platform/sessions/revoke-all"] = ["code"],
         ["platform/case"] = ["caseId"],
         ["platform/cases/find"] = ["mailbox", "realm", "reason", "code"],
@@ -174,6 +175,8 @@ public static class OperationalIdentityModule
                     if (name == "code" && !(operation == "invitations/accept" && value == "enroll") && !((value.Length == 6 && value.All(char.IsAsciiDigit)) ||
                         (value.Length == 32 && value.All(Uri.IsHexDigit)))) return Results.BadRequest();
                     if (name.Contains("Password", StringComparison.OrdinalIgnoreCase) && value.Length > 128) return Results.BadRequest();
+                    if (name is "minutes" or "expectedRevision" &&
+                        (value.Length > 10 || !value.All(char.IsAsciiDigit))) return Results.BadRequest();
                 }
             }
             finally { CryptographicOperations.ZeroMemory(bytes); }

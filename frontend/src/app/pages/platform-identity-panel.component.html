@@ -12,7 +12,7 @@
         <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="operatorRecoveryModal.open()">Recuperar acceso de operador de plataforma</button>
         <cs-institutional-modal #operatorRecoveryModal title="Recuperación segura de operador"
           description="Acceso excepcional. Dos revisores independientes, verificación de identidad y un mínimo de 24 horas."
-          [busy]="busy()" [feedback]="message()" [error]="error()" [wide]="true">
+          [busy]="busy()" [feedback]="message()" [error]="error()" [wide]="true" (dismissed)="platform.discardRecoverySetup()">
           
           <p>Se necesitan otros dos operadores de identidad, verificación independiente y al menos 24 horas. Ninguna aprobación de un negocio sirve para este ámbito.</p>
           <form (submit)="action($event, 'operator-recovery-request')">
@@ -29,8 +29,15 @@
             <button [disabled]="busy()">Iniciar reenrolamiento de operador</button>
           </form>
           @if (platform.operatorRecoverySeed()) {
-            <p>Configura TOTP SHA256, seis dígitos y 30 segundos. Esta autorización vence en cinco minutos.</p>
-            <output aria-label="Semilla MFA del operador recuperado">{{ platform.operatorRecoverySeed() }}</output>
+            <p>Configura TOTP SHA1 con Google Authenticator, Microsoft Authenticator o Aegis. Esta autorización vence en cinco minutos.</p>
+            <div class="totp-setup" role="group" aria-label="Vincular MFA del operador recuperado">
+              <div class="totp-setup__visual">
+                <img [src]="platform.operatorRecoveryQr()" width="256" height="256" alt="QR privado del nuevo autenticador de operador">
+              </div>
+              <details><summary>No puedo escanear: mostrar clave manual</summary>
+                <output aria-label="Semilla MFA del operador recuperado">{{ platform.operatorRecoverySeed() }}</output>
+              </details>
+            </div>
             <form (submit)="action($event, 'operator-recovery-enroll')">
               <label for="operator-recovery-code">Código del nuevo MFA de operador</label><input id="operator-recovery-code" name="code" required pattern="[0-9]{6}" autocomplete="one-time-code">
               <button [disabled]="busy()">Confirmar nuevo MFA de operador</button>
@@ -55,7 +62,7 @@
           <button type="button" [attr.aria-current]="panel() === 'casos' ? 'page' : null" (click)="panel.set('casos')">Casos</button>
           <button type="button" [attr.aria-current]="panel() === 'sesiones' ? 'page' : null" (click)="panel.set('sesiones')">Sesiones</button>
           <button type="button" [attr.aria-current]="panel() === 'perfil' ? 'page' : null" (click)="panel.set('perfil')">Perfil</button>
-          <button type="button" [attr.aria-current]="panel() === 'seguridad' ? 'page' : null" (click)="panel.set('seguridad')">Seguridad</button>
+          <button type="button" [attr.aria-current]="panel() === 'seguridad' ? 'page' : null" (click)="openSecurity()">Seguridad</button>
           <button type="button" [attr.aria-current]="panel() === 'monitor' ? 'page' : null" (click)="panel.set('monitor')">Monitor</button>
         </nav>
         <div class="operator-content">

@@ -31,26 +31,46 @@ internal sealed class OperationalBrowserSessionTransport(byte[] key, string cook
             CryptographicOperations.FixedTimeEquals(Convert.FromHexString(csrf), Convert.FromHexString(Csrf(value)));
     }
 
+    private void RenewCookie(HttpContext context, string token, DateTimeOffset expiry)
+    {
+        context.Response.Cookies.Append(cookieName, token, new CookieOptions
+        {
+            Secure = true, HttpOnly = true, SameSite = SameSiteMode.Strict,
+            Path = "/", Expires = expiry, IsEssential = true
+        });
+    }
+
     public IResult Receipt(HttpContext context, string operation, OperationalIdentityResult result, string? session)
     {
         if (result.Value is OperationalSessionReceipt issued && result.Allowed)
         {
-            context.Response.Cookies.Append(cookieName, issued.SessionToken, new CookieOptions
-            {
-                Secure = true, HttpOnly = true, SameSite = SameSiteMode.Strict,
-                Path = "/", Expires = issued.ExpiresAtUtc, IsEssential = true
-            });
-            return Results.Ok(new { csrfToken = Csrf(issued.SessionToken), issued.ExpiresAtUtc, issued.RecoveryCodes });
+            RenewCookie(context, issued.SessionToken, issued.ExpiresAtUtc);
+            return Results.Ok(new { csrfToken = Csrf(issued.SessionToken), issued.ExpiresAtUtc, issued.RecoveryCodes,
+                idleMinutes = result.SessionIdleMinutes });
         }
         if (operation is "browser/restore" or "platform/restore")
         {
-            if (result.Allowed && session is not null && result.Value is IOperationalSessionWindow window)
-                return Results.Ok(new { csrfToken = Csrf(session), window.ExpiresAtUtc });
+            if (result.Allowed && session is not null && result.SessionExpiresAtUtc is { } expiry)
+            {
+                RenewCookie(context, session, expiry);
+                return Results.Ok(new { csrfToken = Csrf(session), expiresAtUtc = expiry, idleMinutes = result.SessionIdleMinutes });
+            }
             Clear(context);
             return Results.Unauthorized();
         }
-        if ((operation is "sessions" or "platform/session" or "platform/sessions" && !result.Allowed) || (result.Allowed && operation is
-            "logout" or "platform/logout" or "platform/sessions/revoke-all" or "platform/password/change" or "platform/factor/confirm" or "platform/mailbox/complete" or "password/change" or "mailbox/complete" or "factor/replace" or "passkeys/revoke" or "sessions/revoke-all" or "factor/recover-passkey")) Clear(context);
+        var endsSession = result.Allowed && operation is
+            "logout" or "platform/logout" or "platform/sessions/revoke-all" or "platform/password/change" or
+            "platform/factor/confirm" or "platform/mailbox/complete" or "password/change" or "mailbox/complete" or
+            "factor/replace" or "passkeys/revoke" or "sessions/revoke-all" or "factor/recover-passkey";
+        if (endsSession || (!result.Allowed && operation is "sessions" or "platform/session" or "platform/sessions"))
+            Clear(context);
+        else if (result.Allowed && session is not null && result.SessionExpiresAtUtc is { } newExpiry)
+        {
+            RenewCookie(context, session, newExpiry);
+            context.Response.Headers["X-Crecisol-Session-Expires-At"] = newExpiry.ToString("O");
+            if (result.SessionIdleMinutes is { } minutes)
+                context.Response.Headers["X-Crecisol-Idle-Minutes"] = minutes.ToString();
+        }
         return result.Allowed ? Results.Ok(result.Value ?? new { accepted = true }) : Results.Unauthorized();
     }
 

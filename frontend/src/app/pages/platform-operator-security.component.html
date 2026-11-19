@@ -35,18 +35,55 @@
     <span>Reemplazar MFA de operador</span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #opDialog33 title="Reemplazar MFA de operador"
-    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
+    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true" (dismissed)="platform.discardFactorSetup()">
     <form (submit)="actionRequested.emit({ event: $event, action: 'factor' })">
             <label for="operator-factor-password">Contraseña para reemplazar MFA de operador</label><input id="operator-factor-password" name="currentPassword" type="password" required maxlength="128" autocomplete="current-password">
             <label for="operator-factor-code">Código MFA o respaldo para reemplazar factor de operador</label><input id="operator-factor-code" name="code" required maxlength="32" autocomplete="one-time-code">
             <button [disabled]="busy()">Preparar nuevo factor de operador</button>
           </form>
           @if (platform.factorSecret()) {
-            <output aria-label="Semilla del factor de operador a reemplazar">{{ platform.factorSecret() }}</output>
+            <div class="totp-setup" role="group" aria-label="Vincular el nuevo MFA de operador">
+              <div class="totp-setup__visual">
+                <img [src]="platform.factorQr()" width="256" height="256" alt="QR privado para vincular el nuevo autenticador de operador">
+                <p>Escanea con Google Authenticator, Microsoft Authenticator u otra aplicación TOTP SHA1 y confirma el código antes de cerrar.</p>
+              </div>
+              <details><summary>No puedo escanear: mostrar clave manual</summary>
+                <output aria-label="Semilla del factor de operador a reemplazar">{{ platform.factorSecret() }}</output>
+              </details>
+            </div>
             <form (submit)="actionRequested.emit({ event: $event, action: 'factor-confirm' })">
               <label for="operator-factor-confirm-code">Código del factor nuevo de operador</label><input id="operator-factor-confirm-code" name="code" required pattern="[0-9]{6}" autocomplete="one-time-code">
               <button [disabled]="busy()">Activar nuevo factor de operador</button>
             </form>
           }
+  </cs-institutional-modal>
+</div>
+<div class="institutional-task">
+  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="idlePolicyModal.open()">
+    <span>Caducidad por inactividad de sesiones</span><span aria-hidden="true">›</span>
+  </button>
+  <cs-institutional-modal #idlePolicyModal title="Vencimiento de sesiones por inactividad"
+    description="Configuración global para las cuentas empresariales y operadores de C05. La API aplica el valor en cada operación autenticada."
+    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
+    @if (platform.sessionPolicy(); as policy) {
+      <p role="status">Vigencia actual: <strong>{{ policy.idleMinutes }} minutos sin actividad</strong>.</p>
+      <p>Las sesiones activas renuevan su vencimiento al realizar una actividad válida. Si se supera el plazo, se exige volver a iniciar sesión.</p>
+      @if (policy.canManage) {
+        <form (submit)="actionRequested.emit({ event: $event, action: 'session-policy' })">
+          <label for="operator-idle-minutes">Minutos de inactividad permitidos (5 a 120)</label>
+          <input id="operator-idle-minutes" name="minutes" type="number" min="5" max="120" step="1"
+            [value]="policy.idleMinutes" required inputmode="numeric">
+          <input type="hidden" name="expectedRevision" [value]="policy.revision">
+          <label for="operator-idle-code">Código MFA del administrador para guardar el cambio</label>
+          <input id="operator-idle-code" name="code" type="password" required autocomplete="one-time-code"
+            pattern="([0-9]{6}|[0-9a-fA-F]{32})" maxlength="32">
+          <button [disabled]="busy()">Guardar tiempo de inactividad</button>
+        </form>
+      } @else {
+        <p>Consulta habilitada. Solo el administrador de seguridad de plataforma puede modificar este parámetro con MFA.</p>
+      }
+    } @else {
+      <p>Consulta el valor vigente desde la pestaña Seguridad. No se modifica ninguna configuración sin confirmación MFA.</p>
+    }
   </cs-institutional-modal>
 </div>

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { verifySha1EnrollmentQr } from './c05_totp_qr_checks.mjs';
 
 export async function verifyOperatorRecovery({ browser, platform, api, check, confidential, operators, nextCode, totp,
   sql, noticeFor, mailFor, uiPort, reservePlatformWindow }) {
@@ -108,7 +109,9 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   const staged = page.waitForResponse(r => r.url().endsWith('/operator-recovery/complete'));
   await page.getByRole('button', { name: 'Iniciar reenrolamiento de operador', exact: true }).click();
   check((await staged).status() === 200, 'two independent operator shares authorize only mandatory new MFA enrollment');
+  await page.getByText('No puedo escanear: mostrar clave manual', { exact: true }).click();
   const seed = await page.getByLabel('Semilla MFA del operador recuperado', { exact: true }).innerText(); confidential.push(seed);
+  await verifySha1EnrollmentQr(page, 'QR privado del nuevo autenticador de operador', seed, check);
   check((await platform('session', {}, oldToken)).status === 401, 'staging operator recovery revokes every preexisting platform session');
   check((await platform('login', { mailbox: target.mailbox, password: target.password })).status === 401,
     'pending mandatory reenrollment blocks the old password and factor from creating fresh sessions');
@@ -143,9 +146,12 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   const afterRotation = (await subject.cookies()).find(c => c.name === '__Host-crecisol-platform-c05').value; confidential.push(afterRotation);
   check((await platform('session', {}, beforeRotation)).status === 401 && (await platform('session', {}, afterRotation)).status === 200,
     'rotated platform cookie cannot be replayed and its replacement stays valid');
-  check(sql(`SELECT CONCAT(COUNT(DISTINCT expires_at_utc),':',COUNT(DISTINCT mfa_at_utc)) FROM c05_platform_session WHERE operator_id=UNHEX('${target.id}') AND security_revision=(SELECT security_revision FROM c05_platform_operator WHERE operator_id=UNHEX('${target.id}'))`) === '1:1',
-    'platform rotation preserves both the absolute deadline and original MFA time');
+  check(sql(`SELECT COUNT(DISTINCT mfa_at_utc) FROM c05_platform_session WHERE operator_id=UNHEX('${target.id}') AND security_revision=(SELECT security_revision FROM c05_platform_operator WHERE operator_id=UNHEX('${target.id}'))`) === '1',
+    'platform session rotation keeps the verified MFA time unchanged');
   const ownSession = (await platform('sessions', {}, afterRotation)).data.sessions[0];
+  const rotatedSeconds = Number(sql(`SELECT TIMESTAMPDIFF(SECOND,UTC_TIMESTAMP(6),expires_at_utc) FROM c05_platform_session WHERE operator_id=UNHEX('${target.id}') AND session_id=UUID_TO_BIN('${ownSession.id}',0)`));
+  check(rotatedSeconds >= 1740 && rotatedSeconds <= 1801,
+    'platform session rotation renews the 30-minute inactivity deadline from server time');
   check(ownSession.device === 'Chromium', 'session device label is a coarse browser family rather than a raw fingerprint or IP');
   check((await platform('sessions/revoke', { sessionId: ownSession.id }, tokens[1])).status === 401,
     'another platform operator cannot revoke the subject operator session by identifier');
@@ -164,7 +170,9 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   const replace = page.waitForResponse(r => r.url().endsWith('/platform-identity/factor/replace'));
   await page.getByRole('button', { name: 'Preparar nuevo factor de operador', exact: true }).click();
   check((await replace).status() === 200, 'operator can recover or replace MFA automatically with password and a fresh one-use backup');
+  await page.getByText('No puedo escanear: mostrar clave manual', { exact: true }).click();
   const newSeed = await page.getByLabel('Semilla del factor de operador a reemplazar').innerText(); confidential.push(newSeed);
+  await verifySha1EnrollmentQr(page, 'QR privado para vincular el nuevo autenticador de operador', newSeed, check);
   await page.getByLabel('Código del factor nuevo de operador').fill(totp(newSeed, true));
   const confirmed = page.waitForResponse(r => r.url().endsWith('/platform-identity/factor/confirm'));
   await page.getByRole('button', { name: 'Activar nuevo factor de operador', exact: true }).click();

@@ -4,7 +4,7 @@ on:
     branches: [dev]
     paths:
       - 'docs/c05/C05_08_ESPECIFICACION.md'
-      - 'backend/src/Crecisol.CredentialSecurity/TotpSha256Verifier.cs'
+      - 'backend/src/Crecisol.CredentialSecurity/TotpSha1Verifier.cs'
       - 'backend/src/Crecisol.CredentialSecurity/SyntheticWebAuthnEs256Verifier.cs'
       - 'backend/src/Crecisol.CredentialSecurity/MfaRecoveryCodeProtector.cs'
       - 'backend/tests/Crecisol.MfaRisk.ContractsTests/**'
@@ -14,7 +14,7 @@ on:
     branches: [dev]
     paths:
       - 'docs/c05/C05_08_ESPECIFICACION.md'
-      - 'backend/src/Crecisol.CredentialSecurity/TotpSha256Verifier.cs'
+      - 'backend/src/Crecisol.CredentialSecurity/TotpSha1Verifier.cs'
       - 'backend/src/Crecisol.CredentialSecurity/SyntheticWebAuthnEs256Verifier.cs'
       - 'backend/src/Crecisol.CredentialSecurity/MfaRecoveryCodeProtector.cs'
       - 'backend/tests/Crecisol.MfaRisk.ContractsTests/**'
@@ -57,7 +57,7 @@ jobs:
           dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
           dotnet build backend/tests/Crecisol.MfaRisk.ContractsTests/Crecisol.MfaRisk.ContractsTests.csproj -c Release --nologo -warnaserror
           printf 'PASS build sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-08-crypto-proof/build
-      - name: Execute genuine HMAC-SHA256 RFC6238 and ES256 signed WebAuthn cryptographic negatives
+      - name: Execute genuine HMAC-SHA1 RFC6238 and ES256 signed WebAuthn cryptographic negatives
         run: |
           set -euo pipefail
           dotnet run --no-build -c Release --project backend/tests/Crecisol.MfaRisk.ContractsTests/Crecisol.MfaRisk.ContractsTests.csproj
@@ -81,6 +81,9 @@ jobs:
           bash database/tests/c05_05_session_http_mysql.sh
           printf 'PASS regressions sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-08-crypto-proof/regressions
       - name: Audit C immutable same-SHA A/B/NET10/crypto/regression + exact diff
+        # Historical C05-08 C gate is tied to its original one-commit PR.
+        # The separate C05 SHA1 cutover audit checks the current maintenance scope.
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/c05-08-mfa-stepup-passkeys-20261114'
         run: |
           set -euo pipefail
           python3 qa/c05_08_mfa_crypto_audits.py C
@@ -88,7 +91,10 @@ jobs:
       - name: Enforce same-run proof and STOP at crypto subgate, no production entitlement
         run: |
           set -euo pipefail
-          for stage in A B C build crypto regressions; do
+          for stage in A B build crypto regressions; do
             grep -Fqx "PASS $stage sha=$GITHUB_SHA run=$GITHUB_RUN_ID" ".c05-08-crypto-proof/$stage"
           done
+          if [ "${GITHUB_HEAD_REF:-}" = 'feature/c05-08-mfa-stepup-passkeys-20261114' ]; then
+            grep -Fqx "PASS C sha=$GITHUB_SHA run=$GITHUB_RUN_ID" .c05-08-crypto-proof/C
+          fi
           echo 'PASS ONLY C05-08 CRYPTO subgate: no durable enrollment, WebAuthn attestation, factor reset or product access'

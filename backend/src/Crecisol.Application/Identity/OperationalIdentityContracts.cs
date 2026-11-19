@@ -5,7 +5,12 @@ namespace Crecisol.Application.Identity;
 public sealed record OperationalIdentityRequest(string Host, string Peer, string Operation,
     IReadOnlyDictionary<string, string> Fields, string? Bearer, string DeviceLabel = "API");
 
-public sealed record OperationalIdentityResult(bool Allowed, object? Value = null);
+public sealed record OperationalIdentityResult(bool Allowed, object? Value = null)
+{
+    // Browser transport renews a session cookie only after backend validation.
+    public DateTimeOffset? SessionExpiresAtUtc { get; init; }
+    public int? SessionIdleMinutes { get; init; }
+}
 public sealed record OperationalSessionReceipt(string SessionToken, DateTimeOffset ExpiresAtUtc,
     IReadOnlyList<string>? RecoveryCodes = null);
 public sealed record OperationalAssistedReceipt(Guid Reference, bool Accepted = true);

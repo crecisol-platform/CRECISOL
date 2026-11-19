@@ -14,7 +14,7 @@ BASE="e648d7512897e2c6aaf5c42a75969f63e315c6a6"
 BRANCH="feature/c05-08-mfa-stepup-passkeys-20261114"
 FILES={
     "doc":"docs/c05/C05_08_ESPECIFICACION.md",
-    "totp":"backend/src/Crecisol.CredentialSecurity/TotpSha256Verifier.cs",
+    "totp":"backend/src/Crecisol.CredentialSecurity/TotpSha1Verifier.cs",
     "webauthn":"backend/src/Crecisol.CredentialSecurity/SyntheticWebAuthnEs256Verifier.cs",
     "recovery":"backend/src/Crecisol.CredentialSecurity/MfaRecoveryCodeProtector.cs",
     "testproj":"backend/tests/Crecisol.MfaRisk.ContractsTests/Crecisol.MfaRisk.ContractsTests.csproj",
@@ -63,8 +63,8 @@ GUARDS={
         "RFC 6238",
         "IntervalSeconds = 30",
         "MaxPastSteps = 1",
-        "RandomNumberGenerator.GetBytes(32)",
-        "HMACSHA256.HashData(seed, counter)",
+        "RandomNumberGenerator.GetBytes(20)",
+        "HMACSHA1.HashData(seed, counter)",
         "BinaryPrimitives.WriteInt64BigEndian",
         "CryptographicOperations.FixedTimeEquals",
         "step <= lastCommittedStep",
@@ -118,8 +118,8 @@ GUARDS={
         "Crecisol.CredentialSecurity/Crecisol.CredentialSecurity.csproj",
     ),
     "tests":(
-        "RFC 6238 SHA256 59 seconds eight-digit published test vector",
-        "TotpSha256Verifier.TryVerify",
+        "RFC 6238 SHA1 59 seconds eight-digit published test vector",
+        "TotpSha1Verifier.TryVerify",
         "Same code cannot be reused",
         "Future TOTP window is NOT accepted",
         "Zero secret cannot be used",
@@ -178,7 +178,7 @@ def check(data:dict[str,str])->None:
     api=(ROOT/"backend/src/Crecisol.Api/Program.cs").read_text(encoding="utf-8")
     routes=re.findall(r'app\.Map(?:Get|Post|Put|Patch|Delete)\(\s*"([^"]+)"',api)
     ensure(routes==["/api/v1/public/branding/platform"] and
-           "TotpSha256Verifier" not in api and
+           "TotpSha1Verifier" not in api and
            "SyntheticWebAuthnEs256Verifier" not in api,
            "C05-08 crypto test MUST NOT expose product login/MFA API")
     ensure("workflow_dispatch:" not in data["ci"] and

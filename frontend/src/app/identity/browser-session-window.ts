@@ -1,22 +1,25 @@
-/** Privacy teardown follows the server's fixed deadline and network inactivity.
- * A client timer never extends server authority or stores a session secret. */
+/** The server determines the sliding expiry on each validated request.
+ * The browser only clears private UI when that server-issued deadline passes.
+ * No browser event can extend authority without a successful API keepalive. */
 export class BrowserSessionWindow {
-  private absolute: ReturnType<typeof setTimeout> | undefined;
-  private idle: ReturnType<typeof setTimeout> | undefined;
-  constructor(private readonly maximum: number, private readonly inactivity: number, private readonly expired: () => void) {}
-  establish(expiresAtUtc: string): void {
+  private expiryTimer: ReturnType<typeof setTimeout> | undefined;
+  constructor(private readonly expired: () => void) {}
+  establish(expiresAtUtc: string, idleMinutes: number): void {
     const remaining = Date.parse(expiresAtUtc) - Date.now();
-    if (!Number.isFinite(remaining) || remaining <= 0 || remaining > this.maximum + 60_000) throw new Error('identity_unavailable');
-    this.clear(); this.absolute = setTimeout(() => this.fire(), remaining); this.touch();
-  }
-  touch(): void {
-    if (!this.absolute) return;
-    if (this.idle) clearTimeout(this.idle);
-    this.idle = setTimeout(() => this.fire(), this.inactivity);
+    if (!Number.isInteger(idleMinutes) || idleMinutes < 5 || idleMinutes > 120 ||
+        !Number.isFinite(remaining) || remaining <= 0 ||
+        remaining > idleMinutes * 60_000 + 90_000)
+      throw new Error('identity_unavailable');
+    this.clear();
+    this.expiryTimer = setTimeout(() => this.fire(), remaining);
   }
   clear(): void {
-    if (this.absolute) clearTimeout(this.absolute); if (this.idle) clearTimeout(this.idle);
-    this.absolute = undefined; this.idle = undefined;
+    if (this.expiryTimer) clearTimeout(this.expiryTimer);
+    this.expiryTimer = undefined;
   }
-  private fire(): void { const active = this.absolute !== undefined; this.clear(); if (active) this.expired(); }
+  private fire(): void {
+    if (!this.expiryTimer) return;
+    this.clear();
+    this.expired();
+  }
 }

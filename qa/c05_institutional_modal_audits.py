@@ -48,7 +48,10 @@ def guard_modal(source: str) -> None:
 def audit_a() -> None:
     operator = "\n".join(read(PAGES / path) for path in OPERATOR)
     workspace = read(PAGES / "identity-workspace.component.html")
-    require(operator.count("<form ") == 18, "18 original operator forms not preserved")
+    require(operator.count("<form ") == 19, "18 original forms plus configurable session policy form not preserved")
+    require('name="minutes"' in operator and 'name="expectedRevision"' in operator and
+            'action: \'session-policy\'' in operator and 'name="code"' in operator,
+            "session-policy administrator form missing mandatory revision/MFA proof")
     require(workspace.count("<form ") == 15, "15 original consumer account forms not preserved")
     for field in ("caseId", "verified", "evidenceHash", "reason",
                   "shareA", "shareB", "currentPassword", "newPassword",
@@ -59,7 +62,9 @@ def audit_a() -> None:
         require(f'name="{field}"' in workspace, "account critical field lost: " + field)
     panel = read(PAGES / "platform-identity-panel.component.html")
     for tab in ("casos", "sesiones", "perfil", "seguridad", "monitor"):
-        require(f"panel.set('{tab}')" in panel, "operator task tab missing: " + tab)
+        require((f"panel.set('{tab}')" in panel) or
+                (tab == "seguridad" and '(click)="openSecurity()"' in panel),
+                "operator task tab missing: " + tab)
     require("panel-operator" not in workspace, "business account leaked platform view")
     require("Registrar decisión" in workspace, "private approval lost")
     require("Comprobar un acceso privado" in workspace and
@@ -73,7 +78,7 @@ def audit_a() -> None:
     require(sessions.count('Cerrar todas mis sesiones de plataforma') == 2 and
             'Confirmar cierre de todas mis sesiones de plataforma' in sessions,
             "operator session action must distinguish trigger from confirmation")
-    print("PASS C05-UI-A: 18 operator forms, 15 account forms, task navigation and authority boundaries")
+    print("PASS C05-UI-A: 18 original operator forms, 1 administrative policy form, 15 account forms, task navigation and authority boundaries")
 
 
 def audit_b() -> None:

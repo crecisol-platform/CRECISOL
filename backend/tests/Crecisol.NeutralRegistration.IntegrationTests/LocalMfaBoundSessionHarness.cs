@@ -137,7 +137,7 @@ internal static class LocalMfaBoundSessionHarness
         var first=enroll ?? throw new InvalidOperationException("TOTP test enrollment refused.");
         pass(await mfa.ProveTotpAsync(trustedB,approved.ActorId,first,
                  DisposableMfaProofPurpose.Enroll,secrets.TotpCode(first.FactorId),ct),
-             "Actual HMAC-SHA256 TOTP proof activates factor through SQL CAS");
+             "Actual HMAC-SHA1 TOTP proof activates factor through SQL CAS");
         secrets.AdvanceBy(TimeSpan.FromSeconds(65));
 
         var operation=Guid.NewGuid();
@@ -290,7 +290,7 @@ internal static class LocalMfaBoundSessionHarness
             if(kind!=DisposableMfaKind.Totp)
                 throw new InvalidOperationException("Local TOTP-only fixture.");
             if(!factors.TryAdd(factorId,
-                 new Factor(tenant,actor,TotpSha256Verifier.GenerateSeed())))
+                 new Factor(tenant,actor,TotpSha1Verifier.GenerateSeed())))
                 throw new InvalidOperationException("Duplicate local TOTP factor.");
         }
         public void DiscardPendingFixture(Guid id)
@@ -302,8 +302,8 @@ internal static class LocalMfaBoundSessionHarness
         {
             if(!factors.TryGetValue(id,out var factor))
                 throw new InvalidOperationException("Local TOTP factor unavailable.");
-            return TotpSha256Verifier.ComputeCode(
-                factor.Seed,TotpSha256Verifier.StepAt(Now()));
+            return TotpSha1Verifier.ComputeCode(
+                factor.Seed,TotpSha1Verifier.StepAt(Now()));
         }
         public bool TryVerifyTotp(Guid id,TenantId tenant,TenantActorId actor,
             string? candidate,long lastCounter,out long nextCounter)
@@ -311,7 +311,7 @@ internal static class LocalMfaBoundSessionHarness
             nextCounter=-1;
             return factors.TryGetValue(id,out var factor) &&
                 factor.Tenant==tenant && factor.Actor==actor &&
-                TotpSha256Verifier.TryVerify(
+                TotpSha1Verifier.TryVerify(
                     factor.Seed,candidate,Now(),lastCounter,out nextCounter);
         }
         public bool TryVerifyFixturePasskey(Guid id,TenantId tenant,TenantActorId actor,
