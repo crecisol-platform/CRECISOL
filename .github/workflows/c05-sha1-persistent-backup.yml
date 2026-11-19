@@ -56,9 +56,35 @@ jobs:
           }
           trap cleanup EXIT
           node qa/c05_local_persistent.mjs init
+          # The optional human-readable private tenant credentials must be covered,
+          # and an interrupted offline rekey must block both backup and restoration.
+          printf 'Synthetic tenant password fixture only\n' > "$CRECISOL_C05_PERSISTENT_SECRET_DIR/tenant-accounts.md"
+          chmod 600 "$CRECISOL_C05_PERSISTENT_SECRET_DIR/tenant-accounts.md"
+          cp "$CRECISOL_C05_PERSISTENT_SECRET_DIR/tenant-accounts.md" "$RUNNER_TEMP/c05-tenant-md-reference"
+          touch "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md.sha1-pending"
+          chmod 600 "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md.sha1-pending"
+          if node qa/c05_local_persistent.mjs backup > "$RUNNER_TEMP/c05-negative-pending-backup.log" 2>&1; then
+            echo 'FAIL: unresolved offline rekey allowed a new backup' >&2
+            exit 1
+          fi
+          rm -f "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md.sha1-pending"
           cp "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md" "$RUNNER_TEMP/c05-access-reference"
           cp "$CRECISOL_C05_PERSISTENT_SECRET_DIR/runtime.env" "$RUNNER_TEMP/c05-runtime-reference"
           node qa/c05_local_persistent.mjs backup
+          node qa/c05_local_persistent.mjs verify-backup
+          printf '# modified synthetic tenant credentials\n' >> "$CRECISOL_C05_PERSISTENT_SECRET_DIR/tenant-accounts.md"
+          if node qa/c05_local_persistent.mjs verify-backup > "$RUNNER_TEMP/c05-negative-tenant-md.log" 2>&1; then
+            echo 'FAIL: modified private tenant credentials were accepted' >&2
+            exit 1
+          fi
+          cp "$RUNNER_TEMP/c05-tenant-md-reference" "$CRECISOL_C05_PERSISTENT_SECRET_DIR/tenant-accounts.md"
+          touch "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md.sha1-pending"
+          chmod 600 "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md.sha1-pending"
+          if node qa/c05_local_persistent.mjs verify-backup > "$RUNNER_TEMP/c05-negative-pending-verify.log" 2>&1; then
+            echo 'FAIL: unresolved offline rekey accepted during restore verification' >&2
+            exit 1
+          fi
+          rm -f "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md.sha1-pending"
           node qa/c05_local_persistent.mjs verify-backup
           LATEST="$(cat "$CRECISOL_C05_PERSISTENT_SECRET_DIR/backups/.latest")"
           ARCHIVE="$CRECISOL_C05_PERSISTENT_SECRET_DIR/backups/$LATEST"

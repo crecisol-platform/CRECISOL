@@ -42,9 +42,14 @@ Argon2id, HMAC-SHA256 de tokens/backups, WebAuthn ni claves criptográficas.
    cifrar nueva semilla con ese ID, y actualizar bajo transacción el operador
    si está en `recovery_pending=1` con semilla vacía. Crear diez códigos
    de respaldo nuevos y dejar la cuenta activa; no devolver antiguo MFA.
-   El script de aplicación SQL todavía requiere integración/QA con PR #169:
-   **prohibido ejecutar el corte del volumen del propietario hasta que
-   dicho procedimiento haya pasado pruebas reales.**
+   El script de reaprovisionamiento `qa/c05_sha1_local_operator_rekey.mjs`
+   **ya superó ensayo end-to-end en un volumen MySQL8.4 descartable**
+   mediante `database/tests/c05_sha1_offline_rekey_mysql.sh`: tres
+   operadores sintéticos, 30 respaldos, comprobación independiente AES-GCM
+   y rechazo de replay. **Esto NO acredita haber probado la migración ni
+   reaprovisionamiento del volumen persistente del propietario.** Antes
+   de aplicarlo allí se exige una copia recuperable independiente de SQL
+   y claves, restauración en entorno separado y aceptación local.
 6. Resto de usuarios: reactivar por recuperación existente con 2 operadores
    independientes o passkey válido, nunca con contraseña sola ni bypass.
    Confirmar QR/código SHA1 y respaldo nuevo; invalidar factor anterior.

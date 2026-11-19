@@ -37,6 +37,8 @@ const rootPasswordFile = path.join(secretDir, 'mysql-root.password');
 const runtimeEnvFile = path.join(secretDir, 'runtime.env');
 const accessFile = path.join(secretDir, 'access.md');
 const tenantAccountsFile = path.join(secretDir, 'tenant-accounts.json');
+const tenantAccountsMarkdownFile = path.join(secretDir, 'tenant-accounts.md');
+const rekeyPendingFile = path.join(secretDir, 'access.md.sha1-pending');
 const mailboxPasswordFile = path.join(secretDir, 'mailbox.password');
 const proxyFile = path.join(secretDir, 'proxy.json');
 const backupDir = path.join(secretDir, 'backups');
@@ -661,8 +663,14 @@ const c05SnapshotCounts = [
   ['tenants', 'c04_tenant_catalog']
 ];
 const backupSecretFiles = [
-  rootPasswordFile, runtimeEnvFile, accessFile, mailboxPasswordFile, tenantAccountsFile
+  rootPasswordFile, runtimeEnvFile, accessFile, mailboxPasswordFile,
+  tenantAccountsFile, tenantAccountsMarkdownFile
 ];
+function assertNoUnresolvedRekey() {
+  // Pending credentials are neither a verified factor nor a recoverable SQL snapshot.
+  if (existsSync(rekeyPendingFile))
+    throw new Error('Unresolved SHA1 offline operator rekey; reconcile protected pending credentials before backup/restore.');
+}
 function sha256Bytes(value) { return createHash('sha256').update(value).digest('hex'); }
 
 function databaseSnapshot(containerName, rootPassword) {
@@ -690,6 +698,7 @@ function databaseSnapshot(containerName, rootPassword) {
 }
 
 function backup() {
+  assertNoUnresolvedRekey();
   // Never create or mutate a database or encryption key during a backup.
   for (const required of [rootPasswordFile, runtimeEnvFile, accessFile]) {
     if (!existsSync(required)) throw new Error('Existing private C05 key/access files are required before backup.');
@@ -725,6 +734,7 @@ function backup() {
 }
 
 function verifyBackup() {
+  assertNoUnresolvedRekey();
   const latestFile = path.join(backupDir, '.latest');
   if (!existsSync(latestFile)) throw new Error('No managed C05 backup; legacy backups require separate manual review.');
   const filename = readFileSync(latestFile, 'utf8').trim();
@@ -742,6 +752,9 @@ function verifyBackup() {
       sha256Bytes(archive) !== manifest.archiveSha256 ||
       !manifest.secrets || typeof manifest.secrets !== 'object' ||
       ![rootPasswordFile, runtimeEnvFile, accessFile].every(file =>
+        manifest.secrets[path.basename(file)] === sha256Bytes(readFileSync(file))) ||
+      // Also reject newly appearing protected files absent from the manifest.
+      !backupSecretFiles.filter(file => existsSync(file)).every(file =>
         manifest.secrets[path.basename(file)] === sha256Bytes(readFileSync(file)))) {
     throw new Error('C05 archive or external encryption/access key fingerprints mismatch; refusing restore.');
   }

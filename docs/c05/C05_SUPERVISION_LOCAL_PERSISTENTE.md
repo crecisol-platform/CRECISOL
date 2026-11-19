@@ -45,6 +45,7 @@ Las credenciales generadas, semillas MFA, códigos de recuperación y la contras
 ```text
 /home/javi/.crecisol/c05-local/access.md
 /home/javi/.crecisol/c05-local/tenant-accounts.md
+/home/javi/.crecisol/c05-local/tenant-accounts.json
 ```
 
 Los archivos tienen permisos restrictivos y no deben copiarse a Git, tickets, capturas ni chats.
@@ -76,7 +77,7 @@ Las sesiones, códigos de recuperación y permisos temporales caducan o pueden r
 
 `backup` exige una base C05 existente y encendida: no crea silenciosamente contenedores, volúmenes, cuentas ni llaves. Guarda un SQL comprimido y un manifiesto protegido (SHA-256 de archivo SQL, huella del historial 001–016 o 001–017, recuentos de operadores, cuentas, factores, sesiones, membresías y tenants, y SHA-256 de llaves/archivos externos existentes). `verify-backup` valida el manifiesto, comprueba que esas llaves todavía existen sin cambios y restaura SQL en un contenedor nuevo de red aislada, sin puerto publicado ni volumen persistente; compara historial y recuentos con el origen. Al salir elimina exclusivamente el contenedor temporal creado en esa ejecución.
 
-**Importante:** el manifiesto contiene huellas, **no copia, protege ni restaura las llaves mismas**. Además de las copias SQL, el propietario debe conservar una copia independiente, cifrada y verificable de `runtime.env`, `mysql-root.password`, `access.md`, `mailbox.password` y el archivo privado de cuentas tenant si existe; debe poder recuperarla en un entorno C05 distinto. Es una barrera de aceptación antes del corte irreversible. Verificar los hashes de las llaves originales no demuestra que exista un respaldo recuperable de ellas. La base `crecisol_local` de C01/C02 nunca participa en este procedimiento.
+**Importante:** el manifiesto contiene huellas, **no copia, protege ni restaura las llaves mismas**. Además de las copias SQL, el propietario debe conservar una copia independiente, cifrada y verificable de `runtime.env`, `mysql-root.password`, `access.md`, `mailbox.password` y **ambos archivos privados** de cuentas tenant (`tenant-accounts.json` y `tenant-accounts.md`) si existen; debe poder recuperarlos en un entorno C05 distinto. El manifiesto incluye huellas de ambos archivos presentes, pero nunca copia sus credenciales. Si aparece `access.md.sha1-pending`, `backup` y `verify-backup` se bloquean: primero hay que reconciliar el reaprovisionamiento offline; no se debe interpretar el archivo pendiente como recuperación completada. Es una barrera de aceptación antes del corte irreversible. Verificar los hashes de las llaves originales no demuestra que exista un respaldo recuperable de ellas. La base `crecisol_local` de C01/C02 nunca participa en este procedimiento.
 
 Los respaldos históricos sin manifiesto no se convierten automáticamente en verificados: requieren revisión de restauración separada. No efectuar la migración 017 de un volumen anterior sin respaldos SQL **y llaves**, restauración comprobada y recuperación offline de operadores con la API detenida.
 
