@@ -1,10 +1,27 @@
-<section class="operator-readonly-panel" aria-label="Perfil de operador"><h3>Mi perfil de operador</h3>
-          <button type="button" [disabled]="busy()" (click)="loadProfileRequested.emit()">Consultar perfil de operador</button>
-          @if (platform.profile(); as profile) { <p aria-label="Nombre del perfil de operador">{{ profile.displayName }}</p> }
-          @if (platform.photo()) { <img [src]="platform.photo()" width="64" height="64" alt="Foto de mi perfil de operador"> }
-          
-          
-        </section>
+<section class="operator-readonly-panel identity-profile" aria-label="Perfil de operador">
+  <div class="identity-panel-heading">
+    <div><h3>Perfil de operador</h3><p>Identidad exclusiva para acciones autorizadas de plataforma.</p></div>
+    <button type="button" [disabled]="busy()" (click)="loadProfileRequested.emit()">Actualizar perfil</button>
+  </div>
+  <div class="identity-profile-body">
+    @if (platform.photo()) {
+      <img class="identity-profile-avatar" [src]="platform.photo()" width="64" height="64" alt="Foto de mi perfil de operador">
+    } @else {
+      <span class="identity-profile-avatar identity-profile-avatar--empty" aria-hidden="true">O</span>
+    }
+    <div class="identity-profile-details">
+      @if (platform.profile(); as profile) {
+        <p class="identity-profile-name" aria-label="Nombre del perfil de operador">{{ profile.displayName }}</p>
+        <dl class="identity-meta">
+          <div><dt>Idioma</dt><dd>{{ profile.language }}</dd></div>
+          <div><dt>Zona horaria</dt><dd>{{ profile.timeZone }}</dd></div>
+        </dl>
+      } @else {
+        <p class="identity-empty-copy">Consulta el perfil para revisar tus datos de operador.</p>
+      }
+    </div>
+  </div>
+</section>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog51.open()">
     <span>Editar perfil de operador</span><span aria-hidden="true">›</span>
@@ -12,9 +29,9 @@
   <cs-institutional-modal #opDialog51 title="Editar perfil de operador" description="Actualiza únicamente los datos visibles de tu perfil institucional."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="actionRequested.emit({ event: $event, action: 'profile' })">
-            <label for="operator-profile-name">Nombre visible del operador</label><input id="operator-profile-name" name="displayName" required maxlength="80" autocomplete="nickname">
-            <label for="operator-profile-language">Idioma del perfil de operador</label><select id="operator-profile-language" name="language"><option value="es-HN">Español de Honduras</option><option value="es">Español</option><option value="en">English</option></select>
-            <label for="operator-profile-zone">Zona horaria del operador</label><input id="operator-profile-zone" name="timeZone" required maxlength="64" value="America/Tegucigalpa">
+            <label for="operator-profile-name">Nombre visible del operador</label><input id="operator-profile-name" name="displayName" [value]="platform.profile()?.displayName ?? ''" required maxlength="80" autocomplete="nickname">
+            <label for="operator-profile-language">Idioma del perfil de operador</label><select id="operator-profile-language" name="language" [value]="platform.profile()?.language ?? 'es-HN'"><option value="es-HN">Español de Honduras</option><option value="es">Español</option><option value="en">English</option></select>
+            <label for="operator-profile-zone">Zona horaria del operador</label><input id="operator-profile-zone" name="timeZone" required maxlength="64" [value]="platform.profile()?.timeZone ?? 'America/Tegucigalpa'">
             <button [disabled]="busy()">Guardar perfil de operador</button>
           </form>
   </cs-institutional-modal>
