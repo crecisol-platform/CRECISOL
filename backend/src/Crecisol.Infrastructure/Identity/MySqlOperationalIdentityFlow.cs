@@ -204,6 +204,13 @@ public sealed partial class MySqlOperationalIdentityFlow : IOperationalIdentityF
         if (bits > 0) result.Append(alphabet[(value << (5 - bits)) & 31]);
         return result.ToString();
     }
+    // The URI is temporary enrollment material: never persist or log it.
+    // A non-identifying stable label distinguishes multiple CRECISOL accounts
+    // in free authenticators without exposing an email or tenant identifier.
+    private static string TotpUri(byte[] actor, byte[] seed, string realm) =>
+        "otpauth://totp/" + Uri.EscapeDataString("CRECISOL:" + realm + "-" + Hex(actor)[..8]) +
+        "?secret=" + Base32(seed) + "&issuer=CRECISOL&algorithm=SHA1&digits=6&period=30";
+
     public void Dispose()
     {
         CryptographicOperations.ZeroMemory(tokenKey);

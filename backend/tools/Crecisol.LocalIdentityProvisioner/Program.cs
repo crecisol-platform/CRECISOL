@@ -22,7 +22,7 @@ try
     var actor = Guid.NewGuid().ToByteArray(true); var id = Convert.ToHexString(actor);
     var phc = new Argon2idPasswordHasher(PasswordHashingPolicy.Default, new KnownCompromisedPasswordScreen())
         .CreateVerifier(input.Password).ExportForTrustedCredentialStore();
-    var seed = RandomNumberGenerator.GetBytes(32); var envelope = new byte[seed.Length + 28];
+    var seed = RandomNumberGenerator.GetBytes(20); var envelope = new byte[seed.Length + 28];
     RandomNumberGenerator.Fill(envelope.AsSpan(0, 12));
     using (var aes = new AesGcm(key, 16)) aes.Encrypt(envelope.AsSpan(0, 12), seed, envelope.AsSpan(28), envelope.AsSpan(12, 16),
         Encoding.UTF8.GetBytes("C05/operational/v1/platform-factor:" + id));

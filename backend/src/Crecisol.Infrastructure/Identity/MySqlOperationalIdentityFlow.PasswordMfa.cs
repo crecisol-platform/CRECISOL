@@ -86,7 +86,7 @@ public sealed partial class MySqlOperationalIdentityFlow
                 (replacement && (activeFactor is null || !Bytes(activeFactor, "factor_id").SequenceEqual(Bytes(challenge, "replace_factor_id")))))
                 return new(false);
             var factorId = Id();
-            var seed = RandomNumberGenerator.GetBytes(32);
+            var seed = RandomNumberGenerator.GetBytes(20);
             try
             {
                 var envelope = Protect(seed, "factor:" + Hex(actor) + Hex(factorId));
@@ -97,7 +97,7 @@ public sealed partial class MySqlOperationalIdentityFlow
                     """, ("a", actor), ("f", factorId), ("c", envelope[28..]), ("n", envelope[..12]), ("tag", envelope[12..28]));
                 await u.Run("UPDATE c05_identity_challenge SET factor_id=@f WHERE tenant_id=@t AND token_hmac=@h", ("f", factorId), ("t", tenant), ("h", hash));
                 var secret = Base32(seed);
-                return new(true, new { secret, uri = "otpauth://totp/CRECISOL:cuenta?secret=" + secret + "&issuer=CRECISOL&algorithm=SHA256&digits=6&period=30" });
+                return new(true, new { secret, uri = TotpUri(actor, seed, "cuenta") });
             }
             finally { CryptographicOperations.ZeroMemory(seed); }
         }

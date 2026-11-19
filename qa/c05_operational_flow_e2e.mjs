@@ -116,7 +116,7 @@ function totp(seed, previous = false) {
   let bits = 0, value = 0; const out = [];
   for (const c of seed) { value = (value << 5) | alphabet.indexOf(c); bits += 5; if (bits >= 8) { out.push((value >>> (bits - 8)) & 255); bits -= 8; } }
   const counter = Buffer.alloc(8); counter.writeBigInt64BE(BigInt(Math.floor(Date.now() / 30000) - (previous ? 1 : 0)));
-  const hash = createHmac('sha256', Buffer.from(out)).update(counter).digest();
+  const hash = createHmac('sha1', Buffer.from(out)).update(counter).digest();
   const offset = hash.at(-1) & 15;
   return String((hash.readUInt32BE(offset) & 0x7fffffff) % 1000000).padStart(6, '0');
 }
@@ -266,7 +266,7 @@ try {
     const previewKey = secret(); confidential.push(previewKey);
     const folder = path.join(root, '.cache/c05-preview'); mkdirSync(folder, { recursive: true });
     writeFileSync(path.join(folder, 'access.md'), `# CRECISOL — prueba local\n\nFrontend: http://127.0.0.1:4200/cuenta\nBackend: http://127.0.0.1:5187 (Host interno tenant-a.example.test)\nBuzón local: http://127.0.0.1:8025\n\nCuenta ficticia de revisión: reviewer@example.test\nContraseña: ${password}\nConfigura MFA al iniciar por primera vez. La cuenta tiene autoridad local temporal de ocho horas.\n\nUsuario del buzón: preview\nContraseña del buzón: ${previewKey}\n\nSolo @example.test. No uses datos personales. El buzón permite revisar las pruebas de correo e IDs de membresías del entorno ficticio; no es un endpoint del producto. Para detener todo, utiliza su botón Detener.\n`, { mode: 0o600 });
-    writeFileSync(path.join(folder, 'access.md'), '\n## Operadores ficticios de identidad de plataforma\n\nLa consola está en la sección Personal autorizado de identidad CRECISOL. No son administradores productivos. TOTP: SHA256, seis dígitos, 30 segundos. Cada operador conserva su propia contraseña y semilla. Nunca uses estos datos fuera de este entorno.\n\n' + operators.map(o => `Correo: ${o.mailbox}\nContraseña: ${o.password}\nSemilla TOTP: ${o.seed}\nRespaldos de un uso: ${o.backups.join(' / ')}\n`).join('\n'), { flag: 'a', mode: 0o600 });
+    writeFileSync(path.join(folder, 'access.md'), '\n## Operadores ficticios de identidad de plataforma\n\nLa consola está en la sección Personal autorizado de identidad CRECISOL. No son administradores productivos. TOTP: SHA1, seis dígitos, 30 segundos. Cada operador conserva su propia contraseña y semilla. Nunca uses estos datos fuera de este entorno.\n\n' + operators.map(o => `Correo: ${o.mailbox}\nContraseña: ${o.password}\nSemilla TOTP: ${o.seed}\nRespaldos de un uso: ${o.backups.join(' / ')}\n`).join('\n'), { flag: 'a', mode: 0o600 });
     writeFileSync(path.join(folder, 'access.md'), `\n## Recurso privado ficticio de reviewer\n\nAcepta primero las condiciones de prueba desde el portal.\nSucursal: ${branch}\nRecurso: ${resource}\nResultado autorizado: LOCAL-DEMO-PRIVATE-001\nLa autorización vence junto con la autoridad de prueba; no concede acceso a otro tenant o propietario.\n`, { flag: 'a', mode: 0o600 });
     writeFileSync(path.join(folder, 'access.md'), '\nLa membresía y los hosts ficticios duran siete días para permitir pruebas manuales del enfriamiento de 24 horas. Los permisos administrativos y del recurso privado duran solo ocho horas. El entorno termina al detenerlo, cerrar Docker o apagar el equipo.\n', { flag: 'a', mode: 0o600 });
     const escape = value => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');

@@ -18,52 +18,52 @@ void ExpectReject<T>(Action action, string name) where T : Exception
         typeof(T).Name + ": " + name);
 }
 
-// Authentic published RFC 6238 Appendix B HMAC-SHA256 eight-digit vector.
-byte[] rfcSeed = Encoding.ASCII.GetBytes("12345678901234567890123456789012");
-Check(TotpSha256Verifier.ComputeCode(rfcSeed, 1, 8) == "46119246",
-    "RFC 6238 SHA256 59 seconds eight-digit published test vector");
-Check(TotpSha256Verifier.ComputeCode(rfcSeed, 1) == "119246",
-    "6-digit TOTP uses the same RFC SHA256 dynamic truncation");
-Check(TotpSha256Verifier.StepAt(DateTimeOffset.FromUnixTimeSeconds(59)) == 1 &&
-      TotpSha256Verifier.StepAt(DateTimeOffset.FromUnixTimeSeconds(60)) == 2,
+// Authentic published RFC 6238 Appendix B HMAC-SHA1 eight-digit vector.
+byte[] rfcSeed = Encoding.ASCII.GetBytes("12345678901234567890");
+Check(TotpSha1Verifier.ComputeCode(rfcSeed, 1, 8) == "94287082",
+    "RFC 6238 SHA1 59 seconds eight-digit published test vector");
+Check(TotpSha1Verifier.ComputeCode(rfcSeed, 1) == "287082",
+    "6-digit TOTP uses the same RFC SHA1 dynamic truncation");
+Check(TotpSha1Verifier.StepAt(DateTimeOffset.FromUnixTimeSeconds(59)) == 1 &&
+      TotpSha1Verifier.StepAt(DateTimeOffset.FromUnixTimeSeconds(60)) == 2,
     "Trusted 30-second time boundary is precise");
 var clock59 = DateTimeOffset.FromUnixTimeSeconds(59);
-string stepOne = TotpSha256Verifier.ComputeCode(rfcSeed, 1);
-Check(TotpSha256Verifier.TryVerify(rfcSeed, stepOne, clock59, -1,
+string stepOne = TotpSha1Verifier.ComputeCode(rfcSeed, 1);
+Check(TotpSha1Verifier.TryVerify(rfcSeed, stepOne, clock59, -1,
         out long acceptedStep) && acceptedStep == 1,
     "Correct TOTP from active step accepted");
-Check(!TotpSha256Verifier.TryVerify(rfcSeed, stepOne, clock59, 1, out _),
+Check(!TotpSha1Verifier.TryVerify(rfcSeed, stepOne, clock59, 1, out _),
     "Same code cannot be reused once counter is committed");
-Check(TotpSha256Verifier.TryVerify(rfcSeed, stepOne,
+Check(TotpSha1Verifier.TryVerify(rfcSeed, stepOne,
         DateTimeOffset.FromUnixTimeSeconds(60), 0, out long pastStep) &&
       pastStep == 1, "Exactly one previous time step allowed");
-Check(!TotpSha256Verifier.TryVerify(rfcSeed, stepOne,
+Check(!TotpSha1Verifier.TryVerify(rfcSeed, stepOne,
         DateTimeOffset.FromUnixTimeSeconds(90), 0, out _),
     "Old TOTP beyond one step expires");
-Check(!TotpSha256Verifier.TryVerify(rfcSeed,
-        TotpSha256Verifier.ComputeCode(rfcSeed, 2), clock59, -1, out _),
+Check(!TotpSha1Verifier.TryVerify(rfcSeed,
+        TotpSha1Verifier.ComputeCode(rfcSeed, 2), clock59, -1, out _),
     "Future TOTP window is NOT accepted");
-Check(!TotpSha256Verifier.TryVerify(rfcSeed," 119246",clock59,-1,out _) &&
-      !TotpSha256Verifier.TryVerify(rfcSeed,"119246 ",clock59,-1,out _) &&
-      !TotpSha256Verifier.TryVerify(rfcSeed,"１１９２４６",clock59,-1,out _) &&
-      !TotpSha256Verifier.TryVerify(rfcSeed,"11924a",clock59,-1,out _) &&
-      !TotpSha256Verifier.TryVerify(rfcSeed,"119246\n",clock59,-1,out _),
+Check(!TotpSha1Verifier.TryVerify(rfcSeed," 287082",clock59,-1,out _) &&
+      !TotpSha1Verifier.TryVerify(rfcSeed,"287082 ",clock59,-1,out _) &&
+      !TotpSha1Verifier.TryVerify(rfcSeed,"１１９２４６",clock59,-1,out _) &&
+      !TotpSha1Verifier.TryVerify(rfcSeed,"11924a",clock59,-1,out _) &&
+      !TotpSha1Verifier.TryVerify(rfcSeed,"287082\n",clock59,-1,out _),
     "Only exact 6-digit ASCII TOTP accepted; no Unicode or padding");
-Check(!TotpSha256Verifier.TryVerify(new byte[32],stepOne,clock59,-1,out _),
+Check(!TotpSha1Verifier.TryVerify(new byte[20],stepOne,clock59,-1,out _),
     "Zero secret cannot be used as enrolled TOTP factor");
-Check(!TotpSha256Verifier.TryVerify(rfcSeed,stepOne,clock59,10,out _),
+Check(!TotpSha1Verifier.TryVerify(rfcSeed,stepOne,clock59,10,out _),
     "Counter rollback/replay impossible");
-byte[] randomSeed=TotpSha256Verifier.GenerateSeed();
-Check(randomSeed.Length == 32 &&
+byte[] randomSeed=TotpSha1Verifier.GenerateSeed();
+Check(randomSeed.Length == 20 &&
       randomSeed.Any(v=>v!=0) &&
       !CryptographicOperations.FixedTimeEquals(randomSeed,rfcSeed),
     "CSPRNG creates distinct 256-bit seed in memory");
 CryptographicOperations.ZeroMemory(randomSeed);
 ExpectReject<InvalidOperationException>(()=>
-    TotpSha256Verifier.ComputeCode(new byte[32],1),
+    TotpSha1Verifier.ComputeCode(new byte[20],1),
     "All-zero secret rejected");
 ExpectReject<InvalidOperationException>(()=>
-    TotpSha256Verifier.ComputeCode(rfcSeed,-1),
+    TotpSha1Verifier.ComputeCode(rfcSeed,-1),
     "Negative TOTP moving factor rejected");
 
 byte[] recoveryKey=RandomNumberGenerator.GetBytes(32);
@@ -94,7 +94,7 @@ using(var otherProtector=new MfaRecoveryCodeProtector(badKey))
 CryptographicOperations.ZeroMemory(badKey);
 var backupLedger=new SyntheticBackupCodeLedger(backupDigest);
 Check(!backupLedger.TryStartReplacement(
-        new byte[32], freshPassword:true),
+        new byte[20], freshPassword:true),
     "Wrong HMAC backup code cannot start factor replacement");
 Check(!backupLedger.TryStartReplacement(
         backupDigest, freshPassword:false),
@@ -118,7 +118,7 @@ Check(backupLedger.TryActivateReplacement(newFactorProven:true) &&
 CryptographicOperations.ZeroMemory(backupDigest);
 CryptographicOperations.ZeroMemory(recoveryKey);
 ExpectReject<InvalidOperationException>(()=>
-    _ = new MfaRecoveryCodeProtector(new byte[32]),
+    _ = new MfaRecoveryCodeProtector(new byte[20]),
     "All-zero recovery HMAC key not accepted");
 
 const string rp = "alpha.example.test";
