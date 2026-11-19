@@ -77,4 +77,31 @@ if apply "$ROOT/database/migrations/017_c05_totp_sha1_exclusive.sql" >/dev/null 
 fi
 test "$(db "SELECT status FROM c05_totp_sha1_policy WHERE policy_id=1")" = 1
 test "$(db "SELECT COUNT(*) FROM c05_identity_account")" = 1
+
 echo 'PASS C05-017 MySQL8.4: legacy factor cryptoshred, operator lock, WebAuthn preserved, blocked rerun'
+# A separate ADDITIVE C05-018 policy must preserve all credentials/data while
+# rejecting unsafe minute values and defaulting to 30 idle minutes.
+apply "$ROOT/database/migrations/018_c05_session_idle_policy.sql"
+test "$(db "SELECT idle_minutes FROM c05_session_idle_policy WHERE policy_id=1")" = 30
+test "$(db "SELECT revision FROM c05_session_idle_policy WHERE policy_id=1")" = 1
+test "$(db "SELECT can_manage_session_policy FROM c05_platform_operator")" = 0
+test "$(db "SELECT COUNT(*) FROM c05_identity_account")" = 1
+test "$(db "SELECT COUNT(*) FROM c05_platform_operator")" = 1
+db "UPDATE c05_session_idle_policy SET idle_minutes=5,revision=revision+1 WHERE policy_id=1"
+test "$(db "SELECT idle_minutes FROM c05_session_idle_policy WHERE policy_id=1")" = 5
+db "UPDATE c05_session_idle_policy SET idle_minutes=120,revision=revision+1 WHERE policy_id=1"
+test "$(db "SELECT idle_minutes FROM c05_session_idle_policy WHERE policy_id=1")" = 120
+for invalid in 0 4 121 65535; do
+  if db "UPDATE c05_session_idle_policy SET idle_minutes=$invalid WHERE policy_id=1" >/dev/null 2>&1; then
+    echo 'FAIL: invalid inactivity minutes accepted by MySQL constraint' >&2
+    exit 1
+  fi
+done
+db "UPDATE c05_session_idle_policy SET idle_minutes=30,revision=revision+1 WHERE policy_id=1"
+if apply "$ROOT/database/migrations/018_c05_session_idle_policy.sql" >/dev/null 2>&1; then
+  echo 'FAIL C05-018 unexpected second ALTER TABLE or table overwrite' >&2
+  exit 1
+fi
+test "$(db "SELECT idle_minutes FROM c05_session_idle_policy WHERE policy_id=1")" = 30
+echo 'PASS C05-018 MySQL8.4: initial 30m, bounds 5..120, default no-admin, preserved credentials, no migration replay'
+
