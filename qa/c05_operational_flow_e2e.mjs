@@ -485,7 +485,7 @@ try {
     "SELECT tenant_id,UUID_TO_BIN(UUID(),0),account_id,membership_id,UNHEX('" + staleTenantHash + "'),UUID_TO_BIN(UUID(),0)," +
     "mfa_factor_id,mfa_verified_at_utc,UTC_TIMESTAMP(6)-INTERVAL 31 MINUTE," +
     "UTC_TIMESTAMP(6)+INTERVAL 30 MINUTE,account_revision,membership_revision," +
-    "UTC_TIMESTAMP(6)-INTERVAL 31 MINUTE,'expired-disposable-fixture',peer_hmac,auth_method " +
+    "UTC_TIMESTAMP(6)-INTERVAL 31 MINUTE,'idle-expired',peer_hmac,auth_method " +
     "FROM c05_identity_session WHERE token_hmac=UNHEX('" + tokenDigest + "') LIMIT 1");
   check((await api('sessions', {}, staleTenantToken)).status === 401,
     'tenant session idle for 31 minutes is denied despite a future token expiry');
