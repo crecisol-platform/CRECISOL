@@ -212,7 +212,8 @@ function applyMigrations() {
   // A partially migrated existing database (including 001-015 or interrupted
   // 017 without a ledger record) must NEVER reach the destructive 017 script.
   // A fully migrated database is checked against every recorded checksum below.
-  if (applied.size > 0 && (applied.size !== migrationNames.length || !applied.has(17)))
+  if (applied.size > 0 && (applied.size !== migrationNames.length ||
+      !migrationNames.every((_, index) => applied.has(index + 1))))
     throw new Error('Existing or partially migrated C05 database requires verified backup/restore, API shutdown and approved offline SHA1 operator rekey; refusing implicit migration.');
   for (let index = 0; index < migrationNames.length; index++) {
     const version = index + 1;
