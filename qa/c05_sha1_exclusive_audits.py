@@ -34,6 +34,7 @@ PROTECTED={
 "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.OperatorRecovery.cs",
 "backend/tests/Crecisol.MfaRisk.ContractsTests/Program.cs",
 "backend/tests/Crecisol.MfaRisk.MySqlTests/Program.cs",
+"backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalMfaBoundSessionHarness.cs",
 "backend/tools/Crecisol.LocalIdentityProvisioner/Program.cs",
 "database/migrations/017_c05_totp_sha1_exclusive.sql",
 "database/migrations/017_c05_totp_sha1_exclusive.down.sql",
