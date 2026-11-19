@@ -21,6 +21,10 @@ test('A/B/D | a late tenant SHA1 enrollment response cannot resurrect a cleared 
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ secret: SEED, uri }) });
   });
   await page.goto('/cuenta');
+  await expect.poll(() => page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    return portal.identity.restoring();
+  })).toBe(false);
   await page.evaluate(async () => {
     const el = document.querySelector('cs-identity-portal');
     const portal = (window as unknown as AngularDebug).ng.getComponent(el!);
