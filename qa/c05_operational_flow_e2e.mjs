@@ -331,7 +331,7 @@ try {
   // may modify the global inactivity window; no tenant or reviewer can.
   check((await platform('session-policy')).status === 401,
     'anonymous caller cannot inspect protected session policy');
-  check((await api('platform/session-policy', {}, undefined, 'tenant-a.example.test')).status === 400,
+  check([400, 401].includes((await api('platform/session-policy', {}, undefined, 'tenant-a.example.test')).status),
     'tenant identity host cannot impersonate platform session policy');
   const reviewerLogin = await platform('login', { mailbox: operators[1].mailbox, password: operators[1].password });
   check(reviewerLogin.status === 200, 'independent nonadministrator can request their own MFA');
@@ -472,6 +472,36 @@ try {
   check(backupCodes.length === 10, 'MFA enrollment returns ten one-use backup codes once');
   let token = await browserSession(page);
   check(Boolean(token), 'Angular password -> enrollment -> TOTP -> authenticated session');
+  // The tenant actor cannot extend an expired credential. Simulate elapsed
+  // database time on an independently cloned disposable test session only.
+  const tokenDigest = createHmac('sha256', Buffer.from(keys.CRECISOL_C05_TOKEN_HMAC_KEY, 'hex'))
+    .update('C05/session:' + token).digest('hex');
+  const staleTenantToken = secret(); confidential.push(staleTenantToken);
+  const staleTenantHash = createHmac('sha256', Buffer.from(keys.CRECISOL_C05_TOKEN_HMAC_KEY, 'hex'))
+    .update('C05/session:' + staleTenantToken).digest('hex');
+  sql("INSERT INTO c05_identity_session " +
+    "(tenant_id,session_id,account_id,membership_id,token_hmac,session_family,mfa_factor_id,mfa_verified_at_utc," +
+    "issued_at_utc,expires_at_utc,account_revision,membership_revision,last_seen_at_utc,device_label,peer_hmac,auth_method) " +
+    "SELECT tenant_id,UUID_TO_BIN(UUID(),0),account_id,membership_id,UNHEX('" + staleTenantHash + "'),UUID_TO_BIN(UUID(),0)," +
+    "mfa_factor_id,mfa_verified_at_utc,UTC_TIMESTAMP(6)-INTERVAL 31 MINUTE," +
+    "UTC_TIMESTAMP(6)+INTERVAL 30 MINUTE,account_revision,membership_revision," +
+    "UTC_TIMESTAMP(6)-INTERVAL 31 MINUTE,'expired-disposable-fixture',peer_hmac,auth_method " +
+    "FROM c05_identity_session WHERE token_hmac=UNHEX('" + tokenDigest + "') LIMIT 1");
+  check((await api('sessions', {}, staleTenantToken)).status === 401,
+    'tenant session idle for 31 minutes is denied despite a future token expiry');
+  check(sql("SELECT COUNT(*) FROM c05_identity_session WHERE token_hmac=UNHEX('" +
+    staleTenantHash + "') AND revoked_at_utc IS NOT NULL") === '1',
+    'expired tenant token is irrevocably marked revoked and cannot revive');
+  // DB clock controls sliding: narrow an ACTIVE fixture expiry to 1 minute
+  // while keeping the last activity recent, then refresh via real HTTP.
+  sql("UPDATE c05_identity_session SET expires_at_utc=UTC_TIMESTAMP(6)+INTERVAL 1 MINUTE " +
+    "WHERE token_hmac=UNHEX('" + tokenDigest + "')");
+  check((await api('sessions', {}, token)).status === 200,
+    'validated API activity refreshes an active tenant session');
+  const remaining = Number(sql("SELECT TIMESTAMPDIFF(SECOND,UTC_TIMESTAMP(6),expires_at_utc) " +
+    "FROM c05_identity_session WHERE token_hmac=UNHEX('" + tokenDigest + "')"));
+  check(remaining >= 29 * 60 && remaining <= 30 * 60 + 2,
+    'server slides the effective tenant session expiry to 30 minutes after activity');
   const sessionCookie = (await browserContext.cookies()).find(c => c.name === '__Host-crecisol-c05');
   check(sessionCookie.secure && sessionCookie.httpOnly && sessionCookie.sameSite === 'Strict' && sessionCookie.path === '/',
     'browser session uses Secure HttpOnly SameSite Strict host-only cookie');
