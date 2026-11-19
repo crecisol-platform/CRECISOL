@@ -57,7 +57,7 @@ byte[] randomSeed=TotpSha1Verifier.GenerateSeed();
 Check(randomSeed.Length == 20 &&
       randomSeed.Any(v=>v!=0) &&
       !CryptographicOperations.FixedTimeEquals(randomSeed,rfcSeed),
-    "CSPRNG creates distinct 256-bit seed in memory");
+    "CSPRNG creates distinct 160-bit seed in memory");
 CryptographicOperations.ZeroMemory(randomSeed);
 ExpectReject<InvalidOperationException>(()=>
     TotpSha1Verifier.ComputeCode(new byte[20],1),

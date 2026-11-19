@@ -62,7 +62,7 @@ jobs:
           dotnet build backend/tests/Crecisol.MfaRisk.ContractsTests/Crecisol.MfaRisk.ContractsTests.csproj -c Release --nologo -warnaserror
           dotnet build backend/tests/Crecisol.MfaRisk.MySqlTests/Crecisol.MfaRisk.MySqlTests.csproj -c Release --nologo -warnaserror
           printf 'PASS build sha=%s run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > .c05-08-integration-proof/build
-      - name: Run actual SHA256 TOTP and WebAuthn ES256 tests with adverse vectors
+      - name: Run actual SHA1 TOTP and WebAuthn ES256 tests with adverse vectors
         run: |
           set -euo pipefail
           dotnet run --no-build -c Release --project backend/tests/Crecisol.MfaRisk.ContractsTests/Crecisol.MfaRisk.ContractsTests.csproj

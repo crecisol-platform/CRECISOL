@@ -14,7 +14,7 @@ BASE="e648d7512897e2c6aaf5c42a75969f63e315c6a6"
 BRANCH="feature/c05-08-mfa-stepup-passkeys-20261114"
 ORIGINAL={
     ".github/workflows/c05-08-mfa-crypto.yml",
-    "backend/src/Crecisol.CredentialSecurity/TotpSha256Verifier.cs",
+    "backend/src/Crecisol.CredentialSecurity/TotpSha1Verifier.cs",
     "backend/src/Crecisol.CredentialSecurity/SyntheticWebAuthnEs256Verifier.cs",
     "backend/src/Crecisol.CredentialSecurity/MfaRecoveryCodeProtector.cs",
     "backend/tests/Crecisol.MfaRisk.ContractsTests/Crecisol.MfaRisk.ContractsTests.csproj",
