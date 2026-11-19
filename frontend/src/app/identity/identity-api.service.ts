@@ -414,6 +414,7 @@ export class IdentityApiService {
     this.enrollmentQr.set('');
     this.sessions.set([]);
     this.privateReference.set('');
+    this.assistedReference.set('');
     this.recoveryCodes.set([]);
     this.passkeys.set([]);
     this.pairingKey = null; this.pairingNonce = ''; this.pairing.set(null);

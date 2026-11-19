@@ -385,3 +385,19 @@ test('B | a late operator case read cannot reveal case metadata after local logo
     return panel.platform.case();
   })).toBe(null);
 });
+
+
+test('B | assisted recovery reference must be removed on session teardown', async ({ page }) => {
+  await page.route('**/api/v1/identity/browser/restore', route => route.fulfill({ status: 401, body: '{}' }));
+  await page.goto('/cuenta');
+  await expect.poll(() => page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    return portal.identity.restoring();
+  })).toBe(false);
+  expect(await page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    portal.identity.assistedReference.set('synthetic-private-case-reference');
+    portal.identity.clear();
+    return portal.identity.assistedReference();
+  })).toBe('');
+});
