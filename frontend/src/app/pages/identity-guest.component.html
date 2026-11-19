@@ -61,8 +61,9 @@
         </details>
   }
   @default {
-    <section aria-labelledby="login-heading">
+    <section class="identity-entry" aria-labelledby="login-heading">
           <h2 id="login-heading">Iniciar sesión</h2>
+          <p class="identity-entry__intro">Accede a tu cuenta con tus credenciales. Las operaciones sensibles requieren una verificación adicional.</p>
           <form (submit)="loginRequested.emit($event)">
             <label for="login-mailbox">Correo electrónico</label>
             <input id="login-mailbox" name="mailbox" type="email" autocomplete="username"
@@ -72,8 +73,16 @@
               autocomplete="current-password" required maxlength="256">
             <button type="submit" [disabled]="busy() || identity.restoring()">{{ busy() ? 'Verificando…' : 'Continuar' }}</button>
           </form>
-          <p>Para usar una llave de acceso en este entorno local, abre <a href="http://localhost:4200/cuenta">la cuenta en localhost</a>.</p>
-          <button type="button" [disabled]="busy() || identity.restoring()" (click)="passkeyLoginRequested.emit()">Entrar con llave de acceso</button>
+          <div class="identity-alternate-login" aria-label="Otras maneras de entrar">
+            <p class="identity-alternate-login__divider"><span>Otras maneras de acceder</span></p>
+            <button type="button" class="identity-passkey-action" [disabled]="busy() || identity.restoring() || !passkeyAvailable"
+              (click)="passkeyLoginRequested.emit()">Entrar con una llave de acceso</button>
+            @if (!passkeyAvailable) {
+              <p class="identity-field-help" role="status">Este navegador o conexión no admite actualmente el acceso con llaves. Puedes continuar con correo y contraseña.</p>
+            } @else {
+              <p class="identity-field-help">Si ya registraste una llave, podrás verificar tu identidad desde este dispositivo.</p>
+            }
+          </div>
           <details><summary>Entrar vinculando un navegador</summary>
             <p>Genera una solicitud y apruébala desde otro navegador donde ya tengas una sesión verificada. También puedes copiar los datos; no necesitas escanear el QR en este mismo dispositivo. La solicitud vence en dos minutos.</p>
             <button type="button" [disabled]="busy() || identity.restoring()" (click)="startPairingRequested.emit()">Crear solicitud de vinculación</button>
