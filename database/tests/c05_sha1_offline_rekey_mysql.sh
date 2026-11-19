@@ -110,6 +110,68 @@ if ((statSync(f).mode & 0o077)!==0 ||
  throw new Error('Protected operator rekey material or original password persistence failed');
 console.log('PASS C05 offline SHA1 operator rekey: three secret bundles protected, accounts/passwords retained');
 JS
+# Independently prove that rekeyed database envelopes decrypt to the exact
+# private SHA1 seed of each operator, and that ten distinct backup hashes match.
+# This catches AAD/key/operator mix-ups which mere row-count checks miss.
+db "SELECT HEX(operator_id),HEX(protected_seed),HEX(login_hmac) FROM c05_platform_operator ORDER BY operator_id" > "$DIR/operator-envelopes.tsv"
+db "SELECT HEX(operator_id),HEX(token_hmac) FROM c05_platform_mfa_backup WHERE consumed_at_utc IS NULL" > "$DIR/operator-backups.tsv"
+test "$(db "SELECT COUNT(*) FROM c05_platform_operator WHERE password_phc='synthetic-no-login'")" = 3
+node --input-type=module <<'JS'
+import {createHmac,createDecipheriv} from 'node:crypto';
+import {readFileSync} from 'node:fs';
+import path from 'node:path';
+const dir=process.env.C05_TEST_SECRET_DIR;
+const source=readFileSync(path.join(dir,'access.md'),'utf8');
+const key=Buffer.from(process.env.C05_TEST_ENCRYPTION_KEY,'hex');
+const token=Buffer.from(process.env.C05_TEST_TOKEN_KEY,'hex');
+const raw=readFileSync(path.join(dir,'operator-envelopes.tsv'),'utf8').trim();
+const rows=raw.split(/\r?\n/).map(line=>line.split('\t'));
+const backupRows=readFileSync(path.join(dir,'operator-backups.tsv'),'utf8')
+  .trim().split(/\r?\n/).map(line=>line.split('\t'));
+if(rows.length!==3||backupRows.length!==30||key.length!==32||token.length!==32)
+  throw new Error('Unexpected offline rekey fixture state');
+const abc='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+function base32(bytes){
+  let value=0,bits=0,output='';
+  for(const byte of bytes){
+    value=(value<<8)|byte;bits+=8;
+    while(bits>=5){output+=abc[(value>>(bits-5))&31];bits-=5;}
+  }
+  if(bits>0)output+=abc[(value<<(5-bits))&31];
+  return output;
+}
+for(let i=1;i<=3;i++){
+  const id=String(i).repeat(32).toUpperCase();
+  const mailbox='identity.'+['one','two','three'][i-1]+'@example.test';
+  const row=rows.find(v=>v[0]===id);
+  if(!row||row.length!==3)throw new Error('Missing original operator ID');
+  const envelope=Buffer.from(row[1],'hex');
+  if(envelope.length!==48)throw new Error('Invalid AES-GCM factor envelope');
+  const decipher=createDecipheriv('aes-256-gcm',key,envelope.subarray(0,12),{authTagLength:16});
+  decipher.setAAD(Buffer.from('C05/operational/v1/platform-factor:'+id));
+  decipher.setAuthTag(envelope.subarray(12,28));
+  const seed=Buffer.concat([decipher.update(envelope.subarray(28)),decipher.final()]);
+  if(seed.length!==20)throw new Error('Not an exclusive SHA1 seed');
+  const block=source.split('Correo: '+mailbox+'\n')[1];
+  const recorded=/^Semilla TOTP: ([A-Z2-7]{32})$/m.exec(block||'')?.[1];
+  if(!recorded||base32(seed)!==recorded)
+    throw new Error('Offline operator encrypted factor does not match private enrolled seed');
+  const expectedLogin=createHmac('sha256',token)
+    .update('C05/platform-login:'+mailbox).digest('hex').toUpperCase();
+  if(row[2]!==expectedLogin)throw new Error('Operator digest mismatched original account');
+  const serialized=/^Códigos de respaldo de un uso: (.+)$/m.exec(block||'')?.[1]||'';
+  const codes=serialized.split(' / ');
+  if(codes.length!==10||new Set(codes).size!==10)
+    throw new Error('Invalid fresh backup code set');
+  const expected=new Set(codes.map(code=>createHmac('sha256',token)
+    .update('C05/platform-backup:'+id+':'+code).digest('hex').toUpperCase()));
+  const actual=backupRows.filter(v=>v[0]===id).map(v=>v[1]);
+  if(actual.length!==10||new Set(actual).size!==10||actual.some(x=>!expected.has(x)))
+    throw new Error('Stored offline operator backup digest does not match private codes');
+  seed.fill(0);
+}
+console.log('PASS offline SHA1 crypto: 3 independent AES-GCM envelope decryptions and 30 backup digests');
+JS
 if node "$ROOT/qa/c05_sha1_local_operator_rekey.mjs" --rekey-after-verified-017 >/dev/null 2>&1; then
  echo 'FAIL offline rekey replay was unexpectedly allowed' >&2
  exit 1

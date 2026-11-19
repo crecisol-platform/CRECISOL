@@ -156,7 +156,8 @@ export class PlatformIdentityApiService {
     this.backupTimeout = undefined; this.factorTimeout = undefined; this.recoveryTimeout = undefined; this.shareTimeout = undefined;
     this.csrf = ''; this.challenge = ''; this.state.set('anonymous'); this.case.set(null); this.handoffShare.set(''); this.profile.set(null); this.photo.set(''); this.abuse.set([]);
     this.recoveryCase = ''; this.recoveryChallenge = ''; this.factorChallenge = ''; this.factorSecret.set(''); this.factorQr.set(''); this.operatorRecoverySeed.set(''); this.operatorRecoveryQr.set(''); this.recoveryCodes.set([]);
-    this.locatedCase.set('');
+    // A recovery case reference is never kept after logout/session teardown.
+    this.recoveryReference.set(''); this.locatedCase.set('');
     this.sessions.set([]);
     this.sessionWindow.clear();
   }

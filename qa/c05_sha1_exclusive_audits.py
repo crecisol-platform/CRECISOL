@@ -20,6 +20,8 @@ F={
 "frontend/src/app/pages/platform-identity-panel.component.html":["platform.operatorRecoveryQr()","platform.discardRecoverySetup()"],
 "qa/c05_operational_flow_e2e.mjs":["017_c05_totp_sha1_exclusive","createHmac('sha1'","verifySha1EnrollmentQr"],
 "qa/c05_totp_qr_checks.mjs":["jsQR(","searchParams.get('algorithm') === 'SHA1'"],
+"frontend/src/app/identity/platform-identity-api.service.ts":["this.recoveryReference.set('');","this.operatorRecoveryQr.set('');"],
+"database/tests/c05_sha1_offline_rekey_mysql.sh":["createDecipheriv('aes-256-gcm'","C05/operational/v1/platform-factor:","C05/platform-backup:","offline SHA1 crypto"],
 "qa/c05_sha1_local_operator_rekey.mjs":["--rekey-after-verified-017",
  "CRECISOL_C05_LOCAL_SHA1_REKEY_APPROVED", "START TRANSACTION;",
  "c05_rekey_guard", "access.md.sha1-pending",
