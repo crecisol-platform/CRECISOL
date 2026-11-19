@@ -3,6 +3,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom, timeout } from 'rxjs';
 import { canonicalPhotoPixels } from './canonical-photo-pixels';
 import { BrowserSessionWindow } from './browser-session-window';
+import { createTotpQr } from './totp-setup-qr';
 
 /** Closed platform identity realm. It cannot reuse a tenant CSRF proof,
  * session cookie, account, membership or recovery permission. */
@@ -20,7 +21,9 @@ export class PlatformIdentityApiService {
   readonly recoveryReference = signal('');
   readonly locatedCase = signal('');
   readonly operatorRecoverySeed = signal('');
+  readonly operatorRecoveryQr = signal('');
   readonly factorSecret = signal('');
+  readonly factorQr = signal('');
   readonly recoveryCodes = signal<readonly string[]>([]);
   readonly sessions = signal<ReadonlyArray<{ id: string; device: string; lastSeenAtUtc: string; expiresAtUtc: string }>>([]);
   private recoveryChallenge = '';
@@ -98,10 +101,11 @@ export class PlatformIdentityApiService {
   async requestMailbox(mailbox: string, code: string): Promise<void> { await this.post('mailbox/request', { mailbox, code }); }
   async completeMailbox(token: string, code: string): Promise<void> { await this.post('mailbox/complete', { token, code }); this.clear(); }
   async replaceFactor(currentPassword: string, code: string): Promise<void> {
-    const result = await this.post<{ challenge: string; secret: string }>('factor/replace', { currentPassword, code });
-    this.factorChallenge = result.challenge; this.factorSecret.set(result.secret);
+    const result = await this.post<{ challenge: string; secret: string; uri: string }>('factor/replace', { currentPassword, code });
+    const qr = await createTotpQr(result.secret, result.uri);
+    this.factorChallenge = result.challenge; this.factorSecret.set(result.secret); this.factorQr.set(qr);
     if (this.factorTimeout) clearTimeout(this.factorTimeout);
-    this.factorTimeout = setTimeout(() => { this.factorChallenge = ''; this.factorSecret.set(''); }, 5 * 60_000);
+    this.factorTimeout = setTimeout(() => { this.discardFactorSetup(); }, 5 * 60_000);
   }
   async confirmFactor(code: string): Promise<void> {
     const result = await this.post<{ recoveryCodes: string[] }>('factor/confirm', { challenge: this.factorChallenge, code });
@@ -112,10 +116,12 @@ export class PlatformIdentityApiService {
     this.recoveryReference.set(result.reference);
   }
   async completeRecovery(caseId: string, shareA: string, shareB: string, newPassword: string): Promise<void> {
-    const result = await this.post<{ challenge: string; secret: string }>('operator-recovery/complete', { caseId, shareA, shareB, newPassword });
-    this.recoveryCase = caseId; this.recoveryChallenge = result.challenge; this.operatorRecoverySeed.set(result.secret);
+    const result = await this.post<{ challenge: string; secret: string; uri: string }>('operator-recovery/complete', { caseId, shareA, shareB, newPassword });
+    const qr = await createTotpQr(result.secret, result.uri);
+    this.recoveryCase = caseId; this.recoveryChallenge = result.challenge;
+    this.operatorRecoverySeed.set(result.secret); this.operatorRecoveryQr.set(qr);
     if (this.recoveryTimeout) clearTimeout(this.recoveryTimeout);
-    this.recoveryTimeout = setTimeout(() => { this.recoveryCase = ''; this.recoveryChallenge = ''; this.operatorRecoverySeed.set(''); }, 5 * 60_000);
+    this.recoveryTimeout = setTimeout(() => { this.discardRecoverySetup(); }, 5 * 60_000);
   }
   async confirmRecovery(code: string): Promise<void> {
     const result = await this.post<{ recoveryCodes: string[] }>('operator-recovery/enroll', { caseId: this.recoveryCase, token: this.recoveryChallenge, code });
@@ -135,12 +141,23 @@ export class PlatformIdentityApiService {
       throw error;
     }
   }
+  discardFactorSetup(): void {
+    if (this.factorTimeout) clearTimeout(this.factorTimeout);
+    this.factorTimeout = undefined; this.factorChallenge = '';
+    this.factorSecret.set(''); this.factorQr.set('');
+  }
+  discardRecoverySetup(): void {
+    if (this.recoveryTimeout) clearTimeout(this.recoveryTimeout);
+    this.recoveryTimeout = undefined; this.recoveryCase = ''; this.recoveryChallenge = '';
+    this.operatorRecoverySeed.set(''); this.operatorRecoveryQr.set('');
+  }
   clear(): void {
     for (const timer of [this.backupTimeout, this.factorTimeout, this.recoveryTimeout, this.shareTimeout]) if (timer) clearTimeout(timer);
     this.backupTimeout = undefined; this.factorTimeout = undefined; this.recoveryTimeout = undefined; this.shareTimeout = undefined;
     this.csrf = ''; this.challenge = ''; this.state.set('anonymous'); this.case.set(null); this.handoffShare.set(''); this.profile.set(null); this.photo.set(''); this.abuse.set([]);
-    this.recoveryCase = ''; this.recoveryChallenge = ''; this.factorChallenge = ''; this.factorSecret.set(''); this.operatorRecoverySeed.set(''); this.recoveryCodes.set([]);
-    this.locatedCase.set('');
+    this.recoveryCase = ''; this.recoveryChallenge = ''; this.factorChallenge = ''; this.factorSecret.set(''); this.factorQr.set(''); this.operatorRecoverySeed.set(''); this.operatorRecoveryQr.set(''); this.recoveryCodes.set([]);
+    // A recovery case reference is never kept after logout/session teardown.
+    this.recoveryReference.set(''); this.locatedCase.set('');
     this.sessions.set([]);
     this.sessionWindow.clear();
   }

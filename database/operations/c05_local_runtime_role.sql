@@ -2,6 +2,8 @@
 -- migration identity. Grant this role to a separately provisioned API user and
 -- SET DEFAULT ROLE explicitly. This file creates no user or password.
 CREATE ROLE IF NOT EXISTS 'c05_identity_local_runtime';
+-- C05-017: read-only SHA1 cutover policy; absence/blocked status denies login.
+GRANT SELECT ON crecisol_c05.c05_totp_sha1_policy TO 'c05_identity_local_runtime';
 GRANT SELECT ON crecisol_c05.c04_tenant_catalog TO 'c05_identity_local_runtime';
 GRANT SELECT ON crecisol_c05.c04_verified_tenant_host TO 'c05_identity_local_runtime';
 GRANT SELECT ON crecisol_c05.c05_identity_branch TO 'c05_identity_local_runtime';

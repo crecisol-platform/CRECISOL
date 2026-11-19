@@ -35,14 +35,22 @@
     <span>Reemplazar MFA de operador</span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #opDialog33 title="Reemplazar MFA de operador"
-    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
+    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true" (dismissed)="platform.discardFactorSetup()">
     <form (submit)="actionRequested.emit({ event: $event, action: 'factor' })">
             <label for="operator-factor-password">Contraseña para reemplazar MFA de operador</label><input id="operator-factor-password" name="currentPassword" type="password" required maxlength="128" autocomplete="current-password">
             <label for="operator-factor-code">Código MFA o respaldo para reemplazar factor de operador</label><input id="operator-factor-code" name="code" required maxlength="32" autocomplete="one-time-code">
             <button [disabled]="busy()">Preparar nuevo factor de operador</button>
           </form>
           @if (platform.factorSecret()) {
-            <output aria-label="Semilla del factor de operador a reemplazar">{{ platform.factorSecret() }}</output>
+            <div class="totp-setup" role="group" aria-label="Vincular el nuevo MFA de operador">
+              <div class="totp-setup__visual">
+                <img [src]="platform.factorQr()" width="256" height="256" alt="QR privado para vincular el nuevo autenticador de operador">
+                <p>Escanea con Google Authenticator, Microsoft Authenticator u otra aplicación TOTP SHA1 y confirma el código antes de cerrar.</p>
+              </div>
+              <details><summary>No puedo escanear: mostrar clave manual</summary>
+                <output aria-label="Semilla del factor de operador a reemplazar">{{ platform.factorSecret() }}</output>
+              </details>
+            </div>
             <form (submit)="actionRequested.emit({ event: $event, action: 'factor-confirm' })">
               <label for="operator-factor-confirm-code">Código del factor nuevo de operador</label><input id="operator-factor-confirm-code" name="code" required pattern="[0-9]{6}" autocomplete="one-time-code">
               <button [disabled]="busy()">Activar nuevo factor de operador</button>

@@ -1,0 +1,120 @@
+name: CRECISOL C05 SHA1 only cutover security A-B-C MySQL
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/**'
+      - 'database/**'
+      - 'frontend/src/app/identity/**'
+      - 'frontend/src/app/pages/identity-mfa.component.html'
+      - 'qa/c05_sha1_exclusive_audits.py'
+      - 'qa/c05_totp_qr_checks.mjs'
+      - '.github/workflows/c05-totp-sha1-cutover.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/**'
+      - 'database/**'
+      - 'frontend/src/app/identity/**'
+      - 'frontend/src/app/pages/identity-mfa.component.html'
+      - 'qa/c05_sha1_exclusive_audits.py'
+      - 'qa/c05_totp_qr_checks.mjs'
+      - '.github/workflows/c05-totp-sha1-cutover.yml'
+permissions:
+  contents: read
+jobs:
+  authority-a:
+    name: A | source and functional SHA1-only contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: |
+          set -euo pipefail
+          python3 qa/c05_sha1_exclusive_audits.py A
+  negative-b:
+    name: B | negative security mutations and forbidden downgrade
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: |
+          set -euo pipefail
+          python3 qa/c05_sha1_exclusive_audits.py B
+  architecture-c:
+    name: C | .NET10 RFC6238 and destructive migration on disposable MySQL8.4
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Exact protected scope and active policy
+        run: |
+          set -euo pipefail
+          python3 qa/c05_sha1_exclusive_audits.py C
+      - name: Build strict product and crypto, execute genuine SHA1 RFC vectors
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tools/Crecisol.LocalIdentityProvisioner/Crecisol.LocalIdentityProvisioner.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.MfaRisk.ContractsTests/Crecisol.MfaRisk.ContractsTests.csproj -c Release --nologo -warnaserror
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.MfaRisk.ContractsTests/Crecisol.MfaRisk.ContractsTests.csproj
+      - name: Offline existing-operator bundle format and safe command syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check qa/c05_sha1_local_operator_rekey.mjs
+          node --check qa/c05_totp_qr_checks.mjs
+          node --check qa/c05_operational_flow_e2e.mjs
+          export CRECISOL_C05_TOKEN_HMAC_KEY="$(openssl rand -hex 32)"
+          export CRECISOL_C05_FACTOR_ENCRYPTION_KEY="$(openssl rand -hex 32)"
+          printf '%s' '{"Mailbox":"identity.one@example.test","OperatorId":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}' |
+            dotnet run --no-build -c Release --project backend/tools/Crecisol.LocalIdentityProvisioner/Crecisol.LocalIdentityProvisioner.csproj -- --isolated-existing-factor-bundle > "$RUNNER_TEMP/c05-sha1-private.json"
+          python3 - "$RUNNER_TEMP/c05-sha1-private.json" <<'PY'
+          import json,re,sys
+          with open(sys.argv[1],encoding='utf-8') as f: b=json.load(f)
+          assert b['algorithm']=='SHA1'
+          assert re.fullmatch(r'[A-Z2-7]{32}',b['seed'])
+          assert re.fullmatch(r'[A-F0-9]{96}',b['envelope'])
+          assert len(set(b['backups']))==10 and len(set(b['backupHashes']))==10
+          print('PASS synthetic offline rekey material structural validation; no secrets output')
+          PY
+          rm -f "$RUNNER_TEMP/c05-sha1-private.json"
+      - name: Real isolated one-way credential cutover and rerun rejection
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_sha1_cutover_mysql.sh
+      - name: Real offline rekey on a separate disposable MySQL8.4 volume
+        run: |
+          set -euo pipefail
+          bash database/tests/c05_sha1_offline_rekey_mysql.sh
+  certificate-gate:
+    name: C05 SHA1 A-B-C | all mandatory outcomes
+    if: always()
+    needs: [authority-a, negative-b, architecture-c]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Fail closed until all three real jobs are successful
+        env:
+          A: ${{ needs.authority-a.result }}
+          B: ${{ needs.negative-b.result }}
+          C: ${{ needs.architecture-c.result }}
+        run: |
+          set -euo pipefail
+          test "$A" = success
+          test "$B" = success
+          test "$C" = success
+          echo 'PASS SHA1-only scoped A/B/C. D=separate Chromium UX, E=separate Angular->API->MySQL8.4 CI.'

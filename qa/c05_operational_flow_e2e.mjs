@@ -17,6 +17,7 @@ import { verifyAssisted } from './c05_assisted_browser_checks.mjs';
 import { verifyProfile } from './c05_profile_browser_checks.mjs';
 import { verifyTenantAuditBoundary } from './c05_tenant_audit_checks.mjs';
 import { verifyOperatorRecovery } from './c05_operator_recovery_checks.mjs';
+import { verifySha1EnrollmentQr } from './c05_totp_qr_checks.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 mkdirSync(path.join(root, '.cache'), { recursive: true });
@@ -116,7 +117,7 @@ function totp(seed, previous = false) {
   let bits = 0, value = 0; const out = [];
   for (const c of seed) { value = (value << 5) | alphabet.indexOf(c); bits += 5; if (bits >= 8) { out.push((value >>> (bits - 8)) & 255); bits -= 8; } }
   const counter = Buffer.alloc(8); counter.writeBigInt64BE(BigInt(Math.floor(Date.now() / 30000) - (previous ? 1 : 0)));
-  const hash = createHmac('sha256', Buffer.from(out)).update(counter).digest();
+  const hash = createHmac('sha1', Buffer.from(out)).update(counter).digest();
   const offset = hash.at(-1) & 15;
   return String((hash.readUInt32BE(offset) & 0x7fffffff) % 1000000).padStart(6, '0');
 }
@@ -164,6 +165,13 @@ async function enrollLogin(mailbox) {
   confidential.push(login.data.challenge);
   const enrollment = await api('mfa/enroll', { challenge: login.data.challenge }); check(enrollment.status === 200, 'MFA enrollment uses password-bound challenge');
   const seed = enrollment.data.secret; confidential.push(seed);
+  check(/^[A-Z2-7]{32}$/.test(seed) &&
+    enrollment.data.uri.startsWith('otpauth://totp/') &&
+    new URL(enrollment.data.uri).searchParams.get('algorithm') === 'SHA1' &&
+    new URL(enrollment.data.uri).searchParams.get('secret') === seed &&
+    new URL(enrollment.data.uri).searchParams.get('digits') === '6' &&
+    new URL(enrollment.data.uri).searchParams.get('period') === '30',
+    'real enrollment offers only RFC6238 SHA1 via otpauth URI');
   const code = totp(seed, true); confidential.push(code);
   const verified = await api('mfa/verify', { challenge: login.data.challenge, code });
   check(verified.status === 200, 'real TOTP verification issues session');
@@ -197,9 +205,9 @@ try {
   }, 'MySQL 8.4 readiness', 120000);
   const port = run('docker', ['port', name, '3306/tcp']).split(':').at(-1);
   for (const migration of ['001_c05_identity_operational', '002_c05_registration_proof_outbox', '003_c05_pending_account_completion',
-    '004_c05_local_proof_delivery', '005_c05_operational_login_directory', '006_c05_operational_identity_flow', '007_c05_passkeys', '008_c05_terms_invitations', '009_c05_pairing', '010_c05_security_notices', '011_c05_platform_recovery', '012_c05_scoped_profile', '013_c05_abuse_signals', '014_c05_operator_recovery', '015_c05_session_devices', '016_c05_existing_identity_join'])
+    '004_c05_local_proof_delivery', '005_c05_operational_login_directory', '006_c05_operational_identity_flow', '007_c05_passkeys', '008_c05_terms_invitations', '009_c05_pairing', '010_c05_security_notices', '011_c05_platform_recovery', '012_c05_scoped_profile', '013_c05_abuse_signals', '014_c05_operator_recovery', '015_c05_session_devices', '016_c05_existing_identity_join', '017_c05_totp_sha1_exclusive'])
     sql(readFileSync(path.join(root, 'database/migrations', migration + '.sql'), 'utf8'));
-  check(sql('SELECT VERSION()').startsWith('8.4.'), 'sixteen forward migrations on real MySQL 8.4');
+  check(sql('SELECT VERSION()').startsWith('8.4.'), 'seventeen forward migrations on real MySQL 8.4');
   sql(`INSERT INTO c04_tenant_catalog VALUES
     (UNHEX('${A}'),'tenant-a','Tenant A',3,2,1,UTC_TIMESTAMP(6)),
     (UNHEX('${B}'),'tenant-b','Tenant B',3,2,1,UTC_TIMESTAMP(6));
@@ -266,7 +274,7 @@ try {
     const previewKey = secret(); confidential.push(previewKey);
     const folder = path.join(root, '.cache/c05-preview'); mkdirSync(folder, { recursive: true });
     writeFileSync(path.join(folder, 'access.md'), `# CRECISOL — prueba local\n\nFrontend: http://127.0.0.1:4200/cuenta\nBackend: http://127.0.0.1:5187 (Host interno tenant-a.example.test)\nBuzón local: http://127.0.0.1:8025\n\nCuenta ficticia de revisión: reviewer@example.test\nContraseña: ${password}\nConfigura MFA al iniciar por primera vez. La cuenta tiene autoridad local temporal de ocho horas.\n\nUsuario del buzón: preview\nContraseña del buzón: ${previewKey}\n\nSolo @example.test. No uses datos personales. El buzón permite revisar las pruebas de correo e IDs de membresías del entorno ficticio; no es un endpoint del producto. Para detener todo, utiliza su botón Detener.\n`, { mode: 0o600 });
-    writeFileSync(path.join(folder, 'access.md'), '\n## Operadores ficticios de identidad de plataforma\n\nLa consola está en la sección Personal autorizado de identidad CRECISOL. No son administradores productivos. TOTP: SHA256, seis dígitos, 30 segundos. Cada operador conserva su propia contraseña y semilla. Nunca uses estos datos fuera de este entorno.\n\n' + operators.map(o => `Correo: ${o.mailbox}\nContraseña: ${o.password}\nSemilla TOTP: ${o.seed}\nRespaldos de un uso: ${o.backups.join(' / ')}\n`).join('\n'), { flag: 'a', mode: 0o600 });
+    writeFileSync(path.join(folder, 'access.md'), '\n## Operadores ficticios de identidad de plataforma\n\nLa consola está en la sección Personal autorizado de identidad CRECISOL. No son administradores productivos. TOTP: SHA1, seis dígitos, 30 segundos. Cada operador conserva su propia contraseña y semilla. Nunca uses estos datos fuera de este entorno.\n\n' + operators.map(o => `Correo: ${o.mailbox}\nContraseña: ${o.password}\nSemilla TOTP: ${o.seed}\nRespaldos de un uso: ${o.backups.join(' / ')}\n`).join('\n'), { flag: 'a', mode: 0o600 });
     writeFileSync(path.join(folder, 'access.md'), `\n## Recurso privado ficticio de reviewer\n\nAcepta primero las condiciones de prueba desde el portal.\nSucursal: ${branch}\nRecurso: ${resource}\nResultado autorizado: LOCAL-DEMO-PRIVATE-001\nLa autorización vence junto con la autoridad de prueba; no concede acceso a otro tenant o propietario.\n`, { flag: 'a', mode: 0o600 });
     writeFileSync(path.join(folder, 'access.md'), '\nLa membresía y los hosts ficticios duran siete días para permitir pruebas manuales del enfriamiento de 24 horas. Los permisos administrativos y del recurso privado duran solo ocho horas. El entorno termina al detenerlo, cerrar Docker o apagar el equipo.\n', { flag: 'a', mode: 0o600 });
     const escape = value => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
@@ -387,7 +395,9 @@ try {
   await page.getByLabel('Contraseña', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await page.getByRole('button', { name: 'Configurar segundo factor' }).click();
+  await page.getByText('No puedo escanear: mostrar clave manual', { exact: true }).click();
   const seed = await page.getByLabel('Clave de configuración MFA').innerText(); confidential.push(seed);
+  await verifySha1EnrollmentQr(page, 'Código QR privado para vincular CRECISOL con tu aplicación de autenticación', seed, check);
   await page.getByLabel('Código de tu aplicación de autenticación').fill(totp(seed, true));
   const verified = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
@@ -559,7 +569,9 @@ try {
   check((await factorReplacement).status() === 200, 'Angular factor replacement requires password plus a current one-use factor');
   check((await api('sessions', {}, token)).status === 401, 'factor replacement revokes existing sessions');
   await page.getByRole('button', { name: 'Configurar segundo factor' }).click();
+  await page.getByText('No puedo escanear: mostrar clave manual', { exact: true }).click();
   const replacedSeed = await page.getByLabel('Clave de configuración MFA').innerText(); confidential.push(replacedSeed);
+  await verifySha1EnrollmentQr(page, 'Código QR privado para vincular CRECISOL con tu aplicación de autenticación', replacedSeed, check);
   await page.getByLabel('Código de tu aplicación de autenticación').fill(totp(replacedSeed, true));
   const reverified = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
@@ -625,10 +637,10 @@ try {
   for (const p of children.reverse()) { p.kill(); }
   await delay(1500);
   // Reversible migrations are exercised on the actual populated schema.
-  for (const migration of ['016_c05_existing_identity_join', '015_c05_session_devices', '014_c05_operator_recovery', '013_c05_abuse_signals', '012_c05_scoped_profile', '011_c05_platform_recovery', '010_c05_security_notices', '009_c05_pairing', '008_c05_terms_invitations', '007_c05_passkeys', '006_c05_operational_identity_flow', '005_c05_operational_login_directory', '004_c05_local_proof_delivery',
+  for (const migration of ['017_c05_totp_sha1_exclusive', '016_c05_existing_identity_join', '015_c05_session_devices', '014_c05_operator_recovery', '013_c05_abuse_signals', '012_c05_scoped_profile', '011_c05_platform_recovery', '010_c05_security_notices', '009_c05_pairing', '008_c05_terms_invitations', '007_c05_passkeys', '006_c05_operational_identity_flow', '005_c05_operational_login_directory', '004_c05_local_proof_delivery',
     '003_c05_pending_account_completion', '002_c05_registration_proof_outbox', '001_c05_identity_operational'])
     sql(readFileSync(path.join(root, 'database/migrations', migration + '.down.sql'), 'utf8'));
-  check(sql('SHOW TABLES') === '', 'sixteen reverse migrations leave no schema tables');
+  check(sql('SHOW TABLES') === '', 'seventeen reverse migrations leave no schema tables; SHA256 credentials not restored by down');
   console.log(`PASS C05 ${focus ? focus + ' focused' : 'operational integrated'} assertions=${assertions}; A/B/C evidence is limited to executed cases; no production certification`);
   }
 } catch (error) {

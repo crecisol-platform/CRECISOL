@@ -88,14 +88,14 @@ public sealed partial class MySqlOperationalIdentityFlow
             var a = Digest("operator-share:" + Hex(id), Field(r, "shareA")); var b = Digest("operator-share:" + Hex(id), Field(r, "shareB"));
             if (a.SequenceEqual(b) || shares.Count != 2 || !shares.Any(s => CryptographicOperations.FixedTimeEquals(Bytes(s, "share_hmac"), a)) ||
                 !shares.Any(s => CryptographicOperations.FixedTimeEquals(Bytes(s, "share_hmac"), b))) return new(false);
-            var phc = crypto.HashPassword(Field(r, "newPassword")); var seed = RandomNumberGenerator.GetBytes(32); var token = Token();
+            var phc = crypto.HashPassword(Field(r, "newPassword")); var seed = RandomNumberGenerator.GetBytes(20); var token = Token();
             try
             {
                 await u.Run("UPDATE c05_platform_recovery_case SET pending_password_phc=@p,pending_seed=@seed,enrollment_hmac=@h,enrollment_expires_at_utc=UTC_TIMESTAMP(6)+INTERVAL 5 MINUTE WHERE case_id=@id",
                     ("p", phc), ("seed", Protect(seed, "platform-factor:" + Hex(target))), ("h", Digest("operator-enrollment", token)), ("id", id));
                 await u.Run("UPDATE c05_platform_operator SET recovery_pending=1 WHERE operator_id=@a", ("a", target));
                 await RevokePlatformAuth(u, target, false);
-                return new(true, new { challenge = token, secret = Base32(seed), enrollmentRequired = true });
+                return new(true, new { challenge = token, secret = Base32(seed), uri = TotpUri(target, seed, "operador"), enrollmentRequired = true });
             }
             finally { CryptographicOperations.ZeroMemory(seed); }
         }
@@ -137,13 +137,13 @@ public sealed partial class MySqlOperationalIdentityFlow
         if (r.Operation == "platform/factor/replace")
         {
             if (!await PlatformTotp(u, person, Field(r, "code")) || !crypto.VerifyPassword(Field(r, "currentPassword"), Text(person, "password_phc"))) return new(false);
-            var seed = RandomNumberGenerator.GetBytes(32); var challenge = Token();
+            var seed = RandomNumberGenerator.GetBytes(20); var challenge = Token();
             try
             {
                 await u.Run("INSERT INTO c05_platform_factor_change VALUES(@h,@a,@s,@v,@seed,UTC_TIMESTAMP(6)+INTERVAL 5 MINUTE,NULL)",
                     ("h", Digest("operator-factor-change", challenge)), ("a", actor), ("s", sessionHash), ("v", Number(person, "security_revision")),
                     ("seed", Protect(seed, "platform-factor:" + Hex(actor))));
-                return new(true, new { challenge, secret = Base32(seed) });
+                return new(true, new { challenge, secret = Base32(seed), uri = TotpUri(actor, seed, "operador") });
             }
             finally { CryptographicOperations.ZeroMemory(seed); }
         }

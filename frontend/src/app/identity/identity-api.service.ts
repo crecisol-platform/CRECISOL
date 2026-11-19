@@ -1,4 +1,5 @@
 import { canonicalPhotoPixels } from './canonical-photo-pixels';
+import { createTotpQr } from './totp-setup-qr';
 import { BrowserSessionWindow } from './browser-session-window';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
@@ -45,6 +46,7 @@ export class IdentityApiService {
   }
   readonly enrollmentRequired = signal(false);
   readonly enrollmentSecret = signal('');
+  readonly enrollmentQr = signal('');
   readonly recoveryCodes = signal<readonly string[]>([]);
   readonly sessions = signal<ReadonlyArray<{ id: string; expiresAtUtc: string; device: string; factor: string; lastSeenAtUtc: string }>>([]);
   readonly privateReference = signal('');
@@ -214,6 +216,7 @@ export class IdentityApiService {
     this.csrfValue = result.csrfToken;
     this.recoveryCodes.set(result.recoveryCodes ?? []);
     this.enrollmentSecret.set('');
+    this.enrollmentQr.set('');
     this.enrollmentRequired.set(false);
     this.stateValue.set('authenticated');
     this.sessionWindow.establish(result.expiresAtUtc);
@@ -253,8 +256,10 @@ export class IdentityApiService {
 
   async enrollMfa(): Promise<void> {
     if (!this.challengeValue || !this.enrollmentRequired()) throw new Error('identity_unavailable');
-    const result = await this.post<{ secret: string }>('mfa/enroll', { challenge: this.challengeValue }, false);
+    const result = await this.post<{ secret: string; uri: string }>('mfa/enroll', { challenge: this.challengeValue }, false);
+    const qr = await createTotpQr(result.secret, result.uri);
     this.enrollmentSecret.set(result.secret);
+    this.enrollmentQr.set(qr);
   }
 
   async refreshSessions(): Promise<void> {
@@ -359,6 +364,7 @@ export class IdentityApiService {
     this.stateValue.set('anonymous');
     this.enrollmentRequired.set(false);
     this.enrollmentSecret.set('');
+    this.enrollmentQr.set('');
     this.sessions.set([]);
     this.privateReference.set('');
     this.recoveryCodes.set([]);

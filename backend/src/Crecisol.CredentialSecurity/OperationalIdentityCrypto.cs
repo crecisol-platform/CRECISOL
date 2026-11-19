@@ -9,7 +9,7 @@ public sealed class OperationalIdentityCrypto(Argon2idPasswordHasher hasher) : I
     public string HashPassword(string password) => hasher.CreateVerifier(password.AsSpan()).ExportForTrustedCredentialStore();
     public bool VerifyPassword(string password, string phc) => hasher.Verify(password.AsSpan(), phc).Matched;
     public bool VerifyTotp(byte[] seed, string code, DateTimeOffset now, long previous, out long step) =>
-        TotpSha256Verifier.TryVerify(seed, code, now, previous, out step);
+        TotpSha1Verifier.TryVerify(seed, code, now, previous, out step);
     public bool VerifyPairing(byte[] publicKey, string message, byte[] signature)
     {
         try

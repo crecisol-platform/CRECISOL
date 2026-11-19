@@ -71,6 +71,9 @@ public sealed partial class MySqlOperationalIdentityFlow : IOperationalIdentityF
         await using var tx = await db.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct);
         var unit = new Unit(db, tx, ct) { DeviceLabel = request.DeviceLabel is "Chromium" or "Firefox" or "Safari" ? request.DeviceLabel : "API",
             PeerHash = Digest("session-peer:" + request.Host, request.Peer) };
+        // Fail closed until C05-017 retired all TOTP-SHA256 factors.
+        if (await unit.One("SELECT policy_id FROM c05_totp_sha1_policy WHERE policy_id=1 AND status=1") is null)
+            return new(false);
         if (request.Operation.StartsWith("platform/", StringComparison.Ordinal))
         {
             if (request.Host != "platform-admin.example.test") return new(false);
@@ -204,6 +207,13 @@ public sealed partial class MySqlOperationalIdentityFlow : IOperationalIdentityF
         if (bits > 0) result.Append(alphabet[(value << (5 - bits)) & 31]);
         return result.ToString();
     }
+    // The URI is temporary enrollment material: never persist or log it.
+    // A non-identifying stable label distinguishes multiple CRECISOL accounts
+    // in free authenticators without exposing an email or tenant identifier.
+    private static string TotpUri(byte[] actor, byte[] seed, string realm) =>
+        "otpauth://totp/" + Uri.EscapeDataString("CRECISOL:" + realm + "-" + Hex(actor)[..8]) +
+        "?secret=" + Base32(seed) + "&issuer=CRECISOL&algorithm=SHA1&digits=6&period=30";
+
     public void Dispose()
     {
         CryptographicOperations.ZeroMemory(tokenKey);
