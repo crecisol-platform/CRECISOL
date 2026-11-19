@@ -12,10 +12,11 @@ EXPECTED = {320: 63, 390: 63, 768: 63, 1440: 63}
 REQUIRED = (
     "public-ingresar", "public-registro", "public-confirmar",
     "public-recuperar", "public-invitacion", "public-acceso-existente",
+    "public-pairing-disclosure", "public-pairing-qr",
     "account-resumen", "account-perfil", "account-llaves",
     "account-seguridad", "account-administracion",
     "account-mfa-challenge", "account-mfa-enrollment-required",
-    "account-mfa-enrollment-qr", "account-mfa-enrollment-manual",
+    "account-mfa-enrollment-qr", "account-mfa-enrollment-manual", "account-modal-error", "account-modal-feedback",
     "operator-login", "operator-recovery-dialog", "operator-mfa-challenge",
     "operator-Casos", "operator-Sesiones", "operator-Perfil",
     "operator-Seguridad", "operator-Monitor", "operator-error",
