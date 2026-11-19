@@ -8,7 +8,7 @@ Este procedimiento es exclusivamente local y de desarrollo. No conecta con produ
 - Volumen persistente aislado: `crecisol-c05-mysql-data`.
 - Base de datos: `crecisol_c05`.
 - Puerto MySQL: `127.0.0.1:3310`.
-- Migraciones 001–016 aplicadas con control de versión y SHA-256.
+- Migraciones 001–017 para instalaciones nuevas tras el mantenimiento SHA1 aplicadas con control de versión y SHA-256.
 - API C05 local: `http://127.0.0.1:5187`.
 - Frontend C05 local: `http://127.0.0.1:4201/cuenta`.
 - Buzón SMTP local para pruebas: `http://127.0.0.1:8025/`.
@@ -74,9 +74,34 @@ Las sesiones, códigos de recuperación y permisos temporales caducan o pueden r
 
 ## Copias y recuperación
 
-`backup` escribe el volcado comprimido fuera del repositorio. `verify-backup` restaura la copia más reciente en un contenedor temporal aislado y comprueba las 16 migraciones. Las claves runtime permanecen en el directorio externo y no deben regenerarse al reiniciar. Una recuperación real debe restaurar conjuntamente el volcado y las claves en un entorno C05 temporal antes de reemplazar el volumen, siempre con una decisión explícita.
+`backup` escribe el volcado comprimido fuera del repositorio. `verify-backup` restaura la copia más reciente en un contenedor temporal aislado y comprueba 16 migraciones para copias previas al corte o 17 posteriores. Las claves runtime permanecen en el directorio externo y no deben regenerarse al reiniciar. Una recuperación real debe restaurar conjuntamente el volcado y las claves en un entorno C05 temporal antes de reemplazar el volumen, siempre con una decisión explícita.
 
 ## Reversión segura
 
 Detén el supervisor y conserva los archivos externos de secretos y backups. Si se decide retirar C05, elimina únicamente el contenedor `crecisol-c05-mysql-persistent` y el volumen `crecisol-c05-mysql-data` después de confirmar que el backup y su verificación están disponibles. Nunca elimines ni reinicialices `crecisol-local-mysql-20261113`, `crecisol-local-mysql-data-20261113` o la base `crecisol_local`.
 
+
+## Dependencia de mantenimiento MFA SHA1 (PR #170)
+
+Este PR de supervisión es complementario del **PR MFA SHA1 exclusivo #170**.
+No desplegar este seguimiento ni usarlo sobre la base persistente anterior
+hasta que el PR #170 supere cinco auditorías y las pruebas reales. Los factores
+TOTP-SHA256 anteriores se invalidarán explícitamente: **las cuentas pueden
+perder acceso**, por decisión del propietario; sus perfiles y tenants no se
+borran automáticamente.
+
+**No ejecutar `init` o `start` con una base de 16 migraciones esperando
+actualización automática**: el script ahora se niega a aplicar 017 sobre
+volúmenes existentes. Primero ejecutar `backup` y `verify-backup`, detener
+API C05, validar un plan de reversión y seguir el manual
+`docs/c05/C05_TOTP_SHA1_EXCLUSIVE_CUTOVER.md` del PR #170. A continuación
+un operador local con autorización ejecuta la migración 017 una sola vez,
+asienta su checksum en el ledger, recupera los tres operadores ficticios con
+`qa/c05_sha1_local_operator_rekey.mjs` y reconfigura los usuarios empresariales
+mediante recuperación legítima, nunca por acceso solo con contraseña.
+La semilla nueva de cada cuenta se escanea una única vez; la sesión sigue
+caducando y las acciones sensibles siguen requiriendo MFA.
+
+El entorno previo C01/C02, `crecisol_local` y sus puertos no se modifican.
+Esta dependencia no implica haber migrado el volumen real del propietario ni
+haber probado físicamente Google o Microsoft Authenticator.

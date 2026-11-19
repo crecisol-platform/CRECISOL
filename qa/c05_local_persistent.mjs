@@ -51,7 +51,8 @@ const migrationNames = [
   '010_c05_security_notices', '011_c05_platform_recovery',
   '012_c05_scoped_profile', '013_c05_abuse_signals',
   '014_c05_operator_recovery', '015_c05_session_devices',
-  '016_c05_existing_identity_join'
+  '016_c05_existing_identity_join',
+  '017_c05_totp_sha1_exclusive'
 ];
 const operatorMailboxes = [
   'identity.one@example.test', 'identity.two@example.test', 'identity.three@example.test'
@@ -204,6 +205,11 @@ function applyMigrations() {
   ) ENGINE=InnoDB;`);
   const applied = new Map(mysqlSql('SELECT version,sha256 FROM c05_schema_migrations ORDER BY version;')
     .split(/\r?\n/).filter(Boolean).map(row => { const [version, hash] = row.split('\t'); return [Number(version), hash]; }));
+  // Existing persistent SHA256 factors must NEVER be retired automatically by
+  // 'init' or 'start': the operator offline rekey and verified backup must be
+  // performed first in a separate explicit maintenance window.
+  if (applied.has(16) && !applied.has(17))
+    throw new Error('C05-017 requires verified backup/restore, API shutdown and approved offline SHA1 operator rekey; refusing implicit migration.');
   for (let index = 0; index < migrationNames.length; index++) {
     const version = index + 1;
     const name = migrationNames[index];
@@ -337,7 +343,9 @@ function totp(seed) {
   let bits = 0, value = 0, bytes = [];
   for (const character of seed) { value = (value << 5) | alphabet.indexOf(character); bits += 5; if (bits >= 8) { bytes.push((value >>> (bits - 8)) & 255); bits -= 8; } }
   const counter = Buffer.alloc(8); counter.writeBigInt64BE(BigInt(Math.floor(Date.now() / 30000)));
-  const hmac = createHmac('sha256', Buffer.from(bytes)).update(counter).digest();
+  if (!/^[A-Z2-7]{32}$/.test(seed) || bytes.length !== 20)
+    throw new Error('Old TOTP seed invalidated; local SHA1 re-enrollment is required.');
+  const hmac = createHmac('sha1', Buffer.from(bytes)).update(counter).digest();
   const offset = hmac.at(-1) & 15;
   return String((hmac.readUInt32BE(offset) & 0x7fffffff) % 1000000).padStart(6, '0');
 }
@@ -428,7 +436,8 @@ function operatorCredentials(mailbox) {
   if (!block) throw new Error(`Missing local operator credentials for ${mailbox}.`);
   const password = /^Contraseña: (.+)$/m.exec(block)?.[1];
   const seed = /^Semilla TOTP: (.+)$/m.exec(block)?.[1];
-  if (!password || !seed) throw new Error(`Incomplete local operator credentials for ${mailbox}.`);
+  if (!password || !seed || !/^[A-Z2-7]{32}$/.test(seed))
+    throw new Error('Offline SHA1 operator re-enrollment is required; do not reuse an old seed.');
   return { mailbox, password, seed };
 }
 
@@ -625,8 +634,11 @@ function verifyBackup() {
     const unzipped = gunzipSync(readFileSync(target));
     run('docker', ['exec', '-i', '-e', `MYSQL_PWD=${tempPassword}`, temp, 'mysql', '-uroot', database], { input: unzipped });
     const result = run('docker', ['exec', '-e', `MYSQL_PWD=${tempPassword}`, temp, 'mysql', '-uroot', '-Nse', `SELECT COUNT(*) FROM c05_schema_migrations`, database]);
-    if (result !== String(migrationNames.length)) throw new Error('Restored migration count is incomplete.');
-    console.log(`Backup restore verification PASS: ${migrationNames.length} migrations in isolated temporary container.`);
+    // Backups from BEFORE the destructive cutover intentionally contain 16,
+    // while new backups contain 17. Both must restore in a disposable container,
+    // and neither may be installed into the active C05 environment automatically.
+    if (!['16', '17'].includes(result)) throw new Error('Restored migration count is incomplete.');
+    console.log(`Backup restore verification PASS: ${result} migrations in isolated temporary container.`);
   } finally {
     try { run('docker', ['rm', '-f', temp]); } catch { /* best effort for temporary container only */ }
   }
