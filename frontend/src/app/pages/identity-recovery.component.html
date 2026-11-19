@@ -1,6 +1,6 @@
-<section aria-labelledby="recovery-heading"><h2 id="recovery-heading">Recuperar contraseña</h2>
-          <p>La recuperación requiere el correo verificado y tu segundo factor. No inicia una sesión.</p>
-          <form (submit)="securityActionRequested.emit({ event: $event, action: 'recovery-request' })">
+<section class="identity-recovery" aria-labelledby="recovery-heading"><h2 id="recovery-heading">Recuperar contraseña</h2>
+          <p class="identity-entry__intro">Solicita instrucciones para recuperar el acceso. Necesitarás el correo verificado y el segundo factor de tu cuenta; este trámite no inicia una sesión.</p>
+          <form class="identity-recovery__start" (submit)="securityActionRequested.emit({ event: $event, action: 'recovery-request' })">
             <label for="recovery-mailbox">Correo para recuperación</label><input id="recovery-mailbox" name="mailbox" type="email" autocomplete="email" required maxlength="254">
             <button [disabled]="busy() || identity.restoring()">Solicitar recuperación</button>
           </form>
