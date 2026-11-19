@@ -32,11 +32,26 @@ async function capture(page: Page, testInfo: TestInfo, id: string): Promise<void
     visibleHeadings: [...document.querySelectorAll('h1,h2,h3')]
       .filter(x => x.getBoundingClientRect().height > 0)
       .map(x => x.textContent?.trim()).filter(Boolean).slice(0, 20),
-    dialogsOpen: document.querySelectorAll('dialog:modal').length
+    dialogsOpen: document.querySelectorAll('dialog:modal').length,
+    dialog: (() => {
+      const dialog = document.querySelector('dialog.cs-modal:modal');
+      if (!dialog) return null;
+      const rect = dialog.getBoundingClientRect();
+      const footer = dialog.querySelector('.cs-modal__footer')?.getBoundingClientRect();
+      return {
+        scrollTop: dialog.scrollTop, scrollHeight: dialog.scrollHeight,
+        clientHeight: dialog.clientHeight,
+        horizontalOverflow: Math.max(0, dialog.scrollWidth - dialog.clientWidth),
+        inViewport: rect.left >= -1 && rect.top >= -1 &&
+          rect.right <= innerWidth + 1 && rect.bottom <= innerHeight + 1,
+        footerInViewport: Boolean(footer && footer.top >= rect.top && footer.bottom <= rect.bottom)
+      };
+    })()
   }));
   await page.screenshot({ path, fullPage: true, animations: 'disabled' });
   await writeFile(testInfo.outputPath(name + '.json'), JSON.stringify({
-    id, sourceSha: BASELINE, synthetic: true, ...measurements,
+    id, sourceSha: BASELINE, runnerSha: process.env.GITHUB_SHA || 'local',
+    synthetic: true, ...measurements,
     viewport: page.viewportSize(), screenshot: name + '.png',
     captureTimeUtc: new Date().toISOString()
   }, null, 2));
@@ -127,6 +142,14 @@ async function seedOperator(page: Page): Promise<void> {
   });
 }
 
+async function captureDialogBottom(page: Page, testInfo: TestInfo, id: string): Promise<void> {
+  const dialog = page.locator('dialog.cs-modal:modal');
+  if (await dialog.evaluate(element => element.scrollHeight > element.clientHeight + 6)) {
+    await dialog.evaluate(element => { element.scrollTop = element.scrollHeight; });
+    await capture(page, testInfo, id + '-scrolled-footer');
+  }
+}
+
 async function captureModals(page: Page, testInfo: TestInfo, prefix: string): Promise<void> {
   const triggers = page.locator('button.institutional-task__trigger:visible');
   const count = await triggers.count();
@@ -137,7 +160,9 @@ async function captureModals(page: Page, testInfo: TestInfo, prefix: string): Pr
     await trigger.click();
     const dialog = page.locator('dialog.cs-modal:modal');
     await expect(dialog).toHaveCount(1);
-    await capture(page, testInfo, prefix + '-modal-' + String(i + 1).padStart(2, '0') + '-' + label);
+    const id = prefix + '-modal-' + String(i + 1).padStart(2, '0') + '-' + label;
+    await capture(page, testInfo, id);
+    await captureDialogBottom(page, testInfo, id);
     await dialog.locator('button.cs-modal__cancel').click();
     await expect(dialog).toHaveCount(0);
   }
@@ -158,6 +183,7 @@ for (const size of sizes) {
     await capture(page, testInfo, 'operator-login-' + size.name);
     await page.getByRole('button', { name: 'Recuperar acceso de operador de plataforma' }).click();
     await capture(page, testInfo, 'operator-recovery-dialog-' + size.name);
+    await captureDialogBottom(page, testInfo, 'operator-recovery-dialog-' + size.name);
   });
 
   test('F01 | authenticated business surfaces and 15 modal families ' + size.name,
@@ -239,4 +265,85 @@ for (const size of sizes) {
     });
     await capture(page, testInfo, 'account-session-cleared-synthetic-' + size.name);
   });
+  test('F01 | challenge and TOTP QR with synthetic enrollment only ' + size.name,
+    async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: size.width, height: size.height });
+    await setup(page, 'anonymous');
+    await page.goto('/cuenta');
+    await expect(page.getByRole('heading', { name: 'Iniciar sesión' })).toBeVisible();
+    await page.evaluate(() => {
+      const el = document.querySelector('cs-identity-portal')!;
+      const owner = (window as DebugWindow).ng?.getComponent(el);
+      if (!owner) throw new Error('Angular account debug component unavailable');
+      owner.identity.stateValue.set('challenge');
+    });
+    await expect(page.getByRole('heading', { name: 'Verificación en dos pasos' })).toBeVisible();
+    await capture(page, testInfo, 'account-mfa-challenge-synthetic-' + size.name);
+    await page.evaluate(() => {
+      const el = document.querySelector('cs-identity-portal')!;
+      const owner = (window as DebugWindow).ng!.getComponent(el);
+      owner.identity.enrollmentRequired.set(true);
+    });
+    await expect(page.getByRole('button', { name: 'Configurar segundo factor' })).toBeVisible();
+    await capture(page, testInfo, 'account-mfa-enrollment-required-synthetic-' + size.name);
+    const { default: QRCode } = await import('qrcode');
+    const qr = await QRCode.toDataURL(
+      'otpauth://totp/CRECISOL:qa-f01%40example.test?secret=AAAAAAAAAAAAAAAA' +
+      '&issuer=CRECISOL&algorithm=SHA1&digits=6&period=30'
+    );
+    await page.evaluate((qrData: string) => {
+      const el = document.querySelector('cs-identity-portal')!;
+      const owner = (window as DebugWindow).ng!.getComponent(el);
+      owner.identity.enrollmentSecret.set('AAAAAAAAAAAAAAAA');
+      owner.identity.enrollmentQr.set(qrData);
+    }, qr);
+    await expect(page.getByRole('img', { name: /Código QR privado/ })).toBeVisible();
+    await capture(page, testInfo, 'account-mfa-enrollment-qr-SYNTHETIC-ONLY-' + size.name);
+    await page.getByText('No puedo escanear: mostrar clave manual').click();
+    await capture(page, testInfo, 'account-mfa-enrollment-manual-fake-seed-' + size.name);
+
+    await page.goto('/cuenta?vista=operadores');
+    await page.evaluate(() => {
+      const el = document.querySelector('cs-platform-identity-panel')!;
+      const owner = (window as DebugWindow).ng!.getComponent(el);
+      owner.platform.state.set('challenge');
+    });
+    await expect(page.getByLabel('Código MFA del operador')).toBeVisible();
+    await capture(page, testInfo, 'operator-mfa-challenge-synthetic-' + size.name);
+  });
+
+  test('F01 | operator denial, error, empty and expired visual states ' + size.name,
+    async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: size.width, height: size.height });
+    await setup(page, 'operator');
+    await page.goto('/cuenta?vista=operadores');
+    const nav = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
+    await expect(nav).toBeVisible();
+    await nav.getByRole('button', { name: 'Sesiones' }).click();
+    await capture(page, testInfo, 'operator-sessions-empty-synthetic-' + size.name);
+    await nav.getByRole('button', { name: 'Monitor' }).click();
+    await capture(page, testInfo, 'operator-monitor-empty-synthetic-' + size.name);
+    await nav.getByRole('button', { name: 'Seguridad' }).click();
+    await expect(page.getByRole('button', { name: /Caducidad por inactividad/ })).toBeVisible();
+    await page.evaluate(() => {
+      const el = document.querySelector('cs-platform-identity-panel')!;
+      const owner = (window as DebugWindow).ng!.getComponent(el);
+      owner.platform.sessionPolicy.set({ idleMinutes: 30, revision: 1, canManage: false });
+    });
+    await capture(page, testInfo, 'operator-policy-readonly-synthetic-' + size.name);
+    await page.evaluate(() => {
+      const el = document.querySelector('cs-platform-identity-panel')!;
+      const owner = (window as DebugWindow).ng!.getComponent(el);
+      owner.error.set('No se pudo completar la solicitud. Revisa los datos.');
+    });
+    await capture(page, testInfo, 'operator-error-synthetic-' + size.name);
+    await page.evaluate(() => {
+      const el = document.querySelector('cs-platform-identity-panel')!;
+      const owner = (window as DebugWindow).ng!.getComponent(el);
+      owner.error.set('');
+      owner.platform.clear();
+    });
+    await capture(page, testInfo, 'operator-session-expired-simulated-' + size.name);
+  });
+
 }
