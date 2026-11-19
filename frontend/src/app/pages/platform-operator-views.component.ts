@@ -14,8 +14,8 @@ export class PlatformOperatorSessionsComponent {
   readonly platform = inject(PlatformIdentityApiService);
   readonly sessionRows = computed(() => this.platform.sessions().map(session => ({
     ...session,
-    lastActivityLabel: identityDateLabel(session.lastSeenAtUtc),
-    expiryLabel: identityDateLabel(session.expiresAtUtc),
+    lastActivityLabel: identityDateLabel(session.lastSeenAtUtc, this.platform.profile()?.timeZone),
+    expiryLabel: identityDateLabel(session.expiresAtUtc, this.platform.profile()?.timeZone),
     referenceLabel: identityReferenceLabel(session.id)
   })));
   readonly busy = input(false);
