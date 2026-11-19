@@ -164,6 +164,13 @@ async function enrollLogin(mailbox) {
   confidential.push(login.data.challenge);
   const enrollment = await api('mfa/enroll', { challenge: login.data.challenge }); check(enrollment.status === 200, 'MFA enrollment uses password-bound challenge');
   const seed = enrollment.data.secret; confidential.push(seed);
+  check(/^[A-Z2-7]{32}$/.test(seed) &&
+    enrollment.data.uri.startsWith('otpauth://totp/') &&
+    new URL(enrollment.data.uri).searchParams.get('algorithm') === 'SHA1' &&
+    new URL(enrollment.data.uri).searchParams.get('secret') === seed &&
+    new URL(enrollment.data.uri).searchParams.get('digits') === '6' &&
+    new URL(enrollment.data.uri).searchParams.get('period') === '30',
+    'real enrollment offers only RFC6238 SHA1 via otpauth URI');
   const code = totp(seed, true); confidential.push(code);
   const verified = await api('mfa/verify', { challenge: login.data.challenge, code });
   check(verified.status === 200, 'real TOTP verification issues session');
@@ -197,9 +204,9 @@ try {
   }, 'MySQL 8.4 readiness', 120000);
   const port = run('docker', ['port', name, '3306/tcp']).split(':').at(-1);
   for (const migration of ['001_c05_identity_operational', '002_c05_registration_proof_outbox', '003_c05_pending_account_completion',
-    '004_c05_local_proof_delivery', '005_c05_operational_login_directory', '006_c05_operational_identity_flow', '007_c05_passkeys', '008_c05_terms_invitations', '009_c05_pairing', '010_c05_security_notices', '011_c05_platform_recovery', '012_c05_scoped_profile', '013_c05_abuse_signals', '014_c05_operator_recovery', '015_c05_session_devices', '016_c05_existing_identity_join'])
+    '004_c05_local_proof_delivery', '005_c05_operational_login_directory', '006_c05_operational_identity_flow', '007_c05_passkeys', '008_c05_terms_invitations', '009_c05_pairing', '010_c05_security_notices', '011_c05_platform_recovery', '012_c05_scoped_profile', '013_c05_abuse_signals', '014_c05_operator_recovery', '015_c05_session_devices', '016_c05_existing_identity_join', '017_c05_totp_sha1_exclusive'])
     sql(readFileSync(path.join(root, 'database/migrations', migration + '.sql'), 'utf8'));
-  check(sql('SELECT VERSION()').startsWith('8.4.'), 'sixteen forward migrations on real MySQL 8.4');
+  check(sql('SELECT VERSION()').startsWith('8.4.'), 'seventeen forward migrations on real MySQL 8.4');
   sql(`INSERT INTO c04_tenant_catalog VALUES
     (UNHEX('${A}'),'tenant-a','Tenant A',3,2,1,UTC_TIMESTAMP(6)),
     (UNHEX('${B}'),'tenant-b','Tenant B',3,2,1,UTC_TIMESTAMP(6));
@@ -625,10 +632,10 @@ try {
   for (const p of children.reverse()) { p.kill(); }
   await delay(1500);
   // Reversible migrations are exercised on the actual populated schema.
-  for (const migration of ['016_c05_existing_identity_join', '015_c05_session_devices', '014_c05_operator_recovery', '013_c05_abuse_signals', '012_c05_scoped_profile', '011_c05_platform_recovery', '010_c05_security_notices', '009_c05_pairing', '008_c05_terms_invitations', '007_c05_passkeys', '006_c05_operational_identity_flow', '005_c05_operational_login_directory', '004_c05_local_proof_delivery',
+  for (const migration of ['017_c05_totp_sha1_exclusive', '016_c05_existing_identity_join', '015_c05_session_devices', '014_c05_operator_recovery', '013_c05_abuse_signals', '012_c05_scoped_profile', '011_c05_platform_recovery', '010_c05_security_notices', '009_c05_pairing', '008_c05_terms_invitations', '007_c05_passkeys', '006_c05_operational_identity_flow', '005_c05_operational_login_directory', '004_c05_local_proof_delivery',
     '003_c05_pending_account_completion', '002_c05_registration_proof_outbox', '001_c05_identity_operational'])
     sql(readFileSync(path.join(root, 'database/migrations', migration + '.down.sql'), 'utf8'));
-  check(sql('SHOW TABLES') === '', 'sixteen reverse migrations leave no schema tables');
+  check(sql('SHOW TABLES') === '', 'seventeen reverse migrations leave no schema tables; SHA256 credentials not restored by down');
   console.log(`PASS C05 ${focus ? focus + ' focused' : 'operational integrated'} assertions=${assertions}; A/B/C evidence is limited to executed cases; no production certification`);
   }
 } catch (error) {

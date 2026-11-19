@@ -71,6 +71,9 @@ public sealed partial class MySqlOperationalIdentityFlow : IOperationalIdentityF
         await using var tx = await db.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct);
         var unit = new Unit(db, tx, ct) { DeviceLabel = request.DeviceLabel is "Chromium" or "Firefox" or "Safari" ? request.DeviceLabel : "API",
             PeerHash = Digest("session-peer:" + request.Host, request.Peer) };
+        // Fail closed until C05-017 retired all TOTP-SHA256 factors.
+        if (await unit.One("SELECT policy_id FROM c05_totp_sha1_policy WHERE policy_id=1 AND status=1") is null)
+            return new(false);
         if (request.Operation.StartsWith("platform/", StringComparison.Ordinal))
         {
             if (request.Host != "platform-admin.example.test") return new(false);
