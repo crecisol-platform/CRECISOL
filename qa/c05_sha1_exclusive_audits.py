@@ -47,6 +47,17 @@ PROTECTED={
 "database/operations/c05_local_runtime_role.sql",
 "database/tests/c05_sha1_cutover_mysql.sh",
 "database/tests/c05_sha1_offline_rekey_mysql.sh",
+# C05-018 can change only the explicit session transport/authority,
+# the isolated inactivity-policy schema, and its tests. Keep fail-closed
+# for C01/C02/C03/C04, arbitrary SQL/crypto, and the Word/PDF master.
+"backend/src/Crecisol.Application/Identity/OperationalIdentityContracts.cs",
+"backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs",
+"backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Platform.cs",
+"backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.SessionPolicy.cs",
+"backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs",
+"backend/src/Crecisol.Api/Modules/Identity/OperationalBrowserSessionTransport.cs",
+"database/migrations/018_c05_session_idle_policy.sql",
+"database/migrations/018_c05_session_idle_policy.down.sql",
 }
 def ensure(ok,msg):
  if not ok: raise AssertionError(msg)
