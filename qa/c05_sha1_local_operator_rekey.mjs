@@ -89,8 +89,9 @@ async function main(){
   for(const mailbox of accounts){
     const hash=createHmac('sha256',Buffer.from(key,'hex'))
       .update('C05/platform-login:'+mailbox).digest('hex');
-    const account=db("SELECT CONCAT(HEX(operator_id),'\\t',recovery_pending,'\\t',"+
-      "LENGTH(protected_seed),'\\t',active) FROM c05_platform_operator "+
+    // Four real result columns: mysql -B escapes embedded tabs in CONCAT().
+    const account=db("SELECT HEX(operator_id),recovery_pending,"+
+      "LENGTH(protected_seed),active FROM c05_platform_operator "+
       "WHERE login_hmac=UNHEX('"+hash+"')",password);
     const parts=account.split(/\t/);
     requireCheck(parts.length===4 && /^[0-9A-F]{32}$/.test(parts[0]) &&
