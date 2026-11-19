@@ -350,7 +350,26 @@ function totp(seed) {
   return String((hmac.readUInt32BE(offset) & 0x7fffffff) % 1000000).padStart(6, '0');
 }
 
+// C05 SHA1 post-cutover gate: do NOT start an API with a partially
+// re-keyed operator realm. 'status', 'backup' and 'verify-backup' stay usable.
+function requireSha1OperatorsReady() {
+  if (mysqlSql('SELECT status FROM c05_totp_sha1_policy WHERE policy_id=1;') !== '1')
+    throw new Error('C05-017 SHA1 policy must be active before opening the local API.');
+  const counts = mysqlSql(`SELECT COUNT(*),SUM(active=1 AND recovery_pending=0
+    AND LENGTH(protected_seed)=48) FROM c05_platform_operator;`);
+  if (counts !== '3\t3')
+    throw new Error('Three synthetic platform operators must complete authorized offline SHA1 rekey before any API start.');
+  if (!existsSync(accessFile)) throw new Error('Private operator access document missing; refusing to start API.');
+  const privateText = readFileSync(accessFile, 'utf8').replaceAll('\r\n', '\n');
+  for (const mailbox of operatorMailboxes) {
+    const blocks = privateText.split(`Correo: ${mailbox}\n`);
+    if (blocks.length !== 2 || !/^Semilla TOTP: [A-Z2-7]{32}$/m.test(blocks[1].split('\n\n')[0]))
+      throw new Error('Offline SHA1 operator key record missing or legacy; refusing to start API.');
+  }
+}
+
 async function startProvisionApi(runtime) {
+  requireSha1OperatorsReady();
   const smtpPort = await startSmtpReceiver();
   const apiEnv = { ...process.env, ...runtime.env, ASPNETCORE_URLS: `http://127.0.0.1:${apiPort}`, CRECISOL_C05_LOCAL_SMTP_PORT: String(smtpPort) };
   const api = spawnChild('dotnet', ['backend/src/Crecisol.Api/bin/Release/net10.0/Crecisol.Api.dll', '--urls', `http://127.0.0.1:${apiPort}`], apiEnv, 'api.log');
@@ -565,6 +584,7 @@ function startMailbox(password) {
 
 async function start() {
   init();
+  requireSha1OperatorsReady();
   const runtime = ensureRuntime();
   const smtpPort = await startSmtpReceiver();
   startMailbox(runtime.mailboxPassword);

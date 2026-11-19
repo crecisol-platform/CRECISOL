@@ -105,3 +105,17 @@ caducando y las acciones sensibles siguen requiriendo MFA.
 El entorno previo C01/C02, `crecisol_local` y sus puertos no se modifican.
 Esta dependencia no implica haber migrado el volumen real del propietario ni
 haber probado físicamente Google o Microsoft Authenticator.
+
+### Guardián posterior al corte: cero operadores bloqueados al arrancar
+
+En una base que ya registra C05-017, las órdenes `start` y las operaciones
+de aprovisionamiento que levantan Kestrel se niegan a iniciar la API si la
+política SHA1 no está activa, si los tres operadores de prueba no han salido
+de `recovery_pending`, si sus sobres AES-GCM no tienen longitud SHA1 (48
+bytes) o si faltan sus claves privadas de configuración de 32 caracteres
+Base32 en `access.md`. Esto impide un arranque aparentemente correcto con
+el ámbito de operadores todavía inhabilitado. No modifica identidades ni
+credenciales y no reemplaza la comprobación real de acceso de cada operador.
+
+Los comandos `status`, `backup` y `verify-backup` siguen habilitados
+para diagnóstico y recuperación sin necesidad de activar un login.
