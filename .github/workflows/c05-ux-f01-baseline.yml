@@ -11,7 +11,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: c05-ux-f01-${{ github.ref }}
+  group: c05-ux-f01-verified-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   visual-baseline:
