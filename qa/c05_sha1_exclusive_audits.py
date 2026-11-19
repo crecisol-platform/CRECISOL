@@ -26,6 +26,22 @@ F={
  "++this.factorQrRevision","++this.recoveryQrRevision",
  "this.discardFactorSetup();","this.discardRecoverySetup();"],
 "database/tests/c05_sha1_offline_rekey_mysql.sh":["createDecipheriv('aes-256-gcm'","C05/operational/v1/platform-factor:","C05/platform-backup:","offline SHA1 crypto"],
+# C05-018 policy must not regress to browser-only timeout or delegated tenant admin.
+"backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.SessionPolicy.cs":[
+ "MinSessionIdleMinutes = 5", "MaxSessionIdleMinutes = 120",
+ "can_manage_session_policy", "await PlatformTotp(u, operatorPrincipal",
+ "expected != revision", "last_seen_at_utc=UTC_TIMESTAMP(6)",
+ "PlatformSessionPolicy", "SessionIdleMinutes"],
+"database/migrations/018_c05_session_idle_policy.sql":[
+ "idle_minutes SMALLINT UNSIGNED NOT NULL DEFAULT 30",
+ "CHECK(idle_minutes BETWEEN 5 AND 120)",
+ "can_manage_session_policy BOOLEAN NOT NULL DEFAULT FALSE",
+ "UPDATE c05_identity_session SET revoked_at_utc=UTC_TIMESTAMP(6)",
+ "UPDATE c05_platform_session SET revoked_at_utc=UTC_TIMESTAMP(6)"],
+"frontend/src/app/identity/browser-session-window.ts":[
+ "establish(expiresAtUtc: string, idleMinutes: number)",
+ "this.expiryTimer = setTimeout",
+ "this.clear();"],
 "qa/c05_sha1_local_operator_rekey.mjs":["--rekey-after-verified-017",
  "CRECISOL_C05_LOCAL_SHA1_REKEY_APPROVED", "START TRANSACTION;",
  "c05_rekey_guard", "access.md.sha1-pending",
