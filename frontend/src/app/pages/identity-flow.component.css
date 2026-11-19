@@ -346,3 +346,50 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
   .identity-panel-actions { width: 100%; }
   .identity-panel-actions button { flex: 1 1 auto; }
 }
+
+/* C05 MODAL FORM RHYTHM and platform navigation. */
+.institutional-task form {
+  gap: .28rem;
+  max-width: none;
+  margin: .2rem 0;
+}
+.institutional-task form label { margin-top: .9rem; font-size: .88rem; }
+.institutional-task form > label:first-child { margin-top: 0; }
+.institutional-task form :is(input:not([type='checkbox']), select) {
+  border-color: #b9cbda;
+  background: #fff;
+  min-height: 3rem;
+}
+.institutional-task form :is(input:not([type='checkbox']), select):hover:not(:disabled) { border-color: #7fa9c8; }
+.institutional-task form > button:last-child { margin-top: .75rem; min-height: 3rem; }
+.operator-intro { max-width: 60ch; margin: 0 0 1.25rem; line-height: 1.55; }
+.operator-session-banner {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  gap: .6rem;
+  margin: 0 0 .65rem;
+  padding: .6rem .9rem;
+  border: 1px solid #cfe3df;
+  border-radius: .7rem;
+  background: #f2faf7;
+  color: #205d50;
+  font-size: .86rem;
+  font-weight: 690;
+}
+.operator-nav { margin-top: .85rem; }
+@media (max-width: 620px) {
+  .operator-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: x proximity;
+  }
+  .operator-nav button {
+    flex: 0 0 auto;
+    min-width: 6.5rem;
+    scroll-snap-align: start;
+  }
+  .institutional-task form > button:last-child { width: 100%; }
+}
