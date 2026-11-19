@@ -4,14 +4,13 @@
   (cancel)="onCancel($event)" (close)="onClosed()">
   <header class="cs-modal__header">
     <div class="cs-modal__heading">
-      <p class="cs-modal__eyebrow">CRECISOL · ACCIÓN SEGURA</p>
-      <h2 [id]="titleId">{{ title() }}</h2>
+      <h2 #heading tabindex="-1" [id]="titleId">{{ title() }}</h2>
       @if (description()) { <p class="cs-modal__description" [id]="descriptionId">{{ description() }}</p> }
     </div>
     <button type="button" class="cs-modal__dismiss" aria-label="Cerrar ventana"
       [disabled]="busy()" (click)="close()">×</button>
   </header>
-  <div class="cs-modal__content">
+  <div #scrollBody class="cs-modal__content" role="region" aria-label="Contenido de la operación" tabindex="0">
     @if (error()) { <p class="cs-modal__feedback cs-modal__feedback--error" role="alert">{{ error() }}</p> }
     @if (feedback()) { <p class="cs-modal__feedback" role="status" aria-live="polite">{{ feedback() }}</p> }
     <ng-content></ng-content>
