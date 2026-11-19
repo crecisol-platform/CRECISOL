@@ -64,12 +64,16 @@ export class PlatformIdentityApiService {
     this.challenge = ''; this.csrf = result.csrfToken; this.sessionWindow.establish(result.expiresAtUtc); this.state.set('authenticated');
   }
   async lookup(caseId: string): Promise<void> {
+    const revision = this.sessionRevision;
     this.case.set(null);
-    this.case.set(await this.post<{ caseId: string; readyAtUtc: string | null; blocked: boolean; consumed: boolean }>('case', { caseId }));
+    const result = await this.post<{ caseId: string; readyAtUtc: string | null; blocked: boolean; consumed: boolean }>('case', { caseId });
+    if (revision === this.sessionRevision) this.case.set(result);
   }
   async findCase(mailbox: string, realm: string, reason: string, code: string): Promise<void> {
+    const revision = this.sessionRevision;
     this.locatedCase.set('');
-    this.locatedCase.set((await this.post<{ caseId: string }>('cases/find', { mailbox, realm, reason, code })).caseId);
+    const result = await this.post<{ caseId: string }>('cases/find', { mailbox, realm, reason, code });
+    if (revision === this.sessionRevision) this.locatedCase.set(result.caseId);
   }
   async review(caseId: string, decision: string, evidenceHash: string, reason: string, code: string): Promise<void> {
     await this.post('review', { caseId, decision, identityVerified: 'true', evidenceHash, reason, code });
@@ -156,8 +160,9 @@ export class PlatformIdentityApiService {
     this.clear(); this.showBackups(result.recoveryCodes);
   }
   async requestRecovery(mailbox: string): Promise<void> {
+    const revision = this.sessionRevision;
     const result = await this.post<{ reference: string }>('operator-recovery/request', { mailbox, automaticMethodsUnavailable: 'true' });
-    this.recoveryReference.set(result.reference);
+    if (revision === this.sessionRevision) this.recoveryReference.set(result.reference);
   }
   async completeRecovery(caseId: string, shareA: string, shareB: string, newPassword: string): Promise<void> {
     const revision = ++this.recoveryQrRevision;

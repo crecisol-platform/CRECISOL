@@ -283,3 +283,105 @@ test('B | late operator recovery share is never restored after logout', async ({
     return panel.platform.handoffShare();
   })).toBe('');
 });
+
+
+test('B | a late pairing-start response cannot recreate a cleared private key or QR', async ({ page }) => {
+  await page.route('**/api/v1/identity/browser/restore', route => route.fulfill({ status: 401, body: '{}' }));
+  let start!: () => void, resume!: () => void;
+  const seen = new Promise<void>(resolve => { start = resolve; });
+  const held = new Promise<void>(resolve => { resume = resolve; });
+  await page.route('**/api/v1/identity/pairings/start', async route => {
+    start(); await held;
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ token: 'synthetic-pair', nonce: 'synthetic-nonce', fingerprint: 'synthetic-fingerprint' }) });
+  });
+  await page.goto('/cuenta');
+  await expect.poll(() => page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    return portal.identity.restoring();
+  })).toBe(false);
+  await page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    (window as unknown as { c05Task?: Promise<void> }).c05Task = portal.identity.startPairing();
+  });
+  await seen;
+  await page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    portal.identity.clear();
+  });
+  resume();
+  await page.evaluate(async () => { await (window as unknown as { c05Task?: Promise<void> }).c05Task; });
+  expect(await page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    return { pairing: portal.identity.pairing(), privateKeyPresent: portal.identity.pairingKey !== null };
+  })).toEqual({ pairing: null, privateKeyPresent: false });
+});
+
+test('B | late pairing completion cannot reauthenticate a closed tenant session', async ({ page }) => {
+  await page.route('**/api/v1/identity/browser/restore', route => route.fulfill({ status: 401, body: '{}' }));
+  let start!: () => void, resume!: () => void;
+  const seen = new Promise<void>(resolve => { start = resolve; });
+  const held = new Promise<void>(resolve => { resume = resolve; });
+  await page.route('**/api/v1/identity/pairings/complete', async route => {
+    start(); await held;
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ csrfToken: 'c'.repeat(64), expiresAtUtc: '2099-01-01T00:00:00Z' }) });
+  });
+  await page.goto('/cuenta');
+  await expect.poll(() => page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    return portal.identity.restoring();
+  })).toBe(false);
+  await page.evaluate(async () => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    const key = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign', 'verify']);
+    portal.identity.pairingKey = key.privateKey;
+    portal.identity.pairingNonce = 'synthetic-nonce';
+    portal.identity.pairing.set({ token: 'synthetic-pair', fingerprint: 'synthetic-fingerprint', qr: 'synthetic-qr' });
+    (window as unknown as { c05Task?: Promise<void> }).c05Task = portal.identity.completePairing();
+  });
+  await seen;
+  await page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    portal.identity.clear();
+  });
+  resume();
+  await page.evaluate(async () => { await (window as unknown as { c05Task?: Promise<void> }).c05Task; });
+  expect(await page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    return { state: portal.identity.state(), pairing: portal.identity.pairing() };
+  })).toEqual({ state: 'anonymous', pairing: null });
+});
+
+test('B | a late operator case read cannot reveal case metadata after local logout', async ({ page }) => {
+  await page.route('**/api/v1/platform-identity/restore', route => route.fulfill({ status: 401, body: '{}' }));
+  let start!: () => void, resume!: () => void;
+  const seen = new Promise<void>(resolve => { start = resolve; });
+  const held = new Promise<void>(resolve => { resume = resolve; });
+  await page.route('**/api/v1/platform-identity/case', async route => {
+    start(); await held;
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ caseId: 'synthetic-case', readyAtUtc: null, blocked: false, consumed: false }) });
+  });
+  await page.goto('/cuenta?vista=operadores');
+  await expect.poll(() => page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    return panel.platform.restoring();
+  })).toBe(false);
+  await page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    panel.platform.state.set('authenticated');
+    (window as unknown as { c05Task?: Promise<void> }).c05Task = panel.platform.lookup('synthetic-case');
+  });
+  await seen;
+  await page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    panel.platform.clear();
+  });
+  resume();
+  await page.evaluate(async () => { await (window as unknown as { c05Task?: Promise<void> }).c05Task; });
+  expect(await page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    return panel.platform.case();
+  })).toBe(null);
+});

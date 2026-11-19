@@ -78,25 +78,32 @@ export class IdentityApiService {
   }
 
   async startPairing(): Promise<void> {
+    const revision = this.sessionRevision;
     const keys = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign', 'verify']);
     const hex = (bytes: ArrayBuffer): string => Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
     const publicKey = hex(await crypto.subtle.exportKey('spki', keys.publicKey));
     const signature = hex(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, keys.privateKey,
       new TextEncoder().encode('CRECISOL:C05:PAIR:START')));
+    if (revision !== this.sessionRevision) return;
     const result = await this.post<{ token: string; nonce: string; fingerprint: string }>('pairings/start', { publicKey, signature }, false);
+    if (revision !== this.sessionRevision) return;
     this.pairingKey = keys.privateKey; this.pairingNonce = result.nonce;
     // CommonJS uses its default export when Angular prebundling is disabled.
     const { default: QRCode } = await import('qrcode');
     const qr = await QRCode.toDataURL(`${location.origin}/cuenta#pair=${result.token}.${result.fingerprint}`, { width: 320, errorCorrectionLevel: 'M' });
+    if (revision !== this.sessionRevision) return;
     this.pairing.set({ token: result.token, fingerprint: result.fingerprint, qr });
   }
 
   async completePairing(): Promise<void> {
+    const revision = this.sessionRevision;
     const request = this.pairing();
     if (!request || !this.pairingKey) throw new Error('identity_unavailable');
     const signature = Array.from(new Uint8Array(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, this.pairingKey,
       new TextEncoder().encode(`CRECISOL:C05:PAIR:${request.token}:${this.pairingNonce}`))), b => b.toString(16).padStart(2, '0')).join('');
+    if (revision !== this.sessionRevision || this.pairing() !== request) return;
     const result = await this.post<MfaReceipt>('pairings/complete', { token: request.token, signature }, false);
+    if (revision !== this.sessionRevision || this.pairing() !== request) return;
     this.pairingKey = null; this.pairingNonce = ''; this.pairing.set(null);
     this.acceptSession(result);
   }
@@ -122,8 +129,9 @@ export class IdentityApiService {
   }
 
   async requestAssisted(mailbox: string): Promise<void> {
+    const revision = this.sessionRevision;
     const result = await this.post<{ reference: string }>('assisted/request', { mailbox, automaticMethodsUnavailable: 'true' }, false);
-    this.assistedReference.set(result.reference);
+    if (revision === this.sessionRevision) this.assistedReference.set(result.reference);
   }
   async completeAssisted(caseId: string, token: string, newPassword: string): Promise<void> {
     await this.post('assisted/complete', { caseId, token, newPassword }, false); this.clear();
@@ -237,14 +245,18 @@ export class IdentityApiService {
   }
 
   async loginPasskey(): Promise<void> {
+    const revision = this.sessionRevision;
     const options = await this.post<{ challenge: string; publicKey: PublicKeyCredentialRequestOptionsJSON }>('passkeys/options', {}, false);
+    if (revision !== this.sessionRevision) return;
     const credential = await navigator.credentials.get({
       publicKey: PublicKeyCredential.parseRequestOptionsFromJSON(options.publicKey)
     }) as PublicKeyCredential | null;
+    if (revision !== this.sessionRevision) return;
     if (!credential) throw new Error('identity_unavailable');
     const result = await this.post<MfaReceipt>('passkeys/login', {
       challenge: options.challenge, response: JSON.stringify(credential.toJSON())
     }, false);
+    if (revision !== this.sessionRevision) return;
     this.acceptSession(result);
   }
 
