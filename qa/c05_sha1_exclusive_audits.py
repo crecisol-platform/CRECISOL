@@ -16,11 +16,15 @@ F={
 "database/operations/c05_local_runtime_role.sql":["GRANT SELECT ON crecisol_c05.c05_totp_sha1_policy"],
 "frontend/src/app/identity/totp-setup-qr.ts":["QRCode.toDataURL(uri","algorithm') !== 'SHA1'","data:image/png;base64","otpauth:"],
 "frontend/src/app/pages/identity-mfa.component.html":["identity.enrollmentQr()","No puedo escanear: mostrar clave manual"],
+"frontend/src/app/identity/identity-api.service.ts":["this.challengeValue !== challenge","this.stateValue() !== 'challenge'","this.enrollmentSecret.set('');"],
 "frontend/src/app/pages/platform-operator-security.component.html":["platform.factorQr()","platform.discardFactorSetup()"],
 "frontend/src/app/pages/platform-identity-panel.component.html":["platform.operatorRecoveryQr()","platform.discardRecoverySetup()"],
 "qa/c05_operational_flow_e2e.mjs":["017_c05_totp_sha1_exclusive","createHmac('sha1'","verifySha1EnrollmentQr"],
 "qa/c05_totp_qr_checks.mjs":["jsQR(","searchParams.get('algorithm') === 'SHA1'"],
-"frontend/src/app/identity/platform-identity-api.service.ts":["this.recoveryReference.set('');","this.operatorRecoveryQr.set('');"],
+"frontend/src/app/identity/platform-identity-api.service.ts":["this.recoveryReference.set('');","this.operatorRecoveryQr.set('');",
+ "revision !== this.factorQrRevision","revision !== this.recoveryQrRevision",
+ "++this.factorQrRevision","++this.recoveryQrRevision",
+ "this.discardFactorSetup();","this.discardRecoverySetup();"],
 "database/tests/c05_sha1_offline_rekey_mysql.sh":["createDecipheriv('aes-256-gcm'","C05/operational/v1/platform-factor:","C05/platform-backup:","offline SHA1 crypto"],
 "qa/c05_sha1_local_operator_rekey.mjs":["--rekey-after-verified-017",
  "CRECISOL_C05_LOCAL_SHA1_REKEY_APPROVED", "START TRANSACTION;",
@@ -56,6 +60,13 @@ def verify(d):
  ensure("DELETE FROM c05_identity_account" not in sql and "DROP TABLE c04_tenant_catalog" not in sql,"unscoped destructive migration")
  qr=d["frontend/src/app/identity/totp-setup-qr.ts"]
  ensure("fetch(" not in qr and "localStorage" not in qr and "sessionStorage" not in qr,"QR secret exfiltration")
+ tenant=d["frontend/src/app/identity/identity-api.service.ts"].split("  async enrollMfa():",1)[-1].split("  async refreshSessions():",1)[0]
+ ensure(tenant.count("this.challengeValue !== challenge") >= 2,"tenant MFA QR missing pre/post async invalidation")
+ platform=d["frontend/src/app/identity/platform-identity-api.service.ts"]
+ factor=platform.split("  async replaceFactor(",1)[-1].split("  async confirmFactor(",1)[0]
+ recovery=platform.split("  async completeRecovery(",1)[-1].split("  async confirmRecovery(",1)[0]
+ ensure(factor.count("revision !== this.factorQrRevision") >= 2,"operator factor QR missing async invalidation")
+ ensure(recovery.count("revision !== this.recoveryQrRevision") >= 2,"operator recovery QR missing async invalidation")
 def run(which):
  d=read()
  if which=="A":
