@@ -1,0 +1,14 @@
+<button [attr.type]="type()" [attr.data-variant]="variant()" [disabled]="disabled() || busy()"
+  [attr.aria-busy]="busy() ? 'true' : null"
+  [attr.aria-label]="busy() ? busyLabel() + ': ' + label() : null"
+  (click)="activate()">
+  @if (busy()) {
+    <span class="cs-action__spinner" aria-hidden="true"></span>
+    <span>{{ busyLabel() }}</span>
+  } @else {
+    @if (icon(); as glyph) {
+      <cs-ui-icon [name]="glyph"/>
+    }
+    <span>{{ label() }}</span>
+  }
+</button>
