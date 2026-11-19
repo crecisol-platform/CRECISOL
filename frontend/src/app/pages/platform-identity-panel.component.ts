@@ -50,7 +50,7 @@ export class PlatformIdentityPanelComponent {
         'find-case': 'La solicitud de localización fue procesada bajo los controles de privacidad.',
         review: 'La revisión del caso de identidad quedó registrada.',
         share: 'La operación de entrega del parte de recuperación finalizó.',
-        password: 'La contraseña del operador se actualizó. Las sesiones anteriores pueden requerir nuevo acceso.',
+        password: 'La contraseña del operador se actualizó. La sesión se cerró; vuelve a iniciar sesión.',
         'session-policy': 'La política de inactividad se actualizó para las sesiones autorizadas.',
         'revoke-all': 'Se cerraron las sesiones de plataforma.',
         'mailbox-request': 'La solicitud de cambio de correo fue registrada.',
