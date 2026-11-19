@@ -71,7 +71,7 @@ jobs:
           python3 qa/c05_institutional_modal_audits.py C
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE="origin/${{ github.base_ref }}"
-            if [ "${{ github.head_ref }}" = "feature/c05-totp-sha1-exclusive-20261118" ]; then
+            if [ "${{ github.head_ref }}" = "feature/c05-totp-sha1-exclusive-20261118" ] || [ "${{ github.head_ref }}" = "feature/c05-totp-sha1-integrated-qa-20261118" ]; then
               # Exception is branch-specific and still fail-closed: C05 SHA1 C
               # checks every protected backend/database path against an allowlist.
               python3 qa/c05_sha1_exclusive_audits.py C
