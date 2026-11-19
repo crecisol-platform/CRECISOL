@@ -118,7 +118,7 @@ jobs:
           node -e '
             const fs = require("fs");
             const file = process.argv[1], manifest = JSON.parse(fs.readFileSync(file, "utf8"));
-            manifest.migrations = 16;
+            manifest.injectedUntrustedField = "tampered-manifest";
             fs.writeFileSync(file, JSON.stringify(manifest));
           ' "$CRECISOL_C05_PERSISTENT_SECRET_DIR/backups/$LATEST_SIGNED.manifest.json"
           if node qa/c05_local_persistent.mjs verify-backup > "$RUNNER_TEMP/c05-negative-manifest-mac.log" 2>&1; then
