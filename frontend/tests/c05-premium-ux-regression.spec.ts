@@ -98,3 +98,16 @@ test('C05 UX | passkey revocation selects a listed key and never requires typing
   await expect(select).toHaveValue('33333333-4444-4555-8666-777777777777');
   await expect(dialog.locator('input[name="factorId"]')).toHaveCount(0);
 });
+
+test('C05 UX | a newly opened dialog does not inherit another operation receipt', async ({ page }) => {
+  await page.goto('/cuenta?vista=operadores');
+  await expect(page.locator('cs-platform-identity-panel')).toHaveCount(1);
+  await page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    panel.message.set('Resultado anterior de otra operación');
+  });
+  await page.getByRole('button', { name: 'Recuperar acceso de operador de plataforma', exact: true }).click();
+  const modal = page.getByRole('dialog', { name: 'Recuperación segura de operador' });
+  await expect(modal).toBeVisible();
+  await expect(modal).not.toContainText('Resultado anterior de otra operación');
+});
