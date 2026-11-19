@@ -23,11 +23,12 @@ public sealed partial class MySqlOperationalIdentityFlow
         var actor = Bytes(peek, "account_id");
         var account = await Account(u, actor);
         var member = await Membership(u, tenant, actor);
+        var idle = await SessionIdleMinutes(u);
         var session = await u.One("""
             SELECT * FROM c05_identity_session WHERE tenant_id=@t AND token_hmac=@h
             AND revoked_at_utc IS NULL AND expires_at_utc>UTC_TIMESTAMP(6)
-            AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL 15 MINUTE FOR UPDATE
-            """, ("t", tenant), ("h", hash));
+            AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE FOR UPDATE
+            """, ("t", tenant), ("h", hash), ("idle", idle));
         if (account is null || member is null || session is null ||
             !Bytes(session, "membership_id").SequenceEqual(Bytes(member, "membership_id")) ||
             Number(session, "account_revision") != Number(account, "security_revision") ||
@@ -36,7 +37,9 @@ public sealed partial class MySqlOperationalIdentityFlow
             ("a", actor), ("f", Bytes(session, "mfa_factor_id")));
         if (factor is null) return new(false);
         u.VerifiedActor = true;
-        await u.Run("UPDATE c05_identity_session SET last_seen_at_utc=UTC_TIMESTAMP(6) WHERE tenant_id=@t AND token_hmac=@h", ("t", tenant), ("h", hash));
+        await SlideTenantSession(u, tenant, hash, idle);
+        if (r.Operation == "sessions/keepalive")
+            return new(true, new { expiresAtUtc = u.SessionExpiresAtUtc, idleMinutes = idle });
         if (r.Operation == "terms/accept")
             return new(await AcceptTerms(u, tenant, actor, r), new { accepted = true });
         if (r.Operation == "security/events")
@@ -55,10 +58,10 @@ public sealed partial class MySqlOperationalIdentityFlow
                 SELECT s.session_id,s.issued_at_utc,s.expires_at_utc,s.last_seen_at_utc,s.device_label,s.auth_method
                 FROM c05_identity_session s JOIN c05_identity_mfa_factor f ON f.account_id=s.account_id AND f.factor_id=s.mfa_factor_id
                 WHERE s.tenant_id=@t AND s.account_id=@a AND s.revoked_at_utc IS NULL AND s.expires_at_utc>UTC_TIMESTAMP(6)
-                AND s.last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL 15 MINUTE AND s.account_revision=@ar AND s.membership_revision=@mr
+                AND s.last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE AND s.account_revision=@ar AND s.membership_revision=@mr
                 AND f.factor_state=1 AND f.revoked_at_utc IS NULL ORDER BY s.last_seen_at_utc DESC
-                """, ("t", tenant), ("a", actor), ("ar", Number(account, "security_revision")), ("mr", Number(member, "approval_revision")));
-            return new(true, new OperationalSessionInventory(Utc(session, "expires_at_utc"), rows.Select(row => new OperationalSessionSummary(
+                """, ("t", tenant), ("a", actor), ("ar", Number(account, "security_revision")), ("mr", Number(member, "approval_revision")), ("idle", idle));
+            return new(true, new OperationalSessionInventory(u.SessionExpiresAtUtc!.Value, rows.Select(row => new OperationalSessionSummary(
                 new Guid(Bytes(row, "session_id"), true), Utc(row, "issued_at_utc"), Utc(row, "expires_at_utc"), Utc(row, "last_seen_at_utc"),
                 Text(row, "device_label"), Text(row, "auth_method"))).ToArray()));
         }
@@ -72,7 +75,7 @@ public sealed partial class MySqlOperationalIdentityFlow
             // Rotation never refreshes the absolute MFA lifetime.
             u.SessionMethod = Text(session, "auth_method");
             return await IssueSession(u, tenant, account, member, Bytes(factor, "factor_id"), Bytes(session, "session_family"),
-                (DateTime)session["expires_at_utc"], (DateTime)session["mfa_verified_at_utc"]);
+                (DateTime)session["mfa_verified_at_utc"]);
         }
         if (r.Operation == "private/read")
         {

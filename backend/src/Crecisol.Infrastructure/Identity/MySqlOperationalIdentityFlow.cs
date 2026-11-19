@@ -82,7 +82,7 @@ public sealed partial class MySqlOperationalIdentityFlow : IOperationalIdentityF
                 ("id", Id()), ("a", unit.VerifiedActor ? (object?)unit.Actor ?? DBNull.Value : DBNull.Value), ("case", (object?)unit.Subject ?? DBNull.Value),
                 ("op", request.Operation), ("ok", platformResult.Allowed), ("purpose", (object?)unit.PurposeHash ?? DBNull.Value));
             await tx.CommitAsync(ct);
-            return platformResult;
+            return platformResult with { SessionExpiresAtUtc = unit.SessionExpiresAtUtc, SessionIdleMinutes = unit.IdleMinutes };
         }
         var host = await unit.One("""
             SELECT h.tenant_id FROM c04_verified_tenant_host h
@@ -116,7 +116,7 @@ public sealed partial class MySqlOperationalIdentityFlow : IOperationalIdentityF
         else result = await Authenticated(unit, tenant, request, ct);
         await Audit(unit, tenant, request.Operation, result.Allowed);
         await tx.CommitAsync(ct);
-        return result;
+        return result with { SessionExpiresAtUtc = unit.SessionExpiresAtUtc, SessionIdleMinutes = unit.IdleMinutes };
     }
 
     private async Task<bool> Reserve(byte[] tenant, string bucket, int maximum, CancellationToken ct)
@@ -230,6 +230,9 @@ public sealed partial class MySqlOperationalIdentityFlow : IOperationalIdentityF
         public byte[]? Actor { get; set; }
         public byte[]? Subject { get; set; }
         public bool VerifiedActor { get; set; }
+        public int? IdleMinutes { get; set; }
+        public long? PolicyRevision { get; set; }
+        public DateTimeOffset? SessionExpiresAtUtc { get; set; }
         public byte[]? PurposeHash { get; set; }
         public string DeviceLabel { get; set; } = "API";
         public byte[] PeerHash { get; set; } = [];

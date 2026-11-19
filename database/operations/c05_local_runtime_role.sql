@@ -64,3 +64,8 @@ GRANT EXECUTE ON PROCEDURE crecisol_c05.c05_operational_complete_pending_registr
 GRANT EXECUTE ON PROCEDURE crecisol_c05.c05_operational_consume_join_proof TO 'c05_identity_local_runtime';
 GRANT EXECUTE ON PROCEDURE crecisol_c05.c05_operational_claim_mailbox_proof_outbox TO 'c05_identity_local_runtime';
 GRANT EXECUTE ON PROCEDURE crecisol_c05.c05_operational_complete_mailbox_proof_delivery TO 'c05_identity_local_runtime';
+
+-- C05-018 server-side, MFA-authorized session policy edits only.
+GRANT SELECT ON crecisol_c05.c05_session_idle_policy TO 'c05_identity_local_runtime';
+GRANT UPDATE(idle_minutes,revision,changed_at_utc,changed_by)
+ ON crecisol_c05.c05_session_idle_policy TO 'c05_identity_local_runtime';
