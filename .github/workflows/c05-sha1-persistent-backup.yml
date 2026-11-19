@@ -72,6 +72,16 @@ jobs:
           cp "$CRECISOL_C05_PERSISTENT_SECRET_DIR/runtime.env" "$RUNNER_TEMP/c05-runtime-reference"
           node qa/c05_local_persistent.mjs backup
           node qa/c05_local_persistent.mjs verify-backup
+          RUNTIME_FILE="$CRECISOL_C05_PERSISTENT_SECRET_DIR/runtime.env"
+          mv "$RUNTIME_FILE" "$RUNNER_TEMP/c05-private-env-reference"
+          ln -s "$RUNNER_TEMP/c05-private-env-reference" "$RUNTIME_FILE"
+          if node qa/c05_local_persistent.mjs verify-backup > "$RUNNER_TEMP/c05-negative-symlink.log" 2>&1; then
+            echo 'FAIL: private runtime key symlink accepted as a backup source' >&2
+            exit 1
+          fi
+          rm "$RUNTIME_FILE"
+          mv "$RUNNER_TEMP/c05-private-env-reference" "$RUNTIME_FILE"
+          node qa/c05_local_persistent.mjs verify-backup
           printf '# modified synthetic tenant credentials\n' >> "$CRECISOL_C05_PERSISTENT_SECRET_DIR/tenant-accounts.md"
           if node qa/c05_local_persistent.mjs verify-backup > "$RUNNER_TEMP/c05-negative-tenant-md.log" 2>&1; then
             echo 'FAIL: modified private tenant credentials were accepted' >&2

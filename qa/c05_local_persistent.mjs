@@ -173,6 +173,7 @@ function waitForMysql() {
 
 function ensureRuntime() {
   mkdirSync(secretDir, { recursive: true, mode: 0o700 });
+  for (const file of backupSecretFiles) assertProtectedFile(file, false);
   const existing = loadEnvFile();
   const rootPassword = existsSync(rootPasswordFile)
     ? readFileSync(rootPasswordFile, 'utf8').trim() : randomHex(32);
@@ -679,6 +680,19 @@ const backupSecretFiles = [
   rootPasswordFile, runtimeEnvFile, accessFile, mailboxPasswordFile,
   tenantAccountsFile, tenantAccountsMarkdownFile
 ];
+// Never trust the contents of a link or a private file readable by other
+// local users, even if its SHA-256 matches a previously stored fingerprint.
+function assertProtectedFile(file, required = true) {
+  const info = lstatSync(file, { throwIfNoEntry: false });
+  if (!info) {
+    if (required) throw new Error('Missing required C05 private file.');
+    return false;
+  }
+  if (!info.isFile() || info.isSymbolicLink() ||
+      (process.platform !== 'win32' && (info.mode & 0o077) !== 0))
+    throw new Error('Unsafe private C05 file permissions or symbolic link.');
+  return true;
+}
 function assertNoUnresolvedRekey() {
   // Pending credentials are neither a verified factor nor a recoverable SQL snapshot.
   if (existsSync(rekeyPendingFile))
@@ -731,9 +745,9 @@ function databaseSnapshot(containerName, rootPassword) {
 function backup() {
   assertNoUnresolvedRekey();
   // Never create or mutate a database or encryption key during a backup.
-  for (const required of [rootPasswordFile, runtimeEnvFile, accessFile]) {
-    if (!existsSync(required)) throw new Error('Existing private C05 key/access files are required before backup.');
-  }
+  for (const required of [rootPasswordFile, runtimeEnvFile, accessFile])
+    assertProtectedFile(required);
+  for (const file of backupSecretFiles) assertProtectedFile(file, false);
   if (!hasContainer() || !containerRunning()) throw new Error('C05 database must already be running to back up.');
   assertExistingC05Container();
   const password = readFileSync(rootPasswordFile, 'utf8').trim();
@@ -768,14 +782,14 @@ function backup() {
 function verifyBackup() {
   assertNoUnresolvedRekey();
   const latestFile = path.join(backupDir, '.latest');
-  if (!existsSync(latestFile)) throw new Error('No managed C05 backup; legacy backups require separate manual review.');
+  assertProtectedFile(latestFile);
+  for (const file of backupSecretFiles) assertProtectedFile(file, false);
   const filename = readFileSync(latestFile, 'utf8').trim();
   if (!/^crecisol-c05-[A-Za-z0-9TZ-]+\.sql\.gz$/.test(filename))
     throw new Error('Unsafe C05 backup filename; refusing restore.');
   const target = path.join(backupDir, filename);
-  if (!existsSync(target) || !existsSync(target + '.manifest.json') ||
-      !statSync(target).isFile())
-    throw new Error('C05 backup archive or manifest not available.');
+  assertProtectedFile(target);
+  assertProtectedFile(target + '.manifest.json');
   const archive = readFileSync(target);
   const manifest = JSON.parse(readFileSync(target + '.manifest.json', 'utf8'));
   if (!['C05-local-backup-v1', 'C05-local-backup-v2'].includes(manifest?.format) ||

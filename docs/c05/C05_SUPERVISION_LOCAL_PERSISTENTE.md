@@ -191,3 +191,5 @@ la nueva configuración regula **sesiones autenticadas** y cookies
 asociadas, no autoriza ampliar enlaces de recuperación ni OTP de 30 s.
 La política es global en la consola de identidad C05, aislada de C01/C02,
 sin selector de tenant y sin acceso delegado a cada empresa.
+
+**Privacidad de archivos locales:** el supervisor rechaza enlaces simbólicos y archivos privados con permisos para grupo/otros en sistemas POSIX antes de crear o validar respaldos. En Windows debe revisarse adicionalmente la ACL del perfil del propietario: el bit POSIX no certifica una ACL NTFS. Los comandos Docker reciben credenciales mediante el entorno del proceso, nunca en argumentos visibles de la línea de comandos.
