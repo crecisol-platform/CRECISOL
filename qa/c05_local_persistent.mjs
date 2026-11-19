@@ -12,6 +12,7 @@ import { mkdirSync, existsSync, readFileSync, writeFileSync, chmodSync, openSync
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assertC05ContainerIdentity, assertSafeMigrationLedger } from './c05_sha1_persistent_guards.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = new Set(process.argv.slice(2));
@@ -179,6 +180,13 @@ function ensureRuntime() {
   return { env, rootPassword, appPassword, mailboxPassword };
 }
 
+function assertExistingC05Container() {
+  const mounts = JSON.parse(run('docker', ['inspect', '--format', '{{json .Mounts}}', container]));
+  const ports = JSON.parse(run('docker', ['inspect', '--format', '{{json .NetworkSettings.Ports}}', container]));
+  const configuredImage = run('docker', ['inspect', '--format', '{{.Config.Image}}', container]);
+  assertC05ContainerIdentity(mounts, ports, configuredImage, volume, rootPasswordFile, image);
+}
+
 function ensureContainer(rootPassword) {
   if (!hasContainer()) {
     run('docker', ['volume', 'create', volume]);
@@ -190,13 +198,23 @@ function ensureContainer(rootPassword) {
       '-e', 'MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql-root-password',
       '-e', `MYSQL_DATABASE=${database}`, image
     ]);
-  } else if (!containerRunning()) {
-    run('docker', ['start', container]);
+  } else {
+    // Never start or query a preexisting name that points to another volume.
+    assertExistingC05Container();
+    if (!containerRunning()) run('docker', ['start', container]);
   }
+  assertExistingC05Container();
   waitForMysql();
 }
 
 function applyMigrations() {
+  // Inspect the schema BEFORE writing a ledger; a reused or interrupted DB
+  // without one must never be interpreted as a fresh installation.
+  const priorTableCount = Number(mysqlSql('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE();'));
+  const priorLedgerCount = Number(mysqlSql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='c05_schema_migrations';"));
+  if (!Number.isSafeInteger(priorTableCount) || !Number.isSafeInteger(priorLedgerCount) ||
+      priorLedgerCount > 1 || (priorTableCount > 0 && priorLedgerCount !== 1))
+    throw new Error('Existing C05 schema without a valid migration ledger; refusing any writes.');
   mysqlSql(`CREATE TABLE IF NOT EXISTS c05_schema_migrations (
     version INT UNSIGNED NOT NULL PRIMARY KEY,
     migration_name VARCHAR(160) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
@@ -212,9 +230,7 @@ function applyMigrations() {
   // A partially migrated existing database (including 001-015 or interrupted
   // 017 without a ledger record) must NEVER reach the destructive 017 script.
   // A fully migrated database is checked against every recorded checksum below.
-  if (applied.size > 0 && (applied.size !== migrationNames.length ||
-      !migrationNames.every((_, index) => applied.has(index + 1))))
-    throw new Error('Existing or partially migrated C05 database requires verified backup/restore, API shutdown and approved offline SHA1 operator rekey; refusing implicit migration.');
+  assertSafeMigrationLedger(priorTableCount, applied, migrationNames.length);
   for (let index = 0; index < migrationNames.length; index++) {
     const version = index + 1;
     const name = migrationNames[index];
@@ -670,7 +686,10 @@ function verifyBackup() {
 }
 
 function stop() {
-  if (hasContainer() && containerRunning()) run('docker', ['stop', container]);
+  if (hasContainer() && containerRunning()) {
+    assertExistingC05Container();
+    run('docker', ['stop', container]);
+  }
   console.log(`C05 MySQL stopped; volume ${volume} preserved.`);
 }
 
