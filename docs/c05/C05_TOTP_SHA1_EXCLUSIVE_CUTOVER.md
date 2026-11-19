@@ -52,6 +52,23 @@ Argon2id, HMAC-SHA256 de tokens/backups, WebAuthn ni claves criptográficas.
    No afirmar haber probado Google/Microsoft en teléfono si no lo hizo
    el propietario; documentar aceptación humana por interfaz.
 
+
+### Offline rebootstrap implementado (sin ejecutarse en la computadora del propietario)
+Se incluye `qa/c05_sha1_local_operator_rekey.mjs`, solo para el contenedor
+`crecisol-c05-mysql-persistent` / volumen `crecisol-c05-mysql-data`,
+ligado a `127.0.0.1:3310` y tres identidades `identity.*@example.test`.
+Rechaza la operación si la API escucha en 5187, si no existe el ledger
+017/estado SHA1=1, si alguno de los tres operadores no está pendiente
+con semilla vacía o si faltan las claves y los archivos privados.
+Requiere `CRECISOL_C05_LOCAL_SHA1_REKEY_APPROVED=YES` y
+`--rekey-after-verified-017`; no modifica contraseñas, membresías,
+identificadores ni el código de producción. Genera factores SHA1 y respaldos
+nuevos dentro de una única transacción SQL guardada; prepara previamente
+`access.md.sha1-pending` con permisos 0600 para no perder credenciales
+si falla la escritura posterior. No se puede ejecutar como bootstrap público.
+Debe pasar ensayos de reversión y el propietario debe confirmar el respaldo
+y la reconfiguración de cada teléfono antes de utilizar su volumen existente.
+
 ## Verificación
 Auditorías A/B/C de este incremento; D Chromium de vistas/modales con QR
 decodificable, E integración real Angular22/.NET10/MySQL8.4, replay, cuotas,
