@@ -1,7 +1,8 @@
-<section aria-labelledby="mfa-heading">
+<section class="identity-mfa" aria-labelledby="mfa-heading">
   <h2 id="mfa-heading">Verificación en dos pasos</h2>
+  <p class="identity-entry__intro">Confirma tu identidad con un código temporal de tu aplicación o un código de respaldo.</p>
   @if (identity.enrollmentRequired()) {
-    <p>Vincula una aplicación TOTP compatible, como Google Authenticator, Microsoft Authenticator o Aegis. La configuración se realiza una sola vez.</p>
+    <p class="identity-step-context">Antes de continuar, vincula una aplicación compatible con códigos TOTP de 6 dígitos y periodos de 30 segundos.</p>
     @if (!identity.enrollmentSecret()) {
       <button type="button" [disabled]="busy() || identity.restoring()" (click)="enrollRequested.emit()">Configurar segundo factor</button>
     } @else {
@@ -9,21 +10,21 @@
         <div class="totp-setup__visual">
           <img [src]="identity.enrollmentQr()" width="256" height="256"
                alt="Código QR privado para vincular CRECISOL con tu aplicación de autenticación">
-          <p>Abre tu aplicación, elige agregar cuenta y escanea el QR. No introduzcas tu contraseña en el autenticador.</p>
+          <ol class="identity-setup-steps"><li>Abre tu aplicación de autenticación y selecciona <strong>Agregar cuenta</strong>.</li><li>Escanea este código QR desde la aplicación.</li><li>Introduce abajo el código de 6 dígitos generado.</li></ol>
         </div>
         <details>
           <summary>No puedo escanear: mostrar clave manual</summary>
-          <p>Introduce esta clave en la aplicación configurando SHA1, seis dígitos y treinta segundos.</p>
+          <p class="identity-field-help">Configura TOTP con SHA1, 6 dígitos y periodo de 30 segundos. Mantén esta clave privada.</p>
           <output aria-label="Clave de configuración MFA">{{ identity.enrollmentSecret() }}</output>
         </details>
       </div>
     }
   }
-  <form (submit)="verifyRequested.emit($event)">
+  <form class="identity-mfa__form" (submit)="verifyRequested.emit($event)">
     <label for="mfa-code">Código de tu aplicación de autenticación</label>
     <input id="mfa-code" name="mfaCode" inputmode="numeric" autocomplete="one-time-code"
       required minlength="6" maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
-    <p>El código cambia cada treinta segundos; uno ya utilizado no puede repetirse. También puedes usar un código de respaldo de un solo uso.</p>
+    <p class="identity-field-help">El código cambia cada 30 segundos y no puede reutilizarse. También puedes introducir un respaldo de un solo uso.</p>
     <button type="submit" [disabled]="busy() || identity.restoring()">{{ busy() ? 'Verificando…' : 'Verificar' }}</button>
   </form>
   <button type="button" [disabled]="busy() || identity.restoring()" (click)="identity.clear()">Volver a iniciar sesión</button>
