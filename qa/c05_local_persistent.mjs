@@ -55,7 +55,7 @@ const migrationNames = [
   '012_c05_scoped_profile', '013_c05_abuse_signals',
   '014_c05_operator_recovery', '015_c05_session_devices',
   '016_c05_existing_identity_join',
-  '017_c05_totp_sha1_exclusive'
+  '017_c05_totp_sha1_exclusive', '018_c05_session_idle_policy'
 ];
 const operatorMailboxes = [
   'identity.one@example.test', 'identity.two@example.test', 'identity.three@example.test'
@@ -279,8 +279,8 @@ function provisionOperators(env) {
       '--isolated-test-bundle'
     ], { input: JSON.stringify({ Mailbox: mailbox, Password: password }), env: { ...process.env, ...env } });
     const bundle = JSON.parse(bundleText);
-    mysqlSql(`INSERT INTO c05_platform_operator(operator_id,login_hmac,conflict_login_hmac,password_phc,protected_seed,active,security_revision,last_totp_step,protected_contact)
-      VALUES(UNHEX('${bundle.id}'),UNHEX('${bundle.hash}'),UNHEX('${bundle.conflict}'),'${bundle.phc}',UNHEX('${bundle.envelope}'),TRUE,1,NULL,UNHEX('${bundle.contact}'));`);
+    mysqlSql(`INSERT INTO c05_platform_operator(operator_id,login_hmac,conflict_login_hmac,password_phc,protected_seed,active,security_revision,last_totp_step,protected_contact,can_manage_session_policy)
+      VALUES(UNHEX('${bundle.id}'),UNHEX('${bundle.hash}'),UNHEX('${bundle.conflict}'),'${bundle.phc}',UNHEX('${bundle.envelope}'),TRUE,1,NULL,UNHEX('${bundle.contact}'),${mailbox === operatorMailboxes[0] ? 'TRUE' : 'FALSE'});`);
     for (const hash of bundle.backupHashes) mysqlSql(`INSERT INTO c05_platform_mfa_backup VALUES(UNHEX('${bundle.id}'),UNHEX('${hash}'),NULL);`);
     access.push({ mailbox, password, seed: bundle.seed, backups: bundle.backups });
   }
@@ -685,7 +685,7 @@ function databaseSnapshot(containerName, rootPassword) {
   ], { input: sql, env: { ...process.env, MYSQL_PWD: rootPassword } });
   const rows = output.split(/\r?\n/).filter(Boolean);
   const migrations = rows.filter(line => line.startsWith('migration:'));
-  if (![16, 17].includes(migrations.length) ||
+  if (![16, 17, 18].includes(migrations.length) ||
       rows.length !== migrations.length + c05SnapshotCounts.length ||
       !migrations.every((line, i) =>
         line.startsWith('migration:' + (i + 1) + ':') &&
@@ -747,7 +747,7 @@ function verifyBackup() {
   const archive = readFileSync(target);
   const manifest = JSON.parse(readFileSync(target + '.manifest.json', 'utf8'));
   if (manifest?.format !== 'C05-local-backup-v1' || manifest.database !== database ||
-      ![16, 17].includes(manifest.migrations) ||
+      ![16, 17, 18].includes(manifest.migrations) ||
       !/^[a-f0-9]{64}$/.test(manifest.snapshotSha256 || '') ||
       sha256Bytes(archive) !== manifest.archiveSha256 ||
       !manifest.secrets || typeof manifest.secrets !== 'object' ||

@@ -8,7 +8,7 @@ Este procedimiento es exclusivamente local y de desarrollo. No conecta con produ
 - Volumen persistente aislado: `crecisol-c05-mysql-data`.
 - Base de datos: `crecisol_c05`.
 - Puerto MySQL: `127.0.0.1:3310`.
-- Migraciones 001–017 para instalaciones nuevas tras el mantenimiento SHA1 aplicadas con control de versión y SHA-256.
+- Migraciones 001–018 para instalaciones nuevas tras el mantenimiento SHA1 aplicadas con control de versión y SHA-256.
 - API C05 local: `http://127.0.0.1:5187`.
 - Frontend C05 local: `http://127.0.0.1:4201/cuenta`.
 - Buzón SMTP local para pruebas: `http://127.0.0.1:8025/`.

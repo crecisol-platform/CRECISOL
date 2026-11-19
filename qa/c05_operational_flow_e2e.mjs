@@ -99,7 +99,7 @@ function provisionPlatformOperator(mailbox) {
   const bundle = JSON.parse(run('dotnet', ['backend/tools/Crecisol.LocalIdentityProvisioner/bin/Release/net10.0/Crecisol.LocalIdentityProvisioner.dll', '--isolated-test-bundle'],
     { input: JSON.stringify({ Mailbox: mailbox, Password: operatorPassword }), env: { ...process.env, ...keys } }));
   confidential.push(operatorPassword, bundle.seed, bundle.phc, bundle.envelope, ...bundle.backups);
-  sql(`INSERT INTO c05_platform_operator(operator_id,login_hmac,conflict_login_hmac,password_phc,protected_seed,active,security_revision,last_totp_step,protected_contact) VALUES(UNHEX('${bundle.id}'),UNHEX('${bundle.hash}'),UNHEX('${bundle.conflict}'),'${bundle.phc}',UNHEX('${bundle.envelope}'),TRUE,1,NULL,UNHEX('${bundle.contact}'))`);
+  sql(`INSERT INTO c05_platform_operator(operator_id,login_hmac,conflict_login_hmac,password_phc,protected_seed,active,security_revision,last_totp_step,protected_contact,can_manage_session_policy) VALUES(UNHEX('${bundle.id}'),UNHEX('${bundle.hash}'),UNHEX('${bundle.conflict}'),'${bundle.phc}',UNHEX('${bundle.envelope}'),TRUE,1,NULL,UNHEX('${bundle.contact}'),${mailbox === 'identity.one@example.test' ? 'TRUE' : 'FALSE'})`);
   for (const hash of bundle.backupHashes) sql(`INSERT INTO c05_platform_mfa_backup VALUES(UNHEX('${bundle.id}'),UNHEX('${hash}'),NULL)`);
   return { mailbox, password: operatorPassword, seed: bundle.seed, id: bundle.id, backups: bundle.backups };
 }
@@ -205,9 +205,9 @@ try {
   }, 'MySQL 8.4 readiness', 120000);
   const port = run('docker', ['port', name, '3306/tcp']).split(':').at(-1);
   for (const migration of ['001_c05_identity_operational', '002_c05_registration_proof_outbox', '003_c05_pending_account_completion',
-    '004_c05_local_proof_delivery', '005_c05_operational_login_directory', '006_c05_operational_identity_flow', '007_c05_passkeys', '008_c05_terms_invitations', '009_c05_pairing', '010_c05_security_notices', '011_c05_platform_recovery', '012_c05_scoped_profile', '013_c05_abuse_signals', '014_c05_operator_recovery', '015_c05_session_devices', '016_c05_existing_identity_join', '017_c05_totp_sha1_exclusive'])
+    '004_c05_local_proof_delivery', '005_c05_operational_login_directory', '006_c05_operational_identity_flow', '007_c05_passkeys', '008_c05_terms_invitations', '009_c05_pairing', '010_c05_security_notices', '011_c05_platform_recovery', '012_c05_scoped_profile', '013_c05_abuse_signals', '014_c05_operator_recovery', '015_c05_session_devices', '016_c05_existing_identity_join', '017_c05_totp_sha1_exclusive', '018_c05_session_idle_policy'])
     sql(readFileSync(path.join(root, 'database/migrations', migration + '.sql'), 'utf8'));
-  check(sql('SELECT VERSION()').startsWith('8.4.'), 'seventeen forward migrations on real MySQL 8.4');
+  check(sql('SELECT VERSION()').startsWith('8.4.'), 'eighteen forward migrations on real MySQL 8.4');
   sql(`INSERT INTO c04_tenant_catalog VALUES
     (UNHEX('${A}'),'tenant-a','Tenant A',3,2,1,UTC_TIMESTAMP(6)),
     (UNHEX('${B}'),'tenant-b','Tenant B',3,2,1,UTC_TIMESTAMP(6));
@@ -637,10 +637,10 @@ try {
   for (const p of children.reverse()) { p.kill(); }
   await delay(1500);
   // Reversible migrations are exercised on the actual populated schema.
-  for (const migration of ['017_c05_totp_sha1_exclusive', '016_c05_existing_identity_join', '015_c05_session_devices', '014_c05_operator_recovery', '013_c05_abuse_signals', '012_c05_scoped_profile', '011_c05_platform_recovery', '010_c05_security_notices', '009_c05_pairing', '008_c05_terms_invitations', '007_c05_passkeys', '006_c05_operational_identity_flow', '005_c05_operational_login_directory', '004_c05_local_proof_delivery',
+  for (const migration of ['018_c05_session_idle_policy', '017_c05_totp_sha1_exclusive', '016_c05_existing_identity_join', '015_c05_session_devices', '014_c05_operator_recovery', '013_c05_abuse_signals', '012_c05_scoped_profile', '011_c05_platform_recovery', '010_c05_security_notices', '009_c05_pairing', '008_c05_terms_invitations', '007_c05_passkeys', '006_c05_operational_identity_flow', '005_c05_operational_login_directory', '004_c05_local_proof_delivery',
     '003_c05_pending_account_completion', '002_c05_registration_proof_outbox', '001_c05_identity_operational'])
     sql(readFileSync(path.join(root, 'database/migrations', migration + '.down.sql'), 'utf8'));
-  check(sql('SHOW TABLES') === '', 'seventeen reverse migrations leave no schema tables; SHA256 credentials not restored by down');
+  check(sql('SHOW TABLES') === '', 'eighteen reverse migrations leave no schema tables; SHA256 credentials not restored by down');
   console.log(`PASS C05 ${focus ? focus + ' focused' : 'operational integrated'} assertions=${assertions}; A/B/C evidence is limited to executed cases; no production certification`);
   }
 } catch (error) {
