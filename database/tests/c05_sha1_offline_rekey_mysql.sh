@@ -11,9 +11,14 @@ DIR="$(mktemp -d)"
 PASS="$(openssl rand -hex 32)"
 TOKEN="$(openssl rand -hex 32)"
 KEY="$(openssl rand -hex 32)"
+# The destructor owns *only* resources created after the absence check.
+# A pre-existing owner volume/container is NEVER removed, even on error.
+OWNED=0
 cleanup() {
- docker rm -f "$NAME" >/dev/null 2>&1 || true
- docker volume rm "$VOL" >/dev/null 2>&1 || true
+ if [ "$OWNED" = '1' ]; then
+   docker rm -f "$NAME" >/dev/null 2>&1 || true
+   docker volume rm "$VOL" >/dev/null 2>&1 || true
+ fi
  rm -rf "$DIR"
 }
 trap cleanup EXIT
@@ -25,6 +30,7 @@ fi
 umask 077
 printf '%s\n' "$PASS" > "$DIR/mysql-root.password"
 docker volume create "$VOL" >/dev/null
+OWNED=1
 docker run -d --name "$NAME" -p 127.0.0.1:3310:3306 \
  -v "$VOL:/var/lib/mysql" -e "MYSQL_ROOT_PASSWORD=$PASS" \
  -e MYSQL_DATABASE=crecisol_c05 "$IMAGE" >/dev/null
