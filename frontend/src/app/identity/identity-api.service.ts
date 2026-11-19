@@ -86,7 +86,9 @@ export class IdentityApiService {
   readonly assistedReference = signal('');
   readonly profile = signal<{ displayName: string; language: string; timeZone: string } | null>(null);
   readonly photo = signal('');
-  private readonly sessionWindow = new BrowserSessionWindow(() => { void this.logout(); });
+  // A suspended tab must not log out another active tab sharing this HttpOnly cookie.
+  // Server expiry/revocation is enforced independently on every API call.
+  private readonly sessionWindow = new BrowserSessionWindow(() => { this.clear(); });
   private challengeTimer: ReturnType<typeof setTimeout> | undefined;
 
   async requestRegistration(mailbox: string): Promise<void> {

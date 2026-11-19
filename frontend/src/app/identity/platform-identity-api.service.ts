@@ -41,7 +41,9 @@ export class PlatformIdentityApiService {
   private factorTimeout: ReturnType<typeof setTimeout> | undefined;
   private recoveryTimeout: ReturnType<typeof setTimeout> | undefined;
   private shareTimeout: ReturnType<typeof setTimeout> | undefined;
-  private readonly sessionWindow = new BrowserSessionWindow(() => { void this.logout(); });
+  // A suspended tab must not log out another active tab sharing this HttpOnly cookie.
+  // Server expiry/revocation is enforced independently on every API call.
+  private readonly sessionWindow = new BrowserSessionWindow(() => { this.clear(); });
   readonly case = signal<{ caseId: string; readyAtUtc: string | null; blocked: boolean; consumed: boolean } | null>(null);
   constructor() {
     if (typeof document !== 'undefined') {
