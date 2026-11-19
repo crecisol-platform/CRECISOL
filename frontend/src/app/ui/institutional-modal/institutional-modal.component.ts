@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, effect, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, effect, inject, input, output, signal } from '@angular/core';
 
 /**
  * Modal institucional C05. Usa la top layer nativa (<dialog>.showModal):
@@ -13,6 +13,10 @@ import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, e
   styleUrl: './institutional-modal.component.css'
 })
 export class InstitutionalModalComponent implements OnDestroy {
+  // Angular input "title" is also a native HTML tooltip attribute on the host.
+  // Remove the DOM attribute before presenting the dialog; the input signal and
+  // the dialog's accessible title remain unchanged.
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private static sequence = 0;
   private static readonly openInstances = new Set<InstitutionalModalComponent>();
   private static originalOverflow = '';
@@ -73,6 +77,7 @@ export class InstitutionalModalComponent implements OnDestroy {
   open(): void {
     const dialog = this.surface?.nativeElement;
     if (!dialog || dialog.open) return;
+    this.host.nativeElement.removeAttribute('title');
     this.previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.localFeedback.set('');
     this.localError.set('');
