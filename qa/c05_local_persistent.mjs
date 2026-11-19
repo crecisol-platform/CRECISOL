@@ -634,6 +634,7 @@ async function start() {
 
 function status() {
   const db = hasContainer() && containerRunning();
+  if (db) assertExistingC05Container(); // Never query a same-name container backed by another volume.
   let migrations = 0, operators = 0, tenantsCount = 0, accounts = 0, activeMemberships = 0, pendingMemberships = 0;
   if (db) {
     try {
