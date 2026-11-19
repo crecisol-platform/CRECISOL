@@ -1,5 +1,13 @@
 <section aria-labelledby="session-heading">
-          <h2 id="session-heading">Sesión verificada</h2>
+          <h2 id="session-heading">
+            @switch (view()) {
+              @case ('perfil') { Mi perfil }
+              @case ('llaves') { Mis llaves de acceso }
+              @case ('seguridad') { Seguridad de mi cuenta }
+              @case ('administracion') { Aprobaciones de mi empresa }
+              @default { Sesión verificada }
+            }
+          </h2>
           @if (identity.recoveryCodes().length) {
             <aside aria-label="Códigos de respaldo MFA">
               <p>Guarda estos códigos fuera del navegador. Cada código sirve una sola vez y no volverá a mostrarse.</p>
@@ -7,8 +15,12 @@
               <button type="button" (click)="identity.recoveryCodes.set([])">Ya guardé mis códigos</button>
             </aside>
           }
-          <p>La autenticación no concede por sí sola autorización a recursos privados.</p>
-          <p role="status">La sesión vence tras {{ identity.idleMinutes() }} minutos de inactividad. La actividad legítima renueva el plazo desde el servidor.</p>
+          @if (view() === 'resumen' || view() === 'ingresar') {
+            <p>Administra tus dispositivos y verifica los accesos autorizados en el contexto de esta empresa.</p>
+          } @else {
+            <p>Los cambios de seguridad se protegen con las verificaciones correspondientes a esta cuenta.</p>
+          }
+          <p class="identity-session-policy">Por seguridad, la sesión vence tras <strong>{{ identity.idleMinutes() }} minutos de inactividad</strong>. Solo una actividad validada puede renovar el plazo.</p>
           @if (view() === 'perfil') {
 <section class="operator-readonly-panel identity-profile" aria-label="Perfil de mi empresa">
   <div class="identity-panel-heading">
