@@ -47,19 +47,19 @@ export class IdentityWorkspaceComponent {
     .slice(0, this.showAllEvents() ? 50 : 8)
     .map(event => ({
       ...event,
-      dateLabel: identityDateLabel(event.atUtc),
+      dateLabel: identityDateLabel(event.atUtc, this.identity.profile()?.timeZone),
       actionLabel: identityEventLabel(event.action),
       outcomeLabel: identityOutcomeLabel(event.outcome)
     })));
   readonly sessionRows = computed(() => this.identity.sessions().map(session => ({
     ...session,
-    lastActivityLabel: identityDateLabel(session.lastSeenAtUtc),
-    expiryLabel: identityDateLabel(session.expiresAtUtc),
+    lastActivityLabel: identityDateLabel(session.lastSeenAtUtc, this.identity.profile()?.timeZone),
+    expiryLabel: identityDateLabel(session.expiresAtUtc, this.identity.profile()?.timeZone),
     referenceLabel: identityReferenceLabel(session.id)
   })));
   readonly passkeyRows = computed(() => this.identity.passkeys().map(key => ({
     ...key,
-    registrationLabel: identityDateLabel(key.createdAtUtc),
+    registrationLabel: identityDateLabel(key.createdAtUtc, this.identity.profile()?.timeZone),
     referenceLabel: identityReferenceLabel(key.id)
   })));
 
