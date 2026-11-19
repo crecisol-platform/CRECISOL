@@ -8,7 +8,7 @@ import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import { createServer, request as httpRequest } from 'node:http';
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { gzipSync, gunzipSync } from 'node:zlib';
-import { mkdirSync, existsSync, readFileSync, writeFileSync, chmodSync, openSync } from 'node:fs';
+import { mkdirSync, existsSync, readFileSync, writeFileSync, chmodSync, openSync, statSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -182,7 +182,8 @@ function ensureRuntime() {
 
 function assertExistingC05Container() {
   const mounts = JSON.parse(run('docker', ['inspect', '--format', '{{json .Mounts}}', container]));
-  const ports = JSON.parse(run('docker', ['inspect', '--format', '{{json .NetworkSettings.Ports}}', container]));
+  // HostConfig persists across docker stop; NetworkSettings.Ports becomes null when stopped.
+  const ports = JSON.parse(run('docker', ['inspect', '--format', '{{json .HostConfig.PortBindings}}', container]));
   const configuredImage = run('docker', ['inspect', '--format', '{{.Config.Image}}', container]);
   assertC05ContainerIdentity(mounts, ports, configuredImage, volume, rootPasswordFile, image);
 }
@@ -633,6 +634,7 @@ async function start() {
 
 function status() {
   const db = hasContainer() && containerRunning();
+  if (db) assertExistingC05Container(); // Never query a same-name container backed by another volume.
   let migrations = 0, operators = 0, tenantsCount = 0, accounts = 0, activeMemberships = 0, pendingMemberships = 0;
   if (db) {
     try {
@@ -647,41 +649,150 @@ function status() {
   console.log(JSON.stringify({ container, volume, database, mysqlPort, dockerRunning: db, migrations, operators, tenants: tenantsCount, accounts, activeMemberships, pendingMemberships, secretDir }, null, 2));
 }
 
+
+const c05SnapshotCounts = [
+  ['operators', 'c05_platform_operator'],
+  ['accounts', 'c05_identity_account'],
+  ['identityFactors', 'c05_identity_mfa_factor'],
+  ['platformBackups', 'c05_platform_mfa_backup'],
+  ['identitySessions', 'c05_identity_session'],
+  ['platformSessions', 'c05_platform_session'],
+  ['memberships', 'c05_identity_membership'],
+  ['tenants', 'c04_tenant_catalog']
+];
+const backupSecretFiles = [
+  rootPasswordFile, runtimeEnvFile, accessFile, mailboxPasswordFile, tenantAccountsFile
+];
+function sha256Bytes(value) { return createHash('sha256').update(value).digest('hex'); }
+
+function databaseSnapshot(containerName, rootPassword) {
+  const sql = [
+    "SELECT CONCAT('migration:',version,':',sha256) FROM c05_schema_migrations ORDER BY version",
+    ...c05SnapshotCounts.map(([name, table]) =>
+      "SELECT CONCAT('" + name + ":',COUNT(*)) FROM " + table)
+  ].join(';\n') + ';';
+  const output = run('docker', [
+    'exec', '-i', '-e', 'MYSQL_PWD', containerName,
+    'mysql', '-uroot', '-N', '-B', database
+  ], { input: sql, env: { ...process.env, MYSQL_PWD: rootPassword } });
+  const rows = output.split(/\r?\n/).filter(Boolean);
+  const migrations = rows.filter(line => line.startsWith('migration:'));
+  if (![16, 17].includes(migrations.length) ||
+      rows.length !== migrations.length + c05SnapshotCounts.length ||
+      !migrations.every((line, i) =>
+        line.startsWith('migration:' + (i + 1) + ':') &&
+        /^[a-f0-9]{64}$/i.test(line.split(':')[2] || '')) ||
+      !c05SnapshotCounts.every(([name], i) =>
+        new RegExp('^' + name + ':[0-9]+$').test(rows[migrations.length + i]))) {
+    throw new Error('Invalid C05 backup snapshot or incomplete migration ledger.');
+  }
+  return { migrations: migrations.length, digest: sha256Bytes(rows.join('\n')) };
+}
+
 function backup() {
-  const runtime = ensureRuntime();
-  ensureContainer(runtime.rootPassword);
+  // Never create or mutate a database or encryption key during a backup.
+  for (const required of [rootPasswordFile, runtimeEnvFile, accessFile]) {
+    if (!existsSync(required)) throw new Error('Existing private C05 key/access files are required before backup.');
+  }
+  if (!hasContainer() || !containerRunning()) throw new Error('C05 database must already be running to back up.');
+  assertExistingC05Container();
+  const password = readFileSync(rootPasswordFile, 'utf8').trim();
+  const snapshot = databaseSnapshot(container, password);
+  const dump = run('docker', [
+    'exec', '-e', 'MYSQL_PWD', container,
+    'mysqldump', '-uroot', '--single-transaction', '--quick',
+    '--routines', '--triggers', '--hex-blob', database
+  ], { env: { ...process.env, MYSQL_PWD: password }, maxBuffer: 64 * 1024 * 1024 });
+  if (!dump.includes('CREATE TABLE')) throw new Error('Empty or invalid C05 SQL dump; refusing backup.');
+  const archived = gzipSync(Buffer.from(dump + '\n', 'utf8'));
   mkdirSync(backupDir, { recursive: true, mode: 0o700 });
-  const stamp = new Date().toISOString().replaceAll(':', '').replaceAll('.', '');
-  const dump = run('docker', ['exec', '-e', `MYSQL_PWD=${runtime.rootPassword}`, container, 'mysqldump', '-uroot', '--single-transaction', '--routines', '--triggers', '--hex-blob', database], { maxBuffer: 64 * 1024 * 1024 });
-  const target = path.join(backupDir, `crecisol-c05-${stamp}.sql.gz`);
-  secureWrite(target, gzipSync(Buffer.from(dump, 'utf8')));
-  console.log(`Backup created outside repository: ${target}`);
+  const filename = 'crecisol-c05-' + new Date().toISOString().replace(/[:.]/g, '-') +
+    '-' + randomHex(4) + '.sql.gz';
+  const target = path.join(backupDir, filename);
+  const secrets = {};
+  for (const file of backupSecretFiles) {
+    if (existsSync(file)) secrets[path.basename(file)] = sha256Bytes(readFileSync(file));
+  }
+  const manifest = {
+    format: 'C05-local-backup-v1', database, migrations: snapshot.migrations,
+    snapshotSha256: snapshot.digest, archiveSha256: sha256Bytes(archived), secrets
+  };
+  secureWrite(target, archived);
+  secureWrite(target + '.manifest.json', JSON.stringify(manifest, null, 2) + '\n');
+  secureWrite(path.join(backupDir, '.latest'), filename + '\n');
+  console.log('C05 backup and private-key fingerprint manifest created outside repository: ' + target);
+  console.log('IMPORTANT: separately archive the protected key/access files; the manifest does not contain or copy secrets.');
 }
 
 function verifyBackup() {
   const latestFile = path.join(backupDir, '.latest');
-  const files = existsSync(latestFile) ? readFileSync(latestFile, 'utf8').trim() : '';
-  const target = files || (existsSync(backupDir) ? run('bash', ['-lc', `ls -1t '${backupDir}'/*.sql.gz | head -1`]) : '');
-  if (!target || !existsSync(target)) throw new Error('Run backup first; no SQL backup found.');
-  const temp = `crecisol-c05-restore-${process.pid}`;
+  if (!existsSync(latestFile)) throw new Error('No managed C05 backup; legacy backups require separate manual review.');
+  const filename = readFileSync(latestFile, 'utf8').trim();
+  if (!/^crecisol-c05-[A-Za-z0-9TZ-]+\.sql\.gz$/.test(filename))
+    throw new Error('Unsafe C05 backup filename; refusing restore.');
+  const target = path.join(backupDir, filename);
+  if (!existsSync(target) || !existsSync(target + '.manifest.json') ||
+      !statSync(target).isFile())
+    throw new Error('C05 backup archive or manifest not available.');
+  const archive = readFileSync(target);
+  const manifest = JSON.parse(readFileSync(target + '.manifest.json', 'utf8'));
+  if (manifest?.format !== 'C05-local-backup-v1' || manifest.database !== database ||
+      ![16, 17].includes(manifest.migrations) ||
+      !/^[a-f0-9]{64}$/.test(manifest.snapshotSha256 || '') ||
+      sha256Bytes(archive) !== manifest.archiveSha256 ||
+      !manifest.secrets || typeof manifest.secrets !== 'object' ||
+      ![rootPasswordFile, runtimeEnvFile, accessFile].every(file =>
+        manifest.secrets[path.basename(file)] === sha256Bytes(readFileSync(file)))) {
+    throw new Error('C05 archive or external encryption/access key fingerprints mismatch; refusing restore.');
+  }
+  for (const [name, digest] of Object.entries(manifest.secrets)) {
+    if (!backupSecretFiles.some(file => path.basename(file) === name) ||
+        !/^[a-f0-9]{64}$/.test(digest) ||
+        !backupSecretFiles.some(file => path.basename(file) === name &&
+          existsSync(file) && sha256Bytes(readFileSync(file)) === digest)) {
+      throw new Error('C05 protected secret file changed/missing; refusing restore.');
+    }
+  }
+  const unzipped = gunzipSync(archive);
+  const temp = 'crecisol-c05-restore-' + randomHex(8);
   const tempPassword = randomHex(32);
+  let ownedContainerId = null;
   try {
-    run('docker', ['run', '-d', '--name', temp, '-p', '127.0.0.1::3306', '-e', `MYSQL_ROOT_PASSWORD=${tempPassword}`, '-e', `MYSQL_DATABASE=${database}`, image]);
+    // No port or persistent volume. Delete ONLY the container actually created by this call.
+    ownedContainerId = run('docker', [
+      'run', '-d', '--name', temp, '--network', 'none',
+      '-e', 'MYSQL_ROOT_PASSWORD', '-e', 'MYSQL_DATABASE=' + database, image
+    ], { env: { ...process.env, MYSQL_ROOT_PASSWORD: tempPassword } });
     const deadline = Date.now() + 120000;
+    let ready = false;
     while (Date.now() < deadline) {
-      try { if (run('docker', ['exec', '-e', `MYSQL_PWD=${tempPassword}`, temp, 'mysql', '-uroot', '-Nse', 'SELECT 1']) === '1') break; } catch { /* wait */ }
+      try {
+        const answer = run('docker', [
+          'exec', '-e', 'MYSQL_PWD', ownedContainerId,
+          'mysql', '-uroot', '-Nse', 'SELECT 1'
+        ], { env: { ...process.env, MYSQL_PWD: tempPassword } });
+        if (answer === '1') { ready = true; break; }
+      } catch { /* MySQL starts inside a temporary network-isolated container. */ }
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1000);
     }
-    const unzipped = gunzipSync(readFileSync(target));
-    run('docker', ['exec', '-i', '-e', `MYSQL_PWD=${tempPassword}`, temp, 'mysql', '-uroot', database], { input: unzipped });
-    const result = run('docker', ['exec', '-e', `MYSQL_PWD=${tempPassword}`, temp, 'mysql', '-uroot', '-Nse', `SELECT COUNT(*) FROM c05_schema_migrations`, database]);
-    // Backups from BEFORE the destructive cutover intentionally contain 16,
-    // while new backups contain 17. Both must restore in a disposable container,
-    // and neither may be installed into the active C05 environment automatically.
-    if (!['16', '17'].includes(result)) throw new Error('Restored migration count is incomplete.');
-    console.log(`Backup restore verification PASS: ${result} migrations in isolated temporary container.`);
+    if (!ready) throw new Error('Temporary C05 restore MySQL did not become ready.');
+    run('docker', [
+      'exec', '-i', '-e', 'MYSQL_PWD', ownedContainerId,
+      'mysql', '-uroot', database
+    ], { input: unzipped, env: { ...process.env, MYSQL_PWD: tempPassword },
+         maxBuffer: 64 * 1024 * 1024 });
+    const restored = databaseSnapshot(ownedContainerId, tempPassword);
+    if (restored.migrations !== manifest.migrations ||
+        restored.digest !== manifest.snapshotSha256)
+      throw new Error('Restored C05 database differs in ledger/account/factor/session/tenant counts.');
+    console.log('PASS C05 isolated SQL restore: migrations=' + restored.migrations +
+      '; ledger and entity counts match; external private key fingerprints match.');
+    console.log('This verifies present keys; an independently protected key copy and owner device MFA test are still required.');
   } finally {
-    try { run('docker', ['rm', '-f', temp]); } catch { /* best effort for temporary container only */ }
+    if (ownedContainerId) {
+      try { run('docker', ['rm', '-f', ownedContainerId]); }
+      catch { /* no other container is targeted */ }
+    }
   }
 }
 
