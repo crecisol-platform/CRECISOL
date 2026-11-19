@@ -42,7 +42,28 @@ export class PlatformIdentityPanelComponent {
       if (action === 'operator-recovery-enroll') await this.platform.confirmRecovery(field('code'));
       if (action === 'operator-incident') await this.platform.reportIncident(field('token'));
       if (action === 'profile') await this.platform.saveProfile(field('displayName'), field('language'), field('timeZone'));
-      form.reset(); this.message.set('Solicitud procesada por el ámbito de identidad de plataforma.');
+      form.reset();
+      const confirmation: Record<string, string> = {
+        login: 'Continúa con la verificación del operador.',
+        mfa: 'Acceso del operador verificado.',
+        case: 'La consulta del caso de identidad finalizó.',
+        'find-case': 'La solicitud de localización fue procesada bajo los controles de privacidad.',
+        review: 'La revisión del caso de identidad quedó registrada.',
+        share: 'La operación de entrega del parte de recuperación finalizó.',
+        password: 'La contraseña del operador se actualizó. Las sesiones anteriores pueden requerir nuevo acceso.',
+        'session-policy': 'La política de inactividad se actualizó para las sesiones autorizadas.',
+        'revoke-all': 'Se cerraron las sesiones de plataforma.',
+        'mailbox-request': 'La solicitud de cambio de correo fue registrada.',
+        'mailbox-complete': 'El correo del operador se actualizó.',
+        factor: 'El reemplazo de MFA está preparado. Completa la verificación del nuevo factor.',
+        'factor-confirm': 'El nuevo autenticador de operador fue confirmado.',
+        'operator-recovery-request': 'Se registró la solicitud de recuperación del operador.',
+        'operator-recovery-complete': 'Se inició el reenrolamiento protegido del operador.',
+        'operator-recovery-enroll': 'El nuevo factor de operador quedó confirmado.',
+        'operator-incident': 'El incidente de operador quedó registrado.',
+        profile: 'Los datos del perfil de operador se actualizaron.'
+      };
+      this.message.set(confirmation[action] ?? 'La operación de plataforma finalizó correctamente.');
     });
   }
   async logout(): Promise<void> { await this.run(() => this.platform.logout()); }
