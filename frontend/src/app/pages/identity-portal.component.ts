@@ -155,7 +155,31 @@ export class IdentityPortalComponent {
         default: throw new Error('identity_unavailable');
       }
       form.reset();
-      this.message.set(action === 'recovery-request' ? 'Si la cuenta cumple los requisitos, recibirás instrucciones en el correo verificado.' : 'Solicitud procesada. Los cambios de credenciales cierran las sesiones anteriores.');
+      const confirmation: Record<string, string> = {
+        'membership-request': 'Solicitud de membresía recibida. El acceso depende de una aprobación posterior.',
+        profile: 'Los datos de tu perfil se actualizaron en esta empresa.',
+        'assisted-request': 'Si se cumplen las condiciones, se comunicarán los siguientes pasos por el canal verificado.',
+        'assisted-complete': 'Solicitud de recuperación completada. Inicia sesión con tus credenciales actualizadas.',
+        'assisted-handoff': 'La recuperación asistida ha finalizado. Vuelve a iniciar sesión.',
+        'passkey-recovery': 'Se completó la recuperación del segundo factor. Configura un autenticador nuevo antes de continuar.',
+        incident: 'El aviso de seguridad se registró.',
+        'sessions-all': 'Se cerraron las sesiones anteriores. Vuelve a iniciar sesión.',
+        'pairing-approve': 'Se confirmó la solicitud de vinculación del navegador.',
+        terms: 'Aceptaste la versión vigente de las condiciones de esta cuenta.',
+        'invitation-issue': 'La invitación se registró para la empresa actual.',
+        'invitation-accept': 'La invitación fue aceptada. El acceso queda sujeto a las autorizaciones de la empresa.',
+        'passkey-add': 'La llave de acceso se registró. Puedes consultar el listado actualizado.',
+        'passkey-revoke': 'La llave de acceso seleccionada fue revocada.',
+        private: 'La comprobación de acceso privado finalizó.',
+        password: 'La contraseña se actualizó. Las sesiones anteriores pueden requerir un nuevo acceso.',
+        factor: 'La solicitud de reemplazo del segundo factor se completó.',
+        'mailbox-request': 'La solicitud de cambio de correo se registró. Revisa el nuevo buzón para continuar.',
+        'mailbox-complete': 'El cambio de correo se completó.',
+        membership: 'La decisión de membresía quedó registrada.',
+        'recovery-request': 'Si la cuenta cumple los requisitos, recibirás instrucciones en el correo verificado.',
+        'recovery-complete': 'La recuperación de acceso se completó. Inicia sesión de nuevo.'
+      };
+      this.message.set(confirmation[action] ?? 'La operación finalizó correctamente.');
     });
   }
 
