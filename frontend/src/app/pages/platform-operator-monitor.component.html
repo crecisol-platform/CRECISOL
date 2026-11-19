@@ -1,5 +1,21 @@
-<section class="operator-readonly-panel" aria-label="Señales de abuso"><h3>Señales de abuso de identidad</h3>
-          <p>Solo cantidades agregadas; no expone correos, direcciones IP ni datos de otros negocios.</p>
-          <button type="button" [disabled]="busy()" (click)="loadAbuseRequested.emit()">Consultar señales agregadas</button>
-          <ul>@for (signal of platform.abuse(); track signal.kind) { <li>{{ signal.kind }}: {{ signal.count }}</li> }</ul>
-        </section>
+<section class="operator-readonly-panel identity-monitor" aria-label="Señales de abuso">
+  <div class="identity-panel-heading">
+    <div>
+      <h3>Señales de protección de identidad</h3>
+      <p>Indicadores agregados de seguridad. Esta vista no expone correos, direcciones IP ni información de otras empresas.</p>
+    </div>
+    <button type="button" [disabled]="busy()" (click)="loadAbuseRequested.emit()">Actualizar indicadores</button>
+  </div>
+  @if (platform.abuse().length) {
+    <ul class="identity-monitor-list" aria-label="Indicadores agregados">
+      @for (signal of platform.abuse(); track signal.kind) {
+        <li>
+          <span class="identity-monitor-category">{{ signal.kind }}</span>
+          <strong class="identity-monitor-count">{{ signal.count }}</strong>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="identity-empty-copy">Consulta las señales agregadas para revisar los indicadores disponibles.</p>
+  }
+</section>

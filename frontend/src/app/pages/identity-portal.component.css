@@ -49,3 +49,81 @@
   .account-main { min-height: 0; border-radius: 1rem; }
 }
 @media (prefers-reduced-motion: reduce) { .account-nav a { transition: none; } }
+
+/* C05 ACCOUNT SHELL QUALITY PASS — public identity stays consistent with C01/C02. */
+.account-layout--single { max-width: 990px; }
+.account-layout--single .account-main { padding: clamp(1.5rem, 3.25vw, 3rem); }
+.account-nav--workspace { gap: .25rem; margin-bottom: 2.1rem; }
+.account-nav--workspace a { min-height: 2.65rem; white-space: normal; }
+.account-terms {
+  margin-top: 2.3rem;
+  padding: 1.2rem 1.4rem;
+  border: 1px solid #dce8f2;
+  border-radius: 1rem;
+  background: #f8fbfe;
+}
+.account-terms summary {
+  padding: .25rem 0;
+  color: #183d61;
+  font-size: .95rem;
+  font-weight: 760;
+  cursor: pointer;
+}
+.account-terms[open] summary { margin-bottom: 1rem; }
+.account-terms h3 { font-size: 1.04rem; margin: 1.2rem 0 .7rem; color: #173650; }
+.account-terms .terms-content {
+  white-space: pre-wrap;
+  max-width: 70ch;
+  padding: .9rem 1rem;
+  border: 1px solid #e0e9f2;
+  border-radius: .8rem;
+  background: #fff;
+  color: #3a5570;
+  font-size: .9rem;
+  line-height: 1.7;
+}
+.account-terms button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-height: 2.65rem;
+  margin: .9rem 0 0;
+  padding: .65rem 1rem;
+  border: 1px solid #c9dce9;
+  border-radius: .7rem;
+  background: #ecf4fa;
+  color: #174d78;
+  font: inherit;
+  font-weight: 720;
+  font-size: .89rem;
+  cursor: pointer;
+}
+.account-terms button:hover:not(:disabled) { background: #e0edf7; }
+.account-terms button:disabled { opacity: .55; cursor: not-allowed; }
+.account-terms form { display: grid; gap: .85rem; margin: 1.2rem 0 0; }
+.account-terms form label { display: flex; align-items: flex-start; gap: .7rem; font-size: .9rem; color: #274a68; }
+.account-terms form input[type='checkbox'] { margin-top: .2rem; width: 1.1rem; height: 1.1rem; flex: 0 0 auto; }
+.account-terms form button { background: #104678; border-color: #104678; color: #fff; margin: .25rem 0 0; }
+.account-terms form button:hover:not(:disabled) { background: #0b355d; }
+.account-operator-link { padding-top: 1.3rem; }
+@media (max-width: 740px) {
+  .account-nav--workspace {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    scroll-snap-type: x proximity;
+  }
+  .account-nav--workspace a {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
+  .account-terms { padding: 1rem; }
+  .account-layout--single .account-main { padding: 1.2rem; }
+}
+@media (forced-colors: active) {
+  .account-terms { border: 1px solid CanvasText; }
+  .account-terms button { border: 1px solid ButtonText; }
+}

@@ -11,7 +11,12 @@
     <p>Permite localizar un caso cuando el titular perdió su referencia o recibió una referencia neutra por una solicitud previa. Requiere un motivo de soporte y MFA fresco; no devuelve empresas, perfiles ni correos privados.</p>
           <form (submit)="actionRequested.emit({ event: $event, action: 'find-case' })">
             <label for="find-case-mail">Correo indicado por el titular del caso</label><input id="find-case-mail" name="mailbox" type="email" required maxlength="254" autocomplete="off">
-            <label for="find-case-realm">Ámbito del caso de identidad</label><select id="find-case-realm" name="realm"><option value="TENANT_IDENTITY">Identidad de negocio</option><option value="PLATFORM_OPERATOR">Operador de plataforma</option></select>
+            <label for="find-case-realm">Ámbito del caso de identidad</label>
+            <select id="find-case-realm" name="realm" required>
+              <option value="" selected disabled>Selecciona un ámbito</option>
+              <option value="TENANT_IDENTITY">Identidad de negocio</option>
+              <option value="PLATFORM_OPERATOR">Operador de plataforma</option>
+            </select>
             <label for="find-case-reason">Motivo de localización del caso</label><input id="find-case-reason" name="reason" required minlength="12" maxlength="240">
             <label for="find-case-code">Código MFA para localizar caso</label><input id="find-case-code" name="code" required maxlength="32" autocomplete="one-time-code">
             <button [disabled]="busy()">Localizar referencia de identidad</button>
@@ -20,8 +25,12 @@
   </cs-institutional-modal>
 </div>
         @if (platform.case(); as item) {
-          <p>Referencia {{ item.caseId }} · bloqueado {{ item.blocked }} · completado {{ item.consumed }}</p>
-          <p>Disponible después de: {{ item.readyAtUtc ?? 'pendiente de doble revisión' }}</p>
+          <div class="identity-case-summary" role="group" aria-label="Estado del caso consultado">
+            <strong>Expediente consultado</strong>
+            <p>Referencia del caso: <code>{{ item.caseId }}</code></p>
+            <p>Estado: <strong>{{ item.blocked ? 'Bloqueado' : item.consumed ? 'Completado' : 'En revisión' }}</strong></p>
+            <p>{{ item.readyAtUtc ? 'Fecha mínima habilitada: ' + item.readyAtUtc : 'Pendiente de dos revisiones independientes' }}</p>
+          </div>
         }
         <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog21.open()">
@@ -30,9 +39,16 @@
   <cs-institutional-modal #opDialog21 title="Revisar identidad del titular" description="Necesita evidencia independiente y un segundo factor vigente."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="actionRequested.emit({ event: $event, action: 'review' })">
-          <label for="review-case">Caso a revisar</label><input id="review-case" name="caseId" required maxlength="36">
-          <label for="review-decision">Decisión de identidad</label><select id="review-decision" name="decision"><option value="approve">Aprobar</option><option value="reject">Rechazar</option></select>
-          <label for="review-evidence">SHA-256 del expediente de verificación</label><input id="review-evidence" name="evidenceHash" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
+          <label for="review-case">Caso a revisar</label><input id="review-case" name="caseId" [value]="platform.case()?.caseId ?? ''" required maxlength="36">
+          <label for="review-decision">Decisión de identidad</label>
+          <select id="review-decision" name="decision" required>
+            <option value="" selected disabled>Selecciona una decisión</option>
+            <option value="approve">Aprobar</option>
+            <option value="reject">Rechazar</option>
+          </select>
+          <label for="review-evidence">Huella de integridad del expediente (SHA-256)</label>
+          <input id="review-evidence" name="evidenceHash" required pattern="[0-9a-fA-F]{64}" autocomplete="off" aria-describedby="review-evidence-help">
+          <p id="review-evidence-help" class="identity-field-help">Se utiliza para comprobar la integridad de la evidencia documental, no como algoritmo del autenticador.</p>
           <label for="review-reason">Motivo de la revisión de identidad</label><input id="review-reason" name="reason" required minlength="12" maxlength="240">
           <label for="review-code">Código MFA fresco para revisar</label><input id="review-code" name="code" required pattern="([0-9]{6}|[0-9a-fA-F]{32})" autocomplete="one-time-code">
           <label><input name="verified" type="checkbox" required> Verifiqué la identidad de forma independiente; no usé preguntas personales ni solo un correo nuevo</label>
@@ -48,7 +64,7 @@
   <cs-institutional-modal #opDialog22 title="Emitir parte de recuperación" (dismissed)="platform.handoffShare.set('')" description="Entrega la parte únicamente por un canal seguro al titular verificado."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="actionRequested.emit({ event: $event, action: 'share' })">
-          <label for="share-case">Caso para entrega segura</label><input id="share-case" name="caseId" required maxlength="36">
+          <label for="share-case">Caso para entrega segura</label><input id="share-case" name="caseId" [value]="platform.case()?.caseId ?? ''" required maxlength="36">
           <label for="share-code">Código MFA para emitir mi parte</label><input id="share-code" name="code" required pattern="([0-9]{6}|[0-9a-fA-F]{32})" autocomplete="one-time-code">
           <button [disabled]="busy()">Emitir mi parte de recuperación</button>
         </form>
