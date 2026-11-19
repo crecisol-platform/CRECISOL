@@ -92,7 +92,7 @@ jobs:
           npm run build --prefix frontend
           cd frontend
           npx playwright install --with-deps chromium
-          npx playwright test tests/c05-institutional-modals.spec.ts tests/c05-identity-responsive.spec.ts --reporter=line
+          npx playwright test tests/c05-institutional-modals.spec.ts tests/c05-identity-responsive.spec.ts tests/c05-totp-async-privacy.spec.ts --reporter=line
 
   accessibility-d:
     name: "D | Accesibilidad profunda, reflow, foco y preferencias"
