@@ -326,6 +326,71 @@ try {
   } else {
   const browserContext = await browser.newContext();
   const page = await browserContext.newPage();
+
+  // REAL MySQL+HTTP session-policy matrix: only the platform security admin
+  // may modify the global inactivity window; no tenant or reviewer can.
+  check((await platform('session-policy')).status === 401,
+    'anonymous caller cannot inspect protected session policy');
+  check((await api('platform/session-policy', {}, undefined, 'tenant-a.example.test')).status === 400,
+    'tenant identity host cannot impersonate platform session policy');
+  const reviewerLogin = await platform('login', { mailbox: operators[1].mailbox, password: operators[1].password });
+  check(reviewerLogin.status === 200, 'independent nonadministrator can request their own MFA');
+  const reviewerProof = await platform('mfa', {
+    challenge: reviewerLogin.data.challenge, code: operators[1].backups.pop()
+  });
+  check(reviewerProof.status === 200, 'nonadministrator operator MFA establishes only a normal session');
+  const reviewerToken = reviewerProof.data.sessionToken; confidential.push(reviewerToken);
+  const reviewerPolicy = await platform('session-policy', {}, reviewerToken);
+  check(reviewerPolicy.status === 200 && reviewerPolicy.data.idleMinutes === 30 && reviewerPolicy.data.canManage === false,
+    'read-only operator sees default 30-minute policy without change privileges');
+  check((await platform('session-policy/update', {
+    minutes: '120', expectedRevision: '1', code: operators[1].backups.at(-1)
+  }, reviewerToken)).status === 401, 'operator without policy grant cannot modify global idle timeout');
+  const adminLogin = await platform('login', { mailbox: operators[0].mailbox, password: operators[0].password });
+  check(adminLogin.status === 200, 'synthetic security-policy administrator requires password challenge');
+  const adminProof = await platform('mfa', { challenge: adminLogin.data.challenge, code: operators[0].backups.pop() });
+  check(adminProof.status === 200 && adminProof.data.idleMinutes === 30,
+    'policy administrator authenticates by independent MFA and starts with 30-minute idle window');
+  const adminToken = adminProof.data.sessionToken; confidential.push(adminToken);
+  const initialPolicy = await platform('session-policy', {}, adminToken);
+  check(initialPolicy.status === 200 && initialPolicy.data.canManage === true &&
+    initialPolicy.data.idleMinutes === 30 && initialPolicy.data.revision === 1,
+    'administrator reads server version and initial 30-minute inactivity');
+  for (const [minutes, expectedRevision] of [['4', '1'], ['121', '1'], ['30', '0']]) {
+    check((await platform('session-policy/update', {
+      minutes, expectedRevision, code: operators[0].backups.at(-1)
+    }, adminToken)).status === 401, 'invalid timeout or stale policy revision denied');
+  }
+  const shorter = await platform('session-policy/update', {
+    minutes: '5', expectedRevision: '1', code: operators[0].backups.pop()
+  }, adminToken);
+  check(shorter.status === 200 && shorter.data.idleMinutes === 5 && shorter.data.revision === 2,
+    'authorized MFA revision changes global inactivity from 30 to 5 minutes');
+  check((await api('sessions', {}, adminToken)).status === 401,
+    'platform-only admin credential cannot enter a business tenant realm');
+  const restoredPolicy = await platform('session-policy/update', {
+    minutes: '30', expectedRevision: '2', code: operators[0].backups.pop()
+  }, adminToken);
+  check(restoredPolicy.status === 200 && restoredPolicy.data.idleMinutes === 30 &&
+    restoredPolicy.data.revision === 3, 'MFA administrator restores configured 30-minute idle window');
+  check(sql('SELECT idle_minutes FROM c05_session_idle_policy WHERE policy_id=1') === '30',
+    'inactivity policy is persisted globally in MySQL rather than browser storage');
+  const live = await platform('sessions', {}, reviewerToken);
+  check(live.status === 200 && live.data.sessions.length > 0, 'another operator session is unaffected by permitted configuration');
+  // Simulate old last activity with SQL ONLY in the disposable database; do
+  // not wait 30 actual minutes or forge the API clock.
+  const adminDigest = createHmac('sha256', Buffer.from(keys.CRECISOL_C05_TOKEN_HMAC_KEY, 'hex'))
+    .update('C05/platform-session:' + adminToken).digest('hex');
+  sql("UPDATE c05_platform_session SET last_seen_at_utc=UTC_TIMESTAMP(6)-INTERVAL 31 MINUTE, " +
+    "expires_at_utc=UTC_TIMESTAMP(6)+INTERVAL 30 MINUTE WHERE token_hmac=UNHEX('" + adminDigest + "')");
+  check((await platform('sessions', {}, adminToken)).status === 401,
+    'server rejects inactivity of 31 minutes even when token has a later absolute expiry');
+  check(sql("SELECT COUNT(*) FROM c05_platform_session WHERE token_hmac=UNHEX('" +
+    adminDigest + "') AND revoked_at_utc IS NOT NULL") === '1',
+    'server permanently revokes expired operator session, preventing later policy increase from reviving it');
+  check((await platform('sessions', {}, reviewerToken)).status === 200,
+    'unrelated authorized operator remains active after stale-session rejection');
+
   await register('approver@example.test', page);
   check((await api('login', { mailbox: 'approver@example.test', password })).status === 401, 'pending account cannot log in');
   // Privileged setup is offline, explicit, audited and one-time. It creates no
