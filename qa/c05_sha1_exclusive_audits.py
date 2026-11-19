@@ -31,7 +31,8 @@ F={
  "MinSessionIdleMinutes = 5", "MaxSessionIdleMinutes = 120",
  "can_manage_session_policy", "await PlatformTotp(u, operatorPrincipal",
  "expected != revision", "last_seen_at_utc=UTC_TIMESTAMP(6)",
- "PlatformSessionPolicy", "SessionIdleMinutes"],
+ "PlatformSessionPolicy", "SessionIdleMinutes",
+ "SET expires_at_utc=DATE_ADD(last_seen_at_utc,INTERVAL @idle MINUTE)"],
 "database/migrations/018_c05_session_idle_policy.sql":[
  "idle_minutes SMALLINT UNSIGNED NOT NULL DEFAULT 30",
  "CHECK(idle_minutes BETWEEN 5 AND 120)",

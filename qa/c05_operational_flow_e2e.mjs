@@ -369,6 +369,13 @@ try {
   }, adminToken);
   check(shorter.status === 200 && shorter.data.idleMinutes === 5 && shorter.data.revision === 2,
     'authorized MFA revision changes global inactivity from 30 to 5 minutes');
+  const reviewerHash = createHmac('sha256', Buffer.from(keys.CRECISOL_C05_TOKEN_HMAC_KEY, 'hex'))
+    .update('C05/platform-session:' + reviewerToken).digest('hex');
+  const reviewerWindow = () => Number(sql(
+    "SELECT TIMESTAMPDIFF(SECOND,last_seen_at_utc,expires_at_utc) FROM c05_platform_session " +
+    "WHERE token_hmac=UNHEX('" + reviewerHash + "') AND revoked_at_utc IS NULL"));
+  check(reviewerWindow() === 300,
+    'reducing global policy immediately narrows another active operator session to five minutes');
   check((await api('sessions', {}, adminToken)).status === 401,
     'platform-only admin credential cannot enter a business tenant realm');
   const restoredPolicy = await platform('session-policy/update', {
@@ -378,6 +385,8 @@ try {
     restoredPolicy.data.revision === 3, 'MFA administrator restores configured 30-minute idle window');
   check(sql('SELECT idle_minutes FROM c05_session_idle_policy WHERE policy_id=1') === '30',
     'inactivity policy is persisted globally in MySQL rather than browser storage');
+  check(reviewerWindow() === 1800,
+    'increasing global policy immediately extends a previously valid existing session to 30 minutes');
   const live = await platform('sessions', {}, reviewerToken);
   check(live.status === 200 && live.data.sessions.length > 0, 'another operator session is unaffected by permitted configuration');
   // Simulate old last activity with SQL ONLY in the disposable database; do

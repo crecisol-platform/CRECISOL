@@ -93,6 +93,21 @@ public sealed partial class MySqlOperationalIdentityFlow
                   (expires_at_utc<=UTC_TIMESTAMP(6) OR
                    last_seen_at_utc<=UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE)
             """, ("idle", requested));
+        // Apply the requested deadline to every still-valid session now,
+        // including existing tenants and independent operators. A revoked or
+        // previously expired credential is NEVER revived on policy increase.
+        await u.Run("""
+            UPDATE c05_identity_session
+            SET expires_at_utc=DATE_ADD(last_seen_at_utc,INTERVAL @idle MINUTE)
+            WHERE revoked_at_utc IS NULL AND expires_at_utc>UTC_TIMESTAMP(6)
+              AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE
+            """, ("idle", requested));
+        await u.Run("""
+            UPDATE c05_platform_session
+            SET expires_at_utc=DATE_ADD(last_seen_at_utc,INTERVAL @idle MINUTE)
+            WHERE revoked_at_utc IS NULL AND expires_at_utc>UTC_TIMESTAMP(6)
+              AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE
+            """, ("idle", requested));
         u.IdleMinutes = requested;
         u.PolicyRevision = revision + 1;
         await SlidePlatformSession(u, tokenHash, requested);
