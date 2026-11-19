@@ -7,9 +7,9 @@
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import { createServer, request as httpRequest } from 'node:http';
 import { connect } from 'node:net';
-import { createHash, createHmac, randomBytes } from 'node:crypto';
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { gzipSync, gunzipSync } from 'node:zlib';
-import { mkdirSync, existsSync, readFileSync, writeFileSync, chmodSync, openSync, statSync } from 'node:fs';
+import { mkdirSync, existsSync, readFileSync, writeFileSync, chmodSync, openSync, statSync, lstatSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -72,8 +72,20 @@ const receipts = [];
 
 function secureWrite(file, content) {
   mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
+  const dir = lstatSync(path.dirname(file));
+  if (!dir.isDirectory() || dir.isSymbolicLink() ||
+      (process.platform !== 'win32' && (dir.mode & 0o077) !== 0))
+    throw new Error('Unsafe private C05 directory permissions or symlink.');
+  const existing = lstatSync(file, { throwIfNoEntry: false });
+  if (existing && (!existing.isFile() || existing.isSymbolicLink()))
+    throw new Error('Unsafe private C05 file target; refusing overwrite.');
   writeFileSync(file, content, { mode: 0o600 });
-  try { chmodSync(file, 0o600); } catch { /* Windows ACLs are handled by the owner profile. */ }
+  if (process.platform !== 'win32') chmodSync(file, 0o600);
+  else { try { chmodSync(file, 0o600); } catch { /* Windows ACL requires owner-side verification. */ } }
+  const saved = lstatSync(file);
+  if (!saved.isFile() || saved.isSymbolicLink() ||
+      (process.platform !== 'win32' && (saved.mode & 0o077) !== 0))
+    throw new Error('Private C05 file permissions cannot be assured.');
 }
 
 function randomHex(bytes = 32) { return randomBytes(bytes).toString('hex'); }
@@ -673,6 +685,24 @@ function assertNoUnresolvedRekey() {
     throw new Error('Unresolved SHA1 offline operator rekey; reconcile protected pending credentials before backup/restore.');
 }
 function sha256Bytes(value) { return createHash('sha256').update(value).digest('hex'); }
+// Authenticated manifests prevent coherent archive+manifest substitution when
+// a backup directory is writable but the separately held C05 key is not.
+function backupManifestMac(manifest) {
+  const keyHex = loadEnvFile().CRECISOL_C05_TOKEN_HMAC_KEY || '';
+  if (!/^[0-9a-fA-F]{64}$/.test(keyHex))
+    throw new Error('Protected C05 manifest authentication key is unavailable.');
+  const { manifestMacSha256, ...data } = manifest;
+  return createHmac('sha256', Buffer.from(keyHex, 'hex'))
+    .update('C05/backup-manifest/v2\0').update(JSON.stringify(data)).digest('hex');
+}
+function authenticatedManifest(manifest) {
+  if (manifest.format !== 'C05-local-backup-v2' ||
+      !/^[a-f0-9]{64}$/.test(manifest.manifestMacSha256 || ''))
+    return false;
+  const expected = Buffer.from(backupManifestMac(manifest), 'hex');
+  const actual = Buffer.from(manifest.manifestMacSha256, 'hex');
+  return timingSafeEqual(expected, actual);
+}
 
 function databaseSnapshot(containerName, rootPassword) {
   const sql = [
@@ -724,9 +754,10 @@ function backup() {
     if (existsSync(file)) secrets[path.basename(file)] = sha256Bytes(readFileSync(file));
   }
   const manifest = {
-    format: 'C05-local-backup-v1', database, migrations: snapshot.migrations,
+    format: 'C05-local-backup-v2', database, migrations: snapshot.migrations,
     snapshotSha256: snapshot.digest, archiveSha256: sha256Bytes(archived), secrets
   };
+  manifest.manifestMacSha256 = backupManifestMac(manifest);
   secureWrite(target, archived);
   secureWrite(target + '.manifest.json', JSON.stringify(manifest, null, 2) + '\n');
   secureWrite(path.join(backupDir, '.latest'), filename + '\n');
@@ -747,7 +778,8 @@ function verifyBackup() {
     throw new Error('C05 backup archive or manifest not available.');
   const archive = readFileSync(target);
   const manifest = JSON.parse(readFileSync(target + '.manifest.json', 'utf8'));
-  if (manifest?.format !== 'C05-local-backup-v1' || manifest.database !== database ||
+  if (!['C05-local-backup-v1', 'C05-local-backup-v2'].includes(manifest?.format) ||
+      manifest.database !== database ||
       ![16, 17, 18].includes(manifest.migrations) ||
       !/^[a-f0-9]{64}$/.test(manifest.snapshotSha256 || '') ||
       sha256Bytes(archive) !== manifest.archiveSha256 ||
@@ -759,6 +791,10 @@ function verifyBackup() {
         manifest.secrets[path.basename(file)] === sha256Bytes(readFileSync(file)))) {
     throw new Error('C05 archive or external encryption/access key fingerprints mismatch; refusing restore.');
   }
+  if (manifest.format === 'C05-local-backup-v2' && !authenticatedManifest(manifest))
+    throw new Error('C05 authenticated backup manifest was altered; refusing restore.');
+  if (manifest.format === 'C05-local-backup-v1')
+    console.warn('WARNING: legacy unsigned C05 manifest; restore verification only, not approved for automatic offline upgrade.');
   for (const [name, digest] of Object.entries(manifest.secrets)) {
     if (!backupSecretFiles.some(file => path.basename(file) === name) ||
         !/^[a-f0-9]{64}$/.test(digest) ||
@@ -802,6 +838,7 @@ function verifyBackup() {
     console.log('PASS C05 isolated SQL restore: migrations=' + restored.migrations +
       '; ledger and entity counts match; external private key fingerprints match.');
     console.log('This verifies present keys; an independently protected key copy and owner device MFA test are still required.');
+    return manifest.format;
   } finally {
     if (ownedContainerId) {
       try { run('docker', ['rm', '-f', ownedContainerId]); }
@@ -836,7 +873,8 @@ async function upgradeSessionPolicy() {
   requireSha1OperatorsReady();
   // Verifies SQL recovery in an ephemeral container plus external file hashes.
   // The manifest does not contain independent copies of the keys themselves.
-  verifyBackup();
+  if (verifyBackup() !== 'C05-local-backup-v2')
+    throw new Error('Offline upgrade requires a fresh authenticated C05-v2 SQL backup; legacy manifest is insufficient.');
   const expected = migrationNames.length - 1;
   const history = mysqlSql('SELECT version,sha256 FROM c05_schema_migrations ORDER BY version')
     .split(/\r?\n/).filter(Boolean);

@@ -103,6 +103,20 @@ jobs:
           fi
           cp "$RUNNER_TEMP/c05-archive-reference" "$ARCHIVE"
           node qa/c05_local_persistent.mjs verify-backup
+          LATEST_SIGNED="$(cat "$CRECISOL_C05_PERSISTENT_SECRET_DIR/backups/.latest")"
+          cp "$CRECISOL_C05_PERSISTENT_SECRET_DIR/backups/$LATEST_SIGNED.manifest.json" "$RUNNER_TEMP/c05-signed-manifest-reference"
+          node -e '
+            const fs = require("fs");
+            const file = process.argv[1], manifest = JSON.parse(fs.readFileSync(file, "utf8"));
+            manifest.migrations = 16;
+            fs.writeFileSync(file, JSON.stringify(manifest));
+          ' "$CRECISOL_C05_PERSISTENT_SECRET_DIR/backups/$LATEST_SIGNED.manifest.json"
+          if node qa/c05_local_persistent.mjs verify-backup > "$RUNNER_TEMP/c05-negative-manifest-mac.log" 2>&1; then
+            echo 'FAIL: altered signed backup manifest accepted' >&2
+            exit 1
+          fi
+          cp "$RUNNER_TEMP/c05-signed-manifest-reference" "$CRECISOL_C05_PERSISTENT_SECRET_DIR/backups/$LATEST_SIGNED.manifest.json"
+          node qa/c05_local_persistent.mjs verify-backup
           node qa/c05_local_persistent.mjs stop
           node qa/c05_local_persistent.mjs init
           cmp "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md" "$RUNNER_TEMP/c05-access-reference"

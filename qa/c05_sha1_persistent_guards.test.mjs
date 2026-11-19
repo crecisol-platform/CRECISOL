@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { assertSafeMigrationLedger, assertC05ContainerIdentity } from './c05_sha1_persistent_guards.mjs';
 
 const digest = 'a'.repeat(64);
@@ -63,4 +64,23 @@ test('reject wrong port, image, or missing inspect fields', () => {
   assert.throws(() => valid(mounts(), p), /refusing/i);
   assert.throws(() => valid(mounts(), ports(), 'mysql:latest'), /refusing/i);
   assert.throws(() => valid(null, null), /refusing/i);
+});
+
+test('C05 operator secrets never appear in Docker CLI argument values', () => {
+  const supervisor = readFileSync(new URL('./c05_local_persistent.mjs', import.meta.url), 'utf8');
+  const flow = readFileSync(new URL('./c05_operational_flow_e2e.mjs', import.meta.url), 'utf8');
+  const workflow = readFileSync(new URL('../.github/workflows/c05-sha1-persistent-backup.yml', import.meta.url), 'utf8');
+  assert.ok(supervisor.includes("'exec', '-i', '-e', 'MYSQL_PWD'"));
+  assert.ok(flow.includes("'MYSQL_ROOT_PASSWORD'"));
+  assert.ok(flow.includes("'MYSQL_PWD'"));
+  for (const source of [supervisor, flow])
+    assert.ok(!source.includes('`MYSQL_PWD=\${'), 'MySQL secret interpolated into Docker argv');
+  assert.ok(!workflow.includes('-e "MYSQL_PWD=$ROOT_PWD"'));
+});
+test('C05 backup upgrade gates require authenticated manifest and no symbolic link targets', () => {
+  const source = readFileSync(new URL('./c05_local_persistent.mjs', import.meta.url), 'utf8');
+  assert.ok(source.includes("C05-local-backup-v2"));
+  assert.ok(source.includes("timingSafeEqual"));
+  assert.ok(source.includes("lstatSync(file"));
+  assert.ok(source.includes("legacy manifest is insufficient"));
 });

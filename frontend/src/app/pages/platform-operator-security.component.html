@@ -75,7 +75,7 @@
             [value]="policy.idleMinutes" required inputmode="numeric">
           <input type="hidden" name="expectedRevision" [value]="policy.revision">
           <label for="operator-idle-code">Código MFA del administrador para guardar el cambio</label>
-          <input id="operator-idle-code" name="code" required autocomplete="one-time-code"
+          <input id="operator-idle-code" name="code" type="password" required autocomplete="one-time-code"
             pattern="([0-9]{6}|[0-9a-fA-F]{32})" maxlength="32">
           <button [disabled]="busy()">Guardar tiempo de inactividad</button>
         </form>
