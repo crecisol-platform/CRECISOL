@@ -28,6 +28,7 @@ export class IdentityApiService {
   // Invalidate responses created under an older session or MFA enrollment.
   private sessionRevision = 0;
   private enrollmentRevision = 0;
+  private pairingRevision = 0;
 
   readonly state = this.stateValue.asReadonly();
   readonly restoring = signal(true);
@@ -79,19 +80,24 @@ export class IdentityApiService {
 
   async startPairing(): Promise<void> {
     const revision = this.sessionRevision;
+    const pairingRevision = ++this.pairingRevision;
+    // A new attempt replaces any previous QR and its in-memory signing key.
+    this.pairingKey = null;
+    this.pairingNonce = '';
+    this.pairing.set(null);
     const keys = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign', 'verify']);
     const hex = (bytes: ArrayBuffer): string => Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
     const publicKey = hex(await crypto.subtle.exportKey('spki', keys.publicKey));
     const signature = hex(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, keys.privateKey,
       new TextEncoder().encode('CRECISOL:C05:PAIR:START')));
-    if (revision !== this.sessionRevision) return;
+    if (revision !== this.sessionRevision || pairingRevision !== this.pairingRevision) return;
     const result = await this.post<{ token: string; nonce: string; fingerprint: string }>('pairings/start', { publicKey, signature }, false);
-    if (revision !== this.sessionRevision) return;
+    if (revision !== this.sessionRevision || pairingRevision !== this.pairingRevision) return;
     this.pairingKey = keys.privateKey; this.pairingNonce = result.nonce;
     // CommonJS uses its default export when Angular prebundling is disabled.
     const { default: QRCode } = await import('qrcode');
     const qr = await QRCode.toDataURL(`${location.origin}/cuenta#pair=${result.token}.${result.fingerprint}`, { width: 320, errorCorrectionLevel: 'M' });
-    if (revision !== this.sessionRevision) return;
+    if (revision !== this.sessionRevision || pairingRevision !== this.pairingRevision) return;
     this.pairing.set({ token: result.token, fingerprint: result.fingerprint, qr });
   }
 
@@ -369,17 +375,18 @@ export class IdentityApiService {
 
   private async post<T = unknown>(operation: string, body: object, authenticated = true): Promise<T> {
     if (authenticated && !this.csrfValue) throw new Error('identity_unavailable');
+    const requestRevision = this.sessionRevision;
     try {
       const result = await firstValueFrom(this.http.post<T>(`${API}/${operation}`, body, {
         headers: this.csrfValue ? { 'X-Crecisol-Browser': '1', 'X-Crecisol-CSRF': this.csrfValue } : { 'X-Crecisol-Browser': '1' }
       }).pipe(timeout({ first: 12_000 })));
-      if (authenticated && this.state() === 'authenticated') this.sessionWindow.touch();
+      if (requestRevision === this.sessionRevision && authenticated && this.state() === 'authenticated') this.sessionWindow.touch();
       return result;
     } catch (error) {
       // A policy denial of a resource is not evidence that a session expired.
       // Session validation endpoints decide whether local identity is retained.
-      if (authenticated && operation === 'sessions' && error instanceof HttpErrorResponse && error.status === 401)
-        this.clear();
+      if (requestRevision === this.sessionRevision && authenticated && operation === 'sessions' &&
+          error instanceof HttpErrorResponse && error.status === 401) this.clear();
       throw error;
     }
   }
@@ -403,6 +410,7 @@ export class IdentityApiService {
   clear(): void {
     ++this.sessionRevision;
     ++this.enrollmentRevision;
+    ++this.pairingRevision;
     if (this.challengeTimer) clearTimeout(this.challengeTimer);
     this.challengeTimer = undefined;
     this.sessionWindow.clear();

@@ -184,15 +184,17 @@ export class PlatformIdentityApiService {
   }
   async reportIncident(token: string): Promise<void> { await this.post('incidents/report', { token }); this.clear(); }
   private async post<T = unknown>(route: string, body: object): Promise<T> {
+    const requestRevision = this.sessionRevision;
     try {
       const result = await firstValueFrom(this.http.post<T>(`/api/v1/platform-identity/${route}`, body, {
         headers: this.csrf ? { 'X-Crecisol-Browser': '1', 'X-Crecisol-CSRF': this.csrf } : { 'X-Crecisol-Browser': '1' },
         keepalive: route === 'logout'
       }).pipe(timeout({ first: 12_000 })));
-      if (this.state() === 'authenticated') this.sessionWindow.touch();
+      if (requestRevision === this.sessionRevision && this.state() === 'authenticated') this.sessionWindow.touch();
       return result;
     } catch (error) {
-      if (error instanceof HttpErrorResponse && error.status === 401 && ['session', 'sessions'].includes(route)) this.clear();
+      if (requestRevision === this.sessionRevision && error instanceof HttpErrorResponse &&
+          error.status === 401 && ['session', 'sessions'].includes(route)) this.clear();
       throw error;
     }
   }

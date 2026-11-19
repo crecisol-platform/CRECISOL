@@ -401,3 +401,117 @@ test('B | assisted recovery reference must be removed on session teardown', asyn
     return portal.identity.assistedReference();
   })).toBe('');
 });
+
+
+test('B | late tenant session 401 cannot clear a newer authenticated session', async ({ page }) => {
+  await page.route('**/api/v1/identity/browser/restore', route => route.fulfill({ status: 401, body: '{}' }));
+  let received!: () => void, release!: () => void;
+  const requestSeen = new Promise<void>(resolve => { received = resolve; });
+  const held = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/v1/identity/sessions', async route => {
+    received(); await held;
+    await route.fulfill({ status: 401, contentType: 'application/json', body: '{}' });
+  });
+  await page.goto('/cuenta');
+  await expect.poll(() => page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    return portal.identity.restoring();
+  })).toBe(false);
+  await page.evaluate(() => {
+    const api = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!).identity;
+    api.stateValue.set('authenticated');
+    api.csrfValue = 'a'.repeat(64);
+    (window as unknown as { c05Task?: Promise<void> }).c05Task = api.refreshSessions().catch(() => {});
+  });
+  await requestSeen;
+  await page.evaluate(() => {
+    const api = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!).identity;
+    api.clear();  // Old request belongs to a retired session.
+    api.csrfValue = 'b'.repeat(64);
+    api.stateValue.set('authenticated');  // A different, newly established synthetic session.
+  });
+  release();
+  await page.evaluate(async () => { await (window as unknown as { c05Task?: Promise<void> }).c05Task; });
+  expect(await page.evaluate(() => {
+    const api = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!).identity;
+    return { state: api.state(), csrf: api.csrfValue };
+  })).toEqual({ state: 'authenticated', csrf: 'b'.repeat(64) });
+});
+
+test('B | late operator session 401 cannot clear a newer authenticated session', async ({ page }) => {
+  await page.route('**/api/v1/platform-identity/restore', route => route.fulfill({ status: 401, body: '{}' }));
+  let received!: () => void, release!: () => void;
+  const requestSeen = new Promise<void>(resolve => { received = resolve; });
+  const held = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/v1/platform-identity/sessions', async route => {
+    received(); await held;
+    await route.fulfill({ status: 401, contentType: 'application/json', body: '{}' });
+  });
+  await page.goto('/cuenta?vista=operadores');
+  await expect.poll(() => page.evaluate(() => {
+    const panel = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!);
+    return panel.platform.restoring();
+  })).toBe(false);
+  await page.evaluate(() => {
+    const api = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!).platform;
+    api.state.set('authenticated');
+    api.csrf = 'a'.repeat(64);
+    (window as unknown as { c05Task?: Promise<void> }).c05Task = api.loadSessions().catch(() => {});
+  });
+  await requestSeen;
+  await page.evaluate(() => {
+    const api = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!).platform;
+    api.clear();
+    api.csrf = 'b'.repeat(64);
+    api.state.set('authenticated');
+  });
+  release();
+  await page.evaluate(async () => { await (window as unknown as { c05Task?: Promise<void> }).c05Task; });
+  expect(await page.evaluate(() => {
+    const api = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-platform-identity-panel')!).platform;
+    return { state: api.state(), csrf: api.csrf };
+  })).toEqual({ state: 'authenticated', csrf: 'b'.repeat(64) });
+});
+
+test('B | overlapping pairing attempts cannot publish a stale QR with a newer signing key', async ({ page }) => {
+  await page.route('**/api/v1/identity/browser/restore', route => route.fulfill({ status: 401, body: '{}' }));
+  let received!: () => void, release!: () => void;
+  const requestSeen = new Promise<void>(resolve => { received = resolve; });
+  const held = new Promise<void>(resolve => { release = resolve; });
+  let call = 0;
+  await page.route('**/api/v1/identity/pairings/start', async route => {
+    if (++call === 1) {
+      received(); await held;
+      await route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ token: 'old-pair', nonce: 'old-nonce', fingerprint: 'old-fingerprint' }) });
+    } else {
+      await route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ token: 'new-pair', nonce: 'new-nonce', fingerprint: 'new-fingerprint' }) });
+    }
+  });
+  await page.goto('/cuenta');
+  await expect.poll(() => page.evaluate(() => {
+    const portal = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!);
+    return portal.identity.restoring();
+  })).toBe(false);
+  await page.evaluate(() => {
+    const api = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!).identity;
+    (window as unknown as { c05Tasks?: Promise<void>[] }).c05Tasks = [api.startPairing()];
+  });
+  await requestSeen;
+  await page.evaluate(() => {
+    const api = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!).identity;
+    (window as unknown as { c05Tasks?: Promise<void>[] }).c05Tasks!.push(api.startPairing());
+  });
+  await expect.poll(() => page.evaluate(() => {
+    const api = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!).identity;
+    return api.pairing()?.token ?? '';
+  })).toBe('new-pair');
+  release();
+  await page.evaluate(async () => { await Promise.all((window as unknown as { c05Tasks?: Promise<void>[] }).c05Tasks!); });
+  expect(await page.evaluate(() => {
+    const api = (window as unknown as AngularDebug).ng.getComponent(document.querySelector('cs-identity-portal')!).identity;
+    return { token: api.pairing()?.token ?? '', hasSigningKey: api.pairingKey !== null,
+      qrIsPng: api.pairing()?.qr.startsWith('data:image/png;base64,') ?? false };
+  })).toEqual({ token: 'new-pair', hasSigningKey: true, qrIsPng: true });
+});
