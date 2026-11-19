@@ -14,7 +14,7 @@ interface LoginReceipt {
   readonly sessionToken?: string;
   readonly enrollmentRequired?: boolean;
 }
-interface MfaReceipt { readonly csrfToken: string; readonly expiresAtUtc: string; readonly recoveryCodes?: readonly string[]; }
+interface MfaReceipt { readonly csrfToken: string; readonly expiresAtUtc: string; readonly idleMinutes: number; readonly recoveryCodes?: readonly string[]; }
 
 const API = '/api/v1/identity';
 
@@ -29,22 +29,43 @@ export class IdentityApiService {
   private sessionRevision = 0;
   private enrollmentRevision = 0;
   private pairingRevision = 0;
+  readonly idleMinutes = signal(30);
+  private activityLastSent = 0;
+  private activityInFlight = false;
 
   readonly state = this.stateValue.asReadonly();
   readonly restoring = signal(true);
 
-  constructor() { void this.restore(); }
+  constructor() {
+    if (typeof document !== 'undefined') {
+      for (const event of ['pointerdown', 'keydown', 'touchstart', 'wheel'])
+        document.addEventListener(event, (action) => {
+          if (action.isTrusted) this.onRealActivity();
+        }, { passive: true });
+    }
+    void this.restore();
+  }
+  private onRealActivity(): void {
+    if (this.state() !== 'authenticated' || this.activityInFlight ||
+        Date.now() - this.activityLastSent < 60_000) return;
+    this.activityLastSent = Date.now(); this.activityInFlight = true;
+    void this.post('sessions/keepalive', {}).catch((error: unknown) => {
+      if (error instanceof HttpErrorResponse && error.status === 401) this.clear();
+    }).finally(() => { this.activityInFlight = false; });
+  }
 
   private async restore(): Promise<void> {
     const revision = this.sessionRevision;
     try {
-      const result = await firstValueFrom(this.http.post<{ csrfToken: string; expiresAtUtc: string }>(`${API}/browser/restore`, {}, {
+      const result = await firstValueFrom(this.http.post<{ csrfToken: string; expiresAtUtc: string; idleMinutes: number }>(`${API}/browser/restore`, {}, {
         headers: { 'X-Crecisol-Browser': '1' }
       }).pipe(timeout({ first: 8000 })));
       if (revision !== this.sessionRevision) return;
       if (/^[0-9a-f]{64}$/i.test(result.csrfToken)) {
         this.csrfValue = result.csrfToken;
-        this.sessionWindow.establish(result.expiresAtUtc);
+        this.sessionWindow.establish(result.expiresAtUtc, result.idleMinutes);
+        this.idleMinutes.set(result.idleMinutes);
+        this.activityLastSent = Date.now();
         this.stateValue.set('authenticated');
       }
     } catch { if (revision === this.sessionRevision) this.clear(); }
@@ -65,7 +86,7 @@ export class IdentityApiService {
   readonly assistedReference = signal('');
   readonly profile = signal<{ displayName: string; language: string; timeZone: string } | null>(null);
   readonly photo = signal('');
-  private readonly sessionWindow = new BrowserSessionWindow(30 * 60_000, 15 * 60_000, () => { void this.logout(); });
+  private readonly sessionWindow = new BrowserSessionWindow(() => { void this.logout(); });
   private challengeTimer: ReturnType<typeof setTimeout> | undefined;
 
   async requestRegistration(mailbox: string): Promise<void> {
@@ -247,7 +268,9 @@ export class IdentityApiService {
     this.enrollmentQr.set('');
     this.enrollmentRequired.set(false);
     this.stateValue.set('authenticated');
-    this.sessionWindow.establish(result.expiresAtUtc);
+    this.sessionWindow.establish(result.expiresAtUtc, result.idleMinutes);
+    this.idleMinutes.set(result.idleMinutes);
+    this.activityLastSent = Date.now();
   }
 
   async loginPasskey(): Promise<void> {
@@ -315,10 +338,12 @@ export class IdentityApiService {
 
   async rotateSession(): Promise<void> {
     const revision = this.sessionRevision;
-    const result = await this.post<{ csrfToken: string; expiresAtUtc: string }>('sessions/rotate', {});
+    const result = await this.post<{ csrfToken: string; expiresAtUtc: string; idleMinutes: number }>('sessions/rotate', {});
     if (revision !== this.sessionRevision || this.state() !== 'authenticated') return;
     this.csrfValue = result.csrfToken;
-    this.sessionWindow.establish(result.expiresAtUtc);
+    this.sessionWindow.establish(result.expiresAtUtc, result.idleMinutes);
+    this.idleMinutes.set(result.idleMinutes);
+    this.activityLastSent = Date.now();
     await this.refreshSessions();
   }
 
@@ -377,15 +402,24 @@ export class IdentityApiService {
     if (authenticated && !this.csrfValue) throw new Error('identity_unavailable');
     const requestRevision = this.sessionRevision;
     try {
-      const result = await firstValueFrom(this.http.post<T>(`${API}/${operation}`, body, {
-        headers: this.csrfValue ? { 'X-Crecisol-Browser': '1', 'X-Crecisol-CSRF': this.csrfValue } : { 'X-Crecisol-Browser': '1' }
+      const response = await firstValueFrom(this.http.post<T>(`${API}/${operation}`, body, {
+        headers: this.csrfValue ? { 'X-Crecisol-Browser': '1', 'X-Crecisol-CSRF': this.csrfValue } : { 'X-Crecisol-Browser': '1' },
+        observe: 'response'
       }).pipe(timeout({ first: 12_000 })));
-      if (requestRevision === this.sessionRevision && authenticated && this.state() === 'authenticated') this.sessionWindow.touch();
-      return result;
+      if (requestRevision === this.sessionRevision && authenticated && this.state() === 'authenticated') {
+        const expiry = response.headers.get('X-Crecisol-Session-Expires-At');
+        const minutes = Number(response.headers.get('X-Crecisol-Idle-Minutes'));
+        if (expiry) {
+          this.sessionWindow.establish(expiry, minutes);
+          this.idleMinutes.set(minutes);
+          this.activityLastSent = Date.now();
+        }
+      }
+      return response.body as T;
     } catch (error) {
       // A policy denial of a resource is not evidence that a session expired.
       // Session validation endpoints decide whether local identity is retained.
-      if (requestRevision === this.sessionRevision && authenticated && operation === 'sessions' &&
+      if (requestRevision === this.sessionRevision && authenticated && ['sessions', 'sessions/keepalive'].includes(operation) &&
           error instanceof HttpErrorResponse && error.status === 401) this.clear();
       throw error;
     }
@@ -414,6 +448,8 @@ export class IdentityApiService {
     if (this.challengeTimer) clearTimeout(this.challengeTimer);
     this.challengeTimer = undefined;
     this.sessionWindow.clear();
+    this.activityLastSent = 0;
+    this.idleMinutes.set(30);
     this.challengeValue = null;
     this.csrfValue = null;
     this.stateValue.set('anonymous');

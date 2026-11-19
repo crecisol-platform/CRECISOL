@@ -8,6 +8,7 @@
             </aside>
           }
           <p>La autenticación no concede por sí sola autorización a recursos privados.</p>
+          <p role="status">La sesión vence tras {{ identity.idleMinutes() }} minutos de inactividad. La actividad legítima renueva el plazo desde el servidor.</p>
           @if (view() === 'perfil') {
 <section class="operator-readonly-panel" aria-label="Perfil de mi empresa"><h3>Mi perfil en esta empresa</h3>
             <button type="button" [disabled]="busy()" (click)="loadProfileRequested.emit()">Consultar mi perfil</button>

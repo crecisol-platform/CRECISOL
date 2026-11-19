@@ -28,6 +28,7 @@ export class PlatformIdentityPanelComponent {
       }
       if (action === 'share') await this.platform.releaseShare(field('caseId'), field('code'));
       if (action === 'password') await this.platform.changePassword(field('currentPassword'), field('newPassword'), field('code'));
+      if (action === 'session-policy') await this.platform.updateSessionPolicy(field('minutes'), field('expectedRevision'), field('code'));
       if (action === 'revoke-all') await this.platform.revokeAll(field('code'));
       if (action === 'mailbox-request') await this.platform.requestMailbox(field('mailbox'), field('code'));
       if (action === 'mailbox-complete') await this.platform.completeMailbox(field('token'), field('code'));
@@ -47,6 +48,10 @@ export class PlatformIdentityPanelComponent {
   async logout(): Promise<void> { await this.run(() => this.platform.logout()); }
   async loadProfile(): Promise<void> { await this.run(() => this.platform.loadProfile()); }
   async loadAbuse(): Promise<void> { await this.run(() => this.platform.loadAbuse()); }
+  async openSecurity(): Promise<void> {
+    this.panel.set('seguridad');
+    await this.run(() => this.platform.loadSessionPolicy());
+  }
   async loadSessions(): Promise<void> { await this.run(() => this.platform.loadSessions()); }
   async rotateSession(): Promise<void> { await this.run(() => this.platform.rotateSession()); }
   async revokeSession(id: string): Promise<void> { await this.run(() => this.platform.revokeSession(id)); }

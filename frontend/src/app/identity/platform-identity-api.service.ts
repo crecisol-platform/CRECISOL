@@ -13,6 +13,10 @@ export class PlatformIdentityApiService {
   private csrf = '';
   private challenge = '';
   private sessionRevision = 0;
+  readonly idleMinutes = signal(30);
+  readonly sessionPolicy = signal<{ idleMinutes: number; revision: number; canManage: boolean } | null>(null);
+  private activityLastSent = 0;
+  private activityInFlight = false;
   readonly state = signal<'anonymous' | 'challenge' | 'authenticated'>('anonymous');
   readonly restoring = signal(true);
   readonly handoffShare = signal('');
@@ -37,16 +41,32 @@ export class PlatformIdentityApiService {
   private factorTimeout: ReturnType<typeof setTimeout> | undefined;
   private recoveryTimeout: ReturnType<typeof setTimeout> | undefined;
   private shareTimeout: ReturnType<typeof setTimeout> | undefined;
-  private readonly sessionWindow = new BrowserSessionWindow(15 * 60_000, 5 * 60_000, () => { void this.logout(); });
+  private readonly sessionWindow = new BrowserSessionWindow(() => { void this.logout(); });
   readonly case = signal<{ caseId: string; readyAtUtc: string | null; blocked: boolean; consumed: boolean } | null>(null);
-  constructor() { void this.restore(); }
+  constructor() {
+    if (typeof document !== 'undefined') {
+      for (const event of ['pointerdown', 'keydown', 'touchstart', 'wheel'])
+        document.addEventListener(event, (action) => {
+          if (action.isTrusted) this.onRealActivity();
+        }, { passive: true });
+    }
+    void this.restore();
+  }
+  private onRealActivity(): void {
+    if (this.state() !== 'authenticated' || this.activityInFlight ||
+        Date.now() - this.activityLastSent < 60_000) return;
+    this.activityLastSent = Date.now(); this.activityInFlight = true;
+    void this.post('sessions/keepalive', {}).catch((error: unknown) => {
+      if (error instanceof HttpErrorResponse && error.status === 401) this.clear();
+    }).finally(() => { this.activityInFlight = false; });
+  }
   private async restore(): Promise<void> {
     const revision = this.sessionRevision;
     try {
-      const result = await this.post<{ csrfToken: string; expiresAtUtc: string }>('restore', {});
+      const result = await this.post<{ csrfToken: string; expiresAtUtc: string; idleMinutes: number }>('restore', {});
       if (revision !== this.sessionRevision) return;
       this.csrf = result.csrfToken;
-      this.sessionWindow.establish(result.expiresAtUtc); this.state.set('authenticated');
+      this.sessionWindow.establish(result.expiresAtUtc, result.idleMinutes); this.idleMinutes.set(result.idleMinutes); this.activityLastSent = Date.now(); this.state.set('authenticated');
     } catch { if (revision === this.sessionRevision) this.clear(); }
     finally { this.restoring.set(false); }
   }
@@ -58,10 +78,10 @@ export class PlatformIdentityApiService {
   }
   async mfa(code: string): Promise<void> {
     const revision = this.sessionRevision, challenge = this.challenge;
-    const result = await this.post<{ csrfToken: string; expiresAtUtc: string }>('mfa', { challenge, code });
+    const result = await this.post<{ csrfToken: string; expiresAtUtc: string; idleMinutes: number }>('mfa', { challenge, code });
     if (revision !== this.sessionRevision || challenge !== this.challenge) return;
     if (!/^[A-F0-9]{64}$/i.test(result.csrfToken)) throw new Error('identity_unavailable');
-    this.challenge = ''; this.csrf = result.csrfToken; this.sessionWindow.establish(result.expiresAtUtc); this.state.set('authenticated');
+    this.challenge = ''; this.csrf = result.csrfToken; this.sessionWindow.establish(result.expiresAtUtc, result.idleMinutes); this.idleMinutes.set(result.idleMinutes); this.activityLastSent = Date.now(); this.state.set('authenticated');
   }
   async lookup(caseId: string): Promise<void> {
     const revision = this.sessionRevision;
@@ -124,6 +144,19 @@ export class PlatformIdentityApiService {
     const result = await this.post<{ signals: Array<{ kind: string; count: number }> }>('abuse-summary', {});
     if (revision === this.sessionRevision && this.state() === 'authenticated') this.abuse.set(result.signals);
   }
+  async loadSessionPolicy(): Promise<void> {
+    const revision = this.sessionRevision;
+    const policy = await this.post<{ idleMinutes: number; revision: number; canManage: boolean }>('session-policy', {});
+    if (revision === this.sessionRevision && this.state() === 'authenticated')
+      this.sessionPolicy.set(policy);
+  }
+  async updateSessionPolicy(minutes: string, expectedRevision: string, code: string): Promise<void> {
+    const revision = this.sessionRevision;
+    const policy = await this.post<{ idleMinutes: number; revision: number; canManage: boolean }>(
+      'session-policy/update', { minutes, expectedRevision, code });
+    if (revision === this.sessionRevision && this.state() === 'authenticated')
+      this.sessionPolicy.set(policy);
+  }
   async loadSessions(): Promise<void> {
     const revision = this.sessionRevision;
     const result = await this.post<{ sessions: Array<{ id: string; device: string; lastSeenAtUtc: string; expiresAtUtc: string }> }>('sessions', {});
@@ -131,9 +164,9 @@ export class PlatformIdentityApiService {
   }
   async rotateSession(): Promise<void> {
     const revision = this.sessionRevision;
-    const result = await this.post<{ csrfToken: string; expiresAtUtc: string }>('sessions/rotate', {});
+    const result = await this.post<{ csrfToken: string; expiresAtUtc: string; idleMinutes: number }>('sessions/rotate', {});
     if (revision !== this.sessionRevision || this.state() !== 'authenticated') return;
-    this.csrf = result.csrfToken; this.sessionWindow.establish(result.expiresAtUtc); await this.loadSessions();
+    this.csrf = result.csrfToken; this.sessionWindow.establish(result.expiresAtUtc, result.idleMinutes); this.idleMinutes.set(result.idleMinutes); this.activityLastSent = Date.now(); await this.loadSessions();
   }
   async revokeSession(sessionId: string): Promise<void> { await this.post('sessions/revoke', { sessionId }); await this.loadSessions(); }
   async revokeAll(code: string): Promise<void> { await this.post('sessions/revoke-all', { code }); this.clear(); }
@@ -186,15 +219,24 @@ export class PlatformIdentityApiService {
   private async post<T = unknown>(route: string, body: object): Promise<T> {
     const requestRevision = this.sessionRevision;
     try {
-      const result = await firstValueFrom(this.http.post<T>(`/api/v1/platform-identity/${route}`, body, {
+      const response = await firstValueFrom(this.http.post<T>(`/api/v1/platform-identity/${route}`, body, {
         headers: this.csrf ? { 'X-Crecisol-Browser': '1', 'X-Crecisol-CSRF': this.csrf } : { 'X-Crecisol-Browser': '1' },
-        keepalive: route === 'logout'
+        keepalive: route === 'logout',
+        observe: 'response'
       }).pipe(timeout({ first: 12_000 })));
-      if (requestRevision === this.sessionRevision && this.state() === 'authenticated') this.sessionWindow.touch();
-      return result;
+      if (requestRevision === this.sessionRevision && this.state() === 'authenticated') {
+        const expiry = response.headers.get('X-Crecisol-Session-Expires-At');
+        const minutes = Number(response.headers.get('X-Crecisol-Idle-Minutes'));
+        if (expiry) {
+          this.sessionWindow.establish(expiry, minutes);
+          this.idleMinutes.set(minutes);
+          this.activityLastSent = Date.now();
+        }
+      }
+      return response.body as T;
     } catch (error) {
       if (requestRevision === this.sessionRevision && error instanceof HttpErrorResponse &&
-          error.status === 401 && ['session', 'sessions'].includes(route)) this.clear();
+          error.status === 401 && ['session', 'sessions', 'sessions/keepalive'].includes(route)) this.clear();
       throw error;
     }
   }
@@ -221,6 +263,9 @@ export class PlatformIdentityApiService {
     // A recovery case reference is never kept after logout/session teardown.
     this.recoveryReference.set(''); this.locatedCase.set('');
     this.sessions.set([]);
+    this.sessionPolicy.set(null);
+    this.idleMinutes.set(30);
+    this.activityLastSent = 0;
     this.sessionWindow.clear();
   }
   private showBackups(codes: readonly string[]): void {

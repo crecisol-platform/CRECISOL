@@ -58,3 +58,32 @@
           }
   </cs-institutional-modal>
 </div>
+<div class="institutional-task">
+  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="idlePolicyModal.open()">
+    <span>Caducidad por inactividad de sesiones</span><span aria-hidden="true">›</span>
+  </button>
+  <cs-institutional-modal #idlePolicyModal title="Vencimiento de sesiones por inactividad"
+    description="Configuración global para las cuentas empresariales y operadores de C05. La API aplica el valor en cada operación autenticada."
+    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
+    @if (platform.sessionPolicy(); as policy) {
+      <p role="status">Vigencia actual: <strong>{{ policy.idleMinutes }} minutos sin actividad</strong>.</p>
+      <p>Las sesiones activas renuevan su vencimiento al realizar una actividad válida. Si se supera el plazo, se exige volver a iniciar sesión.</p>
+      @if (policy.canManage) {
+        <form (submit)="actionRequested.emit({ event: $event, action: 'session-policy' })">
+          <label for="operator-idle-minutes">Minutos de inactividad permitidos (5 a 120)</label>
+          <input id="operator-idle-minutes" name="minutes" type="number" min="5" max="120" step="1"
+            [value]="policy.idleMinutes" required inputmode="numeric">
+          <input type="hidden" name="expectedRevision" [value]="policy.revision">
+          <label for="operator-idle-code">Código MFA del administrador para guardar el cambio</label>
+          <input id="operator-idle-code" name="code" required autocomplete="one-time-code"
+            pattern="([0-9]{6}|[0-9a-fA-F]{32})" maxlength="32">
+          <button [disabled]="busy()">Guardar tiempo de inactividad</button>
+        </form>
+      } @else {
+        <p>Consulta habilitada. Solo el administrador de seguridad de plataforma puede modificar este parámetro con MFA.</p>
+      }
+    } @else {
+      <p>Consulta el valor vigente desde la pestaña Seguridad. No se modifica ninguna configuración sin confirmación MFA.</p>
+    }
+  </cs-institutional-modal>
+</div>

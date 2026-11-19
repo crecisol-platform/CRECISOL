@@ -62,7 +62,7 @@
           <button type="button" [attr.aria-current]="panel() === 'casos' ? 'page' : null" (click)="panel.set('casos')">Casos</button>
           <button type="button" [attr.aria-current]="panel() === 'sesiones' ? 'page' : null" (click)="panel.set('sesiones')">Sesiones</button>
           <button type="button" [attr.aria-current]="panel() === 'perfil' ? 'page' : null" (click)="panel.set('perfil')">Perfil</button>
-          <button type="button" [attr.aria-current]="panel() === 'seguridad' ? 'page' : null" (click)="panel.set('seguridad')">Seguridad</button>
+          <button type="button" [attr.aria-current]="panel() === 'seguridad' ? 'page' : null" (click)="openSecurity()">Seguridad</button>
           <button type="button" [attr.aria-current]="panel() === 'monitor' ? 'page' : null" (click)="panel.set('monitor')">Monitor</button>
         </nav>
         <div class="operator-content">
