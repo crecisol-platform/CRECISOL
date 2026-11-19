@@ -255,9 +255,18 @@ export class IdentityApiService {
   }
 
   async enrollMfa(): Promise<void> {
-    if (!this.challengeValue || !this.enrollmentRequired()) throw new Error('identity_unavailable');
-    const result = await this.post<{ secret: string; uri: string }>('mfa/enroll', { challenge: this.challengeValue }, false);
+    const challenge = this.challengeValue;
+    if (!challenge || !this.enrollmentRequired() || this.stateValue() !== 'challenge')
+      throw new Error('identity_unavailable');
+    const result = await this.post<{ secret: string; uri: string }>('mfa/enroll', { challenge }, false);
+    // A session timeout or logout can invalidate enrollment while the HTTP
+    // request or local QR encoder is still running. Never re-display a stale
+    // seed after a new session/challenge has replaced this one.
+    if (this.challengeValue !== challenge || !this.enrollmentRequired() ||
+        this.stateValue() !== 'challenge') return;
     const qr = await createTotpQr(result.secret, result.uri);
+    if (this.challengeValue !== challenge || !this.enrollmentRequired() ||
+        this.stateValue() !== 'challenge') return;
     this.enrollmentSecret.set(result.secret);
     this.enrollmentQr.set(qr);
   }
