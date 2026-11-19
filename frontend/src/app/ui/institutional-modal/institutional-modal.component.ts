@@ -14,6 +14,8 @@ import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, e
 })
 export class InstitutionalModalComponent implements OnDestroy {
   private static sequence = 0;
+  private static readonly openInstances = new Set<InstitutionalModalComponent>();
+  private static originalOverflow = '';
   private readonly instanceId = ++InstitutionalModalComponent.sequence;
   readonly titleId = `cs-modal-title-${this.instanceId}`;
   readonly descriptionId = `cs-modal-description-${this.instanceId}`;
@@ -26,6 +28,8 @@ export class InstitutionalModalComponent implements OnDestroy {
   readonly closeOnSuccess = input(false);
   readonly dismissed = output<void>();
   @ViewChild('surface', { static: true }) private surface?: ElementRef<HTMLDialogElement>;
+  @ViewChild('heading', { static: true }) private heading?: ElementRef<HTMLElement>;
+  @ViewChild('scrollBody', { static: true }) private scrollBody?: ElementRef<HTMLElement>;
   private previouslyFocused: HTMLElement | null = null;
   private submittedWhileOpen = false;
 
@@ -46,6 +50,12 @@ export class InstitutionalModalComponent implements OnDestroy {
     if (!dialog || dialog.open) return;
     this.previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     dialog.showModal();
+    if (InstitutionalModalComponent.openInstances.size === 0)
+      InstitutionalModalComponent.originalOverflow = document.body.style.overflow;
+    InstitutionalModalComponent.openInstances.add(this);
+    document.body.style.overflow = 'hidden';
+    if (this.scrollBody) this.scrollBody.nativeElement.scrollTop = 0;
+    this.heading?.nativeElement.focus();
   }
 
   close(): void {
@@ -58,6 +68,7 @@ export class InstitutionalModalComponent implements OnDestroy {
   }
 
   onClosed(): void {
+    this.releasePageScroll();
     // No retener contraseñas/códigos de formularios cancelados en el DOM.
     this.surface?.nativeElement.querySelectorAll('form').forEach(form => form.reset());
     this.dismissed.emit();
@@ -67,8 +78,15 @@ export class InstitutionalModalComponent implements OnDestroy {
     this.submittedWhileOpen = false;
   }
 
+  private releasePageScroll(): void {
+    if (!InstitutionalModalComponent.openInstances.delete(this)) return;
+    if (InstitutionalModalComponent.openInstances.size === 0)
+      document.body.style.overflow = InstitutionalModalComponent.originalOverflow;
+  }
+
   ngOnDestroy(): void {
     const dialog = this.surface?.nativeElement;
     if (dialog?.open) dialog.close();
+    this.releasePageScroll();
   }
 }
