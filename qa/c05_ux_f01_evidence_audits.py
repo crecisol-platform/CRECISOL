@@ -41,7 +41,9 @@ def dimensions(path: Path) -> tuple[int, int]:
 
 
 def main(root: Path) -> None:
-    evidence = sorted(root.rglob("*.json"))
+    # Playwright's .last-run.json is its own metadata, NOT a screenshot.
+    evidence = sorted(path for path in root.rglob("*.json")
+                      if path.name != ".last-run.json")
     require(len(evidence) >= 252,
             f"expected >=252 visual states before scroll variants, got {len(evidence)}")
     rows = []
@@ -76,8 +78,16 @@ def main(root: Path) -> None:
                     f"{width}px missing required scenario: {prefix}")
         tops = [row for row in rows if row["viewport"]["width"] == width
                 and row["dialogsOpen"] == 1 and "-scrolled-footer" not in row["id"]]
-        require(len(tops) == 27,
-                f"{width}px should document all 27 modal families; found {len(tops)}")
+        # In addition to the 27 base dialogs, state snapshots such as feedback,
+        # TOTP QR and readonly settings can also have dialogsOpen=1.
+        base = [row for row in tops if re.search(r"-modal-\\d+", row["id"])
+                or row["id"].startswith(("operator-recovery-dialog",
+                                         "account-revoke-single-session",
+                                         "operator-revoke-single-session"))]
+        require(len(base) == 27,
+                f"{width}px lost a base modal opening; found {len(base)} of 27")
+        require(len(tops) >= 27,
+                f"{width}px requires at least 27 open-dialog images")
     for width in (320, 390):
         require(any("-scrolled-footer" in row["id"] and row["viewport"]["width"] == width
                     and (row["dialog"] or {}).get("scrollTop", 0) > 0 for row in rows),
