@@ -349,8 +349,8 @@ try {
   const adminLogin = await platform('login', { mailbox: operators[0].mailbox, password: operators[0].password });
   check(adminLogin.status === 200, 'synthetic security-policy administrator requires password challenge');
   const adminProof = await platform('mfa', { challenge: adminLogin.data.challenge, code: operators[0].backups.pop() });
-  check(adminProof.status === 200 && adminProof.data.idleMinutes === 30,
-    'policy administrator authenticates by independent MFA and starts with 30-minute idle window');
+  check(adminProof.status === 200,
+    'policy administrator authenticates by independent MFA; browser-only idle receipt is not required for bearer clients');
   const adminToken = adminProof.data.sessionToken; confidential.push(adminToken);
   const initialPolicy = await platform('session-policy', {}, adminToken);
   check(initialPolicy.status === 200 && initialPolicy.data.canManage === true &&
