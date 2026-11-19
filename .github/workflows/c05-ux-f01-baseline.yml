@@ -1,0 +1,69 @@
+name: CRECISOL C05 UX F01 inventoried visual baseline
+on:
+  push:
+    branches: [feature/c05-ux-f01-inventario-20261119]
+    paths:
+      - 'docs/c05/ux/**'
+      - 'frontend/tests/c05-f01-visual-baseline.spec.ts'
+      - 'qa/c05_ux_f01_inventory_audits.py'
+      - 'qa/c05_ux_f01_evidence_audits.py'
+      - '.github/workflows/c05-ux-f01-baseline.yml'
+permissions:
+  contents: read
+concurrency:
+  group: c05-ux-f01-verified-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  visual-baseline:
+    name: F01 | capture synthetic desktop/tablet/mobile before UX redesign
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: F01 A/B/C documentary and scope audits
+        shell: bash
+        run: |
+          set -euo pipefail
+          for audit in A B C; do
+            python3 qa/c05_ux_f01_inventory_audits.py "$audit"
+          done
+          git diff --name-only f61a79d242288c686a88a7c3dd711f2be9a48c18...HEAD | while IFS= read -r file; do
+            case "$file" in
+              docs/c05/ux/*|qa/c05_ux_f01_inventory_audits.py|qa/c05_ux_f01_evidence_audits.py|frontend/tests/c05-f01-visual-baseline.spec.ts|.github/workflows/c05-ux-f01-baseline.yml) ;;
+              *) echo "F01 NO-GO out-of-scope change: $file"; exit 1 ;;
+            esac
+          done
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v4.4.0
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Types and production build (NO deployment)
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+      - name: Chromium baseline capture with fictitious states
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright install --with-deps chromium
+          npx playwright test tests/c05-f01-visual-baseline.spec.ts --reporter=line
+      - name: F01 C | Verify real PNG/JSON evidence integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_ux_f01_evidence_audits.py frontend/test-results
+      - name: Preserve visual evidence even when Chromium fails
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: c05-f01-synthetic-visual-baseline-${{ github.sha }}
+          path: frontend/test-results/
+          retention-days: 30
+          if-no-files-found: warn
