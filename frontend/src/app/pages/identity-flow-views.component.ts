@@ -96,7 +96,7 @@ export class IdentityWorkspaceComponent {
 
   readonly profileTimeZone = computed(() => identityTimeZoneLabel(this.identity.profile()?.timeZone));
   readonly profileInitials = computed(() => {
-    const words = (this.identity.profile()?.displayName ?? '').trim().split(/\\s+/).filter(Boolean);
+    const words = (this.identity.profile()?.displayName ?? '').trim().split(/\s+/).filter(Boolean);
     const letters = words.slice(0, 2).map(part => part.charAt(0).toLocaleUpperCase('es-HN')).join('');
     return letters || '•';
   });
