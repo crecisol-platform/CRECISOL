@@ -39,7 +39,7 @@ def a() -> None:
         require(handler in work or handler in model,
                 "existing account operation unavailable: " + handler)
     for action in ("async refreshPasskeys()", "async refreshSessions()",
-                   "async loadSecurityEvents()", "async decideMembership(",
+                   "async loadSecurityEvents()", "async loadPendingMemberships(", "async decideMembership(",
                    "async revokeSession("):
         require(action in api, "API contract altered or missing: " + action)
     require("cs-ui-card" in work and "cs-ui-state" in work,
@@ -60,6 +60,15 @@ def b() -> None:
             and 'value=""' in work, "passkey revoke must require explicit listed selection")
     require('name="decision" required' in work and
             '<option value="" selected disabled>' in work, "admin approval preselected")
+    require('<select id="membership-id" name="membershipId" required' in work and
+            '<input id="membership-id"' not in work,
+            "membership must be selected from a server-authorized list rather than typed UUID")
+    require('pendingRows()' in work and 'pendingRequested.emit' in work and
+            'identity.pendingNextCursor()' in work,
+            "tenant-authorized review inbox/pagination not connected")
+    require('name="confirmed" required' in work and
+            "field('confirmed') !== 'on'" in portal,
+            "admin decision must require deliberate confirmation")
     require('name="reason" required minlength="8"' in work and
             'name="code" autocomplete="one-time-code"' in work,
             "admin decision must require reason and MFA code")
@@ -85,7 +94,7 @@ def c() -> None:
     for cls in ("identity-workspace", "identity-profile", "identity-activity",
                 "identity-device-region", "identity-session-overview",
                 "identity-security-intro", "identity-approval-context",
-                "identity-key-list"):
+                "identity-key-list", "identity-pending-list"): 
         require("." + cls in css, "missing visual treatment: " + cls)
     require("forced-colors: active" in css and "prefers-reduced-motion: reduce" in css,
             "accessible alternate media unavailable")
@@ -93,6 +102,8 @@ def c() -> None:
         require("width: " + width in test, "screenshot viewport missing: " + width)
     for route in ("resumen", "perfil", "llaves", "seguridad", "historial", "administracion"):
         require("'" + route + "'" in test, "missing account suite route " + route)
+    require("approval inbox: authorized" in test and "approval inbox: unauthorized" in test,
+            "approval inbox security browser negatives unavailable")
     require("AxeBuilder" in test and "noHorizontalOverflow" in test,
             "axe or responsive overflow verification missing")
     require("127.0.0.1:4204" in config and "reuseExistingServer: false" in config,
