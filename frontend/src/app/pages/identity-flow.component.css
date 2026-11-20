@@ -249,3 +249,26 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
  .login-surface .login-form { gap: .3rem; margin-block: .6rem; }
  .login-surface .login-form label { margin-top: .1rem; }
 }
+
+/* F06 premium · Parent-only operator header, tab hint and permission disclosure. */
+.operator-context { display: flex; flex-wrap: wrap; align-items: baseline; gap: .28rem 1rem; padding: .65rem 1rem; margin: .65rem 0 .7rem; background: #f7fafd; box-shadow: none; border-radius: .8rem; }
+.operator-context__eyebrow { font-size: .64rem; letter-spacing: .075em; }
+.operator-context__section { flex: 1 1 18rem; font-size: .84rem; gap: .2rem .65rem; }
+.operator-context__section strong { font-size: .95rem; }
+.operator-nav-hint { margin: .15rem 0 .35rem; color: #536d83; font-size: .79rem; line-height: 1.4; }
+.operator-navigation { margin: .25rem 0 .7rem; }
+.operator-scope-disclosure { padding: 0; margin: .15rem 0 .9rem; border-left-width: 2px; background: transparent; font-size: .83rem; }
+.operator-scope-disclosure summary { padding: .5rem .8rem; color: #28577c; font-weight: 700; cursor: pointer; line-height: 1.4; }
+.operator-scope-disclosure p { margin: 0; padding: .35rem .85rem .8rem; }
+.operator-content { padding-top: .65rem; border-top-color: #e6edf4; }
+
+@media (min-width: 721px) { .operator-nav-hint { display: none; } }
+@media (max-width: 720px) {
+ .operator-context { padding: .7rem .85rem; margin: .45rem 0 .6rem; }
+ .operator-context__eyebrow { display: none; }
+ .operator-navigation { position: relative; margin: .1rem 0 .55rem; }
+ .operator-nav-hint { font-weight: 600; }
+}
+@media (forced-colors: active) {
+ .operator-context, .operator-scope-disclosure { border: 1px solid CanvasText; background: Canvas; }
+}
