@@ -58,6 +58,7 @@ def a() -> None:
 def b() -> None:
     flow = read(FLOW / "MySqlOperationalIdentityFlow.Authorized.cs")
     queue = read(FLOW / "MySqlOperationalIdentityFlow.PendingApprovals.cs")
+    service = read(SERVICE)
     portal = read(PORTAL / "identity-portal.component.ts")
     html = read(PORTAL / "identity-workspace.component.html")
     contains(flow, ("r.Bearer is not { Length: 64 }", "await Membership(u, tenant, actor)",
