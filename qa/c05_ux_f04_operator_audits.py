@@ -61,7 +61,7 @@ def b() -> None:
          "{{ signal.kind }}" not in monitor, "raw operator identifiers or backend codes shown")
     need("identityReferenceLabel(session.id)" in read(PAGES / "platform-operator-views.component.ts"),
          "full session identifiers not masked")
-    need("names[entry.kind] ?? 'Otra señal de protección'" in present,
+    need("'Otras señales de protección'" in present,
          "unknown abuse codes could be displayed verbatim")
     for gate in ("sessionsRequestRevision", "abuseRequestRevision", "profileRequestRevision",
                  "caseRequestRevision", "this.sessions.set([]); this.sessionsLoaded.set(false);",
@@ -85,6 +85,8 @@ def c() -> None:
     for name in ("operator-section-head", "operator-card", "operator-filters", "operator-list",
                  "operator-empty", "operator-scope-note"):
         need("." + name in css, "missing visual component: " + name)
+    need("font-size: 200%" in tests and "forcedColors: 'active'" in tests,
+         "F04 200% and forced-colors test missing")
     need("prefers-reduced-motion: reduce" in css and "forced-colors: active" in css,
          "accessible visual modes missing")
     for width in ("320", "390", "768", "1024", "1440"):
