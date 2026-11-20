@@ -92,6 +92,7 @@ export class IdentityApiService {
   readonly pendingMemberships = signal<readonly PendingMembershipView[]>([]);
   readonly pendingNextCursor = signal<string | null>(null);
   readonly pendingLoaded = signal(false);
+  readonly pendingDenied = signal(false);
   readonly assistedReference = signal('');
   readonly profile = signal<{ displayName: string; language: string; timeZone: string } | null>(null);
   readonly photo = signal('');
@@ -402,8 +403,22 @@ export class IdentityApiService {
     const revision = this.sessionRevision;
     const cursor = next ? this.pendingNextCursor() : 'start';
     if (!cursor) return;
-    const result = await this.post<{ requests: PendingMembershipView[]; nextCursor: string | null }>(
-      'memberships/pending', { cursor });
+    let result: { requests: PendingMembershipView[]; nextCursor: string | null };
+    try {
+      result = await this.post<{ requests: PendingMembershipView[]; nextCursor: string | null }>(
+        'memberships/pending', { cursor });
+    } catch (error) {
+      if (revision === this.sessionRevision) {
+        // Never retain applicant identifiers or masked PII after a failed
+        // authorization revalidation, session invalidation or network error.
+        this.pendingMemberships.set([]);
+        this.pendingNextCursor.set(null);
+        this.pendingLoaded.set(false);
+        this.pendingDenied.set(error instanceof HttpErrorResponse &&
+          (error.status === 401 || error.status === 403));
+      }
+      throw error;
+    }
     if (revision !== this.sessionRevision || this.state() !== 'authenticated') return;
     const incoming = Array.isArray(result.requests) ? result.requests : [];
     if (next) {
@@ -416,6 +431,7 @@ export class IdentityApiService {
     }
     this.pendingNextCursor.set(result.nextCursor || null);
     this.pendingLoaded.set(true);
+    this.pendingDenied.set(false);
   }
 
   async decideMembership(membershipId: string, decision: string, reason: string, code: string): Promise<void> {
@@ -502,6 +518,7 @@ export class IdentityApiService {
     this.pendingMemberships.set([]);
     this.pendingNextCursor.set(null);
     this.pendingLoaded.set(false);
+    this.pendingDenied.set(false);
     this.profile.set(null); this.photo.set('');
   }
 
