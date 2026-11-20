@@ -4,6 +4,7 @@ import {
   InstitutionalActionComponent,
   InstitutionalCardComponent,
   InstitutionalFieldComponent,
+  InstitutionalFormComponent,
   InstitutionalNavigationComponent,
   InstitutionalNoticeComponent,
   InstitutionalStateComponent,
@@ -36,7 +37,7 @@ const SYNTHETIC_BRAND: PublishedPlatformBrand = {
   standalone: true,
   imports: [
     InstitutionalThemeDirective, InstitutionalActionComponent, InstitutionalCardComponent,
-    InstitutionalFieldComponent, InstitutionalNavigationComponent, InstitutionalNoticeComponent,
+    InstitutionalFieldComponent, InstitutionalFormComponent, InstitutionalNavigationComponent, InstitutionalNoticeComponent,
     InstitutionalStateComponent, InstitutionalTableComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
