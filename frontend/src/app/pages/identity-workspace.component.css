@@ -363,7 +363,7 @@
   .identity-workspace > .institutional-task__trigger { width: 100%; }
   .identity-key-panel .identity-key-list { grid-template-columns: minmax(0, 1fr); }
   .identity-session-overview__status { margin: 0; }
-  .identity-workspace > button:last-child { width: 100%; justify-self: stretch; }
+  .identity-workspace > button:last-child { width: 100%; min-width: 0; max-width: 100%; justify-self: stretch; overflow-wrap: anywhere; }
 }
 @media (forced-colors: active) {
   .identity-history-shell > .identity-activity, .identity-device-region,
