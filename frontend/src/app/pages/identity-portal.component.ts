@@ -4,11 +4,16 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { IdentityApiService } from '../identity/identity-api.service';
 import { PublicBrandService } from '../branding/public-brand.service';
 import { PlatformIdentityPanelComponent } from './platform-identity-panel.component';
+import { InstitutionalThemeDirective } from '../ui/institutional-system';
+import {
+  guestLabels, guestViewFor, isSecondaryGuestView,
+  workspaceLabels, workspaceViewFor
+} from './c05-navigation.model';
 import { IdentityGuestComponent, IdentityMfaComponent, IdentityRecoveryComponent, IdentityWorkspaceComponent } from './identity-flow-views.component';
 
 @Component({
   selector: 'cs-identity-portal', standalone: true,
-  imports: [RouterLink, PlatformIdentityPanelComponent, IdentityGuestComponent, IdentityMfaComponent, IdentityRecoveryComponent, IdentityWorkspaceComponent],
+  imports: [RouterLink, InstitutionalThemeDirective, PlatformIdentityPanelComponent, IdentityGuestComponent, IdentityMfaComponent, IdentityRecoveryComponent, IdentityWorkspaceComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './identity-portal.component.html',
   styleUrl: './identity-portal.component.css'
@@ -26,6 +31,21 @@ export class IdentityPortalComponent {
   readonly incomingPairToken = /^#pair=([A-F0-9]{64})\.([A-F0-9]{12})$/.exec(location.hash)?.[1] ?? '';
   readonly incomingPairFingerprint = /^#pair=([A-F0-9]{64})\.([A-F0-9]{12})$/.exec(location.hash)?.[2] ?? '';
   readonly identity = inject(IdentityApiService);
+  // The URL is kept intact: display normalization never grants access
+  // or calls an API, and deep links remain shareable/back-button friendly.
+  readonly guestView = computed(() => guestViewFor(this.view()));
+  readonly workspaceView = computed(() => workspaceViewFor(this.view()));
+  readonly supplementaryGuestView = computed(() => isSecondaryGuestView(this.guestView()));
+  readonly sectionName = computed(() => {
+    if (this.view() === 'operadores') return 'Personal autorizado';
+    if (this.identity.state() === 'challenge') return 'Verificación en dos pasos';
+    if (this.identity.state() === 'authenticated') return workspaceLabels[this.workspaceView()];
+    return guestLabels[this.guestView()];
+  });
+  readonly publishedTheme = computed(() => {
+    const state = this.brandState();
+    return state.kind === 'ready' ? state.brand : null;
+  });
   readonly busy = signal(false);
   readonly message = signal('');
   readonly error = signal('');
