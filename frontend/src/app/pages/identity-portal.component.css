@@ -433,3 +433,23 @@
 @media (forced-colors: active) {
  .account-layout--guest .account-aside { background: Canvas; border-color: CanvasText; }
 }
+
+
+/* F06 premium / authenticated account: shorten the distance to the active task on mobile. */
+@media (max-width: 720px) {
+  .account-workspace-intro {
+    padding: .95rem 1.05rem; margin-bottom: .8rem; border-radius: .9rem;
+    border-top-width: 2px; gap: .35rem;
+  }
+  .account-workspace-intro .eyebrow { margin: 0 0 .25rem; font-size: .66rem; }
+  .account-workspace-intro h1 { font-size: clamp(1.34rem, 4.7vw, 1.65rem); line-height: 1.18; }
+  .account-workspace-intro p:last-child { margin-top: .35rem; font-size: .82rem; line-height: 1.45; }
+  .account-workspace-shell { gap: .65rem; }
+  .account-nav-mobile-help { margin-bottom: .32rem; font-size: .73rem; }
+  .account-nav--workspace { padding: .24rem; margin-bottom: .55rem; gap: .2rem; }
+  .account-nav--workspace a { padding: .5rem .84rem; min-height: 2.6rem; }
+}
+@media (max-width: 480px) {
+  .account-workspace-intro { padding: .88rem .95rem; }
+  .account-workspace-intro h1 { font-size: 1.37rem; }
+}
