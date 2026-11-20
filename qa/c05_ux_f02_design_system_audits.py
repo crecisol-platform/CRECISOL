@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SYSTEM = ROOT / "frontend/src/app/ui/institutional-system"
 FILES = (
     "institutional-icon", "institutional-action", "institutional-card",
-    "institutional-navigation", "institutional-field", "institutional-table",
+    "institutional-navigation", "institutional-field", "institutional-form", "institutional-table",
     "institutional-notice", "institutional-state"
 )
 
@@ -45,14 +45,14 @@ def audit_a() -> None:
         check("templateUrl:" in typescript and "styleUrl:" in typescript,
               "external component template/styles required: " + name)
         check(bool(html.strip()) and bool(css.strip()), "empty template/style: " + name)
-    check(file(SYSTEM / "index.ts").count("export { Institutional") >= 8,
+    check(file(SYSTEM / "index.ts").count("export { Institutional") >= 9,
           "single module barrel incomplete")
     theme = file(SYSTEM / "institutional-theme.directive.ts")
     check("PublishedPlatformBrand" in theme and "validatedColor" in theme,
           "published theme contract or hex validator missing")
     check((ROOT / "frontend/tests/institutional-harness/main.ts").is_file(),
           "synthetic harness missing")
-    print("F02/A static PASS: 8 OnPush primitives, semantic tokens, published theme, isolated build")
+    print("F02/A static PASS: 9 OnPush primitives, semantic tokens, published theme, isolated build")
 
 
 def rgb(color: str) -> tuple[int, int, int]:
