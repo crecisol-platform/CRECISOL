@@ -11,7 +11,7 @@ import {
   InstitutionalThemeDirective
 } from '../../src/app/ui/institutional-system';
 
-const SYNTHETIC_BRAND: PublishedPlatformBrand = Object.freeze({
+const SYNTHETIC_BRAND: PublishedPlatformBrand = {
   revision: 1,
   name: 'CRECISOL',
   slogan: 'Tu negocio, a tu manera.',
@@ -29,7 +29,7 @@ const SYNTHETIC_BRAND: PublishedPlatformBrand = Object.freeze({
     seoDescription: 'Interfaz sintética de componentes',
     copyrightNotice: null
   }
-});
+};
 
 @Component({
   selector: 'cs-institutional-harness',
