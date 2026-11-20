@@ -39,7 +39,8 @@ export class IdentityMfaComponent {
 @Component({
   selector: 'cs-identity-workspace', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [InstitutionalModalComponent, InstitutionalCardComponent, InstitutionalStateComponent],
-  templateUrl: './identity-workspace.component.html', styleUrl: './identity-flow.component.css'
+  templateUrl: './identity-workspace.component.html',
+  styleUrls: ['./identity-flow.component.css', './identity-workspace.component.css']
 })
 export class IdentityWorkspaceComponent {
   readonly identity = inject(IdentityApiService);
