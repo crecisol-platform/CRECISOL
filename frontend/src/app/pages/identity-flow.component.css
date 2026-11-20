@@ -692,3 +692,28 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
   .identity-summary-extras { border: 1px solid CanvasText; }
   .identity-summary-extras[open] > summary { border-bottom-color: CanvasText; }
 }
+
+/* Smaller secondary guidance keeps risky actions contextual without making
+   them compete with primary account content. */
+.identity-workspace .institutional-task__trigger:has(.identity-task-caption) {
+  min-height: 5rem;
+  height: 100%;
+  align-items: center;
+}
+.identity-workspace .institutional-task__trigger .identity-task-caption {
+  display: block;
+  margin: .28rem 0 0;
+  color: var(--cs-color-muted, #455f79);
+  font-size: .775rem;
+  font-weight: 490;
+  line-height: 1.5;
+  text-align: left;
+}
+.identity-workspace .institutional-task__trigger > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (forced-colors: active) {
+  .identity-workspace .identity-task-caption { color: GrayText; }
+}
