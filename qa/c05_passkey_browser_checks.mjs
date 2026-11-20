@@ -44,10 +44,9 @@ export async function verifyPasskeys({ browser, api, check, confidential, passwo
   const login = page.waitForResponse(r => r.url().endsWith('/passkeys/login'));
   await page.getByRole('button', { name: 'Entrar con llave de acceso', exact: true }).click();
   check((await login).status() === 200, 'Angular discoverable passkey login verifies user presence, verification and signature without password');
-  await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
-  // The previous passkey setup leaves the client on its dedicated keys view.
-  // A session inventory belongs to the separate account summary screen.
+  // Passkey login preserves ?vista=llaves. The session summary is a distinct screen.
   await page.getByRole('link', { name: 'Resumen', exact: true }).click();
+  await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
   const sessionRequest = page.waitForRequest(r => r.url().endsWith('/sessions'));
   await page.getByRole('button', { name: 'Actualizar dispositivos', exact: true }).click();
   await sessionRequest;
@@ -147,8 +146,9 @@ export async function verifyPasskeys({ browser, api, check, confidential, passwo
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await page.getByLabel('Código de tu aplicación de autenticación').fill(backups.pop());
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
-  await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
+  // Re-login may preserve the previous Llaves deep link.
   await page.getByRole('link', { name: 'Llaves', exact: true }).click();
+  await page.getByRole('heading', { name: 'Métodos registrados', exact: true }).waitFor();
   await page.getByRole('button', { name: 'Registrar nueva llave de acceso', exact: true }).click();
   await page.getByLabel('Código MFA para registrar llave').fill(backups.pop());
   const secondRegistration = page.waitForResponse(r => r.url().endsWith('/passkeys/register'));
@@ -157,8 +157,8 @@ export async function verifyPasskeys({ browser, api, check, confidential, passwo
   const loggedOut = page.waitForResponse(r => r.url().endsWith('/logout'));
   await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click(); await loggedOut;
   await page.getByRole('button', { name: 'Entrar con llave de acceso', exact: true }).click();
-  await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
   await page.getByRole('link', { name: 'Seguridad', exact: true }).click();
+  await page.getByRole('heading', { name: 'Gestionar seguridad', exact: true }).waitFor();
   await page.getByRole('button', { name: 'Recuperar MFA con una llave de acceso', exact: true }).click();
   await page.getByLabel('Correo verificado para recuperar MFA').fill(mailbox);
   const recoveryRequested = page.waitForResponse(r => r.url().endsWith('/recovery/request'));

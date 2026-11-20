@@ -712,6 +712,9 @@ try {
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   const replacedReceipt = await reverified;
   check(replacedReceipt.status() === 200, 'replacement TOTP enrollment issues a fresh MFA-bound session');
+  // The restored account keeps its Seguridad deep link. Open Resumen
+  // before asserting a heading that exists only on the summary screen.
+  await page.getByRole('link', { name: 'Resumen', exact: true }).click();
   await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
   const replacementData = { sessionToken: await browserSession(page), recoveryCodes: await page.getByLabel('Códigos de respaldo MFA').locator('code').allTextContents() };
   confidential.push(...replacementData.recoveryCodes);
