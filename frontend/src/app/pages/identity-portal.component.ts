@@ -184,7 +184,31 @@ export class IdentityPortalComponent {
         default: throw new Error('identity_unavailable');
       }
       form.reset();
-      this.message.set(action === 'recovery-request' ? 'Si la cuenta cumple los requisitos, recibirás instrucciones en el correo verificado.' : 'Solicitud procesada. Los cambios de credenciales cierran las sesiones anteriores.');
+      const acknowledgements: Readonly<Record<string, string>> = {
+        'membership-request': 'La solicitud de relación empresarial se registró para su revisión. No concede acceso automáticamente.',
+        profile: 'Tus datos de perfil se actualizaron en el contexto autenticado.',
+        'assisted-request': 'Si la cuenta cumple los requisitos, el procedimiento de recuperación continuará por el canal verificado.',
+        'assisted-complete': 'El procedimiento de recuperación terminó. Comprueba el nuevo acceso antes de continuar.',
+        'assisted-handoff': 'La entrega asistida terminó. Comprueba el nuevo acceso antes de continuar.',
+        'passkey-recovery': 'Se completó la recuperación con llave. Configura de nuevo los factores de verificación.',
+        incident: 'Se recibió el reporte de seguridad de tu cuenta.',
+        'sessions-all': 'Se solicitó el cierre de todas tus sesiones verificadas.',
+        'pairing-approve': 'Se confirmó la autorización del navegador que verificaste.',
+        terms: 'La aceptación de las condiciones vigentes quedó registrada.',
+        'invitation-issue': 'La invitación se emitió para la dirección autorizada.',
+        'invitation-accept': 'Se recibió la aceptación; la membresía continúa su proceso de autorización.',
+        'passkey-add': 'Tu nueva llave de acceso quedó registrada.',
+        'passkey-revoke': 'La llave de acceso seleccionada quedó revocada.',
+        private: 'La consulta privada se completó únicamente con los permisos comprobados por el servidor.',
+        password: 'La contraseña se actualizó. Es posible que debas iniciar sesión nuevamente.',
+        factor: 'Se inició el reemplazo protegido de tu autenticador. Completa su nueva configuración.',
+        'mailbox-request': 'Se envió la solicitud para verificar el nuevo correo electrónico.',
+        'mailbox-complete': 'El cambio de correo fue confirmado.',
+        membership: 'La decisión administrativa se registró después de la verificación del servidor.',
+        'recovery-request': 'Si la cuenta cumple los requisitos, recibirás instrucciones en el correo verificado.',
+        'recovery-complete': 'La recuperación terminó. Puedes comprobar tu nuevo acceso.'
+      };
+      this.message.set(acknowledgements[action] ?? 'La operación terminó. Verifica el estado actualizado de tu cuenta.');
     });
   }
 
