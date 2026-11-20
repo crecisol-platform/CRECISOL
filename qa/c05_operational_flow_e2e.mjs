@@ -656,6 +656,7 @@ try {
   await page.getByRole('button', { name: 'Solicitar cambio de correo', exact: true }).click();
   check((await mailboxRequest).status() === 200, 'Angular mailbox change requires authenticated fresh second factor');
   const mailboxProof = await mailFor('member.changed@example.test'); confidential.push(mailboxProof);
+  await page.getByText('Ya tengo el token del nuevo correo', { exact: true }).click();
   await page.getByLabel('Token del nuevo correo').fill(mailboxProof);
   await page.getByLabel('Código MFA para confirmar correo').fill(backupCodes.pop());
   const mailboxConfirmation = page.waitForResponse(r => r.url().endsWith('/mailbox/complete'));
