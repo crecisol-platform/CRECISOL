@@ -75,6 +75,11 @@ def b() -> None:
     contains(queue, ("cursor.Split('/', 2)", "TryParseExact(", "TryParseExact(pieces[1],",
                      "return new(false);", "MaskedPendingMailbox(", "Unprotect(", "ZeroMemory(plain)"),
              "keyset and masked contact memory handling")
+    contains(service, ("private pendingRequestRevision = 0;",
+                       "const loadRevision = ++this.pendingRequestRevision",
+                       "loadRevision !== this.pendingRequestRevision",
+                       "++this.pendingRequestRevision;"),
+             "late approved response must not restore PII after permission denial or logout")
     contains(portal, ("!this.identity.pendingMemberships().some(",
                       "field('confirmed') !== 'on'"), "explicit trusted selection")
     contains(html, ('name="confirmed" required', 'name="code" autocomplete="one-time-code"',
@@ -98,6 +103,7 @@ def c() -> None:
                    "Angular obtains allowed pending memberships through real tenant-authorized API"),
              "real .NET/MySQL HTTP integration negatives")
     contains(ui_tests, ("approval inbox: authorized", "approval inbox: unauthorized",
+                        "stale allowed response cannot restore data after a newer permission denial",
                         "WCAG AA", "noHorizontalOverflow", "width: 320"),
              "Angular accessibility and privacy cases")
     contains(css, (".identity-approval-queue", ".identity-pending-list", ".identity-pending-card",

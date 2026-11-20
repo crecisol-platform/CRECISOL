@@ -420,3 +420,57 @@ test('F03 approvals privacy: authorization revocation scrubs already-loaded appl
     await expect(queue.locator('.identity-pending-card')).toHaveCount(0);
     await expect(page.getByRole('navigation', { name: 'Mi cuenta' })).toBeVisible();
   });
+
+
+test('F03 approvals privacy: stale allowed response cannot restore data after a newer permission denial',
+  async ({ page }) => {
+    await syntheticAccount(page); await visit(page, 'administracion');
+    await page.evaluate(() => {
+      const owner = (window as SyntheticDebug).ng!.getComponent(document.querySelector('cs-identity-portal')!);
+      owner.identity.pendingMemberships.set([]);
+      owner.identity.pendingLoaded.set(false);
+    });
+    let releaseFirst!: () => void;
+    let arrivedFirst!: () => void;
+    const firstHeld = new Promise<void>(resolve => { releaseFirst = resolve; });
+    const firstArrived = new Promise<void>(resolve => { arrivedFirst = resolve; });
+    let sequence = 0;
+    await page.route('**/api/v1/identity/memberships/pending', async route => {
+      sequence++;
+      if (sequence === 1) {
+        arrivedFirst();
+        await firstHeld;
+        await route.fulfill({ status: 200, contentType: 'application/json',
+          body: JSON.stringify({ requests: [{
+            id: '55555555-6666-4777-8888-999999999999',
+            requestedAtUtc: '2026-11-19T11:00:00Z', mailboxHint: 'so•••@example.test'
+          }], nextCursor: null }) });
+      } else {
+        await route.fulfill({ status: 401, contentType: 'application/json', body: '{}' });
+      }
+    });
+    // These two requests are intentionally concurrent; UI buttons normally
+    // serialize clicks, but background calls and permission changes may race.
+    await page.evaluate(() => {
+      const owner = (window as SyntheticDebug).ng!.getComponent(document.querySelector('cs-identity-portal')!);
+      void owner.identity.loadPendingMemberships().catch(() => undefined);
+    });
+    await firstArrived;
+    await page.evaluate(() => {
+      const owner = (window as SyntheticDebug).ng!.getComponent(document.querySelector('cs-identity-portal')!);
+      void owner.identity.loadPendingMemberships().catch(() => undefined);
+    });
+    const queue = page.getByRole('region', { name: 'Solicitudes de membresía pendientes' });
+    await expect(queue).toContainText('Consulta administrativa no autorizada');
+    const lateSuccess = page.waitForResponse(r =>
+      r.url().endsWith('/memberships/pending') && r.status() === 200);
+    releaseFirst();
+    await lateSuccess;
+    // Wait until the 200 response has reached Angular before asserting that
+    // an older authorized result cannot repopulate applicant data.
+    await page.waitForTimeout(100);
+    await expect(queue).toContainText('Consulta administrativa no autorizada');
+    await expect(queue).not.toContainText('so•••@example.test');
+    await expect(queue.locator('.identity-pending-card')).toHaveCount(0);
+    expect(sequence).toBe(2);
+  });

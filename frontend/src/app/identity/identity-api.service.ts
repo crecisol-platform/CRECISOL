@@ -33,6 +33,8 @@ export class IdentityApiService {
   private csrfValue: string | null = null;
   // Invalidate responses created under an older session or MFA enrollment.
   private sessionRevision = 0;
+  // A later denial or decision invalidates older pending-approval responses.
+  private pendingRequestRevision = 0;
   private enrollmentRevision = 0;
   private pairingRevision = 0;
   readonly idleMinutes = signal(30);
@@ -55,8 +57,10 @@ export class IdentityApiService {
     if (this.state() !== 'authenticated' || this.activityInFlight ||
         Date.now() - this.activityLastSent < 60_000) return;
     this.activityLastSent = Date.now(); this.activityInFlight = true;
+    const revision = this.sessionRevision;
     void this.post('sessions/keepalive', {}).catch((error: unknown) => {
-      if (error instanceof HttpErrorResponse && error.status === 401) this.clear();
+      // A late 401 from an older cookie may not close a newer authenticated session.
+      if (revision === this.sessionRevision && error instanceof HttpErrorResponse && error.status === 401) this.clear();
     }).finally(() => { this.activityInFlight = false; });
   }
 
@@ -403,12 +407,13 @@ export class IdentityApiService {
     const revision = this.sessionRevision;
     const cursor = next ? this.pendingNextCursor() : 'start';
     if (!cursor) return;
+    const loadRevision = ++this.pendingRequestRevision;
     let result: { requests: PendingMembershipView[]; nextCursor: string | null };
     try {
       result = await this.post<{ requests: PendingMembershipView[]; nextCursor: string | null }>(
         'memberships/pending', { cursor });
     } catch (error) {
-      if (revision === this.sessionRevision) {
+      if (revision === this.sessionRevision && loadRevision === this.pendingRequestRevision) {
         // Never retain applicant identifiers or masked PII after a failed
         // authorization revalidation, session invalidation or network error.
         this.pendingMemberships.set([]);
@@ -419,7 +424,8 @@ export class IdentityApiService {
       }
       throw error;
     }
-    if (revision !== this.sessionRevision || this.state() !== 'authenticated') return;
+    if (revision !== this.sessionRevision || loadRevision !== this.pendingRequestRevision ||
+        this.state() !== 'authenticated') return;
     const incoming = Array.isArray(result.requests) ? result.requests : [];
     if (next) {
       const seen = new Set(this.pendingMemberships().map(item => item.id));
@@ -435,7 +441,10 @@ export class IdentityApiService {
   }
 
   async decideMembership(membershipId: string, decision: string, reason: string, code: string): Promise<void> {
+    const revision = this.sessionRevision;
     await this.post('memberships/decide', { membershipId, decision, reason, code });
+    if (revision !== this.sessionRevision || this.state() !== 'authenticated') return;
+    ++this.pendingRequestRevision;
     // Never leave a stale, potentially already decided item actionable.
     this.pendingMemberships.set([]);
     this.pendingNextCursor.set(null);
@@ -495,6 +504,7 @@ export class IdentityApiService {
 
   clear(): void {
     ++this.sessionRevision;
+    ++this.pendingRequestRevision;
     ++this.enrollmentRevision;
     ++this.pairingRevision;
     if (this.challengeTimer) clearTimeout(this.challengeTimer);
