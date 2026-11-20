@@ -58,8 +58,8 @@
   }
 </section>
 <div class="institutional-task">
-  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="rotateDialog.open()">
-    <span>Rotar sesión de operador<span class="operator-task-note">Renueva las credenciales de esta sesión sin cambiar las de otros dispositivos.</span></span>
+  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="rotateDialog.open()" aria-label="Rotar sesión de operador" aria-describedby="operator-rotate-hint">
+    <span>Rotar sesión de operador<span id="operator-rotate-hint" class="operator-task-note">Renueva las credenciales de esta sesión sin cambiar las de otros dispositivos.</span></span>
     <span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #rotateDialog title="Renovar la sesión de plataforma"
@@ -70,8 +70,8 @@
   </cs-institutional-modal>
 </div>
 <div class="institutional-task">
-  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog47.open()">
-    <span>Cerrar todas mis sesiones de plataforma<span class="operator-task-note">Operación global e irreversible para este operador; exige MFA.</span></span><span aria-hidden="true">›</span>
+  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog47.open()" aria-label="Cerrar todas mis sesiones de plataforma" aria-describedby="operator-revoke-all-hint">
+    <span>Cerrar todas mis sesiones de plataforma<span id="operator-revoke-all-hint" class="operator-task-note">Operación global e irreversible para este operador; exige MFA.</span></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #opDialog47 title="Cerrar todas mis sesiones de plataforma" description="Esta acción cierra todas tus sesiones activas y requiere MFA."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="false">

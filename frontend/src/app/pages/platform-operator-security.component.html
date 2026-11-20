@@ -17,8 +17,8 @@
   </section>
   <div class="operator-grid" aria-label="Acciones de protección">
     <div class="institutional-task">
-  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog31.open()">
-    <span>Cambiar contraseña de operador<span class="operator-task-note">Requiere contraseña vigente y código independiente; invalida sesiones anteriores.</span></span><span aria-hidden="true">›</span>
+  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog31.open()" aria-label="Cambiar contraseña de operador" aria-describedby="operator-password-hint">
+    <span>Cambiar contraseña de operador<span id="operator-password-hint" class="operator-task-note">Requiere contraseña vigente y código independiente; invalida sesiones anteriores.</span></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #opDialog31 title="Cambiar contraseña de operador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -31,8 +31,8 @@
   </cs-institutional-modal>
 </div>
         <div class="institutional-task">
-  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog32.open()">
-    <span>Cambiar correo de operador<span class="operator-task-note">Verificación del nuevo buzón y MFA fresco; no cambia la identidad empresarial.</span></span><span aria-hidden="true">›</span>
+  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog32.open()" aria-label="Cambiar correo de operador" aria-describedby="operator-mailbox-hint">
+    <span>Cambiar correo de operador<span id="operator-mailbox-hint" class="operator-task-note">Verificación del nuevo buzón y MFA fresco; no cambia la identidad empresarial.</span></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #opDialog32 title="Cambiar correo de operador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -49,8 +49,8 @@
   </cs-institutional-modal>
 </div>
         <div class="institutional-task">
-  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog33.open()">
-    <span>Reemplazar MFA de operador<span class="operator-task-note">No se activa el nuevo TOTP hasta verificar una prueba válida.</span></span><span aria-hidden="true">›</span>
+  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog33.open()" aria-label="Reemplazar MFA de operador" aria-describedby="operator-mfa-hint">
+    <span>Reemplazar MFA de operador<span id="operator-mfa-hint" class="operator-task-note">No se activa el nuevo TOTP hasta verificar una prueba válida.</span></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #opDialog33 title="Reemplazar MFA de operador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true" (dismissed)="platform.discardFactorSetup()">

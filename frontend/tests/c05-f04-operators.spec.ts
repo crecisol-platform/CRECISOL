@@ -223,3 +223,33 @@ test('F04 200 percent text, forced colors and reduced motion preserve operator n
   await expect(nav.getByRole('button', { name: 'Monitor', exact: true })).toHaveAttribute('aria-current', 'page');
   await noOverflow(page);
 });
+
+
+test('F04 all operator task actions retain stable accessible names and connected descriptions', async ({ page }) => {
+  await fixture(page);
+  const taskMatrix = [
+    { section: 'perfil' as const, labels: [
+      ['Editar perfil de operador', 'operator-profile-edit-hint'],
+      ['Actualizar foto de operador', 'operator-profile-photo-hint']
+    ] },
+    { section: 'seguridad' as const, labels: [
+      ['Cambiar contraseña de operador', 'operator-password-hint'],
+      ['Cambiar correo de operador', 'operator-mailbox-hint'],
+      ['Reemplazar MFA de operador', 'operator-mfa-hint']
+    ] },
+    { section: 'sesiones' as const, labels: [
+      ['Rotar sesión de operador', 'operator-rotate-hint'],
+      ['Cerrar todas mis sesiones de plataforma', 'operator-revoke-all-hint']
+    ] }
+  ];
+  for (const group of taskMatrix) {
+    await visit(page, group.section);
+    for (const [label, hint] of group.labels) {
+      const control = page.getByRole('button', { name: label, exact: true });
+      await expect(control).toBeVisible();
+      await expect(control).toHaveAttribute('aria-describedby', hint);
+      await expect(page.locator('#' + hint)).toBeVisible();
+      expect((await page.locator('#' + hint).innerText()).trim().length).toBeGreaterThan(25);
+    }
+  }
+});
