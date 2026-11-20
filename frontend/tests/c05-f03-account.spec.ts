@@ -66,8 +66,10 @@ async function seed(page: Page): Promise<void> {
     owner.identity.sessions.set([{
       id: '11111111-2222-4333-8444-555555555555',
       device: 'Chromium de pruebas', factor: 'TOTP',
-      lastSeenAtUtc: '2026-11-19T12:00:00Z',
-      expiresAtUtc: '2026-11-19T12:30:00Z'
+      // Match the real server's sliding 30-minute policy: a verified
+      // synthetic session must not appear to have expired in screenshots.
+      lastSeenAtUtc: new Date(Date.now() - 2 * 60_000).toISOString(),
+      expiresAtUtc: new Date(Date.now() + 28 * 60_000).toISOString()
     }]);
     owner.identity.passkeys.set([{
       id: '33333333-4444-4555-8666-777777777777',

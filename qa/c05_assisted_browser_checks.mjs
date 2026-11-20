@@ -27,7 +27,8 @@ export async function verifyAssisted({ browser, api, platform, check, confidenti
   for (const operator of operators) {
     const context = await browser.newContext(); const operatorPage = await context.newPage(); contexts.push(context); pages.push(operatorPage);
     await operatorPage.goto(`http://127.0.0.1:${uiPort}/cuenta?vista=operadores`);
-    await operatorPage.getByText('Personal autorizado de identidad CRECISOL', { exact: true }).click();
+    // The operator deep link now lands directly in the independent platform realm.
+    await operatorPage.getByRole('heading', { name: 'Identidad de plataforma', level: 1, exact: true }).waitFor();
     await operatorPage.getByLabel('Correo del operador de identidad').fill(operator.mailbox);
     await operatorPage.getByLabel('Contraseña del operador', { exact: true }).fill(operator.password);
     await operatorPage.getByRole('button', { name: 'Acceder a identidad de plataforma', exact: true }).click();

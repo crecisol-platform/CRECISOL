@@ -14,7 +14,8 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
     'malformed platform recovery factor cannot enter the cryptographic verifier');
   const subject = await browser.newContext(), page = await subject.newPage();
   await page.goto(`http://127.0.0.1:${uiPort}/cuenta?vista=operadores`);
-  await page.getByText('Personal autorizado de identidad CRECISOL', { exact: true }).click();
+  // This route is the dedicated operator realm; there is no legacy entry card.
+  await page.getByRole('heading', { name: 'Identidad de plataforma', level: 1, exact: true }).waitFor();
   await page.getByText('Recuperar acceso de operador de plataforma', { exact: true }).click();
   await page.getByLabel('Correo del operador sin acceso', { exact: true }).fill(target.mailbox);
   await page.getByLabel('No tengo disponibles mis métodos seguros de operador', { exact: true }).check();
@@ -32,7 +33,7 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   for (const operator of operators.slice(1)) {
     const context = await browser.newContext(), p = await context.newPage(); contexts.push(context); reviewers.push(p);
     await p.goto(`http://127.0.0.1:${uiPort}/cuenta?vista=operadores`);
-    await p.getByText('Personal autorizado de identidad CRECISOL', { exact: true }).click();
+    await p.getByRole('heading', { name: 'Identidad de plataforma', level: 1, exact: true }).waitFor();
     await p.getByLabel('Correo del operador de identidad').fill(operator.mailbox);
     await p.getByLabel('Contraseña del operador', { exact: true }).fill(operator.password);
     await p.getByRole('button', { name: 'Acceder a identidad de plataforma', exact: true }).click();
