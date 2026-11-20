@@ -45,10 +45,14 @@ export class IdentityMfaComponent {
 export class IdentityWorkspaceComponent {
   readonly identity = inject(IdentityApiService);
   readonly showAllEvents = signal(false);
+  readonly historyFilter = signal<'all' | 'success' | 'attention'>('all');
+  readonly selectedPasskeyId = signal('');
   readonly historyRequested = signal(false);
   readonly sessionsRequested = signal(false);
   readonly securityEventRows = computed(() => [...this.identity.securityEvents()]
     .sort((left, right) => Date.parse(right.atUtc) - Date.parse(left.atUtc))
+    .filter(event => this.historyFilter() === 'all' ||
+      (this.historyFilter() === 'success' ? event.outcome === 1 : event.outcome !== 1))
     .slice(0, this.showAllEvents() ? 50 : 8)
     .map(event => ({
       ...event,
@@ -90,6 +94,11 @@ export class IdentityWorkspaceComponent {
   readonly revokeRequested = output<string>();
   readonly pendingRequested = output<boolean>();
   readonly logoutRequested = output<void>();
+
+  setHistoryFilter(requested: string): void {
+    this.historyFilter.set(requested === 'success' || requested === 'attention' ? requested : 'all');
+    this.showAllEvents.set(false);
+  }
 
   requestHistory(): void {
     if (this.busy()) return;
