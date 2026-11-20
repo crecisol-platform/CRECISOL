@@ -45,6 +45,28 @@ export class IdentityPortalComponent {
   readonly guestView = computed(() => guestViewFor(this.view()));
   readonly workspaceView = computed(() => workspaceViewFor(this.view()));
   readonly supplementaryGuestView = computed(() => isSecondaryGuestView(this.guestView()));
+  readonly workspaceTitle = computed(() => {
+    const titles: Record<string, string> = {
+      resumen: 'Sesiones y dispositivos',
+      perfil: 'Mi perfil',
+      llaves: 'Llaves de acceso',
+      seguridad: 'Seguridad de cuenta',
+      historial: 'Mi historial',
+      administracion: 'Aprobaciones e invitaciones'
+    };
+    return titles[this.workspaceView()] ?? 'Sesiones y dispositivos';
+  });
+  readonly workspaceDescription = computed(() => {
+    const descriptions: Record<string, string> = {
+      resumen: 'Comprueba qué dispositivos tienen acceso y administra tus sesiones con confianza.',
+      perfil: 'Tu información visible y tus preferencias en esta empresa.',
+      llaves: 'Protege el inicio de sesión con métodos registrados en tus dispositivos.',
+      seguridad: 'Credenciales, segundo factor y operaciones de recuperación verificadas.',
+      historial: 'Una cronología comprensible de accesos y cambios de seguridad.',
+      administracion: 'Gestiones administrativas sujetas a autorización y verificación adicional.'
+    };
+    return descriptions[this.workspaceView()] ?? descriptions.resumen;
+  });
   readonly sectionName = computed(() => {
     if (this.view() === 'operadores') return 'Personal autorizado';
     if (this.identity.state() === 'challenge') return 'Verificación en dos pasos';
