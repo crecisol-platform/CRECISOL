@@ -2,10 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 import { identityDateLabel, identityEventLabel, identityOutcomeLabel, identityReferenceLabel, identityFactorLabel, identityTimeZoneLabel } from '../identity/identity-presentation';
 import { IdentityApiService } from '../identity/identity-api.service';
 import { InstitutionalModalComponent } from '../ui/institutional-modal/institutional-modal.component';
+import { SecureFieldFeedbackDirective } from '../ui/feedback/secure-field-feedback.directive';
 import { InstitutionalCardComponent, InstitutionalStateComponent } from '../ui/institutional-system';
 
 @Component({
   selector: 'cs-identity-guest', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [SecureFieldFeedbackDirective],
   templateUrl: './identity-guest.component.html', styleUrl: './identity-flow.component.css'
 })
 export class IdentityGuestComponent {
@@ -27,6 +29,7 @@ export class IdentityGuestComponent {
 
 @Component({
   selector: 'cs-identity-mfa', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [SecureFieldFeedbackDirective],
   templateUrl: './identity-mfa.component.html', styleUrl: './identity-flow.component.css'
 })
 export class IdentityMfaComponent {
@@ -38,7 +41,7 @@ export class IdentityMfaComponent {
 
 @Component({
   selector: 'cs-identity-workspace', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [InstitutionalModalComponent, InstitutionalCardComponent, InstitutionalStateComponent],
+  imports: [InstitutionalModalComponent, InstitutionalCardComponent, InstitutionalStateComponent, SecureFieldFeedbackDirective],
   templateUrl: './identity-workspace.component.html',
   styleUrls: ['./identity-flow.component.css', './identity-workspace.component.css']
 })
@@ -125,6 +128,7 @@ export class IdentityWorkspaceComponent {
 
 @Component({
   selector: 'cs-identity-recovery', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [SecureFieldFeedbackDirective],
   templateUrl: './identity-recovery.component.html', styleUrl: './identity-flow.component.css'
 })
 export class IdentityRecoveryComponent {

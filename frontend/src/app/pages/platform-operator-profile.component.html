@@ -35,7 +35,7 @@
   </button>
   <cs-institutional-modal #opDialog51 kind="form" title="Editar perfil de operador" description="Actualiza únicamente los datos visibles de tu perfil institucional."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="actionRequested.emit({ event: $event, action: 'profile' })">
+    <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'profile' })">
       <label for="operator-profile-name">Nombre visible del operador</label>
       <input id="operator-profile-name" name="displayName" [value]="platform.profile()?.displayName ?? ''" required maxlength="80" autocomplete="nickname">
       <label for="operator-profile-language">Idioma del perfil de operador</label>
@@ -54,7 +54,7 @@
   </button>
   <cs-institutional-modal #opDialog52 kind="form" title="Actualizar foto de operador" description="Archivo PNG, JPEG o WebP. Se conserva únicamente una miniatura."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="photoRequested.emit($event)">
+    <form csFieldFeedback (submit)="photoRequested.emit($event)">
       <label for="operator-photo">Foto del operador (PNG, JPEG o WebP, hasta 2 MB)</label>
       <input id="operator-photo" name="photo" type="file" accept="image/png,image/jpeg,image/webp" required>
       <button [disabled]="busy()">Guardar foto de operador</button>

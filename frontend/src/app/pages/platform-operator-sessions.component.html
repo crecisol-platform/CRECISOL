@@ -76,7 +76,7 @@
   <cs-institutional-modal #opDialog47 kind="destructive" warning="Se cerrarán todas las sesiones de plataforma de este operador. La operación exige MFA." title="Cerrar todas mis sesiones de plataforma" description="Esta acción cierra todas tus sesiones activas y requiere MFA."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="false">
     <p>Se cerrarán las sesiones de todos tus dispositivos de operador, no las cuentas de los negocios.</p>
-    <form (submit)="actionRequested.emit({ event: $event, action: 'revoke-all' })">
+    <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'revoke-all' })">
       <label for="operator-sessions-code">Código MFA para cerrar sesiones de plataforma</label>
       <input id="operator-sessions-code" name="code" required maxlength="32" autocomplete="one-time-code">
       <button [disabled]="busy()">Confirmar cierre de todas mis sesiones de plataforma</button>

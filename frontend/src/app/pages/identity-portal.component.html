@@ -125,7 +125,7 @@
           @if (identity.terms(); as terms) {
             <h3>Condiciones {{ terms.version }}</h3><p class="terms-content">{{ terms.text }}</p>
             @if (identity.state() === 'authenticated') {
-              <form (submit)="securityAction($event, 'terms')">
+              <form csFieldFeedback (submit)="securityAction($event, 'terms')">
                 <label><input name="accepted" type="checkbox" required> Acepto esta versión de las condiciones</label>
                 <button [disabled]="busy() || identity.restoring()">Registrar aceptación</button>
               </form>

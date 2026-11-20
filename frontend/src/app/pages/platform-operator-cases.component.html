@@ -9,7 +9,7 @@
   <section class="operator-card operator-card--quiet" aria-label="Consulta puntual de caso">
     <h3>Consultar un expediente</h3>
     <p>Introduce la referencia recibida por el canal autorizado. Una referencia no confiere permisos.</p>
-    <form (submit)="actionRequested.emit({ event: $event, action: 'case' })">
+    <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'case' })">
           <label for="platform-case">Referencia del caso de recuperación</label><input id="platform-case" name="caseId" required maxlength="36">
           <button [disabled]="busy()">Consultar caso de identidad</button>
         </form>
@@ -21,7 +21,7 @@
   <cs-institutional-modal #opDialog11 kind="form" title="Localizar una solicitud de identidad pendiente"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <p>Permite localizar un caso cuando el titular perdió su referencia o recibió una referencia neutra por una solicitud previa. Requiere un motivo de soporte y MFA fresco; no devuelve empresas, perfiles ni correos privados.</p>
-          <form (submit)="actionRequested.emit({ event: $event, action: 'find-case' })">
+          <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'find-case' })">
             <label for="find-case-mail">Correo indicado por el titular del caso</label><input id="find-case-mail" name="mailbox" type="email" required maxlength="254" autocomplete="off">
             <label for="find-case-realm">Ámbito del caso de identidad</label><select id="find-case-realm" name="realm" required><option value="">Selecciona el ámbito</option><option value="TENANT_IDENTITY">Identidad de negocio</option><option value="PLATFORM_OPERATOR">Operador de plataforma</option></select>
             <label for="find-case-reason">Motivo de localización del caso</label><input id="find-case-reason" name="reason" required minlength="12" maxlength="240">
@@ -70,7 +70,7 @@
   </button>
   <cs-institutional-modal #opDialog21 kind="destructive" warning="Aprobar o rechazar esta revisión se registrará permanentemente. Exige una segunda verificación independiente." title="Revisar identidad del titular" description="Necesita evidencia independiente y un segundo factor vigente."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="actionRequested.emit({ event: $event, action: 'review' })">
+    <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'review' })">
           <label for="review-case">Caso a revisar</label><input id="review-case" name="caseId" [value]="platform.case()?.caseId ?? ''" required maxlength="36">
           <label for="review-decision">Decisión de identidad</label><select id="review-decision" name="decision" required><option value="">Selecciona una decisión</option><option value="approve">Aprobar</option><option value="reject">Rechazar</option></select>
           <label for="review-evidence">SHA-256 del expediente de verificación</label><input id="review-evidence" name="evidenceHash" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
@@ -89,7 +89,7 @@
   </button>
   <cs-institutional-modal #opDialog22 kind="destructive" warning="La parte emitida es secreta, temporal y exclusiva del operador verificado. No la envíes a otro ámbito." title="Emitir parte de recuperación" (dismissed)="platform.handoffShare.set('')" description="Entrega la parte únicamente por un canal seguro al titular verificado."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="actionRequested.emit({ event: $event, action: 'share' })">
+    <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'share' })">
           <label for="share-case">Caso para entrega segura</label><input id="share-case" name="caseId" [value]="platform.case()?.caseId ?? ''" required maxlength="36">
           <label for="share-code">Código MFA para emitir mi parte</label><input id="share-code" name="code" required pattern="([0-9]{6}|[0-9a-fA-F]{32})" autocomplete="one-time-code">
           <button [disabled]="busy()">Emitir mi parte de recuperación</button>

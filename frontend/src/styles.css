@@ -39,3 +39,29 @@ a { color: inherit; }
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* C05 UX F06 — native per-field validation messages, never a duplicated toast. */
+form[csFieldFeedback] .cs-field-feedback {
+  display: block;
+  width: 100%;
+  margin: -.12rem 0 .38rem;
+  padding: .45rem .7rem;
+  font: inherit;
+  font-size: .81rem;
+  font-weight: 650;
+  line-height: 1.5;
+  color: #853b2f;
+  background: #fff4f0;
+  border: 1px solid #efd0c6;
+  border-radius: .5rem;
+  overflow-wrap: anywhere;
+}
+form[csFieldFeedback] [aria-invalid="true"] {
+  border-color: #b35442 !important;
+  outline-offset: 3px;
+}
+@media (forced-colors: active) {
+  form[csFieldFeedback] .cs-field-feedback { background: Canvas; color: CanvasText; border-color: CanvasText; }
+  form[csFieldFeedback] [aria-invalid="true"] { border: 2px solid CanvasText; }
+}

@@ -3,12 +3,13 @@ import { identityDateLabel, identityReferenceLabel, identityTimeZoneLabel, opera
   operatorCaseView, operatorDeviceLabel, operatorLanguageLabel } from '../identity/platform-operator-presentation';
 import { PlatformIdentityApiService } from '../identity/platform-identity-api.service';
 import { InstitutionalModalComponent } from '../ui/institutional-modal/institutional-modal.component';
+import { SecureFieldFeedbackDirective } from '../ui/feedback/secure-field-feedback.directive';
 
 type OperatorAction = { event: Event; action: string };
 
 @Component({
   selector: 'cs-platform-operator-sessions', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [InstitutionalModalComponent],
+  imports: [InstitutionalModalComponent, SecureFieldFeedbackDirective],
   templateUrl: './platform-operator-sessions.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css']
 })
 export class PlatformOperatorSessionsComponent {
@@ -39,7 +40,7 @@ export class PlatformOperatorSessionsComponent {
 }
 @Component({
   selector: 'cs-platform-operator-profile', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [InstitutionalModalComponent],
+  imports: [InstitutionalModalComponent, SecureFieldFeedbackDirective],
   templateUrl: './platform-operator-profile.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css']
 })
 export class PlatformOperatorProfileComponent {
@@ -70,7 +71,7 @@ export class PlatformOperatorMonitorComponent {
 }
 @Component({
   selector: 'cs-platform-operator-security', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [InstitutionalModalComponent],
+  imports: [InstitutionalModalComponent, SecureFieldFeedbackDirective],
   templateUrl: './platform-operator-security.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css']
 })
 export class PlatformOperatorSecurityComponent {
@@ -81,7 +82,7 @@ export class PlatformOperatorSecurityComponent {
 }
 @Component({
   selector: 'cs-platform-operator-cases', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [InstitutionalModalComponent],
+  imports: [InstitutionalModalComponent, SecureFieldFeedbackDirective],
   templateUrl: './platform-operator-cases.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css']
 })
 export class PlatformOperatorCasesComponent {

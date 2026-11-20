@@ -3,7 +3,7 @@
     <section aria-labelledby="register-heading">
           <h2 id="register-heading">Solicitar una cuenta</h2>
           <p>La solicitud no activa una membresía ni concede acceso a una empresa.</p>
-          <form (submit)="registerRequested.emit($event)">
+          <form csFieldFeedback (submit)="registerRequested.emit($event)">
             <label for="register-mailbox">Correo electrónico</label>
             <input id="register-mailbox" name="mailbox" type="email" autocomplete="email"
               required maxlength="254">
@@ -15,7 +15,7 @@
     <section aria-labelledby="confirm-heading">
           <h2 id="confirm-heading">Confirmar correo</h2>
           <p>Confirma el correo y crea una cuenta pendiente de aprobación. La solicitud no concede acceso.</p>
-          <form (submit)="confirmRequested.emit($event)">
+          <form csFieldFeedback (submit)="confirmRequested.emit($event)">
             <label for="proof-id">Identificador de confirmación</label>
             <input id="proof-id" name="proofId" type="text" autocomplete="off"
               required maxlength="36" pattern="[0-9a-fA-F-]{36}">
@@ -36,7 +36,7 @@
   @case ('invitacion') {
     <details open><summary>Aceptar una invitación</summary>
           <p>Primero confirma tu correo y crea una cuenta. Lee las condiciones vigentes antes de aceptar la invitación. Si todavía no tienes MFA, escribe enroll; si ya lo tienes, usa un código vigente o de respaldo.</p>
-          <form (submit)="securityActionRequested.emit({ event: $event, action: 'invitation-accept' })">
+          <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'invitation-accept' })">
             <label for="invite-mailbox">Correo invitado</label><input id="invite-mailbox" name="mailbox" type="email" autocomplete="username" required maxlength="254">
             <label for="invite-password">Contraseña de la cuenta invitada</label><input id="invite-password" name="password" type="password" autocomplete="current-password" required maxlength="128">
             <label for="invite-code">Código MFA del invitado</label><input id="invite-code" name="code" required maxlength="32" autocomplete="one-time-code">
@@ -49,7 +49,7 @@
   @case ('acceso-existente') {
     <details open><summary>Ya tengo una identidad; solicitar acceso aquí</summary>
           <p>Solicita primero una confirmación de correo en este negocio y lee sus condiciones. Demuestra tu contraseña y MFA existentes para crear solo una relación pendiente de aprobación. No se enlazan cuentas por el correo sin estas pruebas.</p>
-          <form (submit)="securityActionRequested.emit({ event: $event, action: 'membership-request' })">
+          <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'membership-request' })">
             <label for="join-mailbox">Correo de mi identidad existente</label><input id="join-mailbox" name="mailbox" type="email" required maxlength="254" autocomplete="username">
             <label for="join-password">Contraseña de mi identidad existente</label><input id="join-password" name="password" type="password" required maxlength="128" autocomplete="current-password">
             <label for="join-code">Código MFA para solicitar relación</label><input id="join-code" name="code" required maxlength="32" autocomplete="one-time-code">
@@ -63,7 +63,7 @@
   @default {
     <section aria-labelledby="login-heading">
           <h2 id="login-heading">Iniciar sesión</h2>
-          <form (submit)="loginRequested.emit($event)">
+          <form csFieldFeedback (submit)="loginRequested.emit($event)">
             <label for="login-mailbox">Correo electrónico</label>
             <input id="login-mailbox" name="mailbox" type="email" autocomplete="username"
               required maxlength="254">

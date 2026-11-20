@@ -22,7 +22,7 @@
   </button>
   <cs-institutional-modal #opDialog31 kind="form" title="Cambiar contraseña de operador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="actionRequested.emit({ event: $event, action: 'password' })">
+    <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'password' })">
             <label for="operator-current-password">Contraseña actual del operador</label><input id="operator-current-password" name="currentPassword" type="password" required maxlength="128" autocomplete="current-password">
             <label for="operator-new-password">Nueva contraseña de operador</label><input id="operator-new-password" name="newPassword" type="password" required minlength="15" maxlength="128" autocomplete="new-password">
             <label for="operator-password-code">Código MFA para cambiar contraseña de operador</label><input id="operator-password-code" name="code" required maxlength="32" autocomplete="one-time-code">
@@ -36,12 +36,12 @@
   </button>
   <cs-institutional-modal #opDialog32 kind="form" title="Cambiar correo de operador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="actionRequested.emit({ event: $event, action: 'mailbox-request' })">
+    <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'mailbox-request' })">
             <label for="operator-new-mailbox">Nuevo correo del operador</label><input id="operator-new-mailbox" name="mailbox" type="email" required maxlength="254" autocomplete="email">
             <label for="operator-mailbox-code">Código MFA para solicitar correo de operador</label><input id="operator-mailbox-code" name="code" required maxlength="32" autocomplete="one-time-code">
             <button [disabled]="busy()">Solicitar nuevo correo de operador</button>
           </form>
-          <form (submit)="actionRequested.emit({ event: $event, action: 'mailbox-complete' })">
+          <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'mailbox-complete' })">
             <label for="operator-mailbox-token">Token del nuevo correo de operador</label><input id="operator-mailbox-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
             <label for="operator-mailbox-confirm-code">Código MFA para confirmar correo de operador</label><input id="operator-mailbox-confirm-code" name="code" required maxlength="32" autocomplete="one-time-code">
             <button [disabled]="busy()">Confirmar correo de operador</button>
@@ -55,7 +55,7 @@
   <cs-institutional-modal #opDialog33 kind="wizard" [steps]="['Verificar credenciales', 'Configurar nuevo autenticador']" [step]="platform.factorSecret() ? 2 : 1" title="Reemplazar MFA de operador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true" (dismissed)="platform.discardFactorSetup()">
     @if (!platform.factorSecret()) {
-    <form (submit)="actionRequested.emit({ event: $event, action: 'factor' })">
+    <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'factor' })">
             <label for="operator-factor-password">Contraseña para reemplazar MFA de operador</label><input id="operator-factor-password" name="currentPassword" type="password" required maxlength="128" autocomplete="current-password">
             <label for="operator-factor-code">Código MFA o respaldo para reemplazar factor de operador</label><input id="operator-factor-code" name="code" required maxlength="32" autocomplete="one-time-code">
             <button [disabled]="busy()">Preparar nuevo factor de operador</button>
@@ -71,7 +71,7 @@
                 <output aria-label="Semilla del factor de operador a reemplazar">{{ platform.factorSecret() }}</output>
               </details>
             </div>
-            <form (submit)="actionRequested.emit({ event: $event, action: 'factor-confirm' })">
+            <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'factor-confirm' })">
               <label for="operator-factor-confirm-code">Código del factor nuevo de operador</label><input id="operator-factor-confirm-code" name="code" required pattern="[0-9]{6}" autocomplete="one-time-code">
               <button [disabled]="busy()">Activar nuevo factor de operador</button>
             </form>
@@ -93,7 +93,7 @@
       <p role="status">Vigencia actual: <strong>{{ policy.idleMinutes }} minutos sin actividad</strong>.</p>
       <p>Las sesiones activas renuevan su vencimiento al realizar una actividad válida. Si se supera el plazo, se exige volver a iniciar sesión.</p>
       @if (policy.canManage) {
-        <form (submit)="actionRequested.emit({ event: $event, action: 'session-policy' })">
+        <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'session-policy' })">
           <label for="operator-idle-minutes">Minutos de inactividad permitidos (5 a 120)</label>
           <input id="operator-idle-minutes" name="minutes" type="number" min="5" max="120" step="1"
             [value]="policy.idleMinutes" required inputmode="numeric">
