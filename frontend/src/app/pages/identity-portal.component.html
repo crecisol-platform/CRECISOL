@@ -96,7 +96,7 @@
           <div class="account-workspace-shell">
             <div class="account-workspace-rail">
               <p class="account-nav-mobile-help" id="account-nav-mobile-help">Desliza las pestañas para explorar las seis áreas de tu cuenta.</p>
-              <nav class="account-nav account-nav--workspace" aria-label="Mi cuenta" aria-describedby="account-nav-mobile-help">
+              <nav #workspaceTabRail class="account-nav account-nav--workspace" aria-label="Mi cuenta" aria-describedby="account-nav-mobile-help">
             <a routerLink="/cuenta" [queryParams]="{vista:'resumen'}" [attr.aria-current]="workspaceView() === 'resumen' ? 'page' : null">Resumen</a>
             <a routerLink="/cuenta" [queryParams]="{vista:'perfil'}" [attr.aria-current]="workspaceView() === 'perfil' ? 'page' : null">Mi perfil</a>
             <a routerLink="/cuenta" [queryParams]="{vista:'llaves'}" [attr.aria-current]="workspaceView() === 'llaves' ? 'page' : null">Llaves</a>

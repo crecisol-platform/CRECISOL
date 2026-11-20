@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, afterRenderEffect, computed, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { IdentityApiService } from '../identity/identity-api.service';
@@ -32,6 +32,7 @@ export class IdentityPortalComponent {
   readonly incomingPairFingerprint = /^#pair=([A-F0-9]{64})\.([A-F0-9]{12})$/.exec(location.hash)?.[2] ?? '';
   readonly identity = inject(IdentityApiService);
   private readonly contentTarget = viewChild<ElementRef<HTMLElement>>('accountContent');
+  private readonly workspaceTabRail = viewChild<ElementRef<HTMLElement>>('workspaceTabRail');
 
   // Native '#fragment' links are resolved against <base href="/"> in Angular,
   // which can navigate away from /cuenta. Focus the content in place instead:
@@ -82,6 +83,28 @@ export class IdentityPortalComponent {
   readonly error = signal('');
 
   constructor() {
+    // Keep the current account tab visible when opening a deep link on narrow
+    // screens; scrolling only the tab rail must never move the whole document.
+    // DOM layout reads and the subsequent write run after Angular renders.
+    afterRenderEffect({
+      earlyRead: () => {
+        const selected = this.workspaceView();
+        if (this.identity.state() !== 'authenticated' || !selected) return null;
+        const rail = this.workspaceTabRail()?.nativeElement;
+        if (!rail || rail.scrollWidth <= rail.clientWidth + 1) return null;
+        const active = rail.querySelector<HTMLElement>('a[aria-current="page"]');
+        if (!active) return null;
+        const container = rail.getBoundingClientRect();
+        const item = active.getBoundingClientRect();
+        return { rail, left: rail.scrollLeft + item.left - container.left -
+          (rail.clientWidth - item.width) / 2 };
+      },
+      write: position => {
+        const target = position();
+        if (target && Math.abs(target.rail.scrollLeft - target.left) > 2)
+          target.rail.scrollLeft = Math.max(0, target.left);
+      }
+    });
     // Read only validated published PLATFORM branding. Identity never consumes
     // a tenant picker, preview, candidate asset, or browser-stored brand.
     if (this.brandState().kind === 'loading') void this.publishedBrand.load();

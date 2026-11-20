@@ -474,3 +474,24 @@ test('F03 approvals privacy: stale allowed response cannot restore data after a 
     await expect(queue.locator('.identity-pending-card')).toHaveCount(0);
     expect(sequence).toBe(2);
   });
+
+
+test('F03 mobile deep links keep the active account tab visible without page overflow',
+  async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await syntheticAccount(page);
+    for (const view of ['seguridad', 'historial', 'administracion'] as const) {
+      await visit(page, view);
+      const rail = page.getByRole('navigation', { name: 'Mi cuenta' });
+      await expect.poll(() => rail.evaluate(element => {
+        const active = element.querySelector<HTMLElement>('a[aria-current="page"]');
+        if (!active) return false;
+        const outer = element.getBoundingClientRect();
+        const inner = active.getBoundingClientRect();
+        return inner.left >= outer.left - 2 && inner.right <= outer.right + 2;
+      })).toBe(true);
+      if (view === 'administracion')
+        expect(await rail.evaluate(element => element.scrollLeft)).toBeGreaterThan(0);
+      await noHorizontalOverflow(page);
+    }
+  });
