@@ -36,13 +36,13 @@
               <div class="operator-actions">
                 <button type="button" [disabled]="busy()" (click)="revokeDialog.open()">Revocar sesión de operador {{ session.reference }}</button>
               </div>
-              <cs-institutional-modal #revokeDialog title="Revocar sesión de operador"
+              <cs-institutional-modal #revokeDialog kind="destructive" warning="Solo el dispositivo seleccionado perderá su sesión de plataforma. Comprueba la referencia." title="Revocar sesión de operador"
                 description="Esta decisión cierra solo el dispositivo seleccionado, no otras sesiones empresariales o de plataforma."
                 [busy]="busy()" [feedback]="feedback()" [error]="error()" [closeOnSuccess]="true">
                 <p><strong>{{ session.device }}</strong> · {{ session.reference }}</p>
                 <p>Última actividad: {{ session.activity }}</p>
                 <p>Después de la confirmación, el navegador revocado necesitará volver a autenticarse.</p>
-                <button type="button" [disabled]="busy()" (click)="revokeSessionRequested.emit(session.id)">Confirmar revocación de sesión</button>
+                <button type="button" data-modal-action [disabled]="busy()" (click)="revokeSessionRequested.emit(session.id)">Confirmar revocación de sesión</button>
               </cs-institutional-modal>
             </li>
           }
@@ -62,18 +62,18 @@
     <span>Rotar sesión de operador<span id="operator-rotate-hint" class="operator-task-note">Renueva las credenciales de esta sesión sin cambiar las de otros dispositivos.</span></span>
     <span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #rotateDialog title="Renovar la sesión de plataforma"
+  <cs-institutional-modal #rotateDialog kind="simple" title="Renovar la sesión de plataforma"
     description="Esta operación invalida las credenciales actuales del navegador y establece una sesión nueva."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [closeOnSuccess]="true">
     <p>Confirma únicamente si reconoces este dispositivo. El backend mantiene la identidad y los permisos de operador; no se amplían.</p>
-    <button type="button" [disabled]="busy()" (click)="rotateSessionRequested.emit()">Confirmar renovación de sesión</button>
+    <button type="button" data-modal-action [disabled]="busy()" (click)="rotateSessionRequested.emit()">Confirmar renovación de sesión</button>
   </cs-institutional-modal>
 </div>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog47.open()" aria-label="Cerrar todas mis sesiones de plataforma" aria-describedby="operator-revoke-all-hint">
     <span>Cerrar todas mis sesiones de plataforma<span id="operator-revoke-all-hint" class="operator-task-note">Operación global e irreversible para este operador; exige MFA.</span></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #opDialog47 title="Cerrar todas mis sesiones de plataforma" description="Esta acción cierra todas tus sesiones activas y requiere MFA."
+  <cs-institutional-modal #opDialog47 kind="destructive" warning="Se cerrarán todas las sesiones de plataforma de este operador. La operación exige MFA." title="Cerrar todas mis sesiones de plataforma" description="Esta acción cierra todas tus sesiones activas y requiere MFA."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="false">
     <p>Se cerrarán las sesiones de todos tus dispositivos de operador, no las cuentas de los negocios.</p>
     <form (submit)="actionRequested.emit({ event: $event, action: 'revoke-all' })">

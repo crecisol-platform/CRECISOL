@@ -1,0 +1,176 @@
+name: CRECISOL C05 UX F05 secure modal patterns and recovery
+on:
+  push:
+    branches: [feature/c05-ux-f05-modales-procesos-seguros-20261119]
+    paths:
+      - 'frontend/src/app/ui/institutional-modal/institutional-modal.component.ts'
+      - 'frontend/src/app/ui/institutional-modal/institutional-modal.component.html'
+      - 'frontend/src/app/ui/institutional-modal/institutional-modal.component.css'
+      - 'frontend/src/app/pages/identity-workspace.component.html'
+      - 'frontend/src/app/pages/platform-operator-cases.component.html'
+      - 'frontend/src/app/pages/platform-operator-sessions.component.html'
+      - 'frontend/src/app/pages/platform-operator-profile.component.html'
+      - 'frontend/src/app/pages/platform-operator-security.component.html'
+      - 'frontend/src/app/pages/platform-identity-panel.component.ts'
+      - 'frontend/src/app/pages/platform-identity-panel.component.html'
+      - 'frontend/tests/c05-f05-secure-modals.spec.ts'
+      - 'frontend/playwright.c05-f05-modals.config.ts'
+      - 'qa/c05_ux_f05_modal_audits.py'
+      - 'qa/c05_ux_f05_modal_evidence.py'
+      - 'docs/c05/ux/F05_*'
+      - '.github/workflows/c05-ux-f05-modals.yml'
+permissions:
+  contents: read
+concurrency:
+  group: c05-ux-f05-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  navigation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: F05 A/B/C security, UI and strict scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          for gate in A B C; do
+            python3 qa/c05_ux_f05_modal_audits.py "$gate"
+          done
+          git diff --name-only 7d66d011abb5183e5ebeb625b85be176e079638f...HEAD | while IFS= read -r path; do
+            case "$path" in
+              frontend/src/app/ui/institutional-modal/institutional-modal.component.ts|frontend/src/app/ui/institutional-modal/institutional-modal.component.html|frontend/src/app/ui/institutional-modal/institutional-modal.component.css|frontend/src/app/pages/identity-workspace.component.html|frontend/src/app/pages/platform-operator-cases.component.html|frontend/src/app/pages/platform-operator-sessions.component.html|frontend/src/app/pages/platform-operator-profile.component.html|frontend/src/app/pages/platform-operator-security.component.html|frontend/src/app/pages/platform-identity-panel.component.ts|frontend/src/app/pages/platform-identity-panel.component.html|frontend/tests/c05-f05-secure-modals.spec.ts|frontend/playwright.c05-f05-modals.config.ts|qa/c05_ux_f05_modal_audits.py|qa/c05_ux_f05_modal_evidence.py|docs/c05/ux/F05_*|.github/workflows/c05-ux-f05-modals.yml) ;;
+              *) echo "C05 F05 OUT OF SCOPE: $path"; exit 1 ;;
+            esac
+          done
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v4.4.0
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Install locked dependencies
+        shell: bash
+        run: npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+      - name: TypeScript and production Angular 22 build
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+      - name: F02 institutional harness compatibility build
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx ng build --configuration institutional-harness
+      - name: Install Chromium with bounded time
+        shell: bash
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          cd frontend
+          timeout 240s npx playwright install chromium
+      - name: F05 55 individual modal screenshots, keyboard, focus and WCAG
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f05-modals.config.ts --reporter=line
+      - name: Verify 55 independent PNGs and JSON with exact run SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_ux_f05_modal_evidence.py frontend/test-results-f05-modals
+      - name: F04 isolated operator regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f04-operators.config.ts --reporter=line
+      - name: F03 authenticated account and operator navigation regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f03.config.ts --reporter=line
+          npx playwright test --config=playwright.c05-f03-account.config.ts --reporter=line
+      - name: F02 component library regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.institutional.config.ts --reporter=line
+      - name: C05 original modal and focus regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test tests/c05-institutional-modals.spec.ts --config=playwright.config.ts --reporter=line
+      - name: C05 deep modal keyboard and reflow regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test tests/c05-modal-accessibility-deep.spec.ts --config=playwright.config.ts --reporter=line
+      - name: Preserve screenshots and reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: c05-f05-individual-modals-${{ github.sha }}
+          path: |
+            frontend/test-results-f05-modals/
+            frontend/test-results-f04-operators/
+            frontend/test-results-f03/
+            frontend/test-results-f03-account/
+            frontend/test-results-institutional/
+            frontend/test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  authorized-approvals-integration:
+    name: C05 F05 real .NET10/MySQL8.4 MFA, approvals and operator recovery
+    needs: navigation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout exact F05 code without persisting credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Install Node 24 tooling
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Install official .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile real API, local provisioner and independent SMTP receiver
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tools/Crecisol.LocalIdentityProvisioner/Crecisol.LocalIdentityProvisioner.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.LoopbackSmtpReceiver/Crecisol.LoopbackSmtpReceiver.csproj -c Release --nologo -warnaserror
+      - name: Install locked Angular test dependencies and Chromium
+        shell: bash
+        timeout-minutes: 8
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          cd frontend
+          # The previous --with-deps attempted slow apt font downloads and hit
+          # its 300s timeout. Ubuntu 24.04 runner already has the system
+          # libraries verified by the successful navigation/Chromium job.
+          # Browser-only install avoids an unrelated apt/network dependency.
+          timeout 420s npx playwright install chromium
+      - name: Real disposable MySQL 8.4, loopback .NET 10 API, Angular E2E, MFA and tenant B negatives
+        shell: bash
+        timeout-minutes: 35
+        run: |
+          set -euo pipefail
+          node qa/c05_operational_flow_e2e.mjs

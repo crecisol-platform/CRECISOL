@@ -1,9 +1,17 @@
-<dialog #surface class="cs-modal" [class.cs-modal--wide]="wide()"
-  [attr.aria-labelledby]="titleId"
+<dialog #surface class="cs-modal" [class.cs-modal--wide]="wide() || kind() === 'wizard'"
+  [attr.data-kind]="kind()" [attr.aria-labelledby]="titleId"
   [attr.aria-describedby]="description() ? descriptionId : null"
   (cancel)="onCancel($event)" (close)="onClosed()" (click)="onDialogClick($event)" (submit)="onDialogSubmit()">
   <header class="cs-modal__header">
     <div class="cs-modal__heading">
+      <p class="cs-modal__eyebrow">
+        @switch (kind()) {
+          @case ('simple') { Información y acción }
+          @case ('destructive') { Confirmación de seguridad }
+          @case ('wizard') { Asistente protegido }
+          @default { Formulario verificado }
+        }
+      </p>
       <h2 #heading tabindex="-1" [id]="titleId">{{ title() }}</h2>
       @if (description()) { <p class="cs-modal__description" [id]="descriptionId">{{ description() }}</p> }
     </div>
@@ -11,12 +19,39 @@
       [disabled]="busy()" (click)="close()">×</button>
   </header>
   <div #scrollBody class="cs-modal__content" role="region" aria-label="Contenido de la operación" tabindex="0">
+    @if (kind() === 'destructive') {
+      <div class="cs-modal__warning" role="note">
+        <strong>Revisa antes de confirmar.</strong>
+        <span>{{ warning() || 'Esta acción puede retirar acceso o invalidar credenciales. Verifica el elemento y la cuenta antes de continuar.' }}</span>
+      </div>
+    }
+    @if (kind() === 'wizard' && steps().length > 1) {
+      <nav aria-label="Etapas del proceso" class="cs-modal__stepper">
+        <ol class="cs-modal__steps">
+          @for (label of steps(); track $index) {
+            <li [class.cs-modal__step--current]="$index + 1 === activeStep()"
+                [class.cs-modal__step--complete]="$index + 1 < activeStep()"
+                [attr.aria-current]="$index + 1 === activeStep() ? 'step' : null">
+              <span class="cs-modal__step-number" aria-hidden="true">{{ $index + 1 }}</span>
+              <span>{{ label }}</span>
+            </li>
+          }
+        </ol>
+      </nav>
+    }
     @if (localError()) { <p class="cs-modal__feedback cs-modal__feedback--error" role="alert">{{ localError() }}</p> }
     @if (localFeedback()) { <p class="cs-modal__feedback" role="status" aria-live="polite">{{ localFeedback() }}</p> }
     <ng-content></ng-content>
   </div>
   <footer class="cs-modal__footer">
-    <span>Acción protegida · Nunca compartas tus códigos.</span>
+    <span>
+      @switch (kind()) {
+        @case ('simple') { Ningún cambio se aplica al abrir esta ventana. }
+        @case ('destructive') { El servidor verificará permisos, contexto y segundo factor cuando corresponda. }
+        @case ('wizard') { Paso {{ activeStep() }} de {{ steps().length || 1 }} · No compartas códigos ni partes de recuperación. }
+        @default { Acción protegida · Nunca compartas tus códigos. }
+      }
+    </span>
     <button type="button" class="cs-modal__cancel" [disabled]="busy()" (click)="close()">Cerrar</button>
   </footer>
 </dialog>

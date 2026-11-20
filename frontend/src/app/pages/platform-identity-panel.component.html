@@ -13,17 +13,27 @@
           <button [disabled]="busy() || platform.restoring()">Acceder a identidad de plataforma</button>
         </form>
         <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="operatorRecoveryModal.open()">Recuperar acceso de operador de plataforma</button>
-        <cs-institutional-modal #operatorRecoveryModal title="Recuperación segura de operador"
+        <cs-institutional-modal #operatorRecoveryModal kind="wizard"
+          [steps]="['Solicitar revisión', 'Aportar dos revisiones', 'Activar nuevo MFA']"
+          [step]="platform.operatorRecoverySeed() ? 3 : recoveryStep()"
+          title="Recuperación segura de operador"
           description="Acceso excepcional. Dos revisores independientes, verificación de identidad y un mínimo de 24 horas."
-          [busy]="busy()" [feedback]="message()" [error]="error()" [wide]="true" (dismissed)="platform.discardRecoverySetup()">
+          [busy]="busy()" [feedback]="message()" [error]="error()" [wide]="true" (dismissed)="platform.discardRecoverySetup(); recoveryStep.set(1)">
           
           <p>Se necesitan otros dos operadores de identidad, verificación independiente y al menos 24 horas. Ninguna aprobación de un negocio sirve para este ámbito.</p>
+          @if (recoveryStep() === 1 && !platform.operatorRecoverySeed()) {
           <form (submit)="action($event, 'operator-recovery-request')">
             <label for="operator-recovery-mail">Correo del operador sin acceso</label><input id="operator-recovery-mail" name="mailbox" type="email" required maxlength="254" autocomplete="email">
             <label><input name="unavailable" type="checkbox" required> No tengo disponibles mis métodos seguros de operador</label>
             <button [disabled]="busy()">Solicitar recuperación de operador</button>
           </form>
-          @if (platform.recoveryReference()) { <output aria-label="Referencia de recuperación de operador">{{ platform.recoveryReference() }}</output> }
+          <button type="button" [disabled]="busy()" (click)="recoveryStep.set(2)">Ya tengo las dos partes verificadas</button>
+          }
+          @if (recoveryStep() === 2 && !platform.operatorRecoverySeed()) {
+            @if (platform.recoveryReference()) {
+              <p>Referencia de tu solicitud para entregar a los dos operadores independientes:</p>
+              <output aria-label="Referencia de recuperación de operador">{{ platform.recoveryReference() }}</output>
+            }
           <form (submit)="action($event, 'operator-recovery-complete')">
             <label for="operator-recovery-case">Caso aprobado de operador</label><input id="operator-recovery-case" name="caseId" required maxlength="36">
             <label for="operator-share-a">Parte del primer revisor de operador</label><input id="operator-share-a" name="shareA" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
@@ -31,6 +41,8 @@
             <label for="operator-recovery-password">Nueva contraseña del operador recuperado</label><input id="operator-recovery-password" name="newPassword" type="password" required minlength="15" maxlength="128" autocomplete="new-password">
             <button [disabled]="busy()">Iniciar reenrolamiento de operador</button>
           </form>
+          <button type="button" [disabled]="busy()" (click)="recoveryStep.set(1)">Volver a solicitar revisión</button>
+          }
           @if (platform.operatorRecoverySeed()) {
             <p>Configura TOTP SHA1 con Google Authenticator, Microsoft Authenticator o Aegis. Esta autorización vence en cinco minutos.</p>
             <div class="totp-setup" role="group" aria-label="Vincular MFA del operador recuperado">
@@ -46,11 +58,15 @@
               <button [disabled]="busy()">Confirmar nuevo MFA de operador</button>
             </form>
           }
+          <details class="identity-security-step">
+            <summary>Reportar actividad de operador no reconocida</summary>
+            <p>La denuncia revoca sesiones e impide usar cambios sospechosos. No recupera una cuenta ni concede acceso.</p>
           <form (submit)="action($event, 'operator-incident')">
             <label for="operator-incident-token">Código del aviso de seguridad de operador</label><input id="operator-incident-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
             <button [disabled]="busy()">Reportar incidente de operador</button>
           </form>
-        
+          </details>
+
         </cs-institutional-modal>
       }
       @if (platform.state() === 'challenge') {

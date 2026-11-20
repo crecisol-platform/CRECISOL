@@ -15,6 +15,8 @@ import { PlatformOperatorSessionsComponent, PlatformOperatorProfileComponent, Pl
 export class PlatformIdentityPanelComponent {
   readonly platform = inject(PlatformIdentityApiService);
   readonly panel = signal<'casos' | 'sesiones' | 'perfil' | 'seguridad' | 'monitor'>('casos');
+  // Separate anonymous recovery flow state from the operator authenticated realm.
+  readonly recoveryStep = signal<1 | 2>(1);
   readonly busy = signal(false); readonly message = signal(''); readonly error = signal('');
   readonly navigationItems = computed(() =>
     operatorSections.map(({ id, label }) => ({ id, label, disabled: this.busy() })));
@@ -58,6 +60,7 @@ export class PlatformIdentityPanelComponent {
       if (action === 'operator-recovery-request') {
         if (field('unavailable') !== 'on') throw new Error('identity_unavailable');
         await this.platform.requestRecovery(field('mailbox'));
+        this.recoveryStep.set(2);
       }
       if (action === 'operator-recovery-complete') await this.platform.completeRecovery(field('caseId'), field('shareA'), field('shareB'), field('newPassword'));
       if (action === 'operator-recovery-enroll') await this.platform.confirmRecovery(field('code'));
