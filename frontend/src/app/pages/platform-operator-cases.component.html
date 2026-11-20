@@ -2,7 +2,7 @@
   <header class="operator-section-head">
     <div><span class="operator-kicker">GESTIÓN DE IDENTIDAD / CASOS</span>
       <h2>Casos de recuperación y revisión</h2>
-      <p>Consulta una referencia, comprueba su estado y actúa con evidencia verificable.</p>
+      <p>Consulta una referencia y decide con evidencia verificable.</p>
     </div>
   </header>
   <details class="operator-scope-note operator-scope-details">
@@ -11,7 +11,7 @@
   </details>
   <section class="operator-card operator-card--quiet" aria-label="Consulta puntual de caso">
     <h3>Consultar un expediente</h3>
-    <p>Escribe la referencia del expediente que necesitas revisar.</p>
+    <p>Introduce la referencia del caso que necesitas revisar.</p>
     <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'case' })">
           <label for="platform-case">Referencia del caso de recuperación</label><input id="platform-case" name="caseId" required maxlength="36">
           <button [disabled]="busy()">Consultar caso de identidad</button>
@@ -35,11 +35,11 @@
   </cs-institutional-modal>
 </div>
   <section class="operator-card operator-card--result" aria-label="Estado del expediente consultado">
-    <div class="operator-section-head">
-      <div><h3>Estado y prioridad del caso</h3><p>Solo el expediente consultado; no es una bandeja global ni una lista de clientes.</p></div>
-      @if (currentCase(); as summary) { <span class="operator-tag">{{ summary.priority }}</span> }
-    </div>
     @if (currentCase(); as summary) {
+      <div class="operator-section-head">
+        <div><h3>Estado y prioridad del caso</h3><p>Resultado del expediente consultado únicamente.</p></div>
+        <span class="operator-tag">{{ summary.priority }}</span>
+      </div>
       <div class="operator-filters">
         <label for="operator-case-filter">Filtrar estado consultado</label>
         <select id="operator-case-filter" [value]="caseFilter()" (change)="caseFilter.set($any($event.target).value)">
@@ -64,7 +64,7 @@
       }
     } @else {
       <div class="operator-empty operator-empty--result"><h3>Sin expediente seleccionado</h3>
-        <p>Cuando consultes una referencia autorizada, verás aquí su estado y próximos pasos.</p></div>
+        <p>Consulta una referencia autorizada para ver su estado y próximos pasos.</p></div>
     }
   </section>
         <div class="institutional-task">
@@ -85,7 +85,7 @@
         </form>
   </cs-institutional-modal>
 </div>
-        <p>La revisión requiere dos operadores distintos y una espera mínima de 24 horas. Las decisiones quedan registradas.</p>
+        <p class="operator-case-caution">Para emitir una recuperación se necesitan dos revisores independientes y una espera mínima de 24 horas.</p>
         <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog22.open()">
     <span>Emitir parte de recuperación</span><span aria-hidden="true">›</span>

@@ -18,12 +18,12 @@
           }
           <p class="identity-workspace__lead">
             @switch (view()) {
-              @case ('perfil') { Gestiona tu presentación personal y las preferencias de esta empresa. }
-              @case ('llaves') { Consulta tus llaves registradas y elige cuál administrar sin escribir identificadores técnicos. }
-              @case ('seguridad') { Protege tus credenciales y revisa cada operación antes de confirmar cambios delicados. }
-              @case ('historial') { Comprende qué ocurrió en tu cuenta, cuándo y con qué resultado, sin códigos internos. }
-              @case ('administracion') { Invita o revisa solicitudes únicamente cuando el servidor autorice tu permiso administrativo. }
-              @default { Gestiona los navegadores con acceso y protege tu sesión sin perder el control de tus dispositivos. }
+              @case ('perfil') { Consulta y actualiza los datos de tu perfil empresarial. }
+              @case ('llaves') { Consulta y administra tus llaves registradas. }
+              @case ('seguridad') { Actualiza tus métodos de seguridad con verificación adicional. }
+              @case ('historial') { Revisa los eventos recientes de tu cuenta. }
+              @case ('administracion') { Consulta solicitudes pendientes o invita con autorización. }
+              @default { Comprueba tus sesiones y dispositivos autorizados. }
             }
           </p>
           @if (view() === 'perfil') {
@@ -31,7 +31,7 @@
   <div class="identity-panel-heading">
     <div>
       <h3>Mi perfil en esta empresa</h3>
-      <p>Datos de tu identidad en el contexto empresarial actual.</p>
+      <p>Datos verificados del perfil de esta empresa.</p>
     </div>
     <button type="button" [disabled]="busy()" (click)="loadProfileRequested.emit()">Actualizar datos</button>
   </div>
@@ -50,7 +50,7 @@
         </dl>
       } @else {
         <cs-ui-state kind="empty" heading="Perfil aún no consultado"
-          message="Actualiza tus datos para mostrar tu información empresarial verificada. No completaremos valores por suposición."/>
+          message="Consulta tu perfil para mostrar la información verificada."/>
       }
     </div>
   </div>
@@ -106,7 +106,7 @@
   <div class="identity-panel-heading">
     <div>
       <h3>Mi historial de seguridad</h3>
-      <p>Actividad reciente de tu cuenta, sin identificadores técnicos innecesarios.</p>
+      <p>Eventos recientes de tu cuenta.</p>
     </div>
     <button type="button" [disabled]="busy()" (click)="requestHistory()">Actualizar historial</button>
   </div>
@@ -150,7 +150,7 @@
   <div class="identity-panel-heading">
     <div>
       <h3>Mis llaves de acceso</h3>
-      <p>Administra los métodos registrados para esta cuenta; cada cambio exige verificación adicional.</p>
+      <p>Métodos registrados y revocación protegida.</p>
     </div>
     <button type="button" [disabled]="busy() || identity.restoring()" (click)="passkeyListRequested.emit()">Actualizar llaves</button>
   </div>
@@ -208,10 +208,10 @@
 
           
 } @else if (view() === 'seguridad') {
-<div class="identity-security-intro" role="note">
-  <strong>Protección de tu identidad</strong>
+<details class="identity-security-intro identity-policy-disclosure">
+  <summary>Protección de tu identidad</summary>
   <p>Cada cambio exige su propia verificación. Abrir una opción nunca actualiza automáticamente tus credenciales.</p>
-</div>
+</details>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal31.open()">
     <span>Cambiar contraseña<small class="identity-task-caption" aria-hidden="true">Protege tu acceso con una contraseña renovada</small></span><span aria-hidden="true">›</span>
@@ -284,10 +284,10 @@
 </div>
           
 } @else if (view() === 'administracion') {
-  <div class="identity-approval-context" role="note">
-    <strong>Las solicitudes se revisan dentro de tu empresa</strong>
-    <p>Solo el servidor puede autorizar la consulta y las decisiones. Comprueba la identidad del solicitante antes de aprobar; ningún expediente se acepta automáticamente.</p>
-  </div>
+  <details class="identity-approval-context identity-policy-disclosure">
+    <summary>Las solicitudes se revisan dentro de tu empresa</summary>
+    <p>El servidor verifica tus permisos y el ámbito de cada solicitud. Ningún expediente se acepta automáticamente; confirma la identidad antes de decidir.</p>
+  </details>
 
   <cs-institutional-modal #workspaceModal35 kind="destructive" warning="La decisión afecta únicamente a la membresía pendiente de esta empresa. No podrá registrarse otra decisión sobre el mismo expediente."
     title="Revisar membresía con permiso administrativo"
@@ -333,7 +333,7 @@
     <div class="identity-panel-heading">
       <div>
         <h3>Solicitudes de acceso pendientes</h3>
-        <p>Consulta expedientes autorizados con fecha y correo parcialmente oculto. Se muestran hasta doce por página.</p>
+        <p>Verás solo las solicitudes autorizadas, con el correo protegido.</p>
       </div>
       <button type="button" [disabled]="busy() || identity.restoring()"
         (click)="pendingRequested.emit(false)">
@@ -375,14 +375,14 @@
           message="La consulta autorizada no devolvió solicitudes por revisar en esta empresa."/>
       }
     } @else {
-      <cs-ui-state kind="empty" heading="Bandeja de aprobación protegida"
-        message="Pulsa «Consultar solicitudes» para verificar tus permisos y recuperar las solicitudes pendientes de esta empresa."/>
+      <cs-ui-state kind="empty" heading="Consulta pendiente"
+        message="Pulsa «Consultar solicitudes» para ver si hay decisiones por revisar."/>
     }
   </section>
 
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal36.open()">
-    <span>Invitar a una cuenta<small class="identity-task-caption" aria-hidden="true">Emite una invitación protegida de vigencia limitada</small></span><span aria-hidden="true">›</span>
+    <span>Invitar a una cuenta<small class="identity-task-caption" aria-hidden="true">Invitación segura con caducidad</small></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal36 kind="form" title="Invitar a una cuenta"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -398,12 +398,12 @@
 } @else {
           <cs-ui-card headingId="identity-session-card-heading" heading="Acceso verificado"
             headingLevel="h3" eyebrow="SESIÓN DE CUENTA" tone="accent"
-            description="El acceso a recursos privados sigue dependiendo de tus permisos efectivos en el servidor.">
+            description="Acceso verificado; cada recurso conserva sus permisos propios.">
             <div class="identity-session-overview">
               <div>
                 <span class="identity-session-overview__eyebrow">POLÍTICA DE INACTIVIDAD</span>
                 <strong>{{ identity.idleMinutes() }} minutos</strong>
-                <p>El servidor cierra la sesión tras ese tiempo sin actividad. La actividad legítima puede renovar el plazo.</p>
+                <p>La inactividad caduca la sesión; las acciones autorizadas pueden renovar el plazo.</p>
               </div>
               <span class="identity-session-overview__status">Sesión verificada</span>
             </div>

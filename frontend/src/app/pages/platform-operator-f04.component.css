@@ -135,3 +135,24 @@
   .operator-workspace .operator-card--result,
   .operator-workspace .operator-card--session-list { padding: 0; }
 }
+
+
+/* F06 premium polish · Operator cases prioritize exact-lookup and secondary actions. */
+.operator-workspace .operator-case-caution { margin: .35rem .2rem; color: #506780; font-size: .8rem; line-height: 1.5; }
+.operator-card--result:has(.operator-empty--result) { padding: 0; }
+.operator-card--result .operator-empty--result { padding: .8rem 1rem; border-radius: .8rem; }
+.operator-card--result .operator-empty--result h3 { font-size: .9rem; margin: 0 0 .15rem; }
+.operator-card--result .operator-empty--result p { font-size: .81rem; margin: .2rem 0 0; }
+@media (max-width: 720px) {
+  .operator-workspace { gap: .65rem; }
+  .operator-section-head p { margin: .25rem 0 0; }
+  .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] {
+    padding: .8rem .9rem;
+  }
+  .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] > p {
+    font-size: .82rem; margin: .3rem 0 .65rem;
+  }
+  .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] h3 { margin: 0; font-size: 1rem; }
+  .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] form { gap: .35rem; }
+  .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] input { min-height: 2.65rem; }
+}

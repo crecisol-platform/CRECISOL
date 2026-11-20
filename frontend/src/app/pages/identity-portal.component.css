@@ -490,3 +490,29 @@
     line-height: 1.42;
   }
 }
+
+
+/* F06 premium polish · Recovery keeps its F03-expanded deep-link navigation
+   but presents the optional links in a compact two-column layout on phones. */
+@media (max-width: 720px) {
+  .account-layout--recovery .account-navigation-group { margin-bottom: .7rem; }
+  .account-layout--recovery .account-more { margin-top: .7rem; padding-top: .45rem; }
+  .account-layout--recovery .account-subnav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .4rem;
+    padding-top: .25rem;
+  }
+  .account-layout--recovery .account-subnav a {
+    padding: .5rem .6rem; min-height: 2.5rem;
+    font-size: .77rem; line-height: 1.35; text-align: left;
+  }
+  .account-layout--recovery .account-more summary {
+    font-size: .84rem; min-height: 2.6rem;
+  }
+  .account-layout--recovery .account-more__hint { display: none; }
+  .account-layout--recovery .account-main { padding-bottom: .9rem; }
+}
+@media (forced-colors: active) {
+  .account-layout--recovery .account-subnav a { border-color: CanvasText; }
+}

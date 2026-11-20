@@ -667,3 +667,50 @@
     min-width: 0;
   }
 }
+
+
+/* F06 premium polish · Compact explanation rails, not hidden security gates.
+   Destructive confirmation and permission checks remain in modal/API. */
+.identity-workspace__lead { max-width: 58ch; line-height: 1.5; font-size: .9rem; }
+.identity-workspace > h2 { line-height: 1.18; }
+.identity-policy-disclosure {
+  margin: 0; padding: 0 !important; min-width: 0;
+  border: 1px solid var(--cs-color-border, #d3e1ee);
+  border-left: 3px solid var(--cs-color-action, #103f75);
+  border-radius: .85rem;
+  background: #f5f9fd;
+}
+.identity-policy-disclosure > summary {
+  cursor: pointer;
+  display: list-item;
+  padding: .75rem .9rem;
+  font-weight: 740; color: #174b77;
+  font-size: .85rem; line-height: 1.42;
+}
+.identity-policy-disclosure > summary:focus-visible { outline: 3px solid #126aaf; outline-offset: 3px; }
+.identity-policy-disclosure[open] > p {
+  margin: 0; padding: 0 .9rem .85rem;
+  font-size: .84rem; line-height: 1.55;
+}
+.identity-approval-queue .identity-panel-heading > button:not(:disabled) {
+  background: #154879; border-color: #154879; color: #fff; font-weight: 740;
+}
+.identity-approval-queue .identity-panel-heading > button:hover:not(:disabled) { background: #103b65; }
+.identity-approval-queue .identity-panel-heading > button:focus-visible { outline: 3px solid #126aaf; outline-offset: 3px; }
+@media (max-width: 720px) {
+  .identity-workspace { row-gap: .65rem; }
+  .identity-workspace > h2 { font-size: 1.32rem; }
+  .identity-workspace__lead { margin: -.2rem 0 .15rem; font-size: .86rem; line-height: 1.42; }
+  .identity-approval-queue { padding: .8rem; }
+  .identity-approval-queue .identity-panel-heading { gap: .6rem; margin-bottom: .65rem; }
+  .identity-approval-queue .identity-panel-heading p { font-size: .82rem; line-height: 1.45; }
+  .identity-policy-disclosure > summary { padding: .62rem .8rem; }
+  .identity-policy-disclosure[open] > p { padding: 0 .8rem .7rem; }
+}
+@media (forced-colors: active) {
+  .identity-policy-disclosure { background: Canvas; border-color: CanvasText; }
+  .identity-policy-disclosure > summary { color: CanvasText; }
+  .identity-approval-queue .identity-panel-heading > button:not(:disabled) {
+    background: ButtonFace; color: ButtonText; border-color: CanvasText;
+  }
+}

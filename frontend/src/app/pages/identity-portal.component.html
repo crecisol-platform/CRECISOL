@@ -18,7 +18,7 @@
     <span class="header-context">{{ view() === 'operadores' ? 'Consola de plataforma' : identity.state() === 'authenticated' ? 'Mi cuenta' : 'Identidad y acceso' }}</span>
   </header>
 
-  <div class="account-layout" [class.account-layout--single]="identity.state() !== 'anonymous' || view() === 'operadores'" [class.account-layout--guest]="identity.state() === 'anonymous' && view() !== 'operadores'">
+  <div class="account-layout" [class.account-layout--single]="identity.state() !== 'anonymous' || view() === 'operadores'" [class.account-layout--guest]="identity.state() === 'anonymous' && view() !== 'operadores'" [class.account-layout--recovery]="identity.state() === 'anonymous' && view() === 'recuperar'">
     @if (identity.state() === 'anonymous' && view() !== 'operadores') {
     <aside class="account-aside" aria-label="Acerca del acceso">
       <div class="aside-top">
