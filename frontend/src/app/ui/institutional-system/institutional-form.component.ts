@@ -16,6 +16,7 @@ export class InstitutionalFormComponent {
   readonly heading = input.required<string>();
   readonly description = input('');
   readonly busy = input(false);
+  readonly validationMode = input<'native' | 'host'>('native');
   readonly submitIntent = output<Event>();
 
   submit(event: Event): void {
