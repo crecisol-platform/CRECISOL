@@ -1,12 +1,12 @@
 <section class="identity-workspace">
           <h2 id="session-heading">
             @switch (view()) {
-              @case ('perfil') { Mi perfil }
-              @case ('llaves') { Mis llaves de acceso }
-              @case ('seguridad') { Seguridad de mi cuenta }
-              @case ('historial') { Historial de seguridad }
-              @case ('administracion') { Aprobaciones de mi empresa }
-              @default { Sesión verificada }
+              @case ('perfil') { Datos y preferencias }
+              @case ('llaves') { Métodos registrados }
+              @case ('seguridad') { Gestionar seguridad }
+              @case ('historial') { Actividad reciente }
+              @case ('administracion') { Decisiones e invitaciones }
+              @default { Estado de la sesión }
             }
           </h2>
           @if (identity.recoveryCodes().length) {
