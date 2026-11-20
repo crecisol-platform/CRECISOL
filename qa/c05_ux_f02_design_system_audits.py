@@ -90,6 +90,7 @@ def audit_b() -> None:
               ": " + str(round(ratio, 2)))
     ui = "\n".join(file(p) for p in SYSTEM.glob("*.ts"))
     html = "\n".join(file(p) for p in SYSTEM.glob("*.html"))
+    html = html.replace('xmlns="http://www.w3.org/2000/svg"', "")
     for bad in ("innerHTML", "bypassSecurityTrust", "localStorage", "sessionStorage",
                 "document.cookie", "eval(", "fetch(", "XMLHttpRequest",
                 "http://", "https://", "window.open("):
