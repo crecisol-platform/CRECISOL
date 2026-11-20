@@ -203,7 +203,10 @@ export class IdentityPortalComponent {
         case 'factor': await this.identity.replaceFactor(field('currentPassword'), field('code')); break;
         case 'mailbox-request': await this.identity.requestMailbox(field('mailbox'), field('code')); break;
         case 'mailbox-complete': await this.identity.completeMailbox(field('token'), field('code')); break;
-        case 'membership': await this.identity.decideMembership(field('membershipId'), field('decision'), field('reason'), field('code')); break;
+        case 'membership':
+          if (field('confirmed') !== 'on' || !this.identity.pendingMemberships().some(item => item.id === field('membershipId')))
+            throw new Error('identity_unavailable');
+          await this.identity.decideMembership(field('membershipId'), field('decision'), field('reason'), field('code')); break;
         case 'recovery-request': await this.identity.requestRecovery(field('mailbox')); break;
         case 'recovery-complete': await this.identity.completeRecovery(field('token'), field('code'), field('newPassword')); break;
         default: throw new Error('identity_unavailable');
