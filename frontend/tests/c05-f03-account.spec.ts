@@ -73,6 +73,13 @@ async function seed(page: Page): Promise<void> {
       id: '33333333-4444-4555-8666-777777777777',
       createdAtUtc: '2026-11-15T12:00:00Z'
     }]);
+    owner.identity.pendingMemberships.set([{
+      id: '55555555-6666-4777-8888-999999999999',
+      requestedAtUtc: '2026-11-19T11:00:00Z',
+      mailboxHint: 'so•••@example.test'
+    }]);
+    owner.identity.pendingLoaded.set(true);
+    owner.identity.pendingNextCursor.set(null);
     owner.identity.securityEvents.set([
       { action: 'profile/read', outcome: 1, atUtc: '2026-11-19T15:00:00Z' },
       { action: 'mfa/verify', outcome: 1, atUtc: '2026-11-18T15:00:00Z' },
@@ -157,7 +164,10 @@ for (const size of sizes) {
         await expect(timeline).not.toContainText('opaque/internal/tenant-id');
       }
       if (view === 'administracion') {
-        await expect(page.getByText('Ninguna acción se aprueba automáticamente.')).toBeVisible();
+        const queue = page.getByRole('region', { name: 'Solicitudes de membresía pendientes' });
+        await expect(queue).toContainText('so•••@example.test');
+        await expect(queue).not.toContainText('55555555-6666-4777-8888-999999999999');
+        await expect(page.getByText('Solo el servidor puede autorizar la consulta y las decisiones.', { exact: false })).toBeVisible();
       }
       await capture(page, info, 'account-' + view + '-' + size.width, view);
     });
@@ -191,13 +201,16 @@ test('F03 ACCOUNT approvals: blank decision, reason and MFA required, never auto
   page.on('request', request => {
     if (request.url().includes('/memberships/decide')) decisions++;
   });
-  await page.getByRole('button', { name: 'Revisar membresía con permiso administrativo' }).click();
+  await page.getByRole('button', { name: 'Revisar solicitud', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Revisar membresía con permiso administrativo' });
+  const selected = dialog.locator('select[name="membershipId"]');
+  await expect(selected).toHaveValue('55555555-6666-4777-8888-999999999999');
   const decision = dialog.getByLabel('Decisión', { exact: true });
   await expect(decision).toHaveValue('');
-  await expect(dialog.locator('input[name="membershipId"]')).toHaveAttribute('required', '');
+  await expect(dialog.locator('input[name="membershipId"]')).toHaveCount(0);
   await expect(dialog.locator('input[name="reason"]')).toHaveAttribute('minlength', '8');
   await expect(dialog.locator('input[name="code"]')).toHaveAttribute('required', '');
+  await expect(dialog.locator('input[name="confirmed"]')).toHaveAttribute('required', '');
   await dialog.getByRole('button', { name: 'Registrar decisión' }).click();
   expect(decisions).toBe(0);
 });
@@ -327,4 +340,51 @@ test('F03 ACCOUNT mobile: six tabs stay keyboard-reachable in an inner horizonta
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/vista=administracion/);
     await noHorizontalOverflow(page);
+  });
+
+test('F03 approval inbox: authorized server inventory replaces hand-typed UUID', async ({ page }) => {
+  await syntheticAccount(page); await visit(page, 'administracion');
+  await page.evaluate(() => {
+    const owner = (window as SyntheticDebug).ng!.getComponent(document.querySelector('cs-identity-portal')!);
+    owner.identity.pendingMemberships.set([]);
+    owner.identity.pendingLoaded.set(false);
+  });
+  let fetched = 0;
+  await page.route('**/api/v1/identity/memberships/pending', async route => {
+    fetched++;
+    const request = route.request().postDataJSON() as { cursor: string };
+    expect(request.cursor).toBe('start');
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ requests: [{
+        id: '55555555-6666-4777-8888-999999999999',
+        requestedAtUtc: '2026-11-19T11:00:00Z', mailboxHint: 'so•••@example.test'
+      }], nextCursor: null })
+    });
+  });
+  const queue = page.getByRole('region', { name: 'Solicitudes de membresía pendientes' });
+  await expect(queue).toContainText('Bandeja de aprobación protegida');
+  await queue.getByRole('button', { name: 'Consultar solicitudes' }).click();
+  await expect(queue).toContainText('so•••@example.test');
+  await expect(queue).not.toContainText('55555555-6666-4777-8888-999999999999');
+  expect(fetched).toBe(1);
+});
+
+test('F03 approval inbox: unauthorized response reveals no pending applicant and retains session',
+  async ({ page }) => {
+    await syntheticAccount(page); await visit(page, 'administracion');
+    await page.evaluate(() => {
+      const owner = (window as SyntheticDebug).ng!.getComponent(document.querySelector('cs-identity-portal')!);
+      owner.identity.pendingMemberships.set([]);
+      owner.identity.pendingLoaded.set(false);
+    });
+    await page.route('**/api/v1/identity/memberships/pending', route => route.fulfill({
+      status: 401, contentType: 'application/json', body: '{}'
+    }));
+    await page.getByRole('button', { name: 'Consultar solicitudes' }).click();
+    await expect(page.getByRole('navigation', { name: 'Mi cuenta' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Solicitudes de membresía pendientes' }))
+      .not.toContainText('so•••@example.test');
+    await expect(page.getByRole('region', { name: 'Solicitudes de membresía pendientes' })
+      .getByRole('button', { name: 'Revisar solicitud' })).toHaveCount(0);
   });
