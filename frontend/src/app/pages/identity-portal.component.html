@@ -98,6 +98,7 @@
             <a routerLink="/cuenta" [queryParams]="{vista:'perfil'}" [attr.aria-current]="workspaceView() === 'perfil' ? 'page' : null">Mi perfil</a>
             <a routerLink="/cuenta" [queryParams]="{vista:'llaves'}" [attr.aria-current]="workspaceView() === 'llaves' ? 'page' : null">Llaves</a>
             <a routerLink="/cuenta" [queryParams]="{vista:'seguridad'}" [attr.aria-current]="workspaceView() === 'seguridad' ? 'page' : null">Seguridad</a>
+            <a routerLink="/cuenta" [queryParams]="{vista:'historial'}" [attr.aria-current]="workspaceView() === 'historial' ? 'page' : null">Historial</a>
             <a routerLink="/cuenta" [queryParams]="{vista:'administracion'}" [attr.aria-current]="workspaceView() === 'administracion' ? 'page' : null">Aprobaciones</a>
           </nav>
           <p class="account-view-announcement" role="status" aria-live="polite" aria-atomic="true">Sección actual: {{ sectionName() }}</p>
