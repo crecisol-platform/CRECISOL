@@ -1,4 +1,4 @@
-name: CRECISOL C05 UX F03 contextual navigation and IA
+name: CRECISOL C05 UX F03 six account views plus authorized approvals
 on:
   push:
     branches: [feature/c05-ux-f03-arquitectura-navegacion-20261119]
@@ -11,6 +11,12 @@ on:
       - 'frontend/src/app/pages/identity-workspace.component.html'
       - 'frontend/src/app/pages/identity-workspace.component.css'
       - 'frontend/src/app/identity/identity-presentation.ts'
+      - 'frontend/src/app/identity/identity-api.service.ts'
+      - 'backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.PendingApprovals.cs'
+      - 'qa/c05_operational_flow_e2e.mjs'
+      - 'qa/c05_ux_f03_approvals_audits.py'
       - 'frontend/src/app/ui/institutional-modal/**'
       - 'frontend/tests/c05-f03-account.spec.ts'
       - 'frontend/playwright.c05-f03-account.config.ts'
@@ -43,10 +49,11 @@ jobs:
           for gate in A B C; do
             python3 qa/c05_ux_f03_navigation_audits.py "$gate"
             python3 qa/c05_ux_f03_account_audits.py "$gate"
+            python3 qa/c05_ux_f03_approvals_audits.py "$gate"
           done
           git diff --name-only 0361934286282ddb1b6ba94797125859d37464d7...HEAD | while IFS= read -r path; do
             case "$path" in
-              frontend/src/app/pages/c05-navigation.model.ts|frontend/src/app/pages/identity-portal.component.*|              frontend/src/app/pages/platform-identity-panel.component.*|frontend/src/app/pages/identity-flow.component.css|frontend/src/app/pages/identity-flow-views.component.ts|frontend/src/app/pages/identity-workspace.component.html|frontend/src/app/pages/identity-workspace.component.css|frontend/src/app/identity/identity-presentation.ts|frontend/src/app/ui/institutional-modal/*|frontend/tests/c05-f03-account.spec.ts|frontend/playwright.c05-f03-account.config.ts|qa/c05_ux_f03_account_audits.py|qa/c05_ux_f03_account_evidence.py|              frontend/tests/c05-f03-navigation.spec.ts|frontend/playwright.c05-f03.config.ts|              qa/c05_ux_f03_navigation_audits.py|qa/c05_ux_f03_evidence_audits.py|docs/c05/ux/F03_*|              .github/workflows/c05-ux-f03-navigation.yml) ;;
+              frontend/src/app/pages/c05-navigation.model.ts|frontend/src/app/pages/identity-portal.component.*|              frontend/src/app/pages/platform-identity-panel.component.*|frontend/src/app/pages/identity-flow.component.css|frontend/src/app/pages/identity-flow-views.component.ts|frontend/src/app/pages/identity-workspace.component.html|frontend/src/app/pages/identity-workspace.component.css|frontend/src/app/identity/identity-presentation.ts|frontend/src/app/identity/identity-api.service.ts|backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs|backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs|backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.PendingApprovals.cs|qa/c05_operational_flow_e2e.mjs|qa/c05_ux_f03_approvals_audits.py|frontend/src/app/ui/institutional-modal/*|frontend/tests/c05-f03-account.spec.ts|frontend/playwright.c05-f03-account.config.ts|qa/c05_ux_f03_account_audits.py|qa/c05_ux_f03_account_evidence.py|              frontend/tests/c05-f03-navigation.spec.ts|frontend/playwright.c05-f03.config.ts|              qa/c05_ux_f03_navigation_audits.py|qa/c05_ux_f03_evidence_audits.py|docs/c05/ux/F03_*|              .github/workflows/c05-ux-f03-navigation.yml) ;;
               *) echo "C05 F03 OUT OF SCOPE: $path"; exit 1 ;;
             esac
           done
@@ -122,3 +129,44 @@ jobs:
             frontend/test-results/
           if-no-files-found: warn
           retention-days: 14
+
+  authorized-approvals-integration:
+    name: C05 F03 real .NET10/MySQL8.4 scoped approvals and MFA
+    needs: navigation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout exact F03 code without persisting credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Install Node 24 tooling
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Install official .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile real API, local provisioner and independent SMTP receiver
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tools/Crecisol.LocalIdentityProvisioner/Crecisol.LocalIdentityProvisioner.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.LoopbackSmtpReceiver/Crecisol.LoopbackSmtpReceiver.csproj -c Release --nologo -warnaserror
+      - name: Install locked Angular test dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          cd frontend
+          timeout 300s npx playwright install --with-deps chromium
+      - name: Real disposable MySQL 8.4, loopback .NET 10 API, Angular E2E, MFA and tenant B negatives
+        shell: bash
+        timeout-minutes: 35
+        run: |
+          set -euo pipefail
+          node qa/c05_operational_flow_e2e.mjs
