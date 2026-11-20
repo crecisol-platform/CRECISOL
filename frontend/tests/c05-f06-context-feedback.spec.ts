@@ -227,7 +227,8 @@ test('F06 navigation rejects obsolete feedback yet preserves backup-code secrets
   await expect(page.getByText('F06-SYNTHETIC-BACKUP')).toBeVisible();
   await page.getByRole('link', { name: 'Mi perfil', exact: true }).click();
   await expect(page.locator('cs-operation-feedback')).toHaveCount(0);
-  await expect(page.getByText('F06-SYNTHETIC-BACKUP')).toHaveCount(0);
+  // Unacknowledged freshly issued backups remain available for the owner to save.
+  await expect(page.getByText('F06-SYNTHETIC-BACKUP')).toBeVisible();
   await page.getByRole('link', { name: 'Resumen', exact: true }).click();
   // Disclosure was just issued; navigating to its designated summary cannot discard it.
   await expect(page.getByText('F06-SYNTHETIC-BACKUP')).toBeVisible();
