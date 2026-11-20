@@ -49,10 +49,23 @@ export function operatorAbuseViews(input: readonly { kind: string; count: number
     LOGIN_BURST: 'Intentos de acceso reiterados',
     RECOVERY_BURST: 'Solicitudes de recuperación reiteradas'
   };
-  return input.slice(0, 50).map((entry, index) => {
-    const raw = Number(entry.count);
-    const count = Number.isSafeInteger(raw) && raw >= 0 ? raw : 0;
-    const priority: OperatorSignalPriority = count >= 10 ? 'alta' : count >= 3 ? 'revision' : 'informativa';
-    return { id: String(index), label: names[entry.kind] ?? 'Otra señal de protección', count, priority };
-  }).sort((a, b) => b.count - a.count);
+  const known = new Map<string, number>();
+  let other = 0;
+  for (const entry of input.slice(0, 50)) {
+    const value = Number(entry.count);
+    const count = Number.isSafeInteger(value) && value >= 0 ? value : 0;
+    if (Object.prototype.hasOwnProperty.call(names, entry.kind)) {
+      known.set(entry.kind, (known.get(entry.kind) ?? 0) + count);
+    } else {
+      other += count;
+    }
+  }
+  const band = (count: number): OperatorSignalPriority =>
+    count >= 10 ? 'alta' : count >= 3 ? 'revision' : 'informativa';
+  const visible: OperatorAbuseView[] = [...known].map(([kind, count], index) =>
+    ({ id: String(index), label: names[kind], count, priority: band(count) }));
+  if (other > 0) visible.push({
+    id: 'other', label: 'Otras señales de protección', count: other, priority: band(other)
+  });
+  return visible.sort((a, b) => b.count - a.count);
 }
