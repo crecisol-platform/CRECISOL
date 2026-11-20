@@ -89,7 +89,7 @@ def c() -> None:
          "accessible visual modes missing")
     for width in ("320", "390", "768", "1024", "1440"):
         need("width: " + width in tests, "missing viewport " + width)
-    for view in VIEWS:
+    for view in ("casos", "sesiones", "perfil", "seguridad", "monitor"):
         need("'" + view + "'" in tests, "missing operator screenshot area " + view)
     need("AxeBuilder" in tests and "noOverflow" in tests and
          "role', { name: 'Áreas de la consola de identidad'" in tests,
