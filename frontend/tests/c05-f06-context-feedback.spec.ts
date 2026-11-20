@@ -96,8 +96,8 @@ async function openBusyModal(page: Page): Promise<void> {
   await page.evaluate(() => {
     const portal = document.querySelector('cs-identity-portal');
     const owner = portal && (window as DebugWindow).ng?.getComponent(portal);
-    const modalHost = [...document.querySelectorAll('cs-institutional-modal')]
-      .find(node => node.getAttribute('title') === 'Cambiar contraseña');
+    // F05 intentionally removes the native title attribute once a modal opens.
+    const modalHost = document.querySelector('dialog.cs-modal:modal')?.closest('cs-institutional-modal');
     const modal = modalHost && (window as DebugWindow).ng?.getComponent(modalHost);
     if (!owner || !modal) throw Error('F06 fixture: modal unavailable');
     modal.onDialogSubmit();

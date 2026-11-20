@@ -76,6 +76,8 @@ export class InstitutionalModalComponent implements OnDestroy {
       if (busy && this.actionStartedHere()) this.submittedWhileOpen = true;
       if (busy || !this.submittedWhileOpen) return;
       this.submittedWhileOpen = false;
+      // A later unrelated request cannot impersonate another modal transaction.
+      this.actionStartedHere.set(false);
       if (error) {
         this.localError.set(error);
         this.localFeedback.set('');
