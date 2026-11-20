@@ -131,7 +131,7 @@ for (const size of sizes) {
       await page.goto('/cuenta?vista=perfil');
       const nav = page.getByRole('navigation', { name: 'Mi cuenta' });
       await expect(nav).toBeVisible();
-      await expect(page.getByRole('heading', { level: 1, name: 'Tu espacio de cuenta' })).toBeVisible();
+      await expect(page.getByRole('heading', { level: 1, name: 'Mi perfil' })).toBeVisible();
       await expect(nav.getByRole('link', { name: 'Mi perfil' }))
         .toHaveAttribute('aria-current', 'page');
       await expect(page.getByRole('navigation', { name: 'Ruta de navegación' }))
