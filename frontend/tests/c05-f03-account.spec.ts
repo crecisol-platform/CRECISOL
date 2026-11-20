@@ -145,12 +145,12 @@ for (const size of sizes) {
         await expect(page.getByText('Español (Honduras)', { exact: true })).toBeVisible();
       }
       if (view === 'llaves') {
-        const keyPanel = page.getByRole('region', { name: 'Llaves de acceso' });
+        const keyPanel = page.getByRole('region', { name: 'Llaves de acceso', exact: true });
         await expect(keyPanel).toContainText('Terminación 777777');
         await expect(keyPanel).not.toContainText('33333333-4444-4555-8666-777777777777');
       }
       if (view === 'historial') {
-        const timeline = page.getByRole('region', { name: 'Historial de seguridad' });
+        const timeline = page.getByRole('region', { name: 'Historial de seguridad', exact: true });
         await expect(timeline).toContainText('Consulta de perfil');
         await expect(timeline).toContainText('Verificación de segundo factor');
         await expect(timeline).not.toContainText('profile/read');
@@ -193,7 +193,7 @@ test('F03 ACCOUNT approvals: blank decision, reason and MFA required, never auto
   });
   await page.getByRole('button', { name: 'Revisar membresía con permiso administrativo' }).click();
   const dialog = page.getByRole('dialog', { name: 'Revisar membresía con permiso administrativo' });
-  const decision = dialog.getByLabel('Decisión');
+  const decision = dialog.getByLabel('Decisión', { exact: true });
   await expect(decision).toHaveValue('');
   await expect(dialog.locator('input[name="membershipId"]')).toHaveAttribute('required', '');
   await expect(dialog.locator('input[name="reason"]')).toHaveAttribute('minlength', '8');
@@ -204,7 +204,7 @@ test('F03 ACCOUNT approvals: blank decision, reason and MFA required, never auto
 
 test('F03 ACCOUNT history: readable chronology, no unknown backend codes', async ({ page }) => {
   await syntheticAccount(page); await visit(page, 'historial');
-  const timeline = page.getByRole('region', { name: 'Historial de seguridad' });
+  const timeline = page.getByRole('region', { name: 'Historial de seguridad', exact: true });
   await expect(timeline.locator('.identity-activity-item')).toHaveCount(4);
   await expect(timeline).toContainText('Otra actividad de seguridad');
   await expect(timeline).not.toContainText('opaque/internal/tenant-id');
@@ -240,5 +240,5 @@ test('F03 ACCOUNT zoom 200%, forced-colors, reduced-motion and six-tab mobile sc
   await page.addStyleTag({ content: ':root { font-size: 200% !important; }' });
   await noHorizontalOverflow(page);
   await expect(page.getByRole('navigation', { name: 'Mi cuenta' })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Historial de seguridad' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Historial de seguridad', exact: true })).toBeVisible();
 });
