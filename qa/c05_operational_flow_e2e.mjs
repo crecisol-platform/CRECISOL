@@ -189,7 +189,7 @@ async function browserSession(page) {
   await page.getByRole('link', { name: 'Resumen', exact: true }).click();
   const request = page.waitForRequest(r => r.url().endsWith('/sessions') && r.method() === 'POST');
   const response = page.waitForResponse(r => r.url().endsWith('/sessions'));
-  await page.getByRole('button', { name: 'Consultar sesiones', exact: true }).click();
+  await page.getByRole('button', { name: 'Actualizar dispositivos', exact: true }).click();
   await request;
   const token = (await page.context().cookies()).find(c => c.name === '__Host-crecisol-c05')?.value;
   check((await response).status() === 200, 'Angular validates its HttpOnly session cookie against the persistent session endpoint');
@@ -451,7 +451,7 @@ try {
   const queueResponse = page.waitForResponse(response => response.url().endsWith('/memberships/pending'));
   await page.getByRole('button', { name: 'Consultar solicitudes', exact: true }).click();
   check((await queueResponse).status() === 200, 'Angular obtains allowed pending memberships through real tenant-authorized API');
-  await page.getByRole('button', { name: 'Revisar membresía con permiso administrativo' }).click();
+  await page.getByRole('button', { name: 'Revisar solicitud', exact: true }).first().click();
   await page.getByLabel('Solicitud pendiente seleccionada', { exact: true }).selectOption(memberId);
   await page.getByLabel('Decisión', { exact: true }).selectOption('approve');
   await page.getByLabel('Motivo de la decisión', { exact: true }).fill('Synthetic local approval');
@@ -497,7 +497,7 @@ try {
   const verified = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   check((await verified).status() === 200, 'Angular MFA request accepted by the real backend');
-  await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
   const backupCodes = await page.getByLabel('Códigos de respaldo MFA').locator('code').allTextContents(); confidential.push(...backupCodes);
   check(backupCodes.length === 10, 'MFA enrollment returns ten one-use backup codes once');
   let token = await browserSession(page);
@@ -542,7 +542,7 @@ try {
   const restoredRequest = page.waitForResponse(r => r.url().endsWith('/browser/restore'));
   await page.reload();
   check((await restoredRequest).status() === 200, 'reload restores only a server-validated cookie session and CSRF material');
-  await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
   await page.getByText('Condiciones de la cuenta', { exact: true }).click();
   await page.getByRole('button', { name: 'Leer condiciones vigentes', exact: true }).click();
   await page.getByLabel('Acepto esta versión de las condiciones', { exact: true }).check();
@@ -603,7 +603,7 @@ try {
   const mfaRace = await Promise.all(Array.from({ length: 6 }, () => api('mfa/verify', { challenge: login.data.challenge, code: mfaCode })));
   check(mfaRace.filter(r => r.status === 200).length === 1, 'concurrent TOTP/challenge consumption has one winner');
   check((await api('mfa/verify', { challenge: login.data.challenge, code: mfaCode })).status === 401, 'MFA replay denied');
-  await page.getByRole('button', { name: 'Consultar sesiones' }).click();
+  await page.getByRole('button', { name: 'Actualizar dispositivos', exact: true }).click();
   await page.getByRole('heading', { name: 'Iniciar sesión', exact: true }).waitFor();
   check(true, 'Angular clears revoked session on server validation');
   await reserveTestWindow(35);
@@ -643,7 +643,7 @@ try {
     const response = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
     await page.getByRole('button', { name: 'Verificar', exact: true }).click();
     const result = await response; check(result.status() === 200, 'Angular persistent login with one-use backup factor');
-    await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+    await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
     return await browserSession(page);
   }
   token = await uiLogin('member@example.test', newPassword);
@@ -702,7 +702,7 @@ try {
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   const replacedReceipt = await reverified;
   check(replacedReceipt.status() === 200, 'replacement TOTP enrollment issues a fresh MFA-bound session');
-  await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
   const replacementData = { sessionToken: await browserSession(page), recoveryCodes: await page.getByLabel('Códigos de respaldo MFA').locator('code').allTextContents() };
   confidential.push(...replacementData.recoveryCodes);
   check(sql(`SELECT COUNT(*) FROM c05_identity_mfa_factor WHERE account_id=UNHEX('${actor}') AND factor_state=1`) === '1', 'replacement leaves exactly one active TOTP factor');
