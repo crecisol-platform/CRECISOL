@@ -56,3 +56,28 @@ export function identityReferenceLabel(reference: string): string {
   const suffix = reference.replace(/[^a-zA-Z0-9]/g, '').slice(-6).toUpperCase();
   return suffix ? `Terminación ${suffix}` : 'Referencia no disponible';
 }
+
+/** Labels for session step-up mechanisms are display-only, not MFA policy. */
+export function identityFactorLabel(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'totp' || normalized === 'authenticator') return 'Aplicación de autenticación';
+  if (normalized === 'passkey' || normalized === 'webauthn') return 'Llave de acceso';
+  if (normalized === 'backup' || normalized === 'recovery') return 'Código de respaldo';
+  return 'Verificación adicional';
+}
+
+/** Present human-oriented IANA zone names; the original value remains in the
+ * profile form and is never altered before sending it back to the backend.
+ */
+export function identityTimeZoneLabel(value: string | null | undefined): string {
+  if (!value) return 'No configurada';
+  try {
+    new Intl.DateTimeFormat('es-HN', { timeZone: value }).format(new Date());
+  } catch {
+    return 'Zona horaria no disponible';
+  }
+  const locality = value.split('/').pop()?.replace(/_/g, ' ') ?? '';
+  return /^[\\p{L}0-9 .-]{2,45}$/u.test(locality)
+    ? 'Hora de ' + locality
+    : 'Zona horaria configurada';
+}
