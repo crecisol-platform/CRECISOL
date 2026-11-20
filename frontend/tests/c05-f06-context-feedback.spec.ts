@@ -144,7 +144,7 @@ for (const viewport of viewports) for (const selected of scenes) {
         : selected === 'account-success' ? 'success' : 'error';
       const rendered = page.locator('cs-operation-feedback [data-feedback-kind="' + tone + '"]');
       await expect(rendered).toHaveCount(1);
-      await expect(rendered.locator('section')).toHaveAttribute('role', tone === 'error' ? 'alert' : 'status');
+      await expect(rendered).toHaveAttribute('role', tone === 'error' ? 'alert' : 'status');
       await expect(rendered).not.toContainText('undefined');
     } else {
       await expect(page.locator('input[name="mailbox"]')).toHaveAttribute('aria-invalid', 'true');
