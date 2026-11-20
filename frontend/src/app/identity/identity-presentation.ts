@@ -77,7 +77,7 @@ export function identityTimeZoneLabel(value: string | null | undefined): string 
     return 'Zona horaria no disponible';
   }
   const locality = value.split('/').pop()?.replace(/_/g, ' ') ?? '';
-  return /^[\\p{L}0-9 .-]{2,45}$/u.test(locality)
+  return /^[\p{L}0-9 .-]{2,45}$/u.test(locality)
     ? 'Hora de ' + locality
     : 'Zona horaria configurada';
 }
