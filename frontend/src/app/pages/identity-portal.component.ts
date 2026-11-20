@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { IdentityApiService } from '../identity/identity-api.service';
@@ -31,6 +31,15 @@ export class IdentityPortalComponent {
   readonly incomingPairToken = /^#pair=([A-F0-9]{64})\.([A-F0-9]{12})$/.exec(location.hash)?.[1] ?? '';
   readonly incomingPairFingerprint = /^#pair=([A-F0-9]{64})\.([A-F0-9]{12})$/.exec(location.hash)?.[2] ?? '';
   readonly identity = inject(IdentityApiService);
+  private readonly contentTarget = viewChild<ElementRef<HTMLElement>>('accountContent');
+
+  // Native '#fragment' links are resolved against <base href="/"> in Angular,
+  // which can navigate away from /cuenta. Focus the content in place instead:
+  // preserve queryParams, browser history and any temporary pairing fragment.
+  focusContent(event: Event): void {
+    event.preventDefault();
+    this.contentTarget()?.nativeElement.focus();
+  }
   // The URL is kept intact: display normalization never grants access
   // or calls an API, and deep links remain shareable/back-button friendly.
   readonly guestView = computed(() => guestViewFor(this.view()));
