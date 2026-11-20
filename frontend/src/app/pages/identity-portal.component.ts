@@ -102,7 +102,9 @@ export class IdentityPortalComponent {
         this.feedbackScope.set('');
         this.message.set('');
         this.error.set('');
-        this.identity.recoveryCodes.set([]);
+        // Moving between account tabs must not destroy freshly issued backups:
+        // they are displayed in Resumen until acknowledgement or a 5-minute limit.
+        if (next === 'operadores') this.identity.hideRecoveryCodes();
       });
     });
     // Keep the current account tab visible when opening a deep link on narrow

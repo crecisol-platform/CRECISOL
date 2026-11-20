@@ -40,7 +40,8 @@ export class PlatformIdentityPanelComponent {
     this.feedbackScope.set('');
     this.error.set('');
     this.message.set('');
-    this.platform.recoveryCodes.set([]);
+    // Operator backup codes already expire in the platform service; do not
+    // discard newly issued methods merely because an internal tab changed.
     if (next === 'seguridad') {
       void this.openSecurity(); // Preserve the pre-existing policy load contract.
     } else {

@@ -13,7 +13,7 @@
             <aside aria-label="Códigos de respaldo MFA">
               <p>Guarda estos códigos fuera del navegador. Cada código sirve una sola vez y no volverá a mostrarse.</p>
               <ul>@for (code of identity.recoveryCodes(); track code) { <li><code>{{ code }}</code></li> }</ul>
-              <button type="button" (click)="identity.recoveryCodes.set([])">Ya guardé mis códigos</button>
+              <button type="button" (click)="identity.hideRecoveryCodes()">Ya guardé mis códigos</button>
             </aside>
           }
           <p class="identity-workspace__lead">

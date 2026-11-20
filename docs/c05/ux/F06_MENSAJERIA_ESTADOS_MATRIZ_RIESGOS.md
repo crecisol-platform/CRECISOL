@@ -15,7 +15,7 @@ Autoridad: Documento Maestro Único, `AGENTS.md`, `.agents/skills/crecisol-proje
 | Completado | Mensaje concreto solo tras resultado de API | Respetar operación y ámbito originales |
 | Error | `role=alert`, lenguaje público neutro | Nunca imprimir excepción, PII, secretos ni respuesta cruda |
 | Campo inválido | Nota local `aria-describedby` y `aria-invalid` | Validación nativa; no conceder autorización ni enviar automáticamente |
-| Cambio de vista | Revoca aviso anterior y guarda de generación | La respuesta tardía no resucita mensajes obsoletos |
+| Cambio de vista | Revoca aviso anterior y guarda de generación | La respuesta tardía no resucita mensajes obsoletos; códigos de respaldo recién emitidos se conservan hasta guardarlos |
 | Formulario sensible | Limpia contraseñas, MFA, tokens y partes tras éxito **o error** | Conserva solo correo/razón no secreta para corrección |
 | Modal privilegiado | Recibos ligados a la operación real de ese modal | Sin falso éxito de asistentes, sin Escape con operación en curso |
 
@@ -23,7 +23,7 @@ Mensajería compartida `cs-operation-feedback`, panel institucional en estado y 
 
 ## Riesgos y defensas
 - **P0-1** Recepción tardía al cambiar sección: secuencia monotónica `feedbackGeneration` y clave de vista/panel; invalidar al navegar antes de renderizar.
-- **P0-2** Contraseña, tokens MFA o partes en DOM tras fallo de red: limpieza `clearSensitiveInputValues(form)` en `finally`, sin conservar en `localStorage` o mensajes.
+- **P0-2** Contraseña, tokens MFA o partes en DOM tras fallo de red: limpieza `clearSensitiveInputValues(form)` en `finally`, sin conservar en `localStorage` o mensajes. **Excepción UX segura:** los códigos de respaldo MFA recién emitidos deben presentarse en Resumen para que el propietario pueda guardarlos, y desaparecen con el botón «Ya guardé mis códigos», al vencer cinco minutos o al cerrarse la sesión; nunca se descartan silenciosamente entre pestañas.
 - **P0-3** Confundir contexto global de operador con tenant: controladores de avisos separados por componente y no usar señales como permisos.
 - **P1-1** Notificaciones duplicadas: un bloque semántico por superficie; el modal recibe solo el resultado de su propia operación.
 - **P1-2** Etiquetas/español mal codificado: auditoría explícita UTF-8 en todos los archivos modificados; textos locales no devuelven mensajes de excepción.

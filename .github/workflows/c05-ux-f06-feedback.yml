@@ -4,6 +4,7 @@ on:
     branches: [feature/c05-ux-f06-mensajeria-estados-20261120]
     paths:
       - 'frontend/src/app/ui/feedback/**'
+      - 'frontend/src/app/identity/identity-api.service.ts'
       - 'frontend/src/app/pages/identity-*'
       - 'frontend/src/app/pages/platform-*'
       - 'frontend/src/app/ui/institutional-modal/**'

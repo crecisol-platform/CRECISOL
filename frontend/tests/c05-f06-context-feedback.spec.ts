@@ -216,20 +216,26 @@ test('F06 failed operator login scrubs its credentials in the separate realm', a
   await expect(page.getByLabel('Contraseña del operador')).toHaveValue('');
 });
 
-test('F06 navigation rejects obsolete feedback and destroys visible backup-code secrets', async ({ page }) => {
-  await account(page, 'perfil');
-  await setAccountStatus(page, 'success', 'perfil');
+test('F06 navigation rejects obsolete feedback yet preserves backup-code secrets until saved', async ({ page }) => {
+  await account(page, 'resumen');
+  await setAccountStatus(page, 'success', 'resumen');
   await page.evaluate(() => {
     const portal = document.querySelector('cs-identity-portal');
     const owner = portal && (window as DebugWindow).ng?.getComponent(portal);
     owner.identity.recoveryCodes.set(['F06-SYNTHETIC-BACKUP']);
   });
   await expect(page.getByText('F06-SYNTHETIC-BACKUP')).toBeVisible();
-  await page.getByRole('link', { name: 'Llaves', exact: true }).click();
-  await expect(page.locator('cs-operation-feedback')).toHaveCount(0);
-  await expect(page.getByText('F06-SYNTHETIC-BACKUP')).toHaveCount(0);
   await page.getByRole('link', { name: 'Mi perfil', exact: true }).click();
   await expect(page.locator('cs-operation-feedback')).toHaveCount(0);
+  await expect(page.getByText('F06-SYNTHETIC-BACKUP')).toHaveCount(0);
+  await page.getByRole('link', { name: 'Resumen', exact: true }).click();
+  // Disclosure was just issued; navigating to its designated summary cannot discard it.
+  await expect(page.getByText('F06-SYNTHETIC-BACKUP')).toBeVisible();
+  await page.getByRole('button', { name: 'Ya guardé mis códigos' }).click();
+  await expect(page.getByText('F06-SYNTHETIC-BACKUP')).toHaveCount(0);
+  await page.getByRole('link', { name: 'Mi perfil', exact: true }).click();
+  await page.getByRole('link', { name: 'Resumen', exact: true }).click();
+  await expect(page.getByText('F06-SYNTHETIC-BACKUP')).toHaveCount(0);
 });
 
 test('F06 late response from a departed section does not resurrect a success notice', async ({ page }) => {

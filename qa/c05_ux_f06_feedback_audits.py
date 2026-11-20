@@ -16,6 +16,7 @@ ALLOWED = {
     "frontend/src/app/ui/feedback/operation-feedback.component.html",
     "frontend/src/app/ui/feedback/operation-feedback.component.css",
     "frontend/src/app/ui/feedback/secure-field-feedback.directive.ts",
+    "frontend/src/app/identity/identity-api.service.ts",
     "frontend/src/app/ui/institutional-modal/institutional-modal.component.ts",
     "frontend/src/app/ui/institutional-modal/institutional-modal.component.html",
     "frontend/src/app/pages/identity-portal.component.ts",
@@ -99,8 +100,14 @@ def audit_b() -> None:
     for code in (portal, operator):
         need("clearSensitiveInputValues(form);" in code and "this.feedbackScope.set('');" in code,
              "field cleanup or stale-message revocation missing")
-    need("this.identity.recoveryCodes.set([])" in portal and
-         "this.platform.recoveryCodes.set([])" in operator, "backup visibility persists across sections")
+    service = text("frontend/src/app/identity/identity-api.service.ts")
+    need("this.identity.hideRecoveryCodes()" in portal and
+         "showRecoveryCodes(result.recoveryCodes ?? [])" in service and
+         "this.backupCodesTimer = setTimeout" in service and
+         "this.hideRecoveryCodes();" in service,
+         "new backup codes must remain visible in Resumen until saved, 5 minutes, or logout")
+    need("this.platform.recoveryCodes.set([])" not in operator,
+         "operator navigation must not destroy freshly issued backup codes")
     for path in ["frontend/src/app/ui/feedback/operation-feedback.model.ts",
                  "frontend/src/app/ui/feedback/operation-feedback.component.ts",
                  "frontend/src/app/ui/feedback/secure-field-feedback.directive.ts"]:
