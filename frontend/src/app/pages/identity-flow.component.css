@@ -619,3 +619,76 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
     transform: none;
   }
 }
+
+/* Session dashboard: the device list is primary; rare sensitive actions
+   remain discoverable via native, keyboard-accessible disclosure. */
+.identity-workspace > .identity-summary-extras {
+  grid-column: 1 / -1;
+  margin: .3rem 0 .45rem;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid var(--cs-color-border, #d3e1ee);
+  border-radius: var(--cs-radius-md, .85rem);
+  background: var(--cs-color-surface, #fff);
+  overflow: visible;
+}
+.identity-summary-extras > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .25rem .75rem;
+  margin: 0;
+  min-height: var(--cs-hit-target, 2.75rem);
+  padding: .9rem 1.15rem;
+  cursor: pointer;
+  color: var(--cs-color-accent-text, #174b77);
+  font-weight: 770;
+  font-size: .94rem;
+  line-height: 1.4;
+  list-style: none;
+}
+.identity-summary-extras > summary::-webkit-details-marker { display: none; }
+.identity-summary-extras > summary::after {
+  content: '+';
+  align-self: center;
+  font-weight: 500;
+  font-size: 1.35rem;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+.identity-summary-extras[open] > summary::after { content: '−'; }
+.identity-summary-extras > summary span {
+  grid-column: 1;
+  color: var(--cs-color-muted, #455f79);
+  font-size: .8rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+.identity-summary-extras[open] > summary {
+  border-bottom: 1px solid var(--cs-color-border, #d3e1ee);
+}
+.identity-summary-extras__actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .75rem;
+  padding: 1rem;
+}
+.identity-summary-extras__actions .institutional-task {
+  margin: 0;
+  min-width: 0;
+}
+.identity-summary-extras__actions .institutional-task__trigger { min-height: 4rem; }
+.identity-summary-extras summary:focus-visible {
+  outline: 3px solid var(--cs-color-focus, #126aaf);
+  outline-offset: 3px;
+}
+@media (max-width: 900px) {
+  .identity-summary-extras__actions { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) {
+  .identity-summary-extras > summary { padding: .85rem; }
+  .identity-summary-extras__actions { padding: .85rem; }
+}
+@media (forced-colors: active) {
+  .identity-summary-extras { border: 1px solid CanvasText; }
+  .identity-summary-extras[open] > summary { border-bottom-color: CanvasText; }
+}
