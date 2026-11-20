@@ -49,7 +49,8 @@
           <div><dt>Zona horaria</dt><dd>{{ profile.timeZone }}</dd></div>
         </dl>
       } @else {
-        <p class="identity-empty-copy">Consulta tu perfil para ver los datos actualizados.</p>
+        <cs-ui-state kind="empty" heading="Perfil aún no consultado"
+          message="Actualiza tus datos para mostrar tu información empresarial verificada. No completaremos valores por suposición."/>
       }
     </div>
   </div>
@@ -130,7 +131,8 @@
       </button>
     }
   } @else {
-    <p class="identity-empty-copy">Pulsa «Actualizar historial» para consultar los últimos eventos disponibles. Si no aparece actividad después de consultar, no hay registros para mostrar.</p>
+    <cs-ui-state kind="empty" heading="Sin actividad disponible"
+          message="Actualiza el historial para consultar los eventos de seguridad registrados. La vista no muestra códigos internos."/>
   }
 </section>
 </section>
@@ -157,7 +159,8 @@
       }
     </ul>
   } @else {
-    <p class="identity-empty-copy">No hay llaves en la vista actual. Consulta la lista para comprobar tus métodos registrados.</p>
+    <cs-ui-state kind="empty" heading="Ninguna llave visible"
+          message="Actualiza las llaves para consultar los métodos disponibles en esta sesión. Si no hay registros, puedes añadir una llave después de verificarte."/>
   }
 </section>
 <div class="institutional-task">
@@ -306,14 +309,18 @@
 </div>
           
 } @else {
-          <div class="identity-session-overview">
-            <div>
-              <span class="identity-session-overview__eyebrow">SESIÓN DE CUENTA · CONTROL PRIVADO</span>
-              <strong>Tu acceso está verificado</strong>
-              <p>La sesión caduca a los <strong>{{ identity.idleMinutes() }} minutos de inactividad</strong>. El servidor controla ese plazo y solo una actividad legítima lo renueva.</p>
+          <cs-ui-card headingId="identity-session-card-heading" heading="Acceso verificado"
+            headingLevel="h3" eyebrow="SESIÓN DE CUENTA" tone="accent"
+            description="El acceso a recursos privados sigue dependiendo de tus permisos efectivos en el servidor.">
+            <div class="identity-session-overview">
+              <div>
+                <span class="identity-session-overview__eyebrow">POLÍTICA DE INACTIVIDAD</span>
+                <strong>{{ identity.idleMinutes() }} minutos</strong>
+                <p>El servidor cierra la sesión tras ese tiempo sin actividad. La actividad legítima puede renovar el plazo.</p>
+              </div>
+              <span class="identity-session-overview__status">Sesión verificada</span>
             </div>
-            <span class="identity-session-overview__status">Sesión verificada</span>
-          </div>
+          </cs-ui-card>
           <div class="identity-session-actions">
             <button type="button" [disabled]="busy() || identity.restoring()" (click)="requestSessions()">Actualizar dispositivos</button>
             <button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRequested.emit('rotate')">Renovar sesión</button>
@@ -378,7 +385,8 @@
                 }
               </ul>
             } @else {
-              <p class="identity-empty-copy">Aún no hay sesiones visibles. Utiliza «Actualizar dispositivos» para consultar los dispositivos de tu cuenta.</p>
+              <cs-ui-state kind="empty" heading="Sin dispositivos visibles"
+          message="Actualiza dispositivos para consultar las sesiones asociadas a tu cuenta y revocar las que no reconozcas."/>
             }
           </section>
           <div class="institutional-task">
