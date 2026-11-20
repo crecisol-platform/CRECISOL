@@ -41,6 +41,17 @@ export class SecureFieldFeedbackDirective implements AfterViewInit, OnDestroy {
   private static counter = 0;
   private readonly form = inject(ElementRef<HTMLFormElement>).nativeElement;
   private readonly rendered = new Map<EditableField, FieldRecord>();
+  private readonly previousNoValidate = this.form.noValidate;
+  // Suppress browser-language tooltip bubbles without weakening HTML constraints.
+  // checkValidity() dispatches invalid events, but never displays native popups.
+  private readonly validateSubmit = (event: Event): void => {
+    if (this.form.checkValidity()) return;
+    event.preventDefault();
+    event.stopImmediatePropagation(); // The Angular submit output must never fire on invalid data.
+    const first = this.form.querySelector<EditableField>(
+      'input:invalid, select:invalid, textarea:invalid');
+    first?.focus();
+  };
 
   private readonly invalid = (event: Event): void => {
     const target = event.target;
@@ -76,6 +87,8 @@ export class SecureFieldFeedbackDirective implements AfterViewInit, OnDestroy {
   private readonly reset = (): void => { this.clear(); };
 
   ngAfterViewInit(): void {
+    this.form.noValidate = true;
+    this.form.addEventListener('submit', this.validateSubmit, true);
     this.form.addEventListener('invalid', this.invalid, true);
     this.form.addEventListener('input', this.edited, true);
     this.form.addEventListener('change', this.edited, true);
@@ -95,6 +108,8 @@ export class SecureFieldFeedbackDirective implements AfterViewInit, OnDestroy {
     for (const field of [...this.rendered.keys()]) this.release(field);
   }
   ngOnDestroy(): void {
+    this.form.noValidate = this.previousNoValidate;
+    this.form.removeEventListener('submit', this.validateSubmit, true);
     this.form.removeEventListener('invalid', this.invalid, true);
     this.form.removeEventListener('input', this.edited, true);
     this.form.removeEventListener('change', this.edited, true);

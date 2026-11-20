@@ -157,7 +157,7 @@ for (const viewport of viewports) for (const selected of scenes) {
     expect(results.violations).toEqual([]);
     const filename = 'feedback-' + selected + '-' + viewport.width;
     await page.screenshot({ path: info.outputPath(filename + '.png'),
-      fullPage: true, animations: 'disabled' });
+      fullPage: selected !== 'modal-pending', animations: 'disabled' });
     await writeFile(info.outputPath(filename + '.json'), JSON.stringify({
       filename, scene: selected, viewport, runnerSha: process.env.GITHUB_SHA ?? 'local',
       synthetic: true, violations: results.violations.length, png: filename + '.png'
@@ -176,6 +176,21 @@ test('F06 required inputs show safe inline errors and remove ARIA markers after 
   await mailbox.fill('persona@example.test');
   await expect(mailbox).not.toHaveAttribute('aria-invalid', 'true');
   await expect(page.locator('#' + describedBy)).toHaveCount(0);
+});
+
+test('F06 invalid submission is blocked by local constraints without native tooltip', async ({ page }) => {
+  await account(page, 'ingresar', 'anonymous');
+  const form = page.locator('cs-identity-guest form[csFieldFeedback]').first();
+  await expect(form).toHaveAttribute('novalidate', '');
+  let sent = 0;
+  await page.route('**/api/v1/identity/login', route => {
+    sent++;
+    return route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+  });
+  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await expect(page.locator('.cs-field-feedback')).toHaveCount(2);
+  expect(sent).toBe(0);
+  await expect(page.getByLabel('Correo electrónico')).toBeFocused();
 });
 
 test('F06 failed login leaves mailbox editable but scrubs password without echoing it', async ({ page }) => {

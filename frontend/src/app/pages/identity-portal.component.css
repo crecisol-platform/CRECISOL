@@ -1,7 +1,7 @@
 :host { display: block; min-height: 100svh; color: #17314e; }
 .account-page { min-height: 100svh; background: #f2f6fb; }
-.skip-link { position: fixed; top: -5rem; left: 1rem; z-index: 10; padding: .8rem 1rem; background: white; color: #142b46; border-radius: .65rem; }
-.skip-link:focus { top: 1rem; }
+.skip-link { position: fixed; top: -5rem; left: 1rem; z-index: 10; padding: .8rem 1rem; background: white; color: #142b46; border-radius: .65rem; clip-path: inset(50%); }
+.skip-link:focus { top: 1rem; clip-path: none; }
 .account-header { max-width: 1220px; margin: auto; padding: 1.4rem clamp(1rem, 4vw, 3rem); display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .brand { display: inline-flex; align-items: center; gap: .7rem; min-width: 0; font-size: 1.1rem; font-weight: 850; letter-spacing: .075em; text-decoration: none; color: #103f7e; }
 .brand-mark { width: 2.35rem; height: 2.35rem; flex: 0 0 auto; border-radius: .5rem; object-fit: contain; background: #fff; }

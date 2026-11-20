@@ -20,6 +20,7 @@ ALLOWED = {
     "frontend/src/app/ui/institutional-modal/institutional-modal.component.html",
     "frontend/src/app/pages/identity-portal.component.ts",
     "frontend/src/app/pages/identity-portal.component.html",
+    "frontend/src/app/pages/identity-portal.component.css",
     "frontend/src/app/pages/identity-flow-views.component.ts",
     "frontend/src/app/pages/platform-identity-panel.component.ts",
     "frontend/src/app/pages/platform-identity-panel.component.html",
@@ -91,7 +92,8 @@ def audit_b() -> None:
     operator = text("frontend/src/app/pages/platform-identity-panel.component.ts")
     for token in ("input.type !== 'password'", "one-time-code", "input.value = ''",
                   "invalid", "aria-invalid", "aria-describedby", "fieldValidationCopy",
-                  "ngOnDestroy", "previousDescription"):
+                  "ngOnDestroy", "previousDescription", "this.form.noValidate = true",
+                  "stopImmediatePropagation"):
         need(token in directive, "field privacy or accessibility missing: " + token)
     for code in (portal, operator):
         need("clearSensitiveInputValues(form);" in code and "this.feedbackScope.set('');" in code,
@@ -120,6 +122,8 @@ def audit_c() -> None:
     for needle in ("aria-live", "aria-busy", "aria-atomic", "kind() === 'error'"):
         need(needle in html, "missing live-region contract: " + needle)
     need("cs-field-feedback" in global_css and "aria-invalid" in global_css, "field validation not styled")
+    need("clip-path: inset(50%)" in text("frontend/src/app/pages/identity-portal.component.css"),
+         "skip link must be visually clipped when not focused without losing keyboard access")
     for width in (320,390,768,1024,1440):
         need("width: " + str(width) in test, "visual viewport missing " + str(width))
     for need_test in ("AxeBuilder", "reducedMotion: 'reduce'", "forcedColors: 'active'",
