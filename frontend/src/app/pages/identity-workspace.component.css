@@ -486,3 +486,101 @@
 @media (forced-colors: active) {
   .identity-workspace .identity-task-caption { color: GrayText; }
 }
+
+/* F03 approvals inbox: permission-gated server records, no hand-entered UUIDs. */
+.identity-workspace > .identity-approval-queue {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin: 0;
+  padding: clamp(1rem, 2.3vw, 1.45rem);
+  border: 1px solid var(--cs-color-border, #d3e1ee);
+  border-radius: var(--cs-radius-lg, 1.15rem);
+  background: var(--cs-color-surface-soft, #f5f9fd);
+}
+.identity-approval-queue .identity-panel-heading { margin-bottom: 1rem; }
+.identity-pending-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.identity-pending-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem;
+  min-width: 0;
+  background: var(--cs-color-surface, #fff);
+  border: 1px solid var(--cs-color-border, #d3e1ee);
+  border-radius: var(--cs-radius-md, .85rem);
+}
+.identity-pending-main { min-width: 0; display: grid; gap: .3rem; }
+.identity-pending-state {
+  color: #775219;
+  font-weight: 750;
+  font-size: .72rem;
+  letter-spacing: .025em;
+}
+.identity-pending-card strong {
+  display: block;
+  font-size: 1rem;
+  color: var(--cs-color-text-strong, #102e4c);
+  font-weight: 760;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.identity-pending-card p {
+  margin: 0;
+  font-size: .83rem;
+  line-height: 1.6;
+  color: var(--cs-color-muted, #455f79);
+  overflow-wrap: anywhere;
+}
+.identity-pending-card button {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--cs-hit-target, 2.75rem);
+  margin: 0;
+  color: var(--cs-color-accent-text, #174b77);
+  background: #eff6fc;
+  border: 1px solid #b9d3e6;
+}
+.identity-pending-card button:hover:not(:disabled) { background: #e1f0fa; }
+.identity-approval-queue > .identity-more-action {
+  margin-top: .9rem;
+  min-height: var(--cs-hit-target, 2.75rem);
+}
+.identity-workspace .identity-approval-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  font-size: .85rem;
+  line-height: 1.5;
+  max-width: 70ch;
+  min-width: 0;
+}
+.identity-workspace .identity-approval-confirm input[type='checkbox'] {
+  width: 1.25rem;
+  height: 1.25rem;
+  min-width: 1.25rem;
+  min-height: 1.25rem;
+  flex: 0 0 auto;
+  margin: .15rem 0 0;
+  accent-color: var(--cs-color-action, #103f75);
+}
+@media (max-width: 920px) {
+  .identity-pending-list { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) {
+  .identity-workspace > .identity-approval-queue { padding: .9rem; }
+  .identity-pending-card { padding: .95rem; }
+}
+@media (forced-colors: active) {
+  .identity-approval-queue,
+  .identity-pending-card,
+  .identity-pending-card button { border: 1px solid CanvasText; }
+}
