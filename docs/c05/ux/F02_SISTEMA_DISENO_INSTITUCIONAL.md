@@ -49,7 +49,8 @@ Todas las piezas usan Angular 22 standalone, Signals mediante input/output/compu
 | --- | --- | --- |
 | Navegación | cs-ui-navigation | items, activeId, ariaLabel, selected; cambio de vista es intención y no concede acceso |
 | Tarjetas | cs-ui-card | heading, headingId, headingLevel, eyebrow, description, tone, slot cs-card-actions, proyección libre |
-| Campos/formularios | cs-ui-field | controlId, label, required, hint, error; label nativo y descripción/error enlazables |
+| Campos | cs-ui-field | controlId, label, required, hint, error; label nativo y descripción/error enlazables |
+| Formularios | cs-ui-form | formId, heading, description, busy, validationMode native/host, submitIntent; superficie nativa con envío delegado |
 | Tablas | cs-ui-table | caption, columns, rows, scopeKey, rowsScopeKey; solo lectura, escape de texto y fail-closed al cambiar de contexto |
 | Avisos | cs-ui-notice | kind info/success/warning/error; roles status/alert, icono local, copia desde host |
 | Estados | cs-ui-state | empty/loading/error/success, heading, message, actionLabel, action; movimiento reducido |
@@ -58,7 +59,7 @@ Todas las piezas usan Angular 22 standalone, Signals mediante input/output/compu
 
 **Datos:** la aplicación debe pasar filas ya autorizadas y listas para su presentación; el componente de tabla no consulta, clasifica permisos, exporta, almacena ni identifica tenants. El par scopeKey/rowsScopeKey protege exclusivamente contra la visualización accidental de filas antiguas durante un cambio de ámbito; no sustituye IDOR/BOLA del backend.
 
-**Formularios:** cada input proyectado requiere id idéntico a controlId, clase cs-ui-control, y aria-describedby dirigido a controlId-hint y controlId-error si existen. Cada formulario permanece bajo responsabilidad de la vista y de la validación backend. El componente no guarda ni envía datos.
+**Formularios:** cada input proyectado requiere id idéntico a controlId, clase cs-ui-control, y aria-describedby dirigido a controlId-hint y controlId-error si existen. cs-ui-form utiliza el control nativo form y emite submitIntent sin efectuar peticiones, con validación HTML nativa por defecto o validación de host explícita (validationMode=host). La vista y el backend conservan toda responsabilidad de credenciales, verificación, autorización y resultados. Los componentes no guardan ni envían datos.
 
 **Acciones destructivas:** se expresan con variant danger y el host debe exigir una confirmación independiente, MFA, autorización y bitácora cuando corresponda. Ninguna primitiva decide si una acción está permitida; disabled se limita al estado visual.
 
