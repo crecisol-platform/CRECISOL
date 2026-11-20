@@ -28,12 +28,12 @@
     </section>
   } @else {
     <div class="operator-empty"><h3>Perfil aún no consultado</h3>
-      <p>Solicita los datos actualizados a la API de plataforma. No se completan campos con información de una empresa.</p></div>
+      <p>Consulta tu perfil para mostrar sus datos verificados.</p></div>
   }
 </section>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog51.open()" aria-label="Editar perfil de operador" aria-describedby="operator-profile-edit-hint">
-    <span>Editar perfil de operador<span id="operator-profile-edit-hint" class="operator-task-note">Revisa y confirma solo los datos de presentación de tu identidad institucional.</span></span><span aria-hidden="true">›</span>
+    <span>Editar perfil de operador<span id="operator-profile-edit-hint" class="operator-task-note">Actualiza nombre, idioma y zona horaria.</span></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #opDialog51 kind="form" title="Editar perfil de operador" description="Actualiza únicamente los datos visibles de tu perfil institucional."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -52,7 +52,7 @@
 </div>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog52.open()" aria-label="Actualizar foto de operador" aria-describedby="operator-profile-photo-hint">
-    <span>Actualizar foto de operador<span id="operator-profile-photo-hint" class="operator-task-note">Se conserva únicamente la miniatura normalizada, sin metadatos del archivo original.</span></span><span aria-hidden="true">›</span>
+    <span>Actualizar foto de operador<span id="operator-profile-photo-hint" class="operator-task-note">La foto se procesa sin conservar metadatos.</span></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #opDialog52 kind="form" title="Actualizar foto de operador" description="Archivo PNG, JPEG o WebP. Se conserva únicamente una miniatura."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">

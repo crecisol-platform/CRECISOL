@@ -312,3 +312,16 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
   .operator-nav-hint { margin-top: .15rem; }
   .operator-scope-disclosure { margin-bottom: .55rem; }
 }
+
+
+/* F06 buyer refinement: keep the F03-visible section/policy context but
+   make navigation and disclosure compact in five operator workspaces. */
+@media (max-width: 720px) {
+  .operator-nav-hint { font-size: .75rem; line-height: 1.4; margin-bottom: .2rem; }
+  .operator-context { margin-bottom: .25rem; }
+  .operator-scope-disclosure { margin: .1rem 0 .4rem; border-left-width: 2px; }
+  .operator-scope-disclosure summary {
+    padding: .47rem .68rem; font-size: .8rem; line-height: 1.35;
+  }
+  .operator-content { padding-top: .45rem; }
+}

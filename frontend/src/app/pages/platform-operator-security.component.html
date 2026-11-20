@@ -15,13 +15,13 @@
       <p>Plazo vigente: <strong>{{ policy.idleMinutes }} minutos sin actividad</strong>.</p>
       <p>{{ policy.canManage ? 'Puedes solicitar un ajuste autorizado con MFA.' : 'Solo el administrador habilitado puede modificar esta configuración.' }}</p>
     } @else {
-      <p>Consulta Seguridad para recuperar el valor vigente de la API. No se supone una configuración local como verdadera.</p>
+      <p>Consulta la política vigente del servidor para ver la caducidad.</p>
     }
   </section>
   <div class="operator-grid" aria-label="Acciones de protección">
     <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog31.open()" aria-label="Cambiar contraseña de operador" aria-describedby="operator-password-hint">
-    <span>Cambiar contraseña de operador<span id="operator-password-hint" class="operator-task-note">Requiere contraseña vigente y código independiente; invalida sesiones anteriores.</span></span><span aria-hidden="true">›</span>
+    <span>Cambiar contraseña de operador<span id="operator-password-hint" class="operator-task-note">Requiere contraseña actual y MFA; revoca las sesiones previas.</span></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #opDialog31 kind="form" title="Cambiar contraseña de operador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -35,7 +35,7 @@
 </div>
         <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog32.open()" aria-label="Cambiar correo de operador" aria-describedby="operator-mailbox-hint">
-    <span>Cambiar correo de operador<span id="operator-mailbox-hint" class="operator-task-note">Verificación del nuevo buzón y MFA fresco; no cambia la identidad empresarial.</span></span><span aria-hidden="true">›</span>
+    <span>Cambiar correo de operador<span id="operator-mailbox-hint" class="operator-task-note">Confirma el nuevo correo y tu segundo factor.</span></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #opDialog32 kind="form" title="Cambiar correo de operador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">

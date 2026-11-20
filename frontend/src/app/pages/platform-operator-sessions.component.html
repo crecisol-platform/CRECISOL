@@ -52,17 +52,17 @@
         </ul>
       } @else {
         <div class="operator-empty"><h3>Sin sesiones para el filtro elegido</h3>
-          <p>Prueba otra condición o actualiza el listado; nunca se mostrarán dispositivos de otras cuentas.</p></div>
+          <p>Prueba otro filtro o actualiza las sesiones.</p></div>
       }
     </div>
   } @else {
-    <div class="operator-empty"><h3>Sesiones aún no consultadas</h3>
-      <p>La consulta requiere una sesión propia de operador vigente. No se presentan datos guardados de otra sesión.</p></div>
+    <div class="operator-empty"><h3>Dispositivos sin consultar</h3>
+      <p>Consulta tus dispositivos autorizados para verlos aquí.</p></div>
   }
 </section>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="rotateDialog.open()" aria-label="Rotar sesión de operador" aria-describedby="operator-rotate-hint">
-    <span>Rotar sesión de operador<span id="operator-rotate-hint" class="operator-task-note">Renueva las credenciales de esta sesión sin cambiar las de otros dispositivos.</span></span>
+    <span>Rotar sesión de operador<span id="operator-rotate-hint" class="operator-task-note">Renueva solo la sesión de este navegador.</span></span>
     <span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #rotateDialog kind="simple" title="Renovar la sesión de plataforma"
@@ -74,7 +74,7 @@
 </div>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog47.open()" aria-label="Cerrar todas mis sesiones de plataforma" aria-describedby="operator-revoke-all-hint">
-    <span>Cerrar todas mis sesiones de plataforma<span id="operator-revoke-all-hint" class="operator-task-note">Operación global e irreversible para este operador; exige MFA.</span></span><span aria-hidden="true">›</span>
+    <span>Cerrar todas mis sesiones de plataforma<span id="operator-revoke-all-hint" class="operator-task-note">Cierra tus dispositivos de operador. Requiere MFA.</span></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #opDialog47 kind="destructive" warning="Se cerrarán todas las sesiones de plataforma de este operador. La operación exige MFA." title="Cerrar todas mis sesiones de plataforma" description="Esta acción cierra todas tus sesiones activas y requiere MFA."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="false">

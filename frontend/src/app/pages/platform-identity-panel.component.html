@@ -84,13 +84,13 @@
             <span>{{ activeSection().description }}</span>
           </p>
         </div>
-        <p class="operator-nav-hint">Elige un área. En móvil, desliza las pestañas para ver todas.</p>
+        <p class="operator-nav-hint">Desliza las pestañas para ver todas las áreas.</p>
         <cs-ui-navigation class="operator-navigation"
           [items]="navigationItems()" [activeId]="panel()"
           ariaLabel="Áreas de la consola de identidad"
           (selected)="selectPanel($event)"/>
         <details class="operator-scope-banner operator-scope-disclosure">
-          <summary>Cómo se protegen los permisos de esta consola</summary>
+          <summary>Permisos y privacidad de plataforma</summary>
           <p>El acceso de plataforma utiliza una identidad, sesión y permisos distintos de las cuentas empresariales. Ninguna pestaña concede autorización por sí misma.</p>
         </details>
         <div class="operator-content">

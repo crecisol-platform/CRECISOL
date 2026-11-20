@@ -156,3 +156,23 @@
   .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] form { gap: .35rem; }
   .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] input { min-height: 2.65rem; }
 }
+
+
+/* F06 buyer refinement: one editorial rhythm on the five platform areas. */
+.operator-workspace .operator-section-head { gap: .5rem; }
+.operator-workspace .operator-section-head p { margin-top: .18rem; font-size: .84rem; line-height: 1.45; }
+.operator-workspace .operator-kicker { font-size: .64rem; letter-spacing: .085em; }
+.operator-workspace .operator-empty { padding: .9rem 1rem; border-radius: .8rem; }
+.operator-workspace .operator-empty h3 { margin: 0 0 .2rem; font-size: .98rem; }
+.operator-workspace .operator-empty p { margin: .2rem 0 0; font-size: .84rem; line-height: 1.45; }
+.operator-workspace .operator-card__header h3 { margin: 0; }
+.operator-workspace .operator-scope-details { margin: .1rem 0; }
+.operator-workspace .operator-scope-details summary { padding: .53rem .8rem; }
+@media (max-width: 720px) {
+  .operator-workspace .operator-section-head h2 { font-size: 1.2rem; line-height: 1.19; }
+  .operator-workspace .operator-section-head p { font-size: .8rem; }
+  .operator-workspace .operator-empty { padding: .78rem .9rem; }
+  .operator-workspace .operator-card--policy { padding: .78rem .85rem; }
+  .operator-workspace .operator-card--session-list { padding: 0; }
+  .operator-workspace .institutional-task__trigger { min-height: 3rem; }
+}
