@@ -7,7 +7,7 @@ export const guestViews = [
   'ingresar', 'registro', 'confirmar', 'recuperar', 'invitacion', 'acceso-existente'
 ] as const;
 export const workspaceViews = [
-  'resumen', 'perfil', 'llaves', 'seguridad', 'administracion'
+  'resumen', 'perfil', 'llaves', 'seguridad', 'historial', 'administracion'
 ] as const;
 
 export type GuestView = typeof guestViews[number];
@@ -28,6 +28,7 @@ export const workspaceLabels: Readonly<Record<WorkspaceView, string>> = {
   perfil: 'Mi perfil',
   llaves: 'Llaves de acceso',
   seguridad: 'Seguridad',
+  historial: 'Historial',
   administracion: 'Aprobaciones'
 };
 
