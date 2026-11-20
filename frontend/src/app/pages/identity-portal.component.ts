@@ -26,7 +26,7 @@ export class IdentityPortalComponent {
   private readonly params = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
   readonly view = computed(() => {
     const selected = this.params().get('vista') ?? 'ingresar';
-    return ['ingresar', 'registro', 'confirmar', 'recuperar', 'invitacion', 'acceso-existente', 'operadores', 'resumen', 'perfil', 'llaves', 'seguridad', 'administracion'].includes(selected) ? selected : 'ingresar';
+    return ['ingresar', 'registro', 'confirmar', 'recuperar', 'invitacion', 'acceso-existente', 'operadores', 'resumen', 'perfil', 'llaves', 'seguridad', 'historial', 'administracion'].includes(selected) ? selected : 'ingresar';
   });
   readonly incomingPairToken = /^#pair=([A-F0-9]{64})\.([A-F0-9]{12})$/.exec(location.hash)?.[1] ?? '';
   readonly incomingPairFingerprint = /^#pair=([A-F0-9]{64})\.([A-F0-9]{12})$/.exec(location.hash)?.[2] ?? '';
