@@ -413,3 +413,209 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
   .identity-panel-actions button { flex: 1 1 auto; }
 }
 
+
+/* C05 UX F03 correction — authenticated workspace, six functional views.
+ * Editorial hierarchy and density are shared with F02 institutional tokens.
+ * Permission is NOT implemented with these classes or with navigation state.
+ */
+.identity-workspace {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(.75rem, 1.5vw, 1.15rem);
+  row-gap: clamp(.75rem, 1.5vw, 1.15rem);
+  min-width: 0;
+  align-items: start;
+}
+.identity-workspace > :is(h2, .identity-workspace__lead, aside,
+  .identity-profile, .identity-history-shell, .identity-key-panel,
+  .identity-session-overview, .identity-session-actions, .identity-security-intro,
+  .identity-approval-context, .identity-panel-note, .identity-device-region,
+  cs-ui-card, .identity-session-policy, button:last-child) {
+  grid-column: 1 / -1;
+}
+.identity-workspace > h2 {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.1vw, 1.8rem);
+  line-height: 1.22;
+  color: var(--cs-color-text-strong, #102e4c);
+  letter-spacing: -.035em;
+}
+.identity-workspace__lead {
+  margin: -.35rem 0 .45rem;
+  max-width: 66ch;
+  color: var(--cs-color-muted, #455f79);
+  line-height: 1.65;
+  font-size: .96rem;
+}
+.identity-workspace > .institutional-task {
+  min-width: 0;
+  margin: 0;
+  align-self: stretch;
+}
+.identity-workspace > .institutional-task + .institutional-task { margin-top: 0; }
+.identity-workspace .institutional-task__trigger {
+  box-sizing: border-box;
+  min-height: 4.5rem;
+  height: 100%;
+  padding: 1.05rem 1.15rem;
+  border: 1px solid var(--cs-color-border, #d3e1ee);
+  border-radius: var(--cs-radius-md, .85rem);
+  box-shadow: var(--cs-shadow-card, 0 5px 18px rgb(16 46 76 / .07));
+  background: var(--cs-color-surface, #fff) !important;
+  color: var(--cs-color-accent-text, #174b77) !important;
+  line-height: 1.45;
+}
+.identity-workspace .institutional-task__trigger:focus-visible {
+  outline: 3px solid var(--cs-color-focus, #126aaf);
+  outline-offset: 3px;
+}
+.identity-profile, .identity-history-shell, .identity-key-panel, .identity-device-region {
+  box-sizing: border-box;
+  margin: 0;
+  min-width: 0;
+}
+.identity-history-shell > .identity-activity,
+.identity-device-region {
+  padding: clamp(1.15rem, 2.5vw, 1.65rem);
+  border: 1px solid var(--cs-color-border, #d3e1ee);
+  border-radius: var(--cs-radius-lg, 1.15rem);
+  background: var(--cs-color-surface-soft, #f5f9fd);
+}
+.identity-session-overview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: .85rem 1.1rem;
+  color: var(--cs-color-text-strong, #102e4c);
+}
+.identity-session-overview > div { min-width: 0; flex: 1 1 18rem; }
+.identity-session-overview__eyebrow {
+  display: block;
+  margin: 0 0 .45rem;
+  font-weight: 800;
+  font-size: .72rem;
+  letter-spacing: .1em;
+  color: var(--cs-color-accent-text, #174b77);
+}
+.identity-session-overview strong {
+  font-size: clamp(1.65rem, 2.8vw, 2.25rem);
+  font-weight: 825;
+  letter-spacing: -.045em;
+  line-height: 1.2;
+  color: var(--cs-color-text-strong, #102e4c);
+}
+.identity-session-overview p {
+  max-width: 62ch;
+  margin: .6rem 0 0;
+  color: var(--cs-color-muted, #455f79);
+  font-size: .9rem;
+}
+.identity-session-overview__status {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  flex: 0 0 auto;
+  color: #126347;
+  background: #eaf6ef;
+  border: 1px solid #b6ddc9;
+  border-radius: 999px;
+  padding: .44rem .75rem;
+  font-size: .76rem;
+  font-weight: 760;
+}
+.identity-session-overview__status::before {
+  content: '';
+  width: .48rem;
+  height: .48rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+.identity-session-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+}
+.identity-session-actions button {
+  flex: 1 1 12rem;
+  min-height: var(--cs-hit-target, 2.75rem);
+}
+.identity-session-actions button + button {
+  background: #eff6fc;
+  color: var(--cs-color-accent-text, #174b77);
+  border-color: var(--cs-color-border, #d3e1ee);
+}
+.identity-session-actions button + button:hover:not(:disabled) { background: #dfeefa; }
+.identity-approval-context,
+.identity-security-intro, .identity-panel-note {
+  display: grid;
+  gap: .38rem;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 1.1rem 1.3rem;
+  border: 1px solid var(--cs-color-border, #d3e1ee);
+  border-radius: var(--cs-radius-md, .85rem);
+  background: #f3f8fc;
+  color: var(--cs-color-text-strong, #102e4c);
+}
+.identity-approval-context {
+  border-left: 4px solid var(--cs-color-accent-text, #174b77);
+}
+.identity-security-intro { border-left: 4px solid var(--cs-color-action, #103f75); }
+.identity-approval-context strong, .identity-security-intro strong, .identity-panel-note strong {
+  font-weight: 785;
+  font-size: .98rem;
+}
+.identity-approval-context p, .identity-security-intro p,
+.identity-panel-note span {
+  margin: 0;
+  max-width: 68ch;
+  line-height: 1.56;
+  font-size: .89rem;
+  color: var(--cs-color-muted, #455f79);
+}
+.identity-workspace > button:last-child {
+  justify-self: end;
+  min-width: 11rem;
+  margin-top: 1rem;
+  background: var(--cs-color-surface-soft, #f5f9fd);
+  color: var(--cs-color-accent-text, #174b77);
+  border-color: var(--cs-color-border, #d3e1ee);
+}
+.identity-key-panel .identity-key-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.identity-key-item { min-width: 0; }
+.identity-key-item > div { min-width: 0; }
+.identity-key-item p { overflow-wrap: anywhere; }
+.identity-history-shell .identity-activity { margin: 0; }
+.identity-workspace cs-ui-state { display: block; min-width: 0; }
+@media (max-width: 680px) {
+  .identity-workspace { grid-template-columns: minmax(0, 1fr); }
+  .identity-workspace > .institutional-task { grid-column: 1; }
+  .identity-workspace > .institutional-task__trigger { width: 100%; }
+  .identity-key-panel .identity-key-list { grid-template-columns: minmax(0, 1fr); }
+  .identity-session-overview__status { margin: 0; }
+  .identity-workspace > button:last-child { width: 100%; justify-self: stretch; }
+}
+@media (forced-colors: active) {
+  .identity-history-shell > .identity-activity, .identity-device-region,
+  .identity-approval-context, .identity-security-intro, .identity-panel-note {
+    border: 1px solid CanvasText;
+  }
+  .identity-session-overview__status {
+    border: 1px solid CanvasText;
+    color: CanvasText;
+    background: Canvas;
+  }
+  .identity-session-overview__status::before { background: CanvasText; }
+  .identity-workspace .institutional-task__trigger {
+    border: 1px solid CanvasText;
+    color: ButtonText !important;
+    background: ButtonFace !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .identity-workspace .institutional-task__trigger {
+    transition: none;
+    transform: none;
+  }
+}
