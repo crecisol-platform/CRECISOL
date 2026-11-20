@@ -203,7 +203,7 @@
 </div>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal31.open()">
-    <span>Cambiar contraseña</span><span aria-hidden="true">›</span>
+    <span>Cambiar contraseña<small class="identity-task-caption" aria-hidden="true">Protege tu acceso con una contraseña renovada</small></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal31 title="Cambiar contraseña"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -217,7 +217,7 @@
 </div>
           <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal32.open()">
-    <span>Reemplazar segundo factor</span><span aria-hidden="true">›</span>
+    <span>Reemplazar segundo factor<small class="identity-task-caption" aria-hidden="true">Necesitarás el método actual o un respaldo</small></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal32 title="Reemplazar segundo factor"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -231,7 +231,7 @@
 </div>
           <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal33.open()">
-    <span>Recuperar MFA con una llave de acceso</span><span aria-hidden="true">›</span>
+    <span>Recuperar MFA con una llave de acceso<small class="identity-task-caption" aria-hidden="true">Solo para recuperación con verificación adicional</small></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal33 title="Recuperación del segundo factor con llave"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -249,7 +249,7 @@
 </div>
           <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal34.open()">
-    <span>Cambiar correo</span><span aria-hidden="true">›</span>
+    <span>Cambiar correo<small class="identity-task-caption" aria-hidden="true">Verifica tu dirección nueva antes de activarla</small></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal34 title="Cambiar correo"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -273,7 +273,7 @@
 </div>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal35.open()">
-    <span>Revisar membresía con permiso administrativo</span><span aria-hidden="true">›</span>
+    <span>Revisar membresía con permiso administrativo<small class="identity-task-caption" aria-hidden="true">Referencia del expediente, decisión, motivo y MFA</small></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal35 title="Revisar membresía con permiso administrativo"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -295,7 +295,7 @@
 </div>
           <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal36.open()">
-    <span>Invitar a una cuenta</span><span aria-hidden="true">›</span>
+    <span>Invitar a una cuenta<small class="identity-task-caption" aria-hidden="true">Emite una invitación protegida de vigencia limitada</small></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal36 title="Invitar a una cuenta"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
