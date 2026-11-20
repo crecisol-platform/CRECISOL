@@ -59,6 +59,7 @@ def b() -> None:
     flow = read(FLOW / "MySqlOperationalIdentityFlow.Authorized.cs")
     queue = read(FLOW / "MySqlOperationalIdentityFlow.PendingApprovals.cs")
     service = read(SERVICE)
+    api = read(API)
     portal = read(PORTAL / "identity-portal.component.ts")
     html = read(PORTAL / "identity-workspace.component.html")
     contains(flow, ("r.Bearer is not { Length: 64 }", "await Membership(u, tenant, actor)",
@@ -76,6 +77,9 @@ def b() -> None:
     contains(queue, ("cursor.Split('/', 2)", "TryParseExact(", "TryParseExact(pieces[1],",
                      "return new(false);", "MaskedPendingMailbox(", "Unprotect(", "ZeroMemory(plain)"),
              "keyset and masked contact memory handling")
+    contains(api, ('operation == "memberships/decide" && name == "reason"',
+                   'value.Trim().Length < 8', 'value.Length > 240'),
+             "server-side required approval reason, 8-240 characters")
     contains(service, ("private pendingRequestRevision = 0;",
                        "const loadRevision = ++this.pendingRequestRevision",
                        "loadRevision !== this.pendingRequestRevision",
@@ -100,6 +104,9 @@ def c() -> None:
     wf = read(WORKFLOW)
     css = read(PORTAL / "identity-workspace.component.css")
     contains(e2e, ("branch-scoped grant cannot list pending", "token from tenant A cannot enumerate tenant B",
+                   "blank administrative justification is rejected at the HTTP boundary",
+                   "oversize administrative justification is rejected at the HTTP boundary",
+                   "details.identity-summary-extras > summary", "Renovar sesión",
                    "malformed keyset cursor fails closed", "authorized tenant-scoped approval inbox",
                    "Angular obtains allowed pending memberships through real tenant-authorized API"),
              "real .NET/MySQL HTTP integration negatives")

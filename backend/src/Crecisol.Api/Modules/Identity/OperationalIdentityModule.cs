@@ -176,6 +176,10 @@ public static class OperationalIdentityModule
                     if (name == "code" && !(operation == "invitations/accept" && value == "enroll") && !((value.Length == 6 && value.All(char.IsAsciiDigit)) ||
                         (value.Length == 32 && value.All(Uri.IsHexDigit)))) return Results.BadRequest();
                     if (name.Contains("Password", StringComparison.OrdinalIgnoreCase) && value.Length > 128) return Results.BadRequest();
+                    // The review justification is a security/audit contract, not only
+                    // an HTML minlength control that an API caller can bypass.
+                    if (operation == "memberships/decide" && name == "reason" &&
+                        (value.Trim().Length < 8 || value.Length > 240)) return Results.BadRequest();
                     if (name is "minutes" or "expectedRevision" &&
                         (value.Length > 10 || !value.All(char.IsAsciiDigit))) return Results.BadRequest();
                 }

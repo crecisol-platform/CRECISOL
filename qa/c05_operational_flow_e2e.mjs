@@ -429,6 +429,12 @@ try {
   check((await api('memberships/decide', { membershipId: memberId, decision: 'approve', reason: 'Wrong authority scope', code: approver.backups.pop() }, approver.token)).status === 401,
     'branch-scoped approval permission cannot become tenant-wide administrative authority');
   sql(`UPDATE c05_identity_resource_grant SET branch_id=tenant_id WHERE permission_code='MEMBERSHIP_APPROVE'`);
+  check((await api('memberships/decide', { membershipId: memberId, decision: 'approve',
+    reason: '   ', code: '000000' }, approver.token)).status === 400,
+    'blank administrative justification is rejected at the HTTP boundary before step-up');
+  check((await api('memberships/decide', { membershipId: memberId, decision: 'approve',
+    reason: 'X'.repeat(241), code: '000000' }, approver.token)).status === 400,
+    'oversize administrative justification is rejected at the HTTP boundary');
   const pendingInventory = await api('memberships/pending', { cursor: 'start' }, approver.token);
   check(pendingInventory.status === 200 &&
     Array.isArray(pendingInventory.data?.requests) &&
@@ -562,6 +568,9 @@ try {
   sql(`INSERT INTO c05_identity_branch VALUES(UNHEX('${A}'),UUID_TO_BIN('${branch}',0),TRUE),(UNHEX('${A}'),UUID_TO_BIN('${otherBranch}',0),TRUE);
     INSERT INTO c05_identity_private_resource VALUES(UNHEX('${A}'),UUID_TO_BIN('${branch}',0),UUID_TO_BIN('${resource}',0),UNHEX('${actor}'),1,'LOCAL-PRIVATE-REFERENCE');
     INSERT INTO c05_identity_resource_grant VALUES(UNHEX('${A}'),UUID_TO_BIN(UUID(),0),UNHEX('${actor}'),UUID_TO_BIN('${branch}',0),UUID_TO_BIN('${resource}',0),1,'RESOURCE_READ',UNHEX('${accountId('approver@example.test')}'),UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)+INTERVAL 1 HOUR,NULL,1);`);
+  // Rare/advanced operations are intentionally collapsed in the redesigned
+  // account summary; E2E must follow the same contextual journey as a user.
+  await page.locator('details.identity-summary-extras > summary').click();
   await page.getByRole('button', { name: 'Comprobar un acceso privado', exact: true }).click();
   await page.getByLabel('Sucursal del recurso').fill(branch); await page.getByLabel('Identificador del recurso').fill(resource);
   await page.getByRole('button', { name: 'Consultar recurso autorizado' }).click();
@@ -676,7 +685,7 @@ try {
   check((await api('sessions', {}, token)).status === 401, 'password change revokes prior session');
   token = await uiLogin('member.changed@example.test', password);
   const rotatedUi = page.waitForResponse(r => r.url().endsWith('/sessions/rotate'));
-  await page.getByRole('button', { name: 'Rotar sesión', exact: true }).click();
+  await page.getByRole('button', { name: 'Renovar sesión', exact: true }).click();
   const rotationResponse = await rotatedUi;
   check(rotationResponse.status() === 200, 'Angular rotates persistent session');
   const logoutUi = page.waitForResponse(r => r.url().endsWith('/logout'));
