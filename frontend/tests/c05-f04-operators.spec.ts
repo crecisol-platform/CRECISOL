@@ -124,6 +124,7 @@ for (const size of sizes) {
       if (section === 'perfil') {
         await expect(panel).toContainText('Operador ficticio institucional');
         await expect(panel).toContainText('Español (Honduras)');
+        await expect(panel.getByRole('heading', { level: 3, name: 'Operador ficticio institucional' })).toBeVisible();
       }
       if (section === 'seguridad') await expect(panel).toContainText('30 minutos sin actividad');
       if (section === 'monitor') {
@@ -252,4 +253,19 @@ test('F04 all operator task actions retain stable accessible names and connected
       expect((await page.locator('#' + hint).innerText()).trim().length).toBeGreaterThan(25);
     }
   }
+});
+
+
+test('F04 platform policy denial erases stale privileged settings', async ({ page }) => {
+  await fixture(page); await visit(page, 'seguridad');
+  const policy = page.getByRole('region', { name: 'Política vigente de inactividad' });
+  await expect(policy).toContainText('30 minutos sin actividad');
+  await page.route('**/api/v1/platform-identity/session-policy', route => route.fulfill({
+    status: 403, contentType: 'application/json', body: '{}'
+  }));
+  const nav = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
+  await nav.getByRole('button', { name: 'Seguridad', exact: true }).click();
+  await expect(policy).not.toContainText('30 minutos sin actividad');
+  await expect(policy).toContainText('Consulta Seguridad para recuperar el valor vigente de la API');
+  await expect(nav.getByRole('button', { name: 'Seguridad', exact: true })).toHaveAttribute('aria-current', 'page');
 });

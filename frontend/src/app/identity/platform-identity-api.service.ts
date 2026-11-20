@@ -18,6 +18,7 @@ export class PlatformIdentityApiService {
   private sessionsRequestRevision = 0;
   private abuseRequestRevision = 0;
   private profileRequestRevision = 0;
+  private sessionPolicyRequestRevision = 0;
   readonly idleMinutes = signal(30);
   readonly sessionPolicy = signal<{ idleMinutes: number; revision: number; canManage: boolean } | null>(null);
   private activityLastSent = 0;
@@ -189,17 +190,32 @@ export class PlatformIdentityApiService {
     }
   }
   async loadSessionPolicy(): Promise<void> {
-    const revision = this.sessionRevision;
-    const policy = await this.post<{ idleMinutes: number; revision: number; canManage: boolean }>('session-policy', {});
-    if (revision === this.sessionRevision && this.state() === 'authenticated')
-      this.sessionPolicy.set(policy);
+    const revision = this.sessionRevision, request = ++this.sessionPolicyRequestRevision;
+    // Never present previous administrator permissions while a fresh policy is unverified.
+    this.sessionPolicy.set(null);
+    try {
+      const policy = await this.post<{ idleMinutes: number; revision: number; canManage: boolean }>('session-policy', {});
+      if (revision === this.sessionRevision && request === this.sessionPolicyRequestRevision &&
+          this.state() === 'authenticated') this.sessionPolicy.set(policy);
+    } catch (error) {
+      if (revision === this.sessionRevision && request === this.sessionPolicyRequestRevision)
+        this.sessionPolicy.set(null);
+      throw error;
+    }
   }
   async updateSessionPolicy(minutes: string, expectedRevision: string, code: string): Promise<void> {
-    const revision = this.sessionRevision;
-    const policy = await this.post<{ idleMinutes: number; revision: number; canManage: boolean }>(
-      'session-policy/update', { minutes, expectedRevision, code });
-    if (revision === this.sessionRevision && this.state() === 'authenticated')
-      this.sessionPolicy.set(policy);
+    const revision = this.sessionRevision, request = ++this.sessionPolicyRequestRevision;
+    try {
+      const policy = await this.post<{ idleMinutes: number; revision: number; canManage: boolean }>(
+        'session-policy/update', { minutes, expectedRevision, code });
+      if (revision === this.sessionRevision && request === this.sessionPolicyRequestRevision &&
+          this.state() === 'authenticated') this.sessionPolicy.set(policy);
+    } catch (error) {
+      // A revoked role or stale expected revision cannot leave the old edit affordance visible.
+      if (revision === this.sessionRevision && request === this.sessionPolicyRequestRevision)
+        this.sessionPolicy.set(null);
+      throw error;
+    }
   }
   async loadSessions(): Promise<void> {
     const revision = this.sessionRevision, request = ++this.sessionsRequestRevision;
@@ -314,6 +330,7 @@ export class PlatformIdentityApiService {
     ++this.sessionsRequestRevision;
     ++this.abuseRequestRevision;
     ++this.profileRequestRevision;
+    ++this.sessionPolicyRequestRevision;
     this.caseLoaded.set(false); this.sessionsLoaded.set(false);
     this.abuseLoaded.set(false); this.profileLoaded.set(false);
     ++this.factorQrRevision;
