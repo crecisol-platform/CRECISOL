@@ -46,7 +46,7 @@
         <p class="identity-profile-name" aria-label="Nombre de mi perfil">{{ profile.displayName }}</p>
         <dl class="identity-meta">
           <div><dt>Idioma</dt><dd>{{ profileLanguage() }}</dd></div>
-          <div><dt>Zona horaria</dt><dd>{{ profile.timeZone }}</dd></div>
+          <div><dt>Zona horaria</dt><dd>{{ profileTimeZone() }}</dd></div>
         </dl>
       } @else {
         <cs-ui-state kind="empty" heading="Perfil aún no consultado"
@@ -365,7 +365,7 @@
                       <span class="identity-device-icon" aria-hidden="true"></span>
                       <div class="identity-device-title">
                         <strong>{{ session.device }}</strong>
-                        <span>{{ session.factor }} · {{ session.referenceLabel }}</span>
+                        <span>{{ session.factorLabel }} · {{ session.referenceLabel }}</span>
                       </div>
                     </div>
                     <dl class="identity-meta identity-device-meta">
