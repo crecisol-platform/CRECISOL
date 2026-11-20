@@ -300,7 +300,9 @@
 }
 @media (max-width: 480px) {
   .account-header { gap: .65rem; }
-  .brand { font-size: 1.02rem; }
+  .brand { font-size: clamp(.85rem, 3.6vw, 1.02rem); gap: .45rem; }
+  .brand span { white-space: normal; overflow-wrap: normal; }
+  .header-context { white-space: normal; overflow-wrap: anywhere; max-width: 100%; }
   .brand-mark { width: 2.1rem; height: 2.1rem; }
   .header-context { margin-left: 0; font-size: .76rem; padding: .25rem .55rem; }
   .account-layout { padding-inline: .75rem; }
