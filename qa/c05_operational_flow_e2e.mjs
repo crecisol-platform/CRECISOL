@@ -424,9 +424,22 @@ try {
   await register('member@example.test', page);
   const memberId = membershipId('member@example.test');
   sql(`UPDATE c05_identity_resource_grant SET branch_id=UUID_TO_BIN('${otherBranch}',0) WHERE permission_code='MEMBERSHIP_APPROVE'`);
+  check((await api('memberships/pending', { cursor: 'start' }, approver.token)).status === 401,
+    'branch-scoped grant cannot list pending enterprise memberships');
   check((await api('memberships/decide', { membershipId: memberId, decision: 'approve', reason: 'Wrong authority scope', code: approver.backups.pop() }, approver.token)).status === 401,
     'branch-scoped approval permission cannot become tenant-wide administrative authority');
   sql(`UPDATE c05_identity_resource_grant SET branch_id=tenant_id WHERE permission_code='MEMBERSHIP_APPROVE'`);
+  const pendingInventory = await api('memberships/pending', { cursor: 'start' }, approver.token);
+  check(pendingInventory.status === 200 &&
+    Array.isArray(pendingInventory.data?.requests) &&
+    pendingInventory.data.requests.some(entry => entry.id === memberId) &&
+    pendingInventory.data.requests.every(entry => entry.mailboxHint !== 'member@example.test'),
+    'authorized tenant-scoped approval inbox returns pending verified records with redacted contact');
+  check((await api('memberships/pending', { cursor: 'start' }, approver.token,
+    'tenant-b.example.test')).status === 401,
+    'token from tenant A cannot enumerate tenant B approval inbox');
+  check((await api('memberships/pending', { cursor: 'malformed' }, approver.token)).status === 401,
+    'malformed keyset cursor fails closed without applicant details');
   // Registration completion is now an independent screen; return to the login view.
   await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
   await page.getByRole('region', { name: 'Iniciar sesión', exact: true }).getByLabel('Correo electrónico', { exact: true }).fill('approver@example.test');
@@ -435,10 +448,15 @@ try {
   await page.getByLabel('Código de tu aplicación de autenticación').fill(approver.backups.pop());
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   await page.getByRole('link', { name: 'Aprobaciones', exact: true }).click();
-  await page.getByRole('button', { name: 'Revisar membresía con permiso administrativo', exact: true }).click();
-  await page.getByLabel('Membresía pendiente', { exact: true }).fill(memberId);
-  await page.getByLabel('Motivo', { exact: true }).fill('Synthetic local approval');
+  const queueResponse = page.waitForResponse(response => response.url().endsWith('/memberships/pending'));
+  await page.getByRole('button', { name: 'Consultar solicitudes', exact: true }).click();
+  check((await queueResponse).status() === 200, 'Angular obtains allowed pending memberships through real tenant-authorized API');
+  await page.getByRole('button', { name: 'Revisar membresía con permiso administrativo' }).click();
+  await page.getByLabel('Solicitud pendiente seleccionada', { exact: true }).selectOption(memberId);
+  await page.getByLabel('Decisión', { exact: true }).selectOption('approve');
+  await page.getByLabel('Motivo de la decisión', { exact: true }).fill('Synthetic local approval');
   await page.getByLabel('Código MFA del aprobador', { exact: true }).fill(approver.backups.pop());
+  await page.getByLabel('Revisé la solicitud y confirmo que esta es la decisión que deseo registrar.').check();
   const approvalResponse = page.waitForResponse(r => r.url().endsWith('/memberships/decide'));
   await page.getByRole('button', { name: 'Registrar decisión', exact: true }).click();
   check((await approvalResponse).status() === 200, 'Angular real MFA approver activates pending membership through API');
