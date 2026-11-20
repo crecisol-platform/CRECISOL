@@ -2,12 +2,15 @@
   <header class="operator-section-head">
     <div><span class="operator-kicker">CONTROL DE ACCESO / DISPOSITIVOS</span>
       <h2>Sesiones de plataforma</h2>
-      <p>Revisa cada navegador autorizado, distingue actividad reciente y cierra únicamente la sesión que elijas.</p></div>
+      <p>Consulta los dispositivos autorizados y revoca únicamente la sesión que elijas.</p></div>
     <button type="button" [disabled]="busy()" (click)="loadSessionsRequested.emit()">Consultar sesiones de operador</button>
   </header>
-  <p class="operator-scope-note">Solo sesiones vinculadas a la identidad de este operador. Una sesión empresarial no aparece ni puede revocarse desde aquí.</p>
+  <details class="operator-scope-note operator-scope-details">
+    <summary>Alcance de las sesiones</summary>
+    <p>Solo sesiones vinculadas a la identidad de este operador. Una sesión empresarial no aparece ni puede revocarse desde aquí.</p>
+  </details>
   @if (platform.sessionsLoaded()) {
-    <div class="operator-card">
+    <div class="operator-card operator-card--session-list">
       <div class="operator-section-head">
         <div><h3>Dispositivos autorizados</h3><p>{{ sessionRows().length }} sesiones devueltas por el servidor.</p></div>
         <div class="operator-filters">

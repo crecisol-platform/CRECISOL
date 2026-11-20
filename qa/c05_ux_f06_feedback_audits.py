@@ -33,6 +33,7 @@ ALLOWED = {
     "frontend/src/app/pages/identity-recovery.component.html",
     "frontend/src/app/pages/identity-workspace.component.html",
     "frontend/src/app/pages/platform-operator-cases.component.html",
+    "frontend/src/app/pages/platform-operator-monitor.component.html",
     "frontend/src/app/pages/platform-operator-profile.component.html",
     "frontend/src/app/pages/platform-operator-security.component.html",
     "frontend/src/app/pages/platform-operator-sessions.component.html",

@@ -2,10 +2,13 @@
   <header class="operator-section-head">
     <div><span class="operator-kicker">PERFIL / IDENTIDAD INSTITUCIONAL</span>
       <h2>Mi perfil de operador</h2>
-      <p>Datos y preferencias exclusivos de tu identidad de plataforma; no se sincronizan con un perfil de empresa.</p></div>
+      <p>Revisa tu nombre, idioma, zona horaria e imagen institucional.</p></div>
     <button type="button" [disabled]="busy()" (click)="loadProfileRequested.emit()">Consultar perfil de operador</button>
   </header>
-  <p class="operator-scope-note">Cambiar esta presentación no concede ni modifica funciones administrativas ni acceso a negocios.</p>
+  <details class="operator-scope-note operator-scope-details">
+    <summary>Sobre el perfil institucional</summary>
+    <p>Cambiar esta presentación no concede ni modifica funciones administrativas ni acceso a negocios.</p>
+  </details>
   @if (platform.profileLoaded()) {
     <section class="operator-card" aria-label="Datos del perfil institucional">
       <div class="operator-profile-head">
@@ -14,11 +17,10 @@
         } @else { <span class="operator-avatar" aria-hidden="true">{{ profileName().charAt(0).toUpperCase() }}</span> }
         <div><span class="operator-kicker">OPERADOR VERIFICADO</span>
           <h3>{{ profileName() }}</h3>
-          <p class="operator-reassurance">Perfil institucional; los permisos se verifican por separado en cada operación.</p>
+
         </div>
       </div>
       <dl class="operator-facts">
-        <div><dt>Nombre visible</dt><dd>{{ profileName() }}</dd></div>
         <div><dt>Idioma</dt><dd>{{ profileLanguage() }}</dd></div>
         <div><dt>Zona horaria</dt><dd>{{ profileZone() }}</dd></div>
         <div><dt>Imagen</dt><dd>{{ platform.photo() ? 'Foto registrada' : 'Sin fotografía' }}</dd></div>

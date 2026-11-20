@@ -2,11 +2,14 @@
   <header class="operator-section-head">
     <div><span class="operator-kicker">PROTECCIÓN / CREDENCIALES</span>
       <h2>Seguridad de plataforma</h2>
-      <p>Protege las credenciales institucionales, gestiona el autenticador y revisa la caducidad sin mezclar cuentas empresariales.</p>
+      <p>Controla credenciales, MFA y caducidad de las sesiones de plataforma.</p>
     </div>
   </header>
-  <p class="operator-scope-note">Los cambios de credenciales y sesiones exigen la comprobación del servidor y, cuando corresponde, segundo factor reciente. Nunca se transfieren permisos de una empresa al operador.</p>
-  <section class="operator-card operator-card--quiet" aria-label="Política vigente de inactividad">
+  <details class="operator-scope-note operator-scope-details">
+    <summary>Ver controles de seguridad</summary>
+    <p>Los cambios de credenciales y sesiones exigen la comprobación del servidor y, cuando corresponde, segundo factor reciente. Nunca se transfieren permisos de una empresa al operador.</p>
+  </details>
+  <section class="operator-card operator-card--quiet operator-card--policy" aria-label="Política vigente de inactividad">
     <div class="operator-card__header"><h3>Política de sesión</h3><span class="operator-tag">Control central</span></div>
     @if (platform.sessionPolicy(); as policy) {
       <p>Plazo vigente: <strong>{{ policy.idleMinutes }} minutos sin actividad</strong>.</p>
@@ -81,7 +84,7 @@
   </div>
   <section class="operator-card" aria-label="Administración de caducidad">
     <h3>Caducidad y administración</h3>
-    <p>La cuenta conserva la política vigente del servidor. La edición, cuando está autorizada, requiere control de versión y MFA.</p>
+    <p>Los cambios globales requieren autorización, control de versión y MFA.</p>
     <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="idlePolicyModal.open()">
     <span>Caducidad por inactividad de sesiones</span><span aria-hidden="true">›</span>

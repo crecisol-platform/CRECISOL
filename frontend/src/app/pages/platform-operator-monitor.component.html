@@ -2,12 +2,15 @@
   <header class="operator-section-head">
     <div><span class="operator-kicker">OBSERVABILIDAD / PROTECCIÓN</span>
       <h2>Monitor de identidad</h2>
-      <p>Revisa actividad agregada durante las últimas 24 horas, con prioridades orientativas y sin exponer información personal.</p></div>
+      <p>Consulta señales agregadas de las últimas 24 horas y sus niveles de atención.</p></div>
     <button type="button" [disabled]="busy()" (click)="loadAbuseRequested.emit()">Consultar señales agregadas</button>
   </header>
-  <p class="operator-scope-note">Información agregada del servicio de plataforma. No muestra correos, IP, identificadores de clientes ni detalle de tenants. La prioridad visual no sustituye investigación ni autorización backend.</p>
+  <details class="operator-scope-note operator-scope-details">
+    <summary>Privacidad de los indicadores</summary>
+    <p>Información agregada del servicio de plataforma. No muestra correos, IP, identificadores de clientes ni detalle de tenants. La prioridad visual no sustituye investigación ni autorización backend.</p>
+  </details>
   @if (platform.abuseLoaded()) {
-    <div class="operator-grid" aria-label="Indicadores agregados">
+    <div class="operator-grid operator-monitor-stats" aria-label="Indicadores agregados">
       <div class="operator-card operator-stat"><strong>{{ totalSignals() }}</strong><span>Señales agregadas</span></div>
       <div class="operator-card operator-stat"><strong>{{ signals().length }}</strong><span>Categorías devueltas</span></div>
       <div class="operator-card operator-stat"><strong>24 h</strong><span>Ventana de observación</span></div>
@@ -30,7 +33,7 @@
           @for (item of filteredSignals(); track item.id) {
             <li class="operator-card operator-card--quiet">
               <div class="operator-card__header">
-                <div><strong>{{ item.label }}</strong><p>Agregado sin datos personales</p></div>
+                <div><strong>{{ item.label }}</strong></div>
                 <span class="operator-tag" [class.operator-tag--high]="item.priority === 'alta'">
                   {{ item.priority === 'alta' ? 'Atención alta' : item.priority === 'revision' ? 'Por revisar' : 'Informativa' }}
                 </span>
