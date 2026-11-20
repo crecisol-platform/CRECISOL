@@ -280,7 +280,30 @@
   font-weight: 685;
 }
 .skip-link { z-index: 100; top: -7rem; box-shadow: var(--cs-shadow-raised, 0 22px 55px rgb(12 37 68 / .13)); }
+.account-nav-mobile-help {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 @media (max-width: 720px) {
+  .account-nav-mobile-help {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0 0 .55rem;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    color: var(--cs-color-muted, #455f79);
+    font-size: .78rem;
+    line-height: 1.45;
+  }
   .account-nav--workspace {
     display: flex;
     flex-wrap: nowrap;
