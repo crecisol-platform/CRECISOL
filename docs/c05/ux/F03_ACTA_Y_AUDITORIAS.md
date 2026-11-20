@@ -52,3 +52,13 @@ Los controles JavaScript de deshabilitado, navegación, historial y tabla son **
 4. No existan fallos P0/P1, fugas tenant, contradicciones visuales ni cambios fuera de alcance.
 
 **Resolución vigente: NO CERTIFICADA INTEGRALMENTE. PR #176 DRAFT, no fusionado. Fase 04 BLOQUEADA.** Las pruebas técnicas exitosas se registran sin elevarlas injustificadamente a certificación 9/10.
+
+## Actualización de auditoría — 19-11-2026, HEAD b0d6551b4aef6a502892303148b514342ab883fc (referencia previa a este registro)
+
+Esta actualización **rectifica el estado técnico de Aprobaciones** descrito en las secciones II–V, preservadas arriba como relato histórico. En el HEAD auditado existe el nuevo contrato `memberships/pending`, implementado en `OperationalIdentityModule.cs`, `MySqlOperationalIdentityFlow.Authorized.cs` y `MySqlOperationalIdentityFlow.PendingApprovals.cs`; el frontend incorpora `loadPendingMemberships`, selección de solicitud recibida del servidor, motivo, confirmación y código MFA. Por tanto, la afirmación histórica de que la bandeja no existe **ya no describe el código actual**.
+
+**Auditoría A — evidencia de fuente, no de ejecución:** se verificó por lectura de GitHub el listado paginado con límite de 12 y cursor; la selección deja de requerir UUID escrito manualmente. **Auditoría B — evidencia de fuente, no de ejecución:** se observaron filtros por tenant autenticado, permiso `MEMBERSHIP_APPROVE` vigente, exclusión del aprobador, correo enmascarado y comprobaciones de MFA al decidir. **Auditoría C — evidencia de fuente, no de ejecución:** existen pruebas automatizadas de navegador, auditorías estáticas y una ruta de integración .NET/MySQL declarada en el workflow. Ninguna observación estática demuestra que esas pruebas hayan pasado en el HEAD auditado.
+
+**Gate de certificación:** consulta al conector GitHub del HEAD `b0d6551b4aef6a502892303148b514342ab883fc`: no devolvió ejecuciones de workflow asociadas ni estados combinados. La ejecución histórica #44654470572 corresponde a un commit anterior y no acredita este HEAD. No se ejecutó aquí .NET 10, MySQL 8.4, Chromium ni la revisión humana de las seis calificaciones; por consiguiente **F03 NO CERTIFICADA**, PR #176 continúa DRAFT, F04 sigue bloqueada. Antes de un acta de cierre se necesitan evidencias del SHA definitivo, pruebas negativas reales y evaluación visual individual >=9/10 en Resumen, Perfil, Llaves, Seguridad, Historial y Aprobaciones.
+
+No se modifican los hechos históricos ni el Documento Maestro Único. Esta actualización documental no constituye certificación ni prueba de seguridad dinámica.
