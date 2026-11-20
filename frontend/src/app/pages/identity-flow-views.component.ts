@@ -43,7 +43,10 @@ export class IdentityMfaComponent {
 export class IdentityWorkspaceComponent {
   readonly identity = inject(IdentityApiService);
   readonly showAllEvents = signal(false);
-  readonly securityEventRows = computed(() => this.identity.securityEvents()
+  readonly historyRequested = signal(false);
+  readonly sessionsRequested = signal(false);
+  readonly securityEventRows = computed(() => [...this.identity.securityEvents()]
+    .sort((left, right) => Date.parse(right.atUtc) - Date.parse(left.atUtc))
     .slice(0, this.showAllEvents() ? 50 : 8)
     .map(event => ({
       ...event,
@@ -77,6 +80,22 @@ export class IdentityWorkspaceComponent {
   readonly sessionRequested = output<'list' | 'rotate'>();
   readonly revokeRequested = output<string>();
   readonly logoutRequested = output<void>();
+
+  requestHistory(): void {
+    if (this.busy()) return;
+    this.historyRequested.set(true);
+    this.securityEventsRequested.emit();
+  }
+  requestSessions(): void {
+    if (this.busy()) return;
+    this.sessionsRequested.set(true);
+    this.sessionRequested.emit('list');
+  }
+
+  readonly profileLanguage = computed(() => {
+    const code = this.identity.profile()?.language;
+    return code === 'en' ? 'English' : code === 'es' ? 'Español' : code === 'es-HN' ? 'Español (Honduras)' : 'Sin configurar';
+  });
 }
 
 @Component({
