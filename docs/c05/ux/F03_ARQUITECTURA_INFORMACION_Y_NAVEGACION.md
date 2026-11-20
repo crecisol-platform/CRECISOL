@@ -60,6 +60,12 @@ La documentación vigente del repositorio no contenía una especificación autó
 
 Los mocks de restauración devuelven una sesión **ficticia** con campo `idleMinutes=30`; no prueban una expiración real de 30 minutos en .NET/MySQL. El color de tema publicado es validado; no hay base de datos, secretos, QR reales ni cuentas reales en capturas. No se manipulan `URL.hash` de pairing, JWT, cookies, credenciales o solicitudes de recuperación. Un cambio de sección de plataforma no lleva IDs de casos ni detalles del ámbito a la URL.
 
+## Incidencias detectadas y corregidas durante la auditoría
+
+- **F03-UX-001 (P1 de navegación, resuelto):** el skip-link original `href="#account-content"` ejecutaba navegación a `/#account-content` bajo `<base href="/">`, sacando a la persona de `/cuenta?vista=ingresar`. Detectado por Playwright en el primer run [#44647268135](https://github.com/crecisol-platform/CRECISOL/actions/runs/44647268135), con 17/18 PASS y 1 FAIL. Se corrigió con `focusContent(event)` que cancela la navegación e invoca foco nativo sobre el contenido principal, preservando `?vista` y cualquier hash temporal. La prueba negativa de teclado se actualizó para exigir URL conservada y foco real; **no se borró ni reinterpretó el fallo histórico**.
+- **F03-UX-002 (P2 de jerarquía, resuelto):** la consola de operador autenticado repetía el título/intención institucional hasta tres veces. Se condicionó la introducción del operador a sus estados no autenticados y quedó un único encabezado de plataforma con contexto de área. Se conservaron todos los formularios/acciones originales.
+- **F03-QA-003 (cierre probatorio):** el gate de F03 exige exactamente 30 PNG/JSON por commit (seis estados por cada ancho 320, 390, 768, 1024 y 1440) más manifest SHA de test; sin imágenes sueltas ni referencias a cuentas reales.
+
 **Fallo de autorización real:** nunca se admite por tener una pestaña activa o una ruta `?vista`. La comprobación de tenant/membresía/rol/propiedad/step-up ocurre en backend; F03 solo modifica presentación.
 
 ## Aceptación y rigor de F03
