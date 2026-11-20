@@ -159,7 +159,7 @@ export async function verifyPasskeys({ browser, api, check, confidential, passwo
   await page.getByRole('button', { name: 'Entrar con llave de acceso', exact: true }).click();
   await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
   await page.getByRole('link', { name: 'Seguridad', exact: true }).click();
-  await page.getByText('Recuperar MFA con una llave de acceso', { exact: true }).click();
+  await page.getByRole('button', { name: 'Recuperar MFA con una llave de acceso', exact: true }).click();
   await page.getByLabel('Correo verificado para recuperar MFA').fill(mailbox);
   const recoveryRequested = page.waitForResponse(r => r.url().endsWith('/recovery/request'));
   await page.getByRole('button', { name: 'Pedir token para recuperar MFA', exact: true }).click(); await recoveryRequested;
