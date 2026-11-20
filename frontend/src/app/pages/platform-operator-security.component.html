@@ -20,7 +20,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog31.open()" aria-label="Cambiar contraseña de operador" aria-describedby="operator-password-hint">
     <span>Cambiar contraseña de operador<span id="operator-password-hint" class="operator-task-note">Requiere contraseña vigente y código independiente; invalida sesiones anteriores.</span></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #opDialog31 title="Cambiar contraseña de operador"
+  <cs-institutional-modal #opDialog31 kind="form" title="Cambiar contraseña de operador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="actionRequested.emit({ event: $event, action: 'password' })">
             <label for="operator-current-password">Contraseña actual del operador</label><input id="operator-current-password" name="currentPassword" type="password" required maxlength="128" autocomplete="current-password">
@@ -34,7 +34,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog32.open()" aria-label="Cambiar correo de operador" aria-describedby="operator-mailbox-hint">
     <span>Cambiar correo de operador<span id="operator-mailbox-hint" class="operator-task-note">Verificación del nuevo buzón y MFA fresco; no cambia la identidad empresarial.</span></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #opDialog32 title="Cambiar correo de operador"
+  <cs-institutional-modal #opDialog32 kind="form" title="Cambiar correo de operador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="actionRequested.emit({ event: $event, action: 'mailbox-request' })">
             <label for="operator-new-mailbox">Nuevo correo del operador</label><input id="operator-new-mailbox" name="mailbox" type="email" required maxlength="254" autocomplete="email">
@@ -52,13 +52,15 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog33.open()" aria-label="Reemplazar MFA de operador" aria-describedby="operator-mfa-hint">
     <span>Reemplazar MFA de operador<span id="operator-mfa-hint" class="operator-task-note">No se activa el nuevo TOTP hasta verificar una prueba válida.</span></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #opDialog33 title="Reemplazar MFA de operador"
+  <cs-institutional-modal #opDialog33 kind="wizard" [steps]="['Verificar credenciales', 'Configurar nuevo autenticador']" [step]="platform.factorSecret() ? 2 : 1" title="Reemplazar MFA de operador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true" (dismissed)="platform.discardFactorSetup()">
+    @if (!platform.factorSecret()) {
     <form (submit)="actionRequested.emit({ event: $event, action: 'factor' })">
             <label for="operator-factor-password">Contraseña para reemplazar MFA de operador</label><input id="operator-factor-password" name="currentPassword" type="password" required maxlength="128" autocomplete="current-password">
             <label for="operator-factor-code">Código MFA o respaldo para reemplazar factor de operador</label><input id="operator-factor-code" name="code" required maxlength="32" autocomplete="one-time-code">
             <button [disabled]="busy()">Preparar nuevo factor de operador</button>
           </form>
+    }
           @if (platform.factorSecret()) {
             <div class="totp-setup" role="group" aria-label="Vincular el nuevo MFA de operador">
               <div class="totp-setup__visual">
@@ -84,7 +86,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="idlePolicyModal.open()">
     <span>Caducidad por inactividad de sesiones</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #idlePolicyModal title="Vencimiento de sesiones por inactividad"
+  <cs-institutional-modal #idlePolicyModal kind="form" title="Vencimiento de sesiones por inactividad"
     description="Configuración global para las cuentas empresariales y operadores de C05. La API aplica el valor en cada operación autenticada."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     @if (platform.sessionPolicy(); as policy) {

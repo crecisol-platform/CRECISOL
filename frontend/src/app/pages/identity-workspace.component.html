@@ -59,7 +59,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal11.open()">
     <span>Editar perfil de mi empresa</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal11 title="Editar perfil de mi empresa" description="Solo se actualiza el perfil del contexto empresarial autenticado."
+  <cs-institutional-modal #workspaceModal11 kind="form" title="Editar perfil de mi empresa" description="Solo se actualiza el perfil del contexto empresarial autenticado."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="securityActionRequested.emit({ event: $event, action: 'profile' })">
               <label for="profile-name">Nombre visible en esta empresa</label><input id="profile-name" name="displayName" [attr.value]="identity.profile()?.displayName ?? ''" required maxlength="80" autocomplete="nickname">
@@ -77,7 +77,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal12.open()">
     <span>{{ identity.photo() ? 'Actualizar foto de perfil' : 'Añadir foto de perfil' }}</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal12 title="Actualizar foto de perfil" description="Foto cuadrada de hasta 2 MB; sin metadatos del archivo original."
+  <cs-institutional-modal #workspaceModal12 kind="form" title="Actualizar foto de perfil" description="Foto cuadrada de hasta 2 MB; sin metadatos del archivo original."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="uploadPhotoRequested.emit($event)">
               <label for="profile-photo">Foto de perfil (PNG, JPEG o WebP, hasta 2 MB)</label><input id="profile-photo" name="photo" type="file" accept="image/png,image/jpeg,image/webp" required>
@@ -91,10 +91,10 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal13.open()">
     <span>Eliminar foto de perfil</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal13 title="Eliminar foto de perfil"
+  <cs-institutional-modal #workspaceModal13 kind="destructive" warning="El archivo de imagen dejará de estar asociado a tu perfil. Comprueba que quieres eliminarlo." title="Eliminar foto de perfil"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <p>Esta acción elimina únicamente la foto visible de tu perfil en este contexto.</p>
-<button type="button" [disabled]="busy()" (click)="removePhotoRequested.emit()">Confirmar eliminación de mi foto</button>
+<button type="button" data-modal-action [disabled]="busy()" (click)="removePhotoRequested.emit()">Confirmar eliminación de mi foto</button>
   </cs-institutional-modal>
 </div>
 }
@@ -180,7 +180,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal21.open()">
     <span>Registrar nueva llave de acceso</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal21 title="Registrar nueva llave de acceso" [closeOnSuccess]="true" description="Requiere MFA vigente y verificación de usuario en el navegador."
+  <cs-institutional-modal #workspaceModal21 kind="form" title="Registrar nueva llave de acceso" [closeOnSuccess]="true" description="Requiere MFA vigente y verificación de usuario en el navegador."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="securityActionRequested.emit({ event: $event, action: 'passkey-add' })">
               <label for="passkey-code">Código MFA para registrar llave</label><input id="passkey-code" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
@@ -188,7 +188,7 @@
             </form>
   </cs-institutional-modal>
 </div>
-<cs-institutional-modal #workspaceModal22 title="Revocar llave de acceso" description="Revocar una llave no debe afectar cuentas de otras empresas."
+<cs-institutional-modal #workspaceModal22 kind="destructive" warning="La llave de acceso seleccionada perderá validez. Verifica la referencia antes de confirmar." title="Revocar llave de acceso" description="Revocar una llave no debe afectar cuentas de otras empresas."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true"
     (dismissed)="selectedPasskeyId.set('')">
     <form (submit)="securityActionRequested.emit({ event: $event, action: 'passkey-revoke' })">
@@ -216,7 +216,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal31.open()">
     <span>Cambiar contraseña<small class="identity-task-caption" aria-hidden="true">Protege tu acceso con una contraseña renovada</small></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal31 title="Cambiar contraseña"
+  <cs-institutional-modal #workspaceModal31 kind="form" title="Cambiar contraseña"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="securityActionRequested.emit({ event: $event, action: 'password' })">
               <label for="current-password">Contraseña actual</label><input id="current-password" name="currentPassword" type="password" autocomplete="current-password" required maxlength="128">
@@ -230,7 +230,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal32.open()">
     <span>Reemplazar segundo factor<small class="identity-task-caption" aria-hidden="true">Necesitarás el método actual o un respaldo</small></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal32 title="Reemplazar segundo factor"
+  <cs-institutional-modal #workspaceModal32 kind="form" title="Reemplazar segundo factor"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <p>Requiere tu contraseña y el factor actual o un código de respaldo. Revoca los factores y sesiones anteriores.</p>
             <form (submit)="securityActionRequested.emit({ event: $event, action: 'factor' })">
@@ -244,7 +244,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal33.open()">
     <span>Recuperar MFA con una llave de acceso<small class="identity-task-caption" aria-hidden="true">Solo para recuperación con verificación adicional</small></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal33 title="Recuperación del segundo factor con llave"
+  <cs-institutional-modal #workspaceModal33 kind="form" title="Recuperación del segundo factor con llave"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <p>Requiere haber entrado con una llave de acceso en los últimos dos minutos y un token del correo verificado. Revoca todos los autenticadores y exige configurar MFA de nuevo.</p>
             <form (submit)="securityActionRequested.emit({ event: $event, action: 'recovery-request' })">
@@ -265,7 +265,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal34.open()">
     <span>Cambiar correo<small class="identity-task-caption" aria-hidden="true">Verifica tu dirección nueva antes de activarla</small></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal34 title="Cambiar correo"
+  <cs-institutional-modal #workspaceModal34 kind="form" title="Cambiar correo"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="securityActionRequested.emit({ event: $event, action: 'mailbox-request' })">
               <label for="new-mailbox">Nuevo correo</label><input id="new-mailbox" name="mailbox" type="email" autocomplete="email" required maxlength="254">
@@ -289,7 +289,7 @@
     <p>Solo el servidor puede autorizar la consulta y las decisiones. Comprueba la identidad del solicitante antes de aprobar; ningún expediente se acepta automáticamente.</p>
   </div>
 
-  <cs-institutional-modal #workspaceModal35
+  <cs-institutional-modal #workspaceModal35 kind="destructive" warning="La decisión afecta únicamente a la membresía pendiente de esta empresa. No podrá registrarse otra decisión sobre el mismo expediente."
     title="Revisar membresía con permiso administrativo"
     description="Selecciona un expediente obtenido del servidor y verifica la decisión con tu segundo factor."
     [busy]="busy()" [feedback]="feedback()" [error]="error()"
@@ -379,7 +379,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal36.open()">
     <span>Invitar a una cuenta<small class="identity-task-caption" aria-hidden="true">Emite una invitación protegida de vigencia limitada</small></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal36 title="Invitar a una cuenta"
+  <cs-institutional-modal #workspaceModal36 kind="form" title="Invitar a una cuenta"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <p>Requiere permiso administrativo. La invitación solo permite aceptar una membresía básica en esta empresa y vence en diez minutos.</p>
             <form (submit)="securityActionRequested.emit({ event: $event, action: 'invitation-issue' })">
@@ -428,12 +428,12 @@
                     </dl>
                     <button type="button" class="identity-revoke" [disabled]="busy() || identity.restoring()"
                       (click)="sessionRevocation.open()">Revocar esta sesión</button>
-                    <cs-institutional-modal #sessionRevocation title="Revocar sesión"
+                    <cs-institutional-modal #sessionRevocation kind="destructive" warning="Este dispositivo perderá el acceso de esa sesión. Confirma que reconoces la referencia." title="Revocar sesión"
                       description="Esta operación cierra únicamente la sesión seleccionada; las demás no se modifican."
                       [busy]="busy()" [feedback]="feedback()" [error]="error()">
                       <p><strong>{{ session.device }}</strong> · {{ session.referenceLabel }}</p>
                       <p>Última actividad: {{ session.lastActivityLabel }}</p>
-                      <button type="button" class="identity-danger-confirm" [disabled]="busy()" (click)="revokeRequested.emit(session.id)">Confirmar revocación</button>
+                      <button type="button" data-modal-action class="identity-danger-confirm" [disabled]="busy()" (click)="revokeRequested.emit(session.id)">Confirmar revocación</button>
                     </cs-institutional-modal>
                   </li>
                 }
@@ -452,7 +452,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal37.open()">
     <span>Revocar todas mis sesiones</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal37 title="Revocar todas mis sesiones"
+  <cs-institutional-modal #workspaceModal37 kind="destructive" warning="Se cerrarán todas tus sesiones de cuenta. Necesitarás volver a autenticarte." title="Revocar todas mis sesiones"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="securityActionRequested.emit({ event: $event, action: 'sessions-all' })">
               <label for="sessions-all-code">Código MFA para cerrar todas las sesiones</label><input id="sessions-all-code" name="code" autocomplete="one-time-code" required maxlength="32">
@@ -464,7 +464,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal38.open()">
     <span>Aprobar otro navegador</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal38 title="Aprobar otro navegador"
+  <cs-institutional-modal #workspaceModal38 kind="destructive" warning="Autorizar este navegador le permitirá iniciar una sesión. Comprueba la huella antes de continuar." title="Aprobar otro navegador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <p>Autoriza solo un navegador que tú controles. Compara la huella con la pantalla que inició la solicitud; no apruebes códigos que te envíe otra persona.</p>
             <form (submit)="securityActionRequested.emit({ event: $event, action: 'pairing-approve' })">
@@ -481,7 +481,7 @@
     [disabled]="busy() || identity.restoring()" (click)="privateAccessModal.open()">
     <span>Comprobar un acceso privado</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #privateAccessModal title="Consulta segura de recurso"
+  <cs-institutional-modal #privateAccessModal kind="simple" title="Consulta segura de recurso"
     description="Esta comprobación solo devuelve recursos autorizados en la empresa y sucursal verificadas por el servidor."
     [busy]="busy()" [feedback]="feedback()" [error]="error()"
     [closeOnSuccess]="true" [wide]="true">

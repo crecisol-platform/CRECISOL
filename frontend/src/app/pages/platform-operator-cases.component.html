@@ -18,7 +18,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog11.open()">
     <span>Localizar una solicitud de identidad pendiente</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #opDialog11 title="Localizar una solicitud de identidad pendiente"
+  <cs-institutional-modal #opDialog11 kind="form" title="Localizar una solicitud de identidad pendiente"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <p>Permite localizar un caso cuando el titular perdió su referencia o recibió una referencia neutra por una solicitud previa. Requiere un motivo de soporte y MFA fresco; no devuelve empresas, perfiles ni correos privados.</p>
           <form (submit)="actionRequested.emit({ event: $event, action: 'find-case' })">
@@ -68,7 +68,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog21.open()">
     <span>Revisar identidad del titular</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #opDialog21 title="Revisar identidad del titular" description="Necesita evidencia independiente y un segundo factor vigente."
+  <cs-institutional-modal #opDialog21 kind="destructive" warning="Aprobar o rechazar esta revisión se registrará permanentemente. Exige una segunda verificación independiente." title="Revisar identidad del titular" description="Necesita evidencia independiente y un segundo factor vigente."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="actionRequested.emit({ event: $event, action: 'review' })">
           <label for="review-case">Caso a revisar</label><input id="review-case" name="caseId" [value]="platform.case()?.caseId ?? ''" required maxlength="36">
@@ -87,7 +87,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog22.open()">
     <span>Emitir parte de recuperación</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #opDialog22 title="Emitir parte de recuperación" (dismissed)="platform.handoffShare.set('')" description="Entrega la parte únicamente por un canal seguro al titular verificado."
+  <cs-institutional-modal #opDialog22 kind="destructive" warning="La parte emitida es secreta, temporal y exclusiva del operador verificado. No la envíes a otro ámbito." title="Emitir parte de recuperación" (dismissed)="platform.handoffShare.set('')" description="Entrega la parte únicamente por un canal seguro al titular verificado."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="actionRequested.emit({ event: $event, action: 'share' })">
           <label for="share-case">Caso para entrega segura</label><input id="share-case" name="caseId" [value]="platform.case()?.caseId ?? ''" required maxlength="36">
