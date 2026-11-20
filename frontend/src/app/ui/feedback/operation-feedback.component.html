@@ -26,6 +26,8 @@
       <p class="cs-operation-feedback__next">
         {{ context() === 'Identidad de plataforma' ?
           'Comprueba la referencia y tu autorización. Si persiste, contacta al responsable de seguridad.' :
+          context() === 'Operación protegida' ?
+          'Comprueba los datos y el estado de esta solicitud antes de intentarlo de nuevo.' :
           'Revisa los datos y vuelve a intentarlo. También puedes utilizar las opciones de recuperación.' }}
       </p>
     }

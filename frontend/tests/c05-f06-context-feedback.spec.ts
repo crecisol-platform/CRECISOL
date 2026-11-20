@@ -409,3 +409,31 @@ test('F06 PREMIUM errors offer safe next steps without exposing backend details'
   await expect(notice).not.toContainText('SQL');
   await expect(notice).not.toContainText('stack');
 });
+
+
+test('F06 PREMIUM unsupported WebAuthn is safely unavailable without technical localhost links', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'PublicKeyCredential', { value: undefined, configurable: true });
+  });
+  await syntheticApi(page, 'anonymous');
+  await page.goto('/cuenta?vista=ingresar');
+  await expect(page.getByRole('button', { name: 'Entrar con llave de acceso' })).toBeDisabled();
+  await expect(page.locator('.login-compatibility-note')).toContainText('navegador compatible');
+  await expect(page.locator('a[href*="localhost"]')).toHaveCount(0);
+});
+
+test('F06 PREMIUM protected-modal error never suggests unrelated account recovery', async ({ page }) => {
+  await account(page, 'seguridad');
+  await page.getByRole('button', { name: 'Cambiar contraseña', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Cambiar contraseña' });
+  await expect(dialog).toBeVisible();
+  await page.evaluate(() => {
+    const host = document.querySelector('dialog.cs-modal:modal')?.closest('cs-institutional-modal');
+    const component = host && (window as DebugWindow).ng?.getComponent(host);
+    if (!component) throw Error('F06 modal fixture unavailable');
+    component.localError.set('No se pudo completar esta solicitud.');
+  });
+  const notice = dialog.locator('cs-operation-feedback [data-feedback-kind="error"]');
+  await expect(notice).toContainText('Comprueba los datos y el estado de esta solicitud');
+  await expect(notice).not.toContainText('recuperación de cuenta');
+});
