@@ -149,6 +149,8 @@ for (const size of sizes) {
       if (view === 'perfil') {
         await expect(page.getByRole('region', { name: 'Perfil de mi empresa' }))
           .toContainText('Perfil ficticio de prueba');
+        await expect(page.getByRole('button', { name: 'Eliminar foto de perfil' })).toHaveCount(0);
+        await expect(page.getByRole('button', { name: 'Añadir foto de perfil' })).toBeVisible();
         await expect(page.getByText('Español (Honduras)', { exact: true })).toBeVisible();
       }
       if (view === 'llaves') {
@@ -183,13 +185,12 @@ test('F03 ACCOUNT negative: untrusted URL cannot expose six account views', asyn
 
 test('F03 ACCOUNT passkeys: confirmation chooses listed key not typed UUID', async ({ page }) => {
   await syntheticAccount(page); await visit(page, 'llaves');
-  await page.getByRole('button', { name: 'Revocar llave de acceso', exact: true }).click();
+  await page.getByRole('button', { name: 'Revocar esta llave', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Revocar llave de acceso' });
   await expect(dialog).toBeVisible();
   await expect(dialog.locator('input[name="factorId"]')).toHaveCount(0);
   const select = dialog.getByLabel('Llave de acceso a revocar');
-  await expect(select).toHaveValue('');
-  await select.selectOption('33333333-4444-4555-8666-777777777777');
+  await expect(select).toHaveValue('33333333-4444-4555-8666-777777777777');
   await expect(select).toHaveValue('33333333-4444-4555-8666-777777777777');
   await page.keyboard.press('Escape');
   await expect(dialog).not.toBeVisible();
@@ -384,7 +385,38 @@ test('F03 approval inbox: unauthorized response reveals no pending applicant and
     await page.getByRole('button', { name: 'Consultar solicitudes' }).click();
     await expect(page.getByRole('navigation', { name: 'Mi cuenta' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Solicitudes de membresía pendientes' }))
+      .toContainText('Consulta administrativa no autorizada');
+    await expect(page.getByRole('region', { name: 'Solicitudes de membresía pendientes' }))
       .not.toContainText('so•••@example.test');
     await expect(page.getByRole('region', { name: 'Solicitudes de membresía pendientes' })
       .getByRole('button', { name: 'Revisar solicitud' })).toHaveCount(0);
+  });
+
+test('F03 account history filtering: completed vs review, no technical codes', async ({ page }) => {
+  await syntheticAccount(page); await visit(page, 'historial');
+  const filter = page.getByLabel('Mostrar eventos');
+  const timeline = page.getByRole('region', { name: 'Historial de seguridad', exact: true });
+  await expect(timeline.locator('.identity-activity-item')).toHaveCount(4);
+  await filter.selectOption('success');
+  await expect(timeline.locator('.identity-activity-item')).toHaveCount(2);
+  await expect(timeline).not.toContainText('profile/read');
+  await filter.selectOption('attention');
+  await expect(timeline.locator('.identity-activity-item')).toHaveCount(2);
+  await filter.selectOption('all');
+  await expect(timeline.locator('.identity-activity-item')).toHaveCount(4);
+});
+
+test('F03 approvals privacy: authorization revocation scrubs already-loaded applicant hints',
+  async ({ page }) => {
+    await syntheticAccount(page); await visit(page, 'administracion');
+    const queue = page.getByRole('region', { name: 'Solicitudes de membresía pendientes' });
+    await expect(queue).toContainText('so•••@example.test');
+    await page.route('**/api/v1/identity/memberships/pending', route => route.fulfill({
+      status: 401, contentType: 'application/json', body: '{}'
+    }));
+    await queue.getByRole('button', { name: 'Actualizar solicitudes' }).click();
+    await expect(queue).toContainText('Consulta administrativa no autorizada');
+    await expect(queue).not.toContainText('so•••@example.test');
+    await expect(queue.locator('.identity-pending-card')).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Mi cuenta' })).toBeVisible();
   });
