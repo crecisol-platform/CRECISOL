@@ -57,14 +57,17 @@
         </form>
       }
       @if (platform.state() === 'authenticated') {
-        <p role="status">Operador de identidad verificado. Esta sesión pertenece al ámbito de plataforma.</p>
-        <nav class="operator-nav" aria-label="Áreas de la consola de identidad">
-          <button type="button" [attr.aria-current]="panel() === 'casos' ? 'page' : null" (click)="panel.set('casos')">Casos</button>
-          <button type="button" [attr.aria-current]="panel() === 'sesiones' ? 'page' : null" (click)="panel.set('sesiones')">Sesiones</button>
-          <button type="button" [attr.aria-current]="panel() === 'perfil' ? 'page' : null" (click)="panel.set('perfil')">Perfil</button>
-          <button type="button" [attr.aria-current]="panel() === 'seguridad' ? 'page' : null" (click)="openSecurity()">Seguridad</button>
-          <button type="button" [attr.aria-current]="panel() === 'monitor' ? 'page' : null" (click)="panel.set('monitor')">Monitor</button>
-        </nav>
+        <div class="operator-context">
+          <p class="operator-context__eyebrow">CONSOLA VERIFICADA · ÁMBITO DE PLATAFORMA</p>
+          <p class="operator-context__section" role="status" aria-live="polite" aria-atomic="true">
+            <strong>{{ activeSection().label }}</strong>
+            <span>{{ activeSection().description }}</span>
+          </p>
+        </div>
+        <cs-ui-navigation class="operator-navigation"
+          [items]="navigationItems()" [activeId]="panel()"
+          ariaLabel="Áreas de la consola de identidad"
+          (selected)="selectPanel($event)"/>
         <div class="operator-content">
           @switch (panel()) {
             @case ('sesiones') {
@@ -89,7 +92,7 @@
             }
           }
         </div>
-                <button type="button" [disabled]="busy()" (click)="logout()">Cerrar sesión de plataforma</button>
+        <div class="operator-exit"><button type="button" [disabled]="busy()" (click)="logout()">Cerrar sesión de plataforma</button></div>
       }
       @if (platform.recoveryCodes().length) {
         <aside aria-label="Códigos de respaldo del operador"><p>Guarda estos códigos fuera del navegador. Cada uno sirve una sola vez.</p>
