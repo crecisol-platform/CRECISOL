@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
-import { identityDateLabel, identityEventLabel, identityOutcomeLabel, identityReferenceLabel } from '../identity/identity-presentation';
+import { identityDateLabel, identityEventLabel, identityOutcomeLabel, identityReferenceLabel, identityFactorLabel, identityTimeZoneLabel } from '../identity/identity-presentation';
 import { IdentityApiService } from '../identity/identity-api.service';
 import { InstitutionalModalComponent } from '../ui/institutional-modal/institutional-modal.component';
 import { InstitutionalCardComponent, InstitutionalStateComponent } from '../ui/institutional-system';
@@ -59,7 +59,8 @@ export class IdentityWorkspaceComponent {
     ...session,
     lastActivityLabel: identityDateLabel(session.lastSeenAtUtc, this.identity.profile()?.timeZone),
     expiryLabel: identityDateLabel(session.expiresAtUtc, this.identity.profile()?.timeZone),
-    referenceLabel: identityReferenceLabel(session.id)
+    referenceLabel: identityReferenceLabel(session.id),
+    factorLabel: identityFactorLabel(session.factor)
   })));
   readonly passkeyRows = computed(() => this.identity.passkeys().map(key => ({
     ...key,
@@ -93,6 +94,7 @@ export class IdentityWorkspaceComponent {
     this.sessionRequested.emit('list');
   }
 
+  readonly profileTimeZone = computed(() => identityTimeZoneLabel(this.identity.profile()?.timeZone));
   readonly profileLanguage = computed(() => {
     const code = this.identity.profile()?.language;
     return code === 'en' ? 'English' : code === 'es' ? 'Español' : code === 'es-HN' ? 'Español (Honduras)' : 'Sin configurar';
