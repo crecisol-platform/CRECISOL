@@ -1,8 +1,20 @@
-<form (submit)="actionRequested.emit({ event: $event, action: 'case' })">
+<section class="operator-workspace" aria-label="Gestión de casos de plataforma">
+  <header class="operator-section-head">
+    <div><span class="operator-kicker">GESTIÓN DE IDENTIDAD / CASOS</span>
+      <h2>Casos de recuperación y revisión</h2>
+      <p>Consulta el expediente exacto, identifica su estado y registra decisiones independientes con evidencia verificable.</p>
+    </div>
+  </header>
+  <p class="operator-scope-note">Ámbito exclusivo de operadores. La consulta por referencia no permite explorar libremente empresas o cuentas. Toda autorización y revisión se valida en el servidor.</p>
+  <section class="operator-card operator-card--quiet" aria-label="Consulta puntual de caso">
+    <h3>Consultar un expediente</h3>
+    <p>Introduce la referencia recibida por el canal autorizado. Una referencia no confiere permisos.</p>
+    <form (submit)="actionRequested.emit({ event: $event, action: 'case' })">
           <label for="platform-case">Referencia del caso de recuperación</label><input id="platform-case" name="caseId" required maxlength="36">
           <button [disabled]="busy()">Consultar caso de identidad</button>
         </form>
-        <div class="institutional-task">
+  </section>
+  <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog11.open()">
     <span>Localizar una solicitud de identidad pendiente</span><span aria-hidden="true">›</span>
   </button>
@@ -11,7 +23,7 @@
     <p>Permite localizar un caso cuando el titular perdió su referencia o recibió una referencia neutra por una solicitud previa. Requiere un motivo de soporte y MFA fresco; no devuelve empresas, perfiles ni correos privados.</p>
           <form (submit)="actionRequested.emit({ event: $event, action: 'find-case' })">
             <label for="find-case-mail">Correo indicado por el titular del caso</label><input id="find-case-mail" name="mailbox" type="email" required maxlength="254" autocomplete="off">
-            <label for="find-case-realm">Ámbito del caso de identidad</label><select id="find-case-realm" name="realm"><option value="TENANT_IDENTITY">Identidad de negocio</option><option value="PLATFORM_OPERATOR">Operador de plataforma</option></select>
+            <label for="find-case-realm">Ámbito del caso de identidad</label><select id="find-case-realm" name="realm" required><option value="">Selecciona el ámbito</option><option value="TENANT_IDENTITY">Identidad de negocio</option><option value="PLATFORM_OPERATOR">Operador de plataforma</option></select>
             <label for="find-case-reason">Motivo de localización del caso</label><input id="find-case-reason" name="reason" required minlength="12" maxlength="240">
             <label for="find-case-code">Código MFA para localizar caso</label><input id="find-case-code" name="code" required maxlength="32" autocomplete="one-time-code">
             <button [disabled]="busy()">Localizar referencia de identidad</button>
@@ -19,10 +31,39 @@
           @if (platform.locatedCase()) { <output aria-label="Referencia localizada de identidad">{{ platform.locatedCase() }}</output> }
   </cs-institutional-modal>
 </div>
-        @if (platform.case(); as item) {
-          <p>Referencia {{ item.caseId }} · bloqueado {{ item.blocked }} · completado {{ item.consumed }}</p>
-          <p>Disponible después de: {{ item.readyAtUtc ?? 'pendiente de doble revisión' }}</p>
-        }
+  <section class="operator-card" aria-label="Estado del expediente consultado">
+    <div class="operator-section-head">
+      <div><h3>Estado y prioridad del caso</h3><p>Solo el expediente consultado; no es una bandeja global ni una lista de clientes.</p></div>
+      @if (currentCase(); as summary) { <span class="operator-tag">{{ summary.priority }}</span> }
+    </div>
+    @if (currentCase(); as summary) {
+      <div class="operator-filters">
+        <label for="operator-case-filter">Filtrar estado consultado</label>
+        <select id="operator-case-filter" [value]="caseFilter()" (change)="caseFilter.set($any($event.target).value)">
+          <option value="all">Todos los estados</option>
+          <option value="pending">Pendientes y en espera</option>
+          <option value="blocked">Bloqueados</option>
+          <option value="closed">Finalizados</option>
+        </select>
+      </div>
+      @if (visibleCase(); as visible) {
+        <div class="operator-card operator-card--quiet">
+          <div class="operator-card__header"><strong>{{ visible.reference }}</strong>
+            <span class="operator-tag" [class.operator-tag--high]="platform.case()?.blocked">{{ visible.status }}</span></div>
+          <dl class="operator-facts">
+            <div><dt>Condición actual</dt><dd>{{ visible.status }}</dd></div>
+            <div><dt>Plazo de seguridad</dt><dd>{{ visible.ready }}</dd></div>
+          </dl>
+          <p>{{ visible.caption }}</p>
+        </div>
+      } @else {
+        <div class="operator-empty"><h3>Sin coincidencias</h3><p>El expediente no corresponde al filtro seleccionado.</p></div>
+      }
+    } @else {
+      <div class="operator-empty"><h3>Sin expediente consultado</h3>
+        <p>Consulta una referencia para ver su estado. No se muestran casos de otros titulares por defecto.</p></div>
+    }
+  </section>
         <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog21.open()">
     <span>Revisar identidad del titular</span><span aria-hidden="true">›</span>
@@ -30,12 +71,13 @@
   <cs-institutional-modal #opDialog21 title="Revisar identidad del titular" description="Necesita evidencia independiente y un segundo factor vigente."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="actionRequested.emit({ event: $event, action: 'review' })">
-          <label for="review-case">Caso a revisar</label><input id="review-case" name="caseId" required maxlength="36">
-          <label for="review-decision">Decisión de identidad</label><select id="review-decision" name="decision"><option value="approve">Aprobar</option><option value="reject">Rechazar</option></select>
+          <label for="review-case">Caso a revisar</label><input id="review-case" name="caseId" [value]="platform.case()?.caseId ?? ''" required maxlength="36">
+          <label for="review-decision">Decisión de identidad</label><select id="review-decision" name="decision" required><option value="">Selecciona una decisión</option><option value="approve">Aprobar</option><option value="reject">Rechazar</option></select>
           <label for="review-evidence">SHA-256 del expediente de verificación</label><input id="review-evidence" name="evidenceHash" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
           <label for="review-reason">Motivo de la revisión de identidad</label><input id="review-reason" name="reason" required minlength="12" maxlength="240">
           <label for="review-code">Código MFA fresco para revisar</label><input id="review-code" name="code" required pattern="([0-9]{6}|[0-9a-fA-F]{32})" autocomplete="one-time-code">
           <label><input name="verified" type="checkbox" required> Verifiqué la identidad de forma independiente; no usé preguntas personales ni solo un correo nuevo</label>
+          <label><input name="confirmed" type="checkbox" required> Confirmo la decisión administrativa y que mi revisión quedará registrada de forma permanente</label>
           <button [disabled]="busy()">Registrar revisión de identidad</button>
         </form>
   </cs-institutional-modal>
@@ -48,7 +90,7 @@
   <cs-institutional-modal #opDialog22 title="Emitir parte de recuperación" (dismissed)="platform.handoffShare.set('')" description="Entrega la parte únicamente por un canal seguro al titular verificado."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="actionRequested.emit({ event: $event, action: 'share' })">
-          <label for="share-case">Caso para entrega segura</label><input id="share-case" name="caseId" required maxlength="36">
+          <label for="share-case">Caso para entrega segura</label><input id="share-case" name="caseId" [value]="platform.case()?.caseId ?? ''" required maxlength="36">
           <label for="share-code">Código MFA para emitir mi parte</label><input id="share-code" name="code" required pattern="([0-9]{6}|[0-9a-fA-F]{32})" autocomplete="one-time-code">
           <button [disabled]="busy()">Emitir mi parte de recuperación</button>
         </form>
@@ -61,3 +103,5 @@
     }
   </cs-institutional-modal>
 </div>
+
+</section>
