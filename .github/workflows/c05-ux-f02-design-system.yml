@@ -62,12 +62,15 @@ jobs:
           set -euo pipefail
           cd frontend
           npx ng build --configuration institutional-harness
-      - name: Install Chromium for local-only tests
+      - name: Install Chromium for local-only tests (bounded)
         shell: bash
+        timeout-minutes: 5
         run: |
           set -euo pipefail
           cd frontend
-          npx playwright install --with-deps chromium
+          # The test runner provides system libraries on ubuntu-24.04; avoid
+          # potentially stalled apt installation in an unprivileged design QA.
+          timeout 240s npx playwright install chromium
       - name: Responsive + WCAG + scope + motion + branding
         shell: bash
         run: |
