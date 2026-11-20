@@ -1,9 +1,10 @@
-<section aria-labelledby="session-heading">
+<section class="identity-workspace" aria-labelledby="session-heading">
           <h2 id="session-heading">
             @switch (view()) {
               @case ('perfil') { Mi perfil }
               @case ('llaves') { Mis llaves de acceso }
               @case ('seguridad') { Seguridad de mi cuenta }
+              @case ('historial') { Historial de seguridad }
               @case ('administracion') { Aprobaciones de mi empresa }
               @default { Sesión verificada }
             }
@@ -15,12 +16,16 @@
               <button type="button" (click)="identity.recoveryCodes.set([])">Ya guardé mis códigos</button>
             </aside>
           }
-          @if (view() === 'resumen' || view() === 'ingresar') {
-            <p>Administra tus dispositivos y verifica los accesos autorizados en el contexto de esta empresa.</p>
-          } @else {
-            <p>Los cambios de seguridad se protegen con las verificaciones correspondientes a esta cuenta.</p>
-          }
-          <p class="identity-session-policy">Por seguridad, la sesión vence tras <strong>{{ identity.idleMinutes() }} minutos de inactividad</strong>. Solo una actividad validada puede renovar el plazo.</p>
+          <p class="identity-workspace__lead">
+            @switch (view()) {
+              @case ('perfil') { Gestiona tu presentación personal y las preferencias de esta empresa. }
+              @case ('llaves') { Consulta tus llaves registradas y elige cuál administrar sin escribir identificadores técnicos. }
+              @case ('seguridad') { Protege tus credenciales y revisa cada operación antes de confirmar cambios delicados. }
+              @case ('historial') { Comprende qué ocurrió en tu cuenta, cuándo y con qué resultado, sin códigos internos. }
+              @case ('administracion') { Invita o revisa solicitudes únicamente cuando el servidor autorice tu permiso administrativo. }
+              @default { Gestiona los navegadores con acceso y protege tu sesión sin perder el control de tus dispositivos. }
+            }
+          </p>
           @if (view() === 'perfil') {
 <section class="operator-readonly-panel identity-profile" aria-label="Perfil de mi empresa">
   <div class="identity-panel-heading">
@@ -90,13 +95,20 @@
 <button type="button" [disabled]="busy()" (click)="removePhotoRequested.emit()">Confirmar eliminación de mi foto</button>
   </cs-institutional-modal>
 </div>
-          <section class="operator-readonly-panel identity-activity" aria-label="Historial de seguridad">
+          <div class="identity-panel-note identity-panel-note--profile">
+  <strong>Tu actividad de seguridad tiene su propio espacio</strong>
+  <span>Revisa accesos, verificaciones y cambios en la sección Historial para mantener despejado el perfil.</span>
+</div>
+          
+} @else if (view() === 'historial') {
+<section class="identity-history-shell" aria-label="Actividad de la cuenta">
+  <section class="operator-readonly-panel identity-activity" aria-label="Historial de seguridad">
   <div class="identity-panel-heading">
     <div>
       <h3>Mi historial de seguridad</h3>
       <p>Actividad reciente de tu cuenta, sin identificadores técnicos innecesarios.</p>
     </div>
-    <button type="button" [disabled]="busy()" (click)="securityEventsRequested.emit()">Actualizar historial</button>
+    <button type="button" [disabled]="busy()" (click)="requestHistory()">Actualizar historial</button>
   </div>
   @if (securityEventRows().length) {
     <ol class="identity-activity-list">
@@ -118,8 +130,9 @@
       </button>
     }
   } @else {
-    <p class="identity-empty-copy">Consulta el historial para revisar los eventos de seguridad de esta cuenta.</p>
+    <p class="identity-empty-copy">Pulsa «Actualizar historial» para consultar los últimos eventos disponibles. Si no aparece actividad después de consultar, no hay registros para mostrar.</p>
   }
+</section>
 </section>
           
 } @else if (view() === 'llaves') {
