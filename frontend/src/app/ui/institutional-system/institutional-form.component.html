@@ -6,6 +6,7 @@
     }
   </div>
   <form [id]="formId()" [attr.aria-busy]="busy() ? 'true' : null"
+    [attr.novalidate]="validationMode() === 'host' ? '' : null"
     [attr.aria-describedby]="description() ? formId() + '-description' : null"
     (submit)="submit($event)">
     <ng-content/>
