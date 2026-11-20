@@ -74,7 +74,8 @@ def contrast(a: str, b: str) -> float:
 
 def audit_b() -> None:
     token = file(SYSTEM / "institutional-tokens.css")
-    palette = dict(re.findall(r'(--cs-color-[a-z-]+):\s*(#[0-9a-fA-F]{6})\s*;', token))
+    palette = {key.removeprefix('--cs-color-'): color
+               for key, color in re.findall(r'(--cs-color-[a-z-]+):\s*(#[0-9a-fA-F]{6})\s*;', token)}
     pairs = (
         ("text", "surface"), ("muted", "surface"), ("text-strong", "surface"),
         ("action-text", "action"), ("success", "success-bg"),
