@@ -281,6 +281,9 @@ test('F05 busy transaction cannot be dismissed by Escape or close button', async
     const owner = node && (window as AngularDebug).ng?.getComponent(node);
     owner.busy.set(false);
   });
+  // Wait for Angular's UI to reflect the newly unblocked transaction before
+  // testing native cancel again; a synchronous signal is not an instant DOM flush.
+  await expect(dlg.getByRole('button', { name: 'Cerrar ventana' })).toBeEnabled();
   await page.keyboard.press('Escape');
   await expect(dlg).toHaveCount(0);
 });
