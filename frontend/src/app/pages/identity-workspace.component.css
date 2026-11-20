@@ -714,3 +714,13 @@
     background: ButtonFace; color: ButtonText; border-color: CanvasText;
   }
 }
+
+
+/* Task-first approval surfaces: the permission rail follows the protected
+   inbox instead of delaying the primary server-authorized lookup. */
+.identity-workspace > .identity-approval-queue { margin-bottom: 0; }
+.identity-workspace > .identity-approval-context { margin-top: -.15rem; }
+@media (max-width: 720px) {
+  .identity-workspace > .identity-approval-queue { padding: .75rem .85rem; }
+  .identity-approval-queue .identity-panel-heading > button { width: 100%; min-height: 2.8rem; }
+}

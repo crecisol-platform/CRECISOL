@@ -284,11 +284,6 @@
 </div>
           
 } @else if (view() === 'administracion') {
-  <details class="identity-approval-context identity-policy-disclosure">
-    <summary>Las solicitudes se revisan dentro de tu empresa</summary>
-    <p>El servidor verifica tus permisos y el ámbito de cada solicitud. Ningún expediente se acepta automáticamente; confirma la identidad antes de decidir.</p>
-  </details>
-
   <cs-institutional-modal #workspaceModal35 kind="destructive" warning="La decisión afecta únicamente a la membresía pendiente de esta empresa. No podrá registrarse otra decisión sobre el mismo expediente."
     title="Revisar membresía con permiso administrativo"
     description="Selecciona un expediente obtenido del servidor y verifica la decisión con tu segundo factor."
@@ -379,6 +374,12 @@
         message="Pulsa «Consultar solicitudes» para ver si hay decisiones por revisar."/>
     }
   </section>
+  <!-- Permission details remain keyboard-accessible after the task-first queue. -->
+  <details class="identity-approval-context identity-policy-disclosure">
+    <summary>Las solicitudes se revisan dentro de tu empresa</summary>
+    <p>El servidor verifica tus permisos y el ámbito de cada solicitud. Ningún expediente se acepta automáticamente; confirma la identidad antes de decidir.</p>
+  </details>
+
 
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal36.open()">

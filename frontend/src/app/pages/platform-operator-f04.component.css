@@ -176,3 +176,14 @@
   .operator-workspace .operator-card--session-list { padding: 0; }
   .operator-workspace .institutional-task__trigger { min-height: 3rem; }
 }
+
+
+/* Exact-reference lookup leads; the privacy explanation is still available
+   immediately after the protected form and before review/recovery actions. */
+@media (max-width: 720px) {
+  .operator-workspace .operator-scope-details { margin-top: -.2rem; }
+  .operator-workspace .operator-card[aria-label='Consulta puntual de caso'] {
+    border-color: #c9ddeb;
+    background: #f8fbfe;
+  }
+}

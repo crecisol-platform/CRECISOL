@@ -5,10 +5,6 @@
       <p>Consulta una referencia y decide con evidencia verificable.</p>
     </div>
   </header>
-  <details class="operator-scope-note operator-scope-details">
-    <summary>Privacidad y límites de la consulta</summary>
-    <p>Ámbito exclusivo de operadores. La consulta por referencia no permite explorar libremente empresas o cuentas. Toda autorización y revisión se valida en el servidor.</p>
-  </details>
   <section class="operator-card operator-card--quiet" aria-label="Consulta puntual de caso">
     <h3>Consultar un expediente</h3>
     <p>Introduce la referencia del caso que necesitas revisar.</p>
@@ -17,6 +13,10 @@
           <button [disabled]="busy()">Consultar caso de identidad</button>
         </form>
   </section>
+  <details class="operator-scope-note operator-scope-details">
+    <summary>Privacidad y límites de la consulta</summary>
+    <p>Ámbito exclusivo de operadores. La consulta por referencia no permite explorar libremente empresas o cuentas. Toda autorización y revisión se valida en el servidor.</p>
+  </details>
   <div class="institutional-task operator-task-secondary">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog11.open()">
     <span>Localizar una solicitud de identidad pendiente</span><span aria-hidden="true">›</span>

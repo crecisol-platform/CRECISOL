@@ -488,3 +488,64 @@ test('F06 PREMIUM operator mobile summary is compact and retains visible securit
   await expect.poll(() => page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
 });
+
+
+test('F06 premium recovery keeps signed-out options accessible without a four-row mobile menu', async ({ page }) => {
+  await page.setViewportSize({width:320,height:720});
+  await account(page, 'recuperar', 'anonymous');
+  await expect(page.getByRole('heading', { name:'Recuperar contraseña' })).toBeVisible();
+  await expect(page.getByRole('button', {name:'Solicitar recuperación'})).toBeVisible();
+  const secondary=page.locator('.account-more');
+  await expect(secondary).toHaveAttribute('open', '');
+  const columns=await page.locator('.account-subnav').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length);
+  expect(columns).toBe(2);
+  const btn=page.getByRole('button',{name:'Solicitar recuperación'});
+  const y=await btn.evaluate(el=>el.getBoundingClientRect().bottom);
+  expect(y, 'the recovery request must be reachable in the first mobile viewport').toBeLessThan(730);
+});
+
+test('F06 premium approval queue leads; security details remain accessible by keyboard', async ({ page }) => {
+  await page.setViewportSize({width:320,height:720});
+  await account(page, 'administracion');
+  const queue=page.locator('.identity-approval-queue');
+  await expect(queue.getByRole('button',{name:'Consultar solicitudes'})).toBeVisible();
+  const rail=page.locator('details.identity-approval-context');
+  await expect(rail).not.toHaveAttribute('open','');
+  const q=await queue.boundingBox(),r=await rail.boundingBox();
+  expect((q?.top??9999)).toBeLessThan(r?.top??0);
+  await rail.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(rail).toHaveAttribute('open','');
+  await expect(rail).toContainText('Ningún expediente se acepta automáticamente');
+});
+
+test('F06 premium case lookup leads without exposing unauthorized data or concealing the limits', async ({page})=>{
+  await page.setViewportSize({width:320,height:720});
+  await operator(page);
+  const lookup=page.locator('section[aria-label="Consulta puntual de caso"]');
+  const notice=page.locator('details.operator-scope-details');
+  const result=page.locator('section[aria-label="Estado del expediente consultado"]');
+  await expect(lookup.getByRole('button',{name:'Consultar caso de identidad'})).toBeVisible();
+  await expect(result.getByRole('heading',{name:'Sin expediente seleccionado'})).toBeVisible();
+  await expect(result.getByRole('heading',{name:'Estado y prioridad del caso'})).toHaveCount(0);
+  const a=await lookup.boundingBox(), b=await notice.boundingBox();
+  expect(a?.top??9999).toBeLessThan(b?.top??0);
+  await notice.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(notice).toHaveAttribute('open','');
+  await expect(notice).toContainText('Toda autorización y revisión se valida en el servidor');
+});
+
+test('F06 premium account security keeps MFA confirmation behind a protected dialog', async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await account(page,'seguridad');
+  const disclosure=page.locator('details.identity-security-intro');
+  await expect(disclosure).not.toHaveAttribute('open','');
+  await expect(disclosure.locator('summary')).toBeVisible();
+  const action=page.getByRole('button',{name:'Cambiar contraseña',exact:true});
+  await expect(action).toBeVisible();
+  await action.click();
+  const modal=page.getByRole('dialog',{name:'Cambiar contraseña'});
+  await expect(modal).toBeVisible();
+  await expect(modal.locator('input[type=password]')).toHaveCount(2);
+});
