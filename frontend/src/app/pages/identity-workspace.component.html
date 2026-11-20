@@ -45,7 +45,7 @@
       @if (identity.profile(); as profile) {
         <p class="identity-profile-name" aria-label="Nombre de mi perfil">{{ profile.displayName }}</p>
         <dl class="identity-meta">
-          <div><dt>Idioma</dt><dd>{{ profile.language }}</dd></div>
+          <div><dt>Idioma</dt><dd>{{ profileLanguage() }}</dd></div>
           <div><dt>Zona horaria</dt><dd>{{ profile.timeZone }}</dd></div>
         </dl>
       } @else {
@@ -162,7 +162,7 @@
 </section>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal21.open()">
-    <span>Llaves de acceso</span><span aria-hidden="true">›</span>
+    <span>Registrar nueva llave de acceso</span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal21 title="Registrar nueva llave de acceso" [closeOnSuccess]="true" description="Requiere MFA vigente y verificación de usuario en el navegador."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -194,6 +194,10 @@
 </div>
           
 } @else if (view() === 'seguridad') {
+<div class="identity-security-intro" role="note">
+  <strong>Protección de tu identidad</strong>
+  <p>Cada cambio exige su propia verificación. Abrir una opción nunca actualiza automáticamente tus credenciales.</p>
+</div>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal31.open()">
     <span>Cambiar contraseña</span><span aria-hidden="true">›</span>
@@ -260,6 +264,10 @@
 </div>
           
 } @else if (view() === 'administracion') {
+<div class="identity-approval-context" role="note">
+  <strong>Revisión consciente y protegida</strong>
+  <p>Comprueba que el expediente pertenece a la empresa y que tienes autorización para decidir. Ninguna acción se aprueba automáticamente.</p>
+</div>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal35.open()">
     <span>Revisar membresía con permiso administrativo</span><span aria-hidden="true">›</span>
@@ -268,13 +276,15 @@
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <p>Esta acción requiere autorización vigente del servidor. No concede permisos al solicitante.</p>
             <form (submit)="securityActionRequested.emit({ event: $event, action: 'membership' })">
-              <label for="membership-id">Membresía pendiente</label><input id="membership-id" name="membershipId" required maxlength="36">
+              <label for="membership-id">Referencia de membresía del expediente</label>
+              <p class="identity-field-help">Usa solo la referencia recibida mediante un proceso administrativo autorizado. No introduzcas identificadores de otra empresa.</p>
+              <input id="membership-id" name="membershipId" required maxlength="36" autocomplete="off" pattern="[0-9a-fA-F-]{36}">
               <label for="membership-decision">Decisión</label>
               <select id="membership-decision" name="decision" required>
                 <option value="" selected disabled>Selecciona una decisión</option>
                 <option value="approve">Aprobar</option><option value="reject">Rechazar</option>
               </select>
-              <label for="membership-reason">Motivo</label><input id="membership-reason" name="reason" required maxlength="240">
+              <label for="membership-reason">Motivo de la decisión</label><input id="membership-reason" name="reason" required minlength="8" maxlength="240" autocomplete="off">
               <label for="membership-code">Código MFA del aprobador</label><input id="membership-code" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
               <button [disabled]="busy() || identity.restoring()">Registrar decisión</button>
             </form>
@@ -296,8 +306,18 @@
 </div>
           
 } @else {
-<button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRequested.emit('list')">Consultar sesiones</button>
-          <button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRequested.emit('rotate')">Rotar sesión</button>
+          <div class="identity-session-overview">
+            <div>
+              <span class="identity-session-overview__eyebrow">SESIÓN DE CUENTA · CONTROL PRIVADO</span>
+              <strong>Tu acceso está verificado</strong>
+              <p>La sesión caduca a los <strong>{{ identity.idleMinutes() }} minutos de inactividad</strong>. El servidor controla ese plazo y solo una actividad legítima lo renueva.</p>
+            </div>
+            <span class="identity-session-overview__status">Sesión verificada</span>
+          </div>
+          <div class="identity-session-actions">
+            <button type="button" [disabled]="busy() || identity.restoring()" (click)="requestSessions()">Actualizar dispositivos</button>
+            <button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRequested.emit('rotate')">Renovar sesión</button>
+          </div>
           <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal37.open()">
     <span>Revocar todas mis sesiones</span><span aria-hidden="true">›</span>
@@ -358,7 +378,7 @@
                 }
               </ul>
             } @else {
-              <p class="identity-empty-copy">Consulta las sesiones para ver los dispositivos asociados a esta cuenta.</p>
+              <p class="identity-empty-copy">Aún no hay sesiones visibles. Utiliza «Actualizar dispositivos» para consultar los dispositivos de tu cuenta.</p>
             }
           </section>
           <div class="institutional-task">
