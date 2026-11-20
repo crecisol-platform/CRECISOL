@@ -75,7 +75,7 @@
 </div>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal12.open()">
-    <span>Actualizar foto de perfil</span><span aria-hidden="true">›</span>
+    <span>{{ identity.photo() ? 'Actualizar foto de perfil' : 'Añadir foto de perfil' }}</span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal12 title="Actualizar foto de perfil" description="Foto cuadrada de hasta 2 MB; sin metadatos del archivo original."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -86,6 +86,7 @@
             </form>
   </cs-institutional-modal>
 </div>
+@if (identity.photo()) {
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal13.open()">
     <span>Eliminar foto de perfil</span><span aria-hidden="true">›</span>
@@ -96,10 +97,8 @@
 <button type="button" [disabled]="busy()" (click)="removePhotoRequested.emit()">Confirmar eliminación de mi foto</button>
   </cs-institutional-modal>
 </div>
-          <div class="identity-panel-note identity-panel-note--profile">
-  <strong>Tu actividad de seguridad tiene su propio espacio</strong>
-  <span>Revisa accesos, verificaciones y cambios en la sección Historial para mantener despejado el perfil.</span>
-</div>
+}
+
           
 } @else if (view() === 'historial') {
 <section class="identity-history-shell" aria-label="Actividad de la cuenta">
@@ -330,7 +329,7 @@
               <div class="identity-pending-main">
                 <span class="identity-pending-state">Pendiente de decisión</span>
                 <strong>{{ request.mailboxHint }}</strong>
-                <p>Solicitud {{ request.referenceLabel }} ·
+                <p>Solicitud · {{ request.referenceLabel }} ·
                   <time [attr.datetime]="request.requestedAtUtc">{{ request.requestedLabel }}</time>
                 </p>
               </div>
@@ -355,16 +354,7 @@
     }
   </section>
 
-  <div class="institutional-task">
-    <button type="button" class="institutional-task__trigger"
-      [disabled]="busy() || identity.restoring() || !pendingRows().length"
-      (click)="selectedMembershipId.set(''); workspaceModal35.open()">
-      <span>Revisar membresía con permiso administrativo
-        <small class="identity-task-caption" aria-hidden="true">Selecciona un expediente de la bandeja, una decisión, un motivo y MFA</small>
-      </span><span aria-hidden="true">›</span>
-    </button>
-  </div>
-  <div class="institutional-task">
+<div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal36.open()">
     <span>Invitar a una cuenta<small class="identity-task-caption" aria-hidden="true">Emite una invitación protegida de vigencia limitada</small></span><span aria-hidden="true">›</span>
   </button>
