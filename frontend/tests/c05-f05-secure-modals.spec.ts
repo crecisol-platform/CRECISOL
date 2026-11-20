@@ -214,9 +214,23 @@ for (const viewport of viewports) for (const scenario of scenarios) {
       await expect(current).toHaveAttribute('aria-current', 'step');
       if (scenario.endsWith('doble-control') || scenario.endsWith('vinculacion'))
         await expect(dlg.locator('.cs-modal__step--complete')).toHaveCount(1);
+      if (scenario === 'recuperacion-operador-doble-control') {
+        await expect(dlg.locator('.cs-modal__stepper')).toBeInViewport({ ratio: 0.9 });
+        await expect.poll(() => dlg.locator('.cs-modal__content')
+          .evaluate((element: Element) => element.scrollTop)).toBe(0);
+      }
     }
     if (expectedKind(scenario) === 'destructive')
       await expect(dlg.getByRole('note')).toContainText('Revisa antes de confirmar.');
+    if (scenario === 'passkey-revocacion')
+      await expect(dlg.getByLabel('Llave de acceso a revocar').locator('option:checked'))
+        .toHaveText('Terminación 777777');
+    if (scenario === 'aprobacion-membresia') {
+      await expect(dlg.getByLabel('Solicitud pendiente seleccionada').locator('option:checked'))
+        .toContainText('so•••@example.test');
+      await expect(dlg.getByText('Expediente seleccionado · Terminación 999999'))
+        .toBeVisible();
+    }
     const a11y = await new AxeBuilder({ page }).include('dialog.cs-modal:modal')
       .withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();
     expect(a11y.violations).toEqual([]);

@@ -197,7 +197,7 @@
                 (change)="selectedPasskeyId.set($any($event.target).value)">
                 <option value="">Selecciona una llave registrada</option>
                 @for (key of passkeyRows(); track key.id) {
-                  <option [value]="key.id">{{ key.referenceLabel }} · {{ key.registrationLabel }}</option>
+                  <option [value]="key.id">{{ key.referenceLabel }}</option>
                 }
               </select>
               @if (!passkeyRows().length) { <p class="identity-field-help">Consulta primero las llaves registradas para seleccionar la correcta.</p> }
@@ -301,9 +301,14 @@
         (change)="selectedMembershipId.set($any($event.target).value)">
         <option value="" selected disabled>Selecciona una solicitud pendiente</option>
         @for (request of pendingRows(); track request.id) {
-          <option [value]="request.id">{{ request.mailboxHint }} · {{ request.referenceLabel }}</option>
+          <option [value]="request.id">{{ request.mailboxHint }}</option>
         }
       </select>
+      @for (request of pendingRows(); track request.id) {
+        @if (request.id === selectedMembershipId()) {
+          <p class="identity-field-help">Expediente seleccionado · {{ request.referenceLabel }}</p>
+        }
+      }
       <p class="identity-field-help">La referencia completa se envía solo al backend para esta decisión; no necesitas escribirla.</p>
       <label for="membership-decision">Decisión</label>
       <select id="membership-decision" name="decision" required>

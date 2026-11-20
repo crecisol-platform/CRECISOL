@@ -52,8 +52,22 @@ export class InstitutionalModalComponent implements OnDestroy {
   private previouslyFocused: HTMLElement | null = null;
   private submittedWhileOpen = false;
   private actionStartedHere = false;
+  private presentedWizardStep = 1;
 
   constructor() {
+    effect(() => {
+      const step = this.activeStep(), kind = this.kind();
+      if (kind !== 'wizard' || !this.surface?.nativeElement.open ||
+          this.presentedWizardStep === step) return;
+      this.presentedWizardStep = step;
+      // A newly displayed step must not inherit the scroll offset of the
+      // previous form. Announce the transition with the dialog heading.
+      queueMicrotask(() => {
+        if (!this.surface?.nativeElement.open || this.activeStep() !== step) return;
+        if (this.scrollBody) this.scrollBody.nativeElement.scrollTop = 0;
+        this.heading?.nativeElement.focus({ preventScroll: true });
+      });
+    });
     effect(() => {
       const busy = this.busy(), feedback = this.feedback(), error = this.error();
       if (!this.surface?.nativeElement.open) return;
@@ -98,6 +112,7 @@ export class InstitutionalModalComponent implements OnDestroy {
     this.localError.set('');
     this.actionStartedHere = false;
     this.submittedWhileOpen = false;
+    this.presentedWizardStep = this.activeStep();
     dialog.showModal();
     if (InstitutionalModalComponent.openInstances.size === 0)
       InstitutionalModalComponent.originalOverflow = document.body.style.overflow;
