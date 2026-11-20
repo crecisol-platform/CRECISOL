@@ -52,10 +52,12 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
     }
     await p.getByRole('button', { name: 'Revisar identidad del titular', exact: true }).click();
     await p.getByLabel('Caso a revisar', { exact: true }).fill(caseId);
+    await p.getByLabel('Decisión de identidad', { exact: true }).selectOption('approve');
     await p.getByLabel('SHA-256 del expediente de verificación').fill(evidenceHash);
     await p.getByLabel('Motivo de la revisión de identidad').fill('Independent institutional verification of fictional operator');
     await p.getByLabel('Código MFA fresco para revisar').fill(operator.backups.pop());
     await p.getByLabel('Verifiqué la identidad de forma independiente; no usé preguntas personales ni solo un correo nuevo', { exact: true }).check();
+    await p.getByLabel('Confirmo la decisión administrativa y que mi revisión quedará registrada de forma permanente', { exact: true }).check();
     const reviewed = p.waitForResponse(r => r.url().endsWith('/platform-identity/review'));
     await p.getByRole('button', { name: 'Registrar revisión de identidad', exact: true }).click();
     check((await reviewed).status() === 200, 'distinct platform reviewer approves an operator case after independent identity attestation');
@@ -143,7 +145,10 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   const beforeRotation = (await subject.cookies()).find(c => c.name === '__Host-crecisol-platform-c05').value;
   const rotated = page.waitForResponse(r => r.url().endsWith('/platform-identity/sessions/rotate'));
   await page.getByRole('button', { name: 'Rotar sesión de operador', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Renovar la sesión de plataforma', exact: true })
+    .getByRole('button', { name: 'Confirmar renovación de sesión', exact: true }).click();
   check((await rotated).status() === 200, 'Angular rotates the independent platform session cookie and CSRF binding');
+  await page.getByRole('dialog', { name: 'Renovar la sesión de plataforma', exact: true }).waitFor({ state: 'hidden' });
   const afterRotation = (await subject.cookies()).find(c => c.name === '__Host-crecisol-platform-c05').value; confidential.push(afterRotation);
   check((await platform('session', {}, beforeRotation)).status === 401 && (await platform('session', {}, afterRotation)).status === 200,
     'rotated platform cookie cannot be replayed and its replacement stays valid');

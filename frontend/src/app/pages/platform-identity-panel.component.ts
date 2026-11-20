@@ -43,7 +43,8 @@ export class PlatformIdentityPanelComponent {
       if (action === 'case') await this.platform.lookup(field('caseId'));
       if (action === 'find-case') await this.platform.findCase(field('mailbox'), field('realm'), field('reason'), field('code'));
       if (action === 'review') {
-        if (field('verified') !== 'on') throw new Error('identity_unavailable');
+        if (field('verified') !== 'on' || field('confirmed') !== 'on' ||
+            !['approve', 'reject'].includes(field('decision'))) throw new Error('identity_unavailable');
         await this.platform.review(field('caseId'), field('decision'), field('evidenceHash'), field('reason'), field('code'));
       }
       if (action === 'share') await this.platform.releaseShare(field('caseId'), field('code'));
@@ -62,7 +63,24 @@ export class PlatformIdentityPanelComponent {
       if (action === 'operator-recovery-enroll') await this.platform.confirmRecovery(field('code'));
       if (action === 'operator-incident') await this.platform.reportIncident(field('token'));
       if (action === 'profile') await this.platform.saveProfile(field('displayName'), field('language'), field('timeZone'));
-      form.reset(); this.message.set('Solicitud procesada por el ámbito de identidad de plataforma.');
+      form.reset();
+      const receipts: Readonly<Record<string, string>> = {
+        login: 'Comprueba ahora el segundo factor del operador.',
+        mfa: 'Identidad de plataforma verificada.',
+        case: 'Expediente consultado conforme a los permisos de plataforma.',
+        'find-case': 'Referencia localizada exclusivamente bajo el ámbito autorizado.',
+        review: 'Revisión de identidad registrada; no sustituye una segunda revisión independiente.',
+        share: 'Parte de recuperación emitida para entrega segura y temporal.',
+        profile: 'Perfil institucional actualizado.',
+        password: 'Cambio de contraseña procesado; inicia una nueva sesión.',
+        'session-policy': 'Parámetro de inactividad registrado después de la verificación.',
+        'revoke-all': 'Sesiones de plataforma cerradas.',
+        'mailbox-request': 'Se solicitó la verificación del nuevo correo.',
+        'mailbox-complete': 'Nuevo correo verificado; vuelve a autenticarte.',
+        factor: 'Verifica el autenticador nuevo antes de activarlo.',
+        'factor-confirm': 'Autenticador actualizado; vuelve a iniciar sesión.'
+      };
+      this.message.set(receipts[action] ?? 'Solicitud procesada en identidad de plataforma.');
     });
   }
   async logout(): Promise<void> {
@@ -76,8 +94,12 @@ export class PlatformIdentityPanelComponent {
     await this.run(() => this.platform.loadSessionPolicy());
   }
   async loadSessions(): Promise<void> { await this.run(() => this.platform.loadSessions()); }
-  async rotateSession(): Promise<void> { await this.run(() => this.platform.rotateSession()); }
-  async revokeSession(id: string): Promise<void> { await this.run(() => this.platform.revokeSession(id)); }
+  async rotateSession(): Promise<void> {
+    await this.run(async () => { await this.platform.rotateSession(); this.message.set('Sesión de operador renovada y vinculada a nuevas credenciales de navegador.'); });
+  }
+  async revokeSession(id: string): Promise<void> {
+    await this.run(async () => { await this.platform.revokeSession(id); this.message.set('Sesión seleccionada revocada en el servidor.'); });
+  }
   async photo(event: Event): Promise<void> {
     event.preventDefault(); const form = event.currentTarget as HTMLFormElement; const file = new FormData(form).get('photo');
     await this.run(async () => { if (!(file instanceof File)) throw new Error('identity_unavailable'); await this.platform.uploadPhoto(file); form.reset(); });

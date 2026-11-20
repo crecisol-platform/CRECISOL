@@ -13,6 +13,12 @@ export class PlatformIdentityApiService {
   private csrf = '';
   private challenge = '';
   private sessionRevision = 0;
+  // Old authorized responses may not restore state after a newer denial.
+  private caseRequestRevision = 0;
+  private sessionsRequestRevision = 0;
+  private abuseRequestRevision = 0;
+  private profileRequestRevision = 0;
+  private sessionPolicyRequestRevision = 0;
   readonly idleMinutes = signal(30);
   readonly sessionPolicy = signal<{ idleMinutes: number; revision: number; canManage: boolean } | null>(null);
   private activityLastSent = 0;
@@ -31,6 +37,10 @@ export class PlatformIdentityApiService {
   readonly factorQr = signal('');
   readonly recoveryCodes = signal<readonly string[]>([]);
   readonly sessions = signal<ReadonlyArray<{ id: string; device: string; lastSeenAtUtc: string; expiresAtUtc: string }>>([]);
+  readonly sessionsLoaded = signal(false);
+  readonly profileLoaded = signal(false);
+  readonly abuseLoaded = signal(false);
+  readonly caseLoaded = signal(false);
   private recoveryChallenge = '';
   private recoveryCase = '';
   private factorChallenge = '';
@@ -58,8 +68,9 @@ export class PlatformIdentityApiService {
     if (this.state() !== 'authenticated' || this.activityInFlight ||
         Date.now() - this.activityLastSent < 60_000) return;
     this.activityLastSent = Date.now(); this.activityInFlight = true;
+    const revision = this.sessionRevision;
     void this.post('sessions/keepalive', {}).catch((error: unknown) => {
-      if (error instanceof HttpErrorResponse && error.status === 401) this.clear();
+      if (revision === this.sessionRevision && error instanceof HttpErrorResponse && error.status === 401) this.clear();
     }).finally(() => { this.activityInFlight = false; });
   }
   private async restore(): Promise<void> {
@@ -86,10 +97,20 @@ export class PlatformIdentityApiService {
     this.challenge = ''; this.csrf = result.csrfToken; this.sessionWindow.establish(result.expiresAtUtc, result.idleMinutes); this.idleMinutes.set(result.idleMinutes); this.activityLastSent = Date.now(); this.state.set('authenticated');
   }
   async lookup(caseId: string): Promise<void> {
-    const revision = this.sessionRevision;
-    this.case.set(null);
-    const result = await this.post<{ caseId: string; readyAtUtc: string | null; blocked: boolean; consumed: boolean }>('case', { caseId });
-    if (revision === this.sessionRevision) this.case.set(result);
+    const revision = this.sessionRevision, request = ++this.caseRequestRevision;
+    this.case.set(null); this.caseLoaded.set(false);
+    try {
+      const result = await this.post<{ caseId: string; readyAtUtc: string | null; blocked: boolean; consumed: boolean }>('case', { caseId });
+      if (revision === this.sessionRevision && request === this.caseRequestRevision &&
+          this.state() === 'authenticated') {
+        this.case.set(result); this.caseLoaded.set(true);
+      }
+    } catch (error) {
+      if (revision === this.sessionRevision && request === this.caseRequestRevision) {
+        this.case.set(null); this.caseLoaded.set(false);
+      }
+      throw error;
+    }
   }
   async findCase(mailbox: string, realm: string, reason: string, code: string): Promise<void> {
     const revision = this.sessionRevision;
@@ -124,15 +145,25 @@ export class PlatformIdentityApiService {
     finally { this.restoring.set(false); }
   }
   async loadProfile(): Promise<void> {
-    const revision = this.sessionRevision;
-    const profile = await this.post<{ displayName: string; language: string; timeZone: string; hasPhoto: boolean }>('profile/read', {});
-    if (revision !== this.sessionRevision || this.state() !== 'authenticated') return;
-    this.profile.set(profile); this.photo.set('');
-    if (profile.hasPhoto) {
-      const photo = await this.post<{ png: string }>('profile/photo', {});
-      if (revision !== this.sessionRevision || this.state() !== 'authenticated') return;
-      if (!/^[A-Za-z0-9+/=]+$/.test(photo.png) || photo.png.length > 32768) throw new Error('identity_unavailable');
-      this.photo.set('data:image/png;base64,' + photo.png);
+    const revision = this.sessionRevision, request = ++this.profileRequestRevision;
+    this.profile.set(null); this.photo.set(''); this.profileLoaded.set(false);
+    try {
+      const profile = await this.post<{ displayName: string; language: string; timeZone: string; hasPhoto: boolean }>('profile/read', {});
+      if (revision !== this.sessionRevision || request !== this.profileRequestRevision ||
+          this.state() !== 'authenticated') return;
+      if (profile.hasPhoto) {
+        const photo = await this.post<{ png: string }>('profile/photo', {});
+        if (revision !== this.sessionRevision || request !== this.profileRequestRevision ||
+            this.state() !== 'authenticated') return;
+        if (!/^[A-Za-z0-9+/=]+$/.test(photo.png) || photo.png.length > 32768) throw new Error('identity_unavailable');
+        this.photo.set('data:image/png;base64,' + photo.png);
+      }
+      this.profile.set(profile); this.profileLoaded.set(true);
+    } catch (error) {
+      if (revision === this.sessionRevision && request === this.profileRequestRevision) {
+        this.profile.set(null); this.photo.set(''); this.profileLoaded.set(false);
+      }
+      throw error;
     }
   }
   async saveProfile(displayName: string, language: string, timeZone: string): Promise<void> {
@@ -142,27 +173,66 @@ export class PlatformIdentityApiService {
     await this.post('profile/photo-upload', { pixels: await canonicalPhotoPixels(file) }); await this.loadProfile();
   }
   async loadAbuse(): Promise<void> {
-    const revision = this.sessionRevision;
-    const result = await this.post<{ signals: Array<{ kind: string; count: number }> }>('abuse-summary', {});
-    if (revision === this.sessionRevision && this.state() === 'authenticated') this.abuse.set(result.signals);
+    const revision = this.sessionRevision, request = ++this.abuseRequestRevision;
+    this.abuse.set([]); this.abuseLoaded.set(false);
+    try {
+      const result = await this.post<{ signals: Array<{ kind: string; count: number }> }>('abuse-summary', {});
+      if (revision === this.sessionRevision && request === this.abuseRequestRevision &&
+          this.state() === 'authenticated') {
+        this.abuse.set(Array.isArray(result.signals) ? result.signals : []);
+        this.abuseLoaded.set(true);
+      }
+    } catch (error) {
+      if (revision === this.sessionRevision && request === this.abuseRequestRevision) {
+        this.abuse.set([]); this.abuseLoaded.set(false);
+      }
+      throw error;
+    }
   }
   async loadSessionPolicy(): Promise<void> {
-    const revision = this.sessionRevision;
-    const policy = await this.post<{ idleMinutes: number; revision: number; canManage: boolean }>('session-policy', {});
-    if (revision === this.sessionRevision && this.state() === 'authenticated')
-      this.sessionPolicy.set(policy);
+    const revision = this.sessionRevision, request = ++this.sessionPolicyRequestRevision;
+    // Never present previous administrator permissions while a fresh policy is unverified.
+    this.sessionPolicy.set(null);
+    try {
+      const policy = await this.post<{ idleMinutes: number; revision: number; canManage: boolean }>('session-policy', {});
+      if (revision === this.sessionRevision && request === this.sessionPolicyRequestRevision &&
+          this.state() === 'authenticated') this.sessionPolicy.set(policy);
+    } catch (error) {
+      if (revision === this.sessionRevision && request === this.sessionPolicyRequestRevision)
+        this.sessionPolicy.set(null);
+      throw error;
+    }
   }
   async updateSessionPolicy(minutes: string, expectedRevision: string, code: string): Promise<void> {
-    const revision = this.sessionRevision;
-    const policy = await this.post<{ idleMinutes: number; revision: number; canManage: boolean }>(
-      'session-policy/update', { minutes, expectedRevision, code });
-    if (revision === this.sessionRevision && this.state() === 'authenticated')
-      this.sessionPolicy.set(policy);
+    const revision = this.sessionRevision, request = ++this.sessionPolicyRequestRevision;
+    try {
+      const policy = await this.post<{ idleMinutes: number; revision: number; canManage: boolean }>(
+        'session-policy/update', { minutes, expectedRevision, code });
+      if (revision === this.sessionRevision && request === this.sessionPolicyRequestRevision &&
+          this.state() === 'authenticated') this.sessionPolicy.set(policy);
+    } catch (error) {
+      // A revoked role or stale expected revision cannot leave the old edit affordance visible.
+      if (revision === this.sessionRevision && request === this.sessionPolicyRequestRevision)
+        this.sessionPolicy.set(null);
+      throw error;
+    }
   }
   async loadSessions(): Promise<void> {
-    const revision = this.sessionRevision;
-    const result = await this.post<{ sessions: Array<{ id: string; device: string; lastSeenAtUtc: string; expiresAtUtc: string }> }>('sessions', {});
-    if (revision === this.sessionRevision && this.state() === 'authenticated') this.sessions.set(result.sessions);
+    const revision = this.sessionRevision, request = ++this.sessionsRequestRevision;
+    this.sessions.set([]); this.sessionsLoaded.set(false);
+    try {
+      const result = await this.post<{ sessions: Array<{ id: string; device: string; lastSeenAtUtc: string; expiresAtUtc: string }> }>('sessions', {});
+      if (revision === this.sessionRevision && request === this.sessionsRequestRevision &&
+          this.state() === 'authenticated') {
+        this.sessions.set(Array.isArray(result.sessions) ? result.sessions : []);
+        this.sessionsLoaded.set(true);
+      }
+    } catch (error) {
+      if (revision === this.sessionRevision && request === this.sessionsRequestRevision) {
+        this.sessions.set([]); this.sessionsLoaded.set(false);
+      }
+      throw error;
+    }
   }
   async rotateSession(): Promise<void> {
     const revision = this.sessionRevision;
@@ -256,6 +326,13 @@ export class PlatformIdentityApiService {
   }
   clear(): void {
     ++this.sessionRevision;
+    ++this.caseRequestRevision;
+    ++this.sessionsRequestRevision;
+    ++this.abuseRequestRevision;
+    ++this.profileRequestRevision;
+    ++this.sessionPolicyRequestRevision;
+    this.caseLoaded.set(false); this.sessionsLoaded.set(false);
+    this.abuseLoaded.set(false); this.profileLoaded.set(false);
     ++this.factorQrRevision;
     ++this.recoveryQrRevision;
     for (const timer of [this.backupTimeout, this.factorTimeout, this.recoveryTimeout, this.shareTimeout]) if (timer) clearTimeout(timer);

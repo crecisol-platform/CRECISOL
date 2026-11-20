@@ -228,3 +228,8 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
   .identity-panel-actions { width: 100%; }
   .identity-panel-actions button { flex: 1 1 auto; }
 }
+
+/* F04 platform-only realm boundary: never affects business account navigation. */
+.operator-scope-banner { margin: -.4rem 0 1.1rem; padding: .85rem 1.1rem;
+  border-left: 4px solid var(--cs-color-accent-text, #174b77); border-radius: .45rem;
+  background: #f3f8fc; color: #3c5975; font-size: .87rem; line-height: 1.65; }

@@ -61,6 +61,7 @@
       }
       @if (platform.state() === 'authenticated') {
         <div class="operator-context">
+          <p class="operator-context__eyebrow">CONSOLA INSTITUCIONAL / ÁMBITO AISLADO</p>
           <p class="operator-context__section" role="status" aria-live="polite" aria-atomic="true">
             <strong>{{ activeSection().label }}</strong>
             <span>{{ activeSection().description }}</span>
@@ -70,6 +71,7 @@
           [items]="navigationItems()" [activeId]="panel()"
           ariaLabel="Áreas de la consola de identidad"
           (selected)="selectPanel($event)"/>
+        <p class="operator-scope-banner">El acceso de plataforma utiliza una identidad, sesión y permisos distintos de las cuentas empresariales. Ninguna pestaña concede autorización por sí misma.</p>
         <div class="operator-content">
           @switch (panel()) {
             @case ('sesiones') {
