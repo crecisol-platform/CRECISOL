@@ -1,53 +1,54 @@
-# CRECISOL · C05 UX · F03 — Acta de cierre técnico delimitado
+# CRECISOL C05 · Fase 03 — Acta de revisión y rectificación de alcance
 
-**Resolución: F03 CERRADA TÉCNICAMENTE EN SU ALCANCE DE NAVEGACIÓN Y ARQUITECTURA DE INFORMACIÓN.**  
-**Calificación premium final ≥9/10 de las 65 interfaces: NO CERTIFICADA, reservada para la última fase.**  
-**Fecha:** 19-11-2026 (America/Tegucigalpa) / 20-11-2026 UTC.
+**ESTADO VIGENTE: IMPLEMENTACIÓN Y AUDITORÍAS EN CURSO. CERTIFICACIÓN INTEGRAL NO OTORGADA.**  
+**Alcance obligatorio:** rediseño de las seis vistas **Resumen, Perfil, Llaves, Seguridad, Historial y Aprobaciones**, con **9/10 mínimo individual y verificable**, conforme a la [especificación corregida](F03_CUENTA_AUTENTICADA_REDISENO_Y_CALIFICACION.md).
 
-## Identidad, dependencias y límites
+## I. Rectificación documentada — no borrar historia
 
-- Repositorio autorizado: `crecisol-platform/CRECISOL` (ID 1450414592). No se toca `solqaryn/Solqaryn`.
-- Rama: `feature/c05-ux-f03-arquitectura-navegacion-20261119`, PR [#176](https://github.com/crecisol-platform/CRECISOL/pull/176) **DRAFT, sin fusionar**.
-- Base F02: `0361934286282ddb1b6ba94797125859d37464d7`, PR #175 técnicamente cerrada.
-- C05 fuente: `f61a79d242288c686a88a7c3dd711f2be9a48c18`, PR #172 de TOTP-SHA1 y sesión por inactividad configurable. No se cambian sus contratos.
-- Prueba integral **SUCCESS** del último SHA de código: `71db3b7e49561a0f71fb014d966805b3673f6a88`, [run #44648016787](https://github.com/crecisol-platform/CRECISOL/actions/runs/44648016787). El contenido documental de esta acta y del registro de hallazgos provoca un nuevo HEAD: su CI deberá ser verificada por separado antes de afirmar SUCCESS de ese SHA.
-- Alcance del trabajo: componentes de portal y operador en `frontend/src/app/pages/`, rutas de presentación, CSS acotado, QA, workflow y documentación F03. **Ningún cambio** a `frontend/src/app/app.routes.ts`, servicios o endpoints API, TOTP SHA1, WebAuthn, 30 minutos inactividad configurable, `backend/`, `database/`, VPS, producción, C01/C02, `main`, `dev` o PR #173.
+El primer cierre de PR #176 (SHA `07b6768ee4265db9bfd4b095d3825c55cc5739b5`, run #44648444073 PASS) cubrió arquitectura de información y navegación contextual. **No cubría este entregable F03 de cuenta autenticada**. Las anteriores afirmaciones generales de «F03 certificada» se rectifican, sin manipular sus pruebas ni borrar el comentario previo. Constancia [#7026956082](https://github.com/crecisol-platform/CRECISOL/pull/176#issuecomment-7026956082). Esta acta **sustituye la conclusión** del registro anterior, no sus datos históricos de ejecución.
 
-## Matriz de resultados A/B/C
+**Repositorio autorizado:** `crecisol-platform/CRECISOL` (ID 1450414592); rama `feature/c05-ux-f03-arquitectura-navegacion-20261119` (nombre histórico de rama, mismo PR #176 DRAFT). Base F02 `0361934286282ddb1b6ba94797125859d37464d7` (PR #175). Dependencia autenticación PR #172 de TOTP-SHA1 y sesión configurable, valor inicial 30 minutos de inactividad. PR #173 preservado sin escritura ni fusión.
 
-| Auditoría | Prueba / criterio | Evidencia del SHA 71db3b7e... | Veredicto |
-| --- | --- | --- | --- |
-| **A — Funcionalidad** | Rutas permitidas, comportamiento por estado, componentes, navegación de operador, `loadSessionPolicy()` preservado | `qa/c05_ux_f03_navigation_audits.py A` en CI | PASS |
-| **A — Compilación** | TypeScript/Angular 22 aplicación y harness institucional F02 | Dos compilaciones SUCCESS | PASS |
-| **A — E2E** | Cuenta invitada, autenticada y operador en cinco resoluciones, enlaces y regresión de teclado | **18/18** Playwright F03 | PASS |
-| **A — Regresión previa** | F02 componentes y modales institucionales C05 | **11/11** F02 y **2/2** modales C05 | PASS |
-| **B — Separación** | Invitado no muestra áreas privadas, operador sin login no muestra su consola; allowlists y datos sintéticos | `qa/c05_ux_f03_navigation_audits.py B`, pruebas negativas Chromium | PASS en alcance UI |
-| **B — Privacidad** | Sin datos personales, QR real, envío backend real, persistencia o token privado en URL de operador | Inspección del diff y del manifest sintético | PASS en alcance UI |
-| **C — Arquitectura/UX** | Tokens F02, foco/skip-link, `aria-current`, breadcrumbs, zoom 200%, forced-colors, reduced-motion, axe WCAG | `qa/c05_ux_f03_navigation_audits.py C` y 18 Chromium | PASS |
-| **C — Capturas** | 320,390,768,1024,1440, estados guest/recovery/account profile/account security/operator cases/operator security | `qa/c05_ux_f03_evidence_audits.py`: **30 PNG/30 JSON**, manifest y SHA coincidente | PASS |
+## II. Corrección de código desarrollada
 
-## Artefactos y verificación de integridad
+- `frontend/src/app/pages/identity-workspace.component.html`: seis vistas separadas, tarjeta de sesión, dispositivos, perfil y foto, passkeys, seguridad, historial nuevo, aprobaciones explícitas y avisos específicos.
+- `frontend/src/app/pages/identity-flow-views.component.ts`: datos presentados con fechas locales, referencias recortadas y eventos semánticos; 8 eventos iniciales, hasta 50; no sustituye autorización backend.
+- `frontend/src/app/identity/identity-presentation.ts`: formato de fechas, referencias, eventos, método de segundo factor y zona horaria con fallback seguro.
+- `frontend/src/app/pages/identity-portal.component.{ts,html,css}`: ruta `historial`, título contextual individual, pestañas móviles accesibles y copia de confirmaciones por acción.
+- `frontend/src/app/ui/institutional-modal/*`: aislamiento de feedback, foco en el título, scroll del cuerpo, encabezado/pie visibles, cancelación y foco de retorno; no envía credenciales ni aplica permisos.
+- `frontend/src/app/pages/identity-flow.component.css`: composición responsive/densidad, estados vacíos F02, tarjetas de dispositivos/llaves, cronología, acciones secundarias progresivas.
+- Workflows F03, auditorías y pruebas sintéticas 320/390/768/1024/1440; no se editan `backend/`, `database/`, `dev`, `main`, SOLQARYN ni producción.
 
-- GitHub Actions [run #44648016787](https://github.com/crecisol-platform/CRECISOL/actions/runs/44648016787): **COMPLETED / SUCCESS** en el SHA de código `71db3b7e...`.
-- Artefacto **ID 14588439356**, `c05-f03-navigation-71db3b7e49561a0f71fb014d966805b3673f6a88`. ZIP descargado e inspeccionado fuera del runner.
-- ZIP: **66 archivos: 35 PNG** (30 de F03 + 5 del harness F02), **31 JSON** (30 individuales y un manifiesto F03).
-- El manifiesto declara `runnerSha=71db3b7e...`, `screenshots=30`, `perViewport={320:6,390:6,768:6,1024:6,1440:6}`, `synthetic=true`, `backendAuthorizationVerified=false`, `finalAestheticNineOfTenCertified=false`. Cada imagen tiene hash SHA-256 registrado.
-- SHA-256 del ZIP descargado e inspeccionado: `e6940c94374c3f26503294721421f4f36bcd2ab2ae8a3b58a177fcea7c604dcb`.
-- La revisión visual independiente de las capturas finales 320,390,1440 confirmó navegación legible, separación de ámbitos y eliminación de textos redundantes de operador; el documento no presentó desbordamiento horizontal en las pruebas. Los detalles de captura son sintéticos y no demuestran calidad 9/10 de todas las interfaces.
+## III. Auditorías y evidencia real observada
 
-## Defectos reales corregidos y regresiones
+| Gate | Evidencia existente | Estado |
+| --- | --- | --- |
+| A — Contratos/rutas y construcción | Auditores A/B/C estáticos y TypeScript+Angular 22, en run [#44651963391](https://github.com/crecisol-platform/CRECISOL/actions/runs/44651963391) | **PASS** en SHA de código `1514fcc3...` |
+| A — Navegación y regresiones | 18/18 F03 navegación, 11/11 F02 y 2/2 C05 modal en mismo run | **PASS** en SHA `1514fcc3...` |
+| A — Seis superficies reales de frontend | Suite Chrome `c05-f03-account.spec.ts` con 30 estados cargados + negativos y axe | **PASS** en SHA `1514fcc3...` |
+| B — Privacidad y controles negativos | Auditor B y Chrome: sesión ausente, UUID ocultos, evento técnico inerte, selector explícito de passkey, aprobación vacía y MFA | **PASS** en alcance UI sintético |
+| C — Responsive y evidencias | 30 PNG + 30 JSON de seis vistas x 5 anchos, manifiesto vinculado a commit, axe y reflow de 200% | **PASS** en SHA `1514fcc3...` |
+| C — Calidad estética ≥9/10 **por cada vista** | Capturas reales inspeccionadas, sin calificación individual aprobada de seis vistas | **PENDIENTE / NO-GO** |
+| B/A — Bandeja autorizada de pendientes empresariales | No existe contrato actual de listado por tenant, solo `memberships/decide`; no inventar permisos o recursos | **NO-GO para Aprobaciones 9/10** |
 
-**F03-UX-001 — RESUELTO (P1):** primer run [#44647268135](https://github.com/crecisol-platform/CRECISOL/actions/runs/44647268135) mostró **17/18 PASS** con un fallo real del skip-link: `href="#account-content"` con el `<base href="/">` hacía navegar a la portada pública `/#account-content`. Se implementó `focusContent(event)` para cancelar navegación y enfocar el contenido de `/cuenta` sin cambiar `?vista`; test de teclado ahora exige foco real y URL preservada. Run correctivo 18/18 PASS.
+La primera ejecución de seis vistas [#44650830227](https://github.com/crecisol-platform/CRECISOL/actions/runs/44650830227) pasó builds y la navegación pero tuvo **29/42 PASS** y **13 FAIL** en localizadores ambiguos de regiones/etiqueta; se corrigió la duplicación de landmarks y se usaron nombres accesibles exactos. Se conserva el fallo histórico, no se presenta como verde.
 
-**F03-UX-002 — RESUELTO (P2):** la consola operadora repetía encabezado, explicación y sección en el estado autenticado. Se eliminó la introducción duplicada para operadores ya verificados, conservando formularios y controles.
+### Evidencia de imágenes anterior al HEAD documental
 
-**Sin regresiones funcionales activas detectadas en el alcance probado F03**. No se ocultan runs fallidos/cancelados históricos, que permanecen auditables.
+[Run #44651963391](https://github.com/crecisol-platform/CRECISOL/actions/runs/44651963391), **SUCCESS** sobre `1514fcc3b14a51906ca335215fdee0248cb03117`; artefacto `#14590854212`, `c05-f03-navigation-1514fcc3b14a51906ca335215fdee0248cb03117`, descargado e inspeccionado. Un ZIP de 127 entradas: 30 PNG/30 JSON de cuenta + manifiesto, 30 PNG/30 JSON previos de navegación + manifiesto, y cinco PNG F02. **Posteriores cambios de presentación y estas actas crean otro HEAD que requiere run nuevo.** No adjudicar pruebas de ese SHA a cambios posteriores.
 
-## Criterios explícitos de no sobrecertificación
+## IV. Seguridad, privacidad y límites
 
-- Esta fase **NO** rediseña ni califica las 65 pantallas/modales/estados completos. El objetivo ≥9/10 **se mide por pantalla al terminar la última fase**, no por media de esta fase ni por CI verde.
-- Las pruebas de navegación son de frontend **sintético**: no ejecutan controles de autorización real en .NET/MySQL, IDOR entre tenants, MFA físico, expiración real de 30 minutos, OAuth/WebAuthn de hardware ni recuperación 24 horas. No atribuirles ninguna certificación de esos contratos.
-- El usuario solicitó no avanzar de fase hasta certificar el alcance vigente. **F04 NO INICIADA**. PR #176 DRAFT sin fusionar por dependencia con PR #175 y #172.
-- Si surgiera un fallo vigente en CI del SHA final con este documento, el cierre se reabre y no se declara certificado hasta corregirlo. No activar producción, compras, pagos ni servicios externos.
+Los controles JavaScript de deshabilitado, navegación, historial y tabla son **solo UX**. El backend verifica identidad, tenant, membresía, rol, sucursal, propiedad, MFA, CSRF y política real de sesión. No hay pruebas MySQL/IDOR con tenants reales en esta fase de frontend. La aplicación no debe exponer UUID completos o semillas MFA en contenido principal; referencias completas pueden permanecer únicamente como valores de comandos protegidos al backend.
 
-**Veredicto condicionado al gate del HEAD final:** F03 técnicamente completada y probada. Cierre institucional documentado, pendiente únicamente de la repetición de CI sobre el nuevo commit del acta; dejar constancia final en conversación del PR tras comprobarlo sin crear otro commit.
+**Aprobaciones:** su UI de formulario sigue solicitando `membershipId` manual porque no existe API autorizada de bandeja de expedientes pendientes. No se puede presentar una lista inventada ni calificarla 9/10 a partir de fixtures. La especificación de contrato y controles necesarios está en el documento corregido; extender el backend exige evaluación de seguridad y pruebas separadas.
+
+## V. Requisitos de certificación pendiente
+
+**La F03 real NO estará certificada** hasta que:
+1. El **HEAD final** con código y acta tenga A/B/C, builds y regresiones PASS y capturas vinculadas al SHA.
+2. Cada una de las seis vistas, con estados de carga, vacío, error, decisiones/confirmaciones y 320–1440, logre una **nota de revisión visual individual >=9,0/10** con evidencia suficiente.
+3. Se cierre la carencia de bandeja segura de Aprobaciones o se apruebe un alcance funcional equivalente que cumpla realmente la revisión de expedientes sin exposición de otras empresas.
+4. No existan fallos P0/P1, fugas tenant, contradicciones visuales ni cambios fuera de alcance.
+
+**Resolución vigente: NO CERTIFICADA INTEGRALMENTE. PR #176 DRAFT, no fusionado. Fase 04 BLOQUEADA.** Las pruebas técnicas exitosas se registran sin elevarlas injustificadamente a certificación 9/10.
