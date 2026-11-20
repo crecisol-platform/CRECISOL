@@ -191,7 +191,8 @@ test('F03 keyboard: skip link and focus preserve native navigation', async ({ pa
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: 'Ir al contenido principal' })).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(page).toHaveURL(/#account-content$/);
+  await expect(page.locator('#account-content')).toBeFocused();
+  await expect(page).toHaveURL(/\/cuenta\?vista=ingresar$/);
   await page.getByRole('navigation', { name: 'Opciones de identidad' })
     .getByRole('link', { name: 'Solicitar cuenta' }).focus();
   await page.keyboard.press('Enter');
