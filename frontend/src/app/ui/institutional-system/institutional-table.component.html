@@ -1,0 +1,30 @@
+@if (!configurationValid()) {
+  <p class="cs-table__issue" role="alert">La tabla no está disponible: configuración inválida.</p>
+} @else if (!contextValid()) {
+  <p class="cs-table__issue" role="status">Los datos de este ámbito aún no están disponibles.</p>
+} @else {
+  <section class="cs-table__region" role="region" tabindex="0"
+    [attr.aria-label]="caption() + ', tabla con desplazamiento horizontal'">
+    <table>
+      <caption>{{ caption() }}</caption>
+      <thead>
+        <tr>
+          @for (column of columns(); track column.key) {
+            <th scope="col">{{ column.label }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of visibleRows(); track $index) {
+          <tr>
+            @for (column of columns(); track column.key) {
+              <td>{{ row[column.key] ?? '' }}</td>
+            }
+          </tr>
+        } @empty {
+          <tr><td [attr.colspan]="columns().length" class="cs-table__empty">{{ emptyMessage() }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </section>
+}

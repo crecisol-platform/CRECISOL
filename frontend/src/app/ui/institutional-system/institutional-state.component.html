@@ -1,0 +1,15 @@
+<section class="cs-state" [attr.data-kind]="kind()"
+  [attr.role]="kind() === 'error' ? 'alert' : 'status'"
+  [attr.aria-busy]="kind() === 'loading' ? 'true' : null">
+  <span class="cs-state__symbol" aria-hidden="true">
+    <cs-ui-icon [name]="icon()"/>
+  </span>
+  <h3>{{ heading() }}</h3>
+  <p>{{ message() }}</p>
+  @if (kind() === 'loading') {
+    <div class="cs-state__progress" aria-hidden="true"></div>
+  }
+  @if (kind() !== 'loading' && actionLabel()) {
+    <cs-ui-action variant="secondary" [label]="actionLabel()" (activated)="requestAction()"/>
+  }
+</section>

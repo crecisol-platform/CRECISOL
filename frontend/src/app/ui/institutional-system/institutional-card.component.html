@@ -1,0 +1,15 @@
+<section class="cs-card" [attr.aria-labelledby]="headingId()" [attr.data-tone]="tone()">
+  <header class="cs-card__header">
+    <div class="cs-card__heading">
+      @if (eyebrow()) { <p class="cs-card__eyebrow">{{ eyebrow() }}</p> }
+      @if (headingLevel() === 'h2') {
+        <h2 [id]="headingId()">{{ heading() }}</h2>
+      } @else {
+        <h3 [id]="headingId()">{{ heading() }}</h3>
+      }
+      @if (description()) { <p class="cs-card__description">{{ description() }}</p> }
+    </div>
+    <div class="cs-card__actions"><ng-content select="[cs-card-actions]"/></div>
+  </header>
+  <div class="cs-card__body"><ng-content/></div>
+</section>
