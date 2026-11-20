@@ -1,5 +1,5 @@
 <main class="account-page" id="contenido" tabindex="-1" [csInstitutionalTheme]="publishedTheme()">
-  <a class="skip-link" href="#account-content">Ir al contenido principal</a>
+  <a class="skip-link" href="#account-content" (click)="focusContent($event)">Ir al contenido principal</a>
   <header class="account-header">
     <a routerLink="/" class="brand" aria-label="Volver al inicio de CRECISOL">
       @if (brandState(); as published) {
@@ -30,7 +30,7 @@
     </aside>
     }
 
-    <div class="account-main" id="account-content" tabindex="-1">
+    <div #accountContent class="account-main" id="account-content" tabindex="-1">
       <nav class="account-breadcrumb" aria-label="Ruta de navegación">
         <ol>
           <li><a routerLink="/">Inicio</a></li>
