@@ -285,10 +285,29 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
 }
 
 
-/* C05 UX F06 premium: mobile operators already have page title, selected tab
-   and area heading. Suppress the redundant context strip, not permissions. */
+/* C05 UX F06 premium: preserve F03's explicit live section description,
+   but compact it into a readable line rather than repeating a large card. */
 @media (max-width: 720px) {
-  .operator-context { display: none; }
+  .operator-context {
+    display: flex;
+    padding: .4rem .65rem;
+    margin: .2rem 0 .4rem;
+    gap: .2rem .6rem;
+    border-radius: .55rem;
+    box-shadow: none;
+  }
+  .operator-context__section {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .1rem .5rem;
+    font-size: .74rem;
+    line-height: 1.33;
+  }
+  .operator-context__section strong { font-size: .78rem; }
+  .operator-context__section span { display: inline; overflow-wrap: anywhere; }
   .operator-navigation { margin-top: .1rem; }
   .operator-nav-hint { margin-top: .15rem; }
   .operator-scope-disclosure { margin-bottom: .55rem; }

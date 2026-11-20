@@ -472,10 +472,14 @@ test('F06 PREMIUM empty business profile uses full width rather than a cramped f
   expect(metrics.body - metrics.state).toBeLessThan(4);
 });
 
-test('F06 PREMIUM operator mobile page eliminates redundant summary but keeps permissions accessible', async ({ page }) => {
+test('F06 PREMIUM operator mobile summary is compact and retains visible security context', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
   await operator(page);
-  await expect(page.locator('.operator-context')).toBeHidden();
+  const context = page.locator('.operator-context');
+  await expect(context).toBeVisible();
+  await expect(context).toContainText('Consulta y revisión independiente de identidad.');
+  const box = await context.boundingBox();
+  expect(box?.height ?? 999).toBeLessThan(105);
   await expect(page.getByRole('heading', { name: 'Casos de recuperación y revisión' })).toBeVisible();
   await expect(page.locator('details.operator-scope-disclosure')).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Áreas de la consola de identidad' })).toBeVisible();
