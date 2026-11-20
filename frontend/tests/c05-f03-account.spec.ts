@@ -242,3 +242,44 @@ test('F03 ACCOUNT zoom 200%, forced-colors, reduced-motion and six-tab mobile sc
   await expect(page.getByRole('navigation', { name: 'Mi cuenta' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Historial de seguridad', exact: true })).toBeVisible();
 });
+
+test('F03 ACCOUNT modal: a previous operation receipt cannot appear in a different dialog',
+  async ({ page }) => {
+    await syntheticAccount(page); await visit(page, 'seguridad');
+    await page.evaluate(() => {
+      const owner = (window as SyntheticDebug).ng!.getComponent(document.querySelector('cs-identity-portal')!);
+      owner.message.set('Mensaje de la acción anterior: no pertenece a este diálogo');
+    });
+    await page.getByRole('button', { name: 'Cambiar contraseña', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Cambiar contraseña', exact: true });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).not.toContainText('Mensaje de la acción anterior: no pertenece a este diálogo');
+    await page.keyboard.press('Escape');
+  });
+
+test('F03 ACCOUNT long secure modal: heading, footer, focus and scroll contained on 320px',
+  async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 720 });
+    await syntheticAccount(page); await visit(page, 'seguridad');
+    const opener = page.getByRole('button', { name: 'Recuperar MFA con una llave de acceso' });
+    await opener.click();
+    const dialog = page.getByRole('dialog', { name: 'Recuperación del segundo factor con llave' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: 'Recuperación del segundo factor con llave' }))
+      .toBeFocused();
+    await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
+    const fit = await dialog.evaluate(element => {
+      const rect = element.getBoundingClientRect();
+      const header = element.querySelector('.cs-modal__header')!.getBoundingClientRect();
+      const body = element.querySelector('.cs-modal__content')!.getBoundingClientRect();
+      const footer = element.querySelector('.cs-modal__footer')!.getBoundingClientRect();
+      return rect.left >= -1 && rect.right <= innerWidth + 1 &&
+        rect.top >= -1 && rect.bottom <= innerHeight + 1 &&
+        body.top >= header.bottom - 1 && body.bottom <= footer.top + 1;
+    });
+    expect(fit).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(dialog).not.toBeVisible();
+    await expect(opener).toBeFocused();
+    await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden');
+  });
