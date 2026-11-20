@@ -11,7 +11,7 @@ Repo canónico crecisol-platform/CRECISOL, rama feature/c05-ux-f02-sistema-insti
 ## Auditoría A — funcional/contratos
 
 - [ ] Angular 22 producción y harness sintético compilan.
-- [ ] 8 componentes + directiva publicados mediante un barrel único.
+- [ ] 9 componentes + directiva publicados mediante un barrel único.
 - [ ] tokens y bindings de parametrización preservan contrato PublicBrandService.
 - [ ] navegación, formularios, tablas, alertas y acciones renderizados y probados.
 - [ ] regresiones de modales C05 y patrones C02/C01 aplicables comprobadas.
