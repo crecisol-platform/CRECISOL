@@ -7,6 +7,12 @@ on:
       - 'frontend/src/app/pages/identity-portal.component.*'
       - 'frontend/src/app/pages/platform-identity-panel.component.*'
       - 'frontend/src/app/pages/identity-flow.component.css'
+      - 'frontend/src/app/pages/identity-flow-views.component.ts'
+      - 'frontend/src/app/pages/identity-workspace.component.html'
+      - 'frontend/src/app/identity/identity-presentation.ts'
+      - 'frontend/tests/c05-f03-account.spec.ts'
+      - 'frontend/playwright.c05-f03-account.config.ts'
+      - 'qa/c05_ux_f03_account_audits.py'
       - 'frontend/tests/c05-f03-navigation.spec.ts'
       - 'frontend/playwright.c05-f03.config.ts'
       - 'qa/c05_ux_f03_navigation_audits.py'
@@ -33,10 +39,11 @@ jobs:
           set -euo pipefail
           for gate in A B C; do
             python3 qa/c05_ux_f03_navigation_audits.py "$gate"
+            python3 qa/c05_ux_f03_account_audits.py "$gate"
           done
           git diff --name-only 0361934286282ddb1b6ba94797125859d37464d7...HEAD | while IFS= read -r path; do
             case "$path" in
-              frontend/src/app/pages/c05-navigation.model.ts|frontend/src/app/pages/identity-portal.component.*|              frontend/src/app/pages/platform-identity-panel.component.*|frontend/src/app/pages/identity-flow.component.css|              frontend/tests/c05-f03-navigation.spec.ts|frontend/playwright.c05-f03.config.ts|              qa/c05_ux_f03_navigation_audits.py|qa/c05_ux_f03_evidence_audits.py|docs/c05/ux/F03_*|              .github/workflows/c05-ux-f03-navigation.yml) ;;
+              frontend/src/app/pages/c05-navigation.model.ts|frontend/src/app/pages/identity-portal.component.*|              frontend/src/app/pages/platform-identity-panel.component.*|frontend/src/app/pages/identity-flow.component.css|frontend/src/app/pages/identity-flow-views.component.ts|frontend/src/app/pages/identity-workspace.component.html|frontend/src/app/identity/identity-presentation.ts|frontend/tests/c05-f03-account.spec.ts|frontend/playwright.c05-f03-account.config.ts|qa/c05_ux_f03_account_audits.py|              frontend/tests/c05-f03-navigation.spec.ts|frontend/playwright.c05-f03.config.ts|              qa/c05_ux_f03_navigation_audits.py|qa/c05_ux_f03_evidence_audits.py|docs/c05/ux/F03_*|              .github/workflows/c05-ux-f03-navigation.yml) ;;
               *) echo "C05 F03 OUT OF SCOPE: $path"; exit 1 ;;
             esac
           done
@@ -77,6 +84,12 @@ jobs:
         run: |
           set -euo pipefail
           python3 qa/c05_ux_f03_evidence_audits.py frontend/test-results-f03
+      - name: F03 six account views, axe, privacy, approvals and responsive captures
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f03-account.config.ts --reporter=line
       - name: F02 component library regression
         shell: bash
         run: |
@@ -96,6 +109,7 @@ jobs:
           name: c05-f03-navigation-${{ github.sha }}
           path: |
             frontend/test-results-f03/
+            frontend/test-results-f03-account/
             frontend/test-results-institutional/
             frontend/test-results/
           if-no-files-found: warn
