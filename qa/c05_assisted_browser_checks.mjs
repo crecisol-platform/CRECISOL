@@ -45,10 +45,12 @@ export async function verifyAssisted({ browser, api, platform, check, confidenti
     const operatorPage = pages[index], operator = operators[index];
     await operatorPage.getByRole('button', { name: 'Revisar identidad del titular', exact: true }).click();
     await operatorPage.getByLabel('Caso a revisar', { exact: true }).fill(caseId);
+    await operatorPage.getByLabel('Decisión de identidad', { exact: true }).selectOption('approve');
     await operatorPage.getByLabel('SHA-256 del expediente de verificación').fill(createHash('sha256').update(`FICTIONAL independent identity evidence ${index}`).digest('hex'));
     await operatorPage.getByLabel('Motivo de la revisión de identidad').fill('Independent fictional verification, no real personal documents');
     await operatorPage.getByLabel('Código MFA fresco para revisar').fill(await nextCode(operator.seed));
     await operatorPage.getByLabel('Verifiqué la identidad de forma independiente; no usé preguntas personales ni solo un correo nuevo', { exact: true }).check();
+    await operatorPage.getByLabel('Confirmo la decisión administrativa y que mi revisión quedará registrada de forma permanente', { exact: true }).check();
     const reviewed = operatorPage.waitForResponse(r => r.url().endsWith('/platform-identity/review'));
     await operatorPage.getByRole('button', { name: 'Registrar revisión de identidad', exact: true }).click();
     check((await reviewed).status() === 200, 'platform reviewer commits a fresh-MFA identity attestation and evidence digest');
