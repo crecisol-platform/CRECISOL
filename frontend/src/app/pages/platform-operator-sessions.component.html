@@ -38,7 +38,7 @@
               </div>
               <cs-institutional-modal #revokeDialog title="Revocar sesión de operador"
                 description="Esta decisión cierra solo el dispositivo seleccionado, no otras sesiones empresariales o de plataforma."
-                [busy]="busy()" [feedback]="feedback()" [error]="error()">
+                [busy]="busy()" [feedback]="feedback()" [error]="error()" [closeOnSuccess]="true">
                 <p><strong>{{ session.device }}</strong> · {{ session.reference }}</p>
                 <p>Última actividad: {{ session.activity }}</p>
                 <p>Después de la confirmación, el navegador revocado necesitará volver a autenticarse.</p>
@@ -64,7 +64,7 @@
   </button>
   <cs-institutional-modal #rotateDialog title="Renovar la sesión de plataforma"
     description="Esta operación invalida las credenciales actuales del navegador y establece una sesión nueva."
-    [busy]="busy()" [feedback]="feedback()" [error]="error()">
+    [busy]="busy()" [feedback]="feedback()" [error]="error()" [closeOnSuccess]="true">
     <p>Confirma únicamente si reconoces este dispositivo. El backend mantiene la identidad y los permisos de operador; no se amplían.</p>
     <button type="button" [disabled]="busy()" (click)="rotateSessionRequested.emit()">Confirmar renovación de sesión</button>
   </cs-institutional-modal>
