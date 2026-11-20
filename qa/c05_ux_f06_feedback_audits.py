@@ -16,6 +16,8 @@ ALLOWED = {
     "frontend/src/app/ui/feedback/operation-feedback.component.html",
     "frontend/src/app/ui/feedback/operation-feedback.component.css",
     "frontend/src/app/ui/feedback/secure-field-feedback.directive.ts",
+    "frontend/src/app/ui/institutional-modal/institutional-modal.component.ts",
+    "frontend/src/app/ui/institutional-modal/institutional-modal.component.html",
     "frontend/src/app/pages/identity-portal.component.ts",
     "frontend/src/app/pages/identity-portal.component.html",
     "frontend/src/app/pages/identity-flow-views.component.ts",
