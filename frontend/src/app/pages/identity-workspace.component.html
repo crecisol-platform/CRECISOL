@@ -370,13 +370,13 @@
           message="La consulta autorizada no devolvió solicitudes por revisar en esta empresa."/>
       }
     } @else {
-      <cs-ui-state kind="empty" heading="Consulta pendiente"
+      <cs-ui-state kind="empty" heading="Bandeja de aprobación protegida"
         message="Pulsa «Consultar solicitudes» para ver si hay decisiones por revisar."/>
     }
   </section>
   <!-- Permission details remain keyboard-accessible after the task-first queue. -->
   <details class="identity-approval-context identity-policy-disclosure">
-    <summary>Las solicitudes se revisan dentro de tu empresa</summary>
+    <summary>Solo el servidor puede autorizar la consulta y las decisiones.</summary>
     <p>El servidor verifica tus permisos y el ámbito de cada solicitud. Ningún expediente se acepta automáticamente; confirma la identidad antes de decidir.</p>
   </details>
 
