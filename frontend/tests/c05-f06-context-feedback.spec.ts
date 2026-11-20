@@ -333,7 +333,12 @@ async function premiumScene(page: Page, item: PremiumSurface): Promise<void> {
     const nav = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
     await nav.getByRole('button', { name: operatorLabels[section], exact: true }).click();
   }
-  await expect(page.locator('cs-platform-operator-' + section)).toBeVisible();
+  const selectors: Readonly<Record<string, string>> = {
+    casos: 'cs-platform-operator-cases', sesiones: 'cs-platform-operator-sessions',
+    perfil: 'cs-platform-operator-profile', seguridad: 'cs-platform-operator-security',
+    monitor: 'cs-platform-operator-monitor'
+  };
+  await expect(page.locator(selectors[section])).toBeVisible();
 }
 
 for (const viewport of viewports) for (const item of premiumSurfaces) {
