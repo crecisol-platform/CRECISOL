@@ -251,11 +251,14 @@
               <label for="passkey-recovery-mail">Correo verificado para recuperar MFA</label><input id="passkey-recovery-mail" name="mailbox" type="email" required maxlength="254" autocomplete="email">
               <button [disabled]="busy()">Pedir token para recuperar MFA</button>
             </form>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'passkey-recovery' })">
+            <details class="identity-security-step">
+              <summary>Ya tengo el token de recuperación</summary>
+              <form (submit)="securityActionRequested.emit({ event: $event, action: 'passkey-recovery' })">
               <label for="passkey-recovery-token">Token de correo para recuperar MFA</label><input id="passkey-recovery-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
               <label for="passkey-recovery-password">Nueva contraseña tras recuperar MFA</label><input id="passkey-recovery-password" name="newPassword" type="password" required minlength="15" maxlength="128" autocomplete="new-password">
               <button [disabled]="busy()">Recuperar autenticadores con llave</button>
-            </form>
+              </form>
+            </details>
   </cs-institutional-modal>
 </div>
           <div class="institutional-task">
@@ -269,11 +272,14 @@
               <label for="mailbox-mfa">Código MFA para solicitar correo</label><input id="mailbox-mfa" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
               <button [disabled]="busy() || identity.restoring()">Solicitar cambio de correo</button>
             </form>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'mailbox-complete' })">
+            <details class="identity-security-step">
+              <summary>Ya tengo el token del nuevo correo</summary>
+              <form (submit)="securityActionRequested.emit({ event: $event, action: 'mailbox-complete' })">
               <label for="mailbox-token">Token del nuevo correo</label><input id="mailbox-token" name="token" autocomplete="off" required pattern="[0-9a-fA-F]{64}">
               <label for="mailbox-confirm-mfa">Código MFA para confirmar correo</label><input id="mailbox-confirm-mfa" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
               <button [disabled]="busy() || identity.restoring()">Confirmar cambio de correo</button>
-            </form>
+              </form>
+            </details>
   </cs-institutional-modal>
 </div>
           
