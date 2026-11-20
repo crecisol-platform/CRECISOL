@@ -56,6 +56,8 @@ def scope() -> list[str]:
     need(bool(changed), "F06 diff absent")
     need(set(changed) <= ALLOWED, "out of scope: " + str(set(changed) - ALLOWED))
     for path in changed:
+        # The validator itself contains malformed-token test literals by design.
+        if path == "qa/c05_ux_f06_feedback_audits.py": continue
         if not path.endswith((".html",".css",".ts",".py",".md",".yml")): continue
         source = text(path)
         for malformed in ("\ufffd", "Ã¡", "Ã©", "Ã³", "Ã±", "Ãº", "Â¿", "Â¡", "â€¦", "â€”", "â€œ", "â€"):
