@@ -35,7 +35,7 @@
   --cs-border-width: 1px;
   --cs-hit-target: 2.75rem;
   --cs-color-canvas: #f2f6fb;
-  --cs-color-surface: #fff;
+  --cs-color-surface: #ffffff;
   --cs-color-surface-soft: #f5f9fd;
   --cs-color-surface-raised: #fff;
   --cs-color-text: #172d46;
@@ -48,7 +48,7 @@
   --cs-color-accent-text: #174b77;
   --cs-color-action: #103f75;
   --cs-color-action-hover: #0b315c;
-  --cs-color-action-text: #fff;
+  --cs-color-action-text: #ffffff;
   --cs-color-focus: #126aaf;
   --cs-color-success: #1d6048;
   --cs-color-success-bg: #ecf8f2;
