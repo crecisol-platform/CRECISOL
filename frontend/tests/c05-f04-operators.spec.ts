@@ -264,7 +264,13 @@ test('F04 platform policy denial erases stale privileged settings', async ({ pag
     status: 403, contentType: 'application/json', body: '{}'
   }));
   const nav = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
+  // Selecting the already active tab is intentionally a no-op. Re-enter
+  // Seguridad from another section to issue a real server policy refresh.
+  await nav.getByRole('button', { name: 'Perfil', exact: true }).click();
+  const denied = page.waitForResponse(response => response.url().endsWith('/platform-identity/session-policy') &&
+    response.status() === 403);
   await nav.getByRole('button', { name: 'Seguridad', exact: true }).click();
+  await denied;
   await expect(policy).not.toContainText('30 minutos sin actividad');
   await expect(policy).toContainText('Consulta Seguridad para recuperar el valor vigente de la API');
   await expect(nav.getByRole('button', { name: 'Seguridad', exact: true })).toHaveAttribute('aria-current', 'page');
