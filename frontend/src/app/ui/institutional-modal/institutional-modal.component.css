@@ -160,3 +160,63 @@
 @media (prefers-reduced-motion: reduce) {
   .cs-modal, .cs-modal__dismiss, .cs-modal__cancel { transition: none; }
 }
+
+/* F05: semantic modal variants, independent content scrolling, no stacked sheets. */
+.cs-modal {
+  max-width: calc(100vw - 1rem);
+  max-height: min(89dvh, 54rem);
+}
+.cs-modal__eyebrow {
+  margin: 0 0 .4rem;
+  color: #426886;
+  font-size: .69rem;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.cs-modal[data-kind="destructive"] { border-color: #e3c9bc; }
+.cs-modal[data-kind="destructive"] .cs-modal__eyebrow { color: #8b4d30; }
+.cs-modal__warning {
+  display: grid; gap: .3rem; margin-bottom: 1.25rem;
+  padding: .9rem 1rem; border: 1px solid #ebd5c9;
+  border-left: .22rem solid #aa603d; border-radius: .8rem;
+  background: #fff9f5; color: #5f3e30; line-height: 1.55;
+}
+.cs-modal__stepper { margin: 0 0 1.4rem; }
+.cs-modal__steps {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: .55rem; padding: 0; margin: 0; list-style: none;
+}
+.cs-modal__steps > li {
+  display: flex; align-items: center; gap: .55rem; min-width: 0;
+  padding: .7rem; border: 1px solid #d9e7f1; border-radius: .75rem;
+  background: #f7fafc; color: #456482; font-size: .81rem;
+  overflow-wrap: anywhere; line-height: 1.45;
+}
+.cs-modal__step-number {
+  display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%;
+  width: 1.6rem; height: 1.6rem; color: #3f6580; background: #e4eff7; font-weight: 800;
+}
+.cs-modal__step--current { border-color: #3c7aaf !important; background: #eff7fd !important; color: #124576 !important; font-weight: 800; }
+.cs-modal__step--current .cs-modal__step-number { color: #fff; background: #185b92; }
+.cs-modal__step--complete { color: #225d7a !important; }
+.cs-modal__content { overflow-wrap: anywhere; scrollbar-gutter: stable; }
+.cs-modal__footer { flex-wrap: wrap; }
+@media (max-width: 400px) {
+  .cs-modal__steps { grid-template-columns: 1fr; }
+  .cs-modal__steps > li { padding: .55rem .7rem; }
+  .cs-modal__header { padding: .9rem; }
+  .cs-modal__content { padding: .95rem; }
+  .cs-modal__footer { padding: .7rem .9rem; }
+}
+@media (max-height: 540px) {
+  .cs-modal { max-height: calc(100dvh - .5rem); }
+  .cs-modal__header { padding-block: .55rem; overflow-y: auto; max-height: 35dvh; }
+  .cs-modal__description { margin-top: .3rem; }
+  .cs-modal__footer { padding-block: .45rem; }
+}
+@media (forced-colors: active) {
+  .cs-modal__warning, .cs-modal__steps > li { border-color: CanvasText; background: Canvas; color: CanvasText; }
+  .cs-modal__step-number { color: CanvasText; background: Canvas; border: 1px solid CanvasText; }
+}

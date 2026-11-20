@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject, input, output, signal } from '@angular/core';
 
 /**
  * Modal institucional C05. Usa la top layer nativa (<dialog>.showModal):
@@ -12,6 +12,8 @@ import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, e
   templateUrl: './institutional-modal.component.html',
   styleUrl: './institutional-modal.component.css'
 })
+export type InstitutionalModalKind = 'simple' | 'form' | 'destructive' | 'wizard';
+
 export class InstitutionalModalComponent implements OnDestroy {
   // Angular input "title" is also a native HTML tooltip attribute on the host.
   // Remove the DOM attribute before presenting the dialog; the input signal and
@@ -30,6 +32,16 @@ export class InstitutionalModalComponent implements OnDestroy {
   readonly error = input('');
   readonly wide = input(false);
   readonly closeOnSuccess = input(false);
+  /** Visual/interaction pattern only. Never authorizes a privileged API request. */
+  readonly kind = input<InstitutionalModalKind>('form');
+  readonly warning = input('');
+  readonly steps = input<readonly string[]>([]);
+  readonly step = input(1);
+  readonly activeStep = computed(() => {
+    const requested = this.step();
+    const value = Number.isFinite(requested) ? Math.trunc(requested) : 1;
+    return Math.max(1, Math.min(Math.max(1, this.steps().length), value));
+  });
   readonly dismissed = output<void>();
   // A global receipt must not appear in another newly opened dialog.
   readonly localFeedback = signal('');
@@ -69,14 +81,17 @@ export class InstitutionalModalComponent implements OnDestroy {
     const target = event.target;
     if (!(target instanceof Element)) return;
     const button = target.closest('button');
-    if (!button || button.classList.contains('cs-modal__cancel') ||
-        button.classList.contains('cs-modal__dismiss')) return;
-    this.onDialogSubmit();
+    if (!button || button.closest('.cs-modal__header, .cs-modal__footer')) return;
+    // Only actual form submissions or explicit direct commands may claim
+    // the global success receipt. Wizard navigation never impersonates a request.
+    if (button.hasAttribute('data-modal-action')) this.onDialogSubmit();
   }
 
   open(): void {
     const dialog = this.surface?.nativeElement;
-    if (!dialog || dialog.open) return;
+    if (!dialog || dialog.open || this.busy()) return;
+    // Never layer a second privileged modal over another dialog.
+    if (InstitutionalModalComponent.openInstances.size !== 0) return;
     this.host.nativeElement.removeAttribute('title');
     this.previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.localFeedback.set('');
@@ -98,6 +113,8 @@ export class InstitutionalModalComponent implements OnDestroy {
   }
 
   onCancel(event: Event): void {
+    // During a server mutation Escape cannot hide the status nor abandon the
+    // protected transaction; the dialog remains focus-trapped until completion.
     if (this.busy()) event.preventDefault();
   }
 
