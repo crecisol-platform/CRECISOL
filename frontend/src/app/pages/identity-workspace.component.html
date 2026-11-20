@@ -110,6 +110,15 @@
     </div>
     <button type="button" [disabled]="busy()" (click)="requestHistory()">Actualizar historial</button>
   </div>
+  <div class="identity-history-filters">
+    <label for="security-history-filter">Mostrar eventos</label>
+    <select id="security-history-filter" [value]="historyFilter()"
+      (change)="setHistoryFilter($any($event.target).value)">
+      <option value="all">Toda la actividad</option>
+      <option value="success">Acciones completadas</option>
+      <option value="attention">Actividad por revisar</option>
+    </select>
+  </div>
   @if (securityEventRows().length) {
     <ol class="identity-activity-list">
       @for (event of securityEventRows(); track $index) {
@@ -131,7 +140,7 @@
     }
   } @else {
     <cs-ui-state kind="empty" heading="Sin actividad disponible"
-          message="Actualiza el historial para consultar los eventos de seguridad registrados. La vista no muestra códigos internos."/>
+          message="No hay eventos para el filtro elegido. Actualiza el historial o selecciona otra categoría."/>
   }
 </section>
 </section>
@@ -154,6 +163,11 @@
             <strong>Llave de acceso</strong>
             <p>{{ key.referenceLabel }} · Registrada {{ key.registrationLabel }}</p>
           </div>
+          <button type="button" class="identity-key-revoke"
+            [disabled]="busy() || identity.restoring()"
+            (click)="selectedPasskeyId.set(key.id); workspaceModal22.open()">
+            Revocar esta llave
+          </button>
         </li>
       }
     </ul>
@@ -174,15 +188,13 @@
             </form>
   </cs-institutional-modal>
 </div>
-<div class="institutional-task">
-  <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal22.open()">
-    <span>Revocar llave de acceso</span><span aria-hidden="true">›</span>
-  </button>
-  <cs-institutional-modal #workspaceModal22 title="Revocar llave de acceso" description="Revocar una llave no debe afectar cuentas de otras empresas."
-    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
+<cs-institutional-modal #workspaceModal22 title="Revocar llave de acceso" description="Revocar una llave no debe afectar cuentas de otras empresas."
+    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true"
+    (dismissed)="selectedPasskeyId.set('')">
     <form (submit)="securityActionRequested.emit({ event: $event, action: 'passkey-revoke' })">
               <label for="passkey-id">Llave de acceso a revocar</label>
-              <select id="passkey-id" name="factorId" required>
+              <select id="passkey-id" name="factorId" required [value]="selectedPasskeyId()"
+                (change)="selectedPasskeyId.set($any($event.target).value)">
                 <option value="">Selecciona una llave registrada</option>
                 @for (key of passkeyRows(); track key.id) {
                   <option [value]="key.id">{{ key.referenceLabel }} · {{ key.registrationLabel }}</option>
@@ -193,7 +205,7 @@
               <button [disabled]="busy() || identity.restoring()">Revocar llave de acceso</button>
             </form>
   </cs-institutional-modal>
-</div>
+
           
 } @else if (view() === 'seguridad') {
 <div class="identity-security-intro" role="note">
