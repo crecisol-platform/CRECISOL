@@ -5,6 +5,8 @@ import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, c
  * foco atrapado por el navegador, contenido de fondo inerte y Escape estándar.
  * No realiza acciones privilegiadas: cada formulario sigue usando la API existente.
  */
+export type InstitutionalModalKind = 'simple' | 'form' | 'destructive' | 'wizard';
+
 @Component({
   selector: 'cs-institutional-modal',
   standalone: true,
@@ -12,8 +14,6 @@ import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, c
   templateUrl: './institutional-modal.component.html',
   styleUrl: './institutional-modal.component.css'
 })
-export type InstitutionalModalKind = 'simple' | 'form' | 'destructive' | 'wizard';
-
 export class InstitutionalModalComponent implements OnDestroy {
   // Angular input "title" is also a native HTML tooltip attribute on the host.
   // Remove the DOM attribute before presenting the dialog; the input signal and
