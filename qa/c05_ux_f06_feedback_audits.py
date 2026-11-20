@@ -136,6 +136,12 @@ def audit_c() -> None:
          "skip link must be visually clipped when not focused without losing keyboard access")
     for width in (320,390,768,1024,1440):
         need("width: " + str(width) in test, "visual viewport missing " + str(width))
+    for premium_surface in ("guest-login", "guest-register", "guest-recovery",
+                            "account-resumen", "account-perfil", "account-llaves",
+                            "account-seguridad", "account-historial", "account-administracion",
+                            "operator-casos", "operator-sesiones", "operator-perfil",
+                            "operator-monitor", "operator-seguridad"):
+        need(premium_surface in test, "premium screen not individually audited: " + premium_surface)
     for need_test in ("AxeBuilder", "reducedMotion: 'reduce'", "forcedColors: 'active'",
                       "font-size: 200%", "noHorizontalClip", "late response",
                       "scrubs password", "backup-code secrets"):

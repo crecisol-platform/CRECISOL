@@ -291,3 +291,121 @@ test('F06 reduced motion, high-contrast and 200-percent text retain context and 
     getComputedStyle(el).animationName);
   expect(animation).toBe('none');
 });
+
+
+/** F06 premium buyer acceptance: one independent artifact per full interface
+ * on all five sizes. Real permissions remain the job of the integration suite.
+ */
+type PremiumSurface =
+  'guest-login' | 'guest-register' | 'guest-recovery' |
+  'account-resumen' | 'account-perfil' | 'account-llaves' |
+  'account-seguridad' | 'account-historial' | 'account-administracion' |
+  'operator-casos' | 'operator-sesiones' | 'operator-perfil' |
+  'operator-monitor' | 'operator-seguridad';
+const premiumSurfaces: readonly PremiumSurface[] = [
+  'guest-login', 'guest-register', 'guest-recovery',
+  'account-resumen', 'account-perfil', 'account-llaves',
+  'account-seguridad', 'account-historial', 'account-administracion',
+  'operator-casos', 'operator-sesiones', 'operator-perfil',
+  'operator-monitor', 'operator-seguridad'
+];
+const operatorLabels: Readonly<Record<string, string>> = {
+  casos: 'Casos', sesiones: 'Sesiones', perfil: 'Perfil',
+  monitor: 'Monitor', seguridad: 'Seguridad'
+};
+async function premiumScene(page: Page, item: PremiumSurface): Promise<void> {
+  const [realm, section] = item.split('-');
+  if (realm === 'guest') {
+    await syntheticApi(page, 'anonymous');
+    const guestRoutes: Readonly<Record<string, string>> = {
+      login: 'ingresar', register: 'registro', recovery: 'recuperar'
+    };
+    await page.goto('/cuenta?vista=' + guestRoutes[section]);
+    await expect(page.locator('cs-identity-portal')).toBeVisible();
+    return;
+  }
+  if (realm === 'account') {
+    await account(page, section);
+    return;
+  }
+  await operator(page);
+  if (section !== 'casos') {
+    const nav = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
+    await nav.getByRole('button', { name: operatorLabels[section], exact: true }).click();
+  }
+  await expect(page.locator('cs-platform-operator-' + section)).toBeVisible();
+}
+
+for (const viewport of viewports) for (const item of premiumSurfaces) {
+  test('F06 PREMIUM interface ' + item + ' at ' + viewport.width + 'px',
+    async ({ page }, info: TestInfo) => {
+      await page.setViewportSize(viewport);
+      await premiumScene(page, item);
+      const width = await page.evaluate(() => document.documentElement.scrollWidth
+        - document.documentElement.clientWidth);
+      expect(width, 'A premium interface must never scroll horizontally').toBeLessThanOrEqual(2);
+      if (item === 'guest-login') {
+        await expect(page.getByRole('heading', { name: 'Iniciar sesión' })).toBeVisible();
+        await expect(page.getByLabel('Correo electrónico')).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Entrar con llave de acceso' })).toBeVisible();
+        await expect(page.locator('a[href*="localhost:4200"]')).toHaveCount(0);
+        if (viewport.width <= 390) {
+          const y = await page.getByLabel('Correo electrónico').evaluate(node => node.getBoundingClientRect().top);
+          expect(y, 'The primary login field must be reachable in the first mobile viewport')
+            .toBeLessThan(viewport.height);
+        }
+      }
+      if (item === 'operator-casos') {
+        await expect(page.getByRole('heading', { name: 'Sin expediente seleccionado' })).toBeVisible();
+        const details = page.locator('details.operator-scope-details');
+        await expect(details).not.toHaveAttribute('open', '');
+        await expect(page.getByRole('button', { name: 'Consultar caso de identidad' })).toBeVisible();
+        if (viewport.width <= 390)
+          await expect(page.locator('.operator-nav-hint')).toBeVisible();
+      }
+      if (item.startsWith('operator-')) {
+        const disclosure = page.locator('details.operator-scope-disclosure');
+        await expect(disclosure).not.toHaveAttribute('open', '');
+        const nav = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
+        await expect(nav).toBeVisible();
+        if (viewport.width <= 390)
+          await expect(page.locator('.operator-nav-hint')).toBeVisible();
+      }
+      if (viewport.width === 390 || viewport.width === 1440) {
+        const scope = item.startsWith('operator-')
+          ? 'cs-platform-identity-panel' : 'cs-identity-portal';
+        const audit = await new AxeBuilder({ page }).include(scope)
+          .withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();
+        expect(audit.violations).toEqual([]);
+      }
+      const name = 'premium-' + item + '-' + viewport.width;
+      await page.screenshot({ path: info.outputPath(name + '.png'),
+        fullPage: true, animations: 'disabled' });
+      await writeFile(info.outputPath(name + '.json'), JSON.stringify({
+        name, surface: item, viewport, synthetic: true,
+        runnerSha: process.env.GITHUB_SHA ?? 'local',
+        decision: 'pending-human-visual-review'
+      }, null, 2));
+    });
+}
+
+test('F06 PREMIUM operator privacy disclosure remains keyboard accessible without hiding the action', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await operator(page);
+  const hint = page.locator('details.operator-scope-details');
+  await expect(hint).not.toHaveAttribute('open', '');
+  await hint.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(hint).toHaveAttribute('open', '');
+  await expect(hint).toContainText('Toda autorización y revisión se valida en el servidor');
+  await expect(page.getByRole('button', { name: 'Consultar caso de identidad' })).toBeVisible();
+});
+
+test('F06 PREMIUM errors offer safe next steps without exposing backend details', async ({ page }) => {
+  await account(page, 'seguridad');
+  await setAccountStatus(page, 'error', 'seguridad');
+  const notice = page.locator('cs-operation-feedback [data-feedback-kind="error"]');
+  await expect(notice).toContainText('Revisa los datos y vuelve a intentarlo');
+  await expect(notice).not.toContainText('SQL');
+  await expect(notice).not.toContainText('stack');
+});
