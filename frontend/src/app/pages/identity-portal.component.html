@@ -93,16 +93,20 @@
             </div>
             <span class="account-workspace-scope">Ámbito de cuenta</span>
           </div>
-          <p class="account-nav-mobile-help" id="account-nav-mobile-help">Desliza las pestañas para explorar las seis áreas de tu cuenta.</p>
-          <nav class="account-nav account-nav--workspace" aria-label="Mi cuenta" aria-describedby="account-nav-mobile-help">
+          <div class="account-workspace-shell">
+            <div class="account-workspace-rail">
+              <p class="account-nav-mobile-help" id="account-nav-mobile-help">Desliza las pestañas para explorar las seis áreas de tu cuenta.</p>
+              <nav class="account-nav account-nav--workspace" aria-label="Mi cuenta" aria-describedby="account-nav-mobile-help">
             <a routerLink="/cuenta" [queryParams]="{vista:'resumen'}" [attr.aria-current]="workspaceView() === 'resumen' ? 'page' : null">Resumen</a>
             <a routerLink="/cuenta" [queryParams]="{vista:'perfil'}" [attr.aria-current]="workspaceView() === 'perfil' ? 'page' : null">Mi perfil</a>
             <a routerLink="/cuenta" [queryParams]="{vista:'llaves'}" [attr.aria-current]="workspaceView() === 'llaves' ? 'page' : null">Llaves</a>
             <a routerLink="/cuenta" [queryParams]="{vista:'seguridad'}" [attr.aria-current]="workspaceView() === 'seguridad' ? 'page' : null">Seguridad</a>
             <a routerLink="/cuenta" [queryParams]="{vista:'historial'}" [attr.aria-current]="workspaceView() === 'historial' ? 'page' : null">Historial</a>
             <a routerLink="/cuenta" [queryParams]="{vista:'administracion'}" [attr.aria-current]="workspaceView() === 'administracion' ? 'page' : null">Aprobaciones</a>
-          </nav>
-          <p class="account-view-announcement" role="status" aria-live="polite" aria-atomic="true">Sección actual: {{ sectionName() }}</p>
+              </nav>
+            </div>
+            <div class="account-workspace-body">
+              <p class="account-view-announcement" role="status" aria-live="polite" aria-atomic="true">Sección actual: {{ sectionName() }}</p>
           <cs-identity-workspace [busy]="busy()" [feedback]="message()" [error]="error()" [view]="workspaceView()" [incomingPairToken]="incomingPairToken"
             [incomingPairFingerprint]="incomingPairFingerprint"
             (securityActionRequested)="securityAction($event.event, $event.action)"
@@ -111,6 +115,8 @@
             (securityEventsRequested)="securityEvents()" (passkeyListRequested)="passkeyList()"
             (sessionRequested)="sessionAction($event)" (revokeRequested)="revoke($event)"
             (logoutRequested)="logout()" />
+            </div>
+          </div>
         }
         <details class="account-terms"><summary>Condiciones de la cuenta</summary>
           <button type="button" [disabled]="busy() || identity.restoring()" (click)="loadTerms()">Leer condiciones vigentes</button>
