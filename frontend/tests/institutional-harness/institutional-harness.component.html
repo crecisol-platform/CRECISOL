@@ -48,7 +48,9 @@
       <cs-ui-card headingId="card-form-title" heading="Formulario protegido"
         eyebrow="03 / FORMULARIOS" description="Campos asociados con ayuda y validación local."
         tone="base">
-        <form novalidate (submit)="submitLocal($event)" class="laboratory__form">
+        <cs-ui-form formId="demo-form" heading="Verificación de datos"
+          description="Revisa el formato sin enviar información." (submitIntent)="submitLocal($event)"
+          class="laboratory__form">
           <cs-ui-field controlId="demo-email" label="Correo de prueba"
             hint="Utiliza únicamente una dirección ficticia." [error]="emailError()" [required]="true">
             <input class="cs-ui-control" id="demo-email" name="demo-email" type="email"
@@ -57,7 +59,7 @@
               [attr.aria-invalid]="emailError() ? 'true' : null" required>
           </cs-ui-field>
           <cs-ui-action label="Revisar formato" icon="check" type="submit"/>
-        </form>
+        </cs-ui-form>
       </cs-ui-card>
     </div>
 
