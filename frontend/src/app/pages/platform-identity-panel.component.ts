@@ -1,12 +1,14 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { PlatformIdentityApiService } from '../identity/platform-identity-api.service';
 import { IdentityApiService } from '../identity/identity-api.service';
 import { InstitutionalModalComponent } from '../ui/institutional-modal/institutional-modal.component';
+import { InstitutionalNavigationComponent } from '../ui/institutional-system';
+import { operatorSections, operatorSectionFor } from './c05-navigation.model';
 import { PlatformOperatorSessionsComponent, PlatformOperatorProfileComponent, PlatformOperatorMonitorComponent, PlatformOperatorSecurityComponent, PlatformOperatorCasesComponent } from './platform-operator-views.component';
 
 @Component({
   selector: 'cs-platform-identity-panel', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [InstitutionalModalComponent, PlatformOperatorSessionsComponent, PlatformOperatorProfileComponent, PlatformOperatorMonitorComponent, PlatformOperatorSecurityComponent, PlatformOperatorCasesComponent],
+  imports: [InstitutionalModalComponent, InstitutionalNavigationComponent, PlatformOperatorSessionsComponent, PlatformOperatorProfileComponent, PlatformOperatorMonitorComponent, PlatformOperatorSecurityComponent, PlatformOperatorCasesComponent],
   templateUrl: './platform-identity-panel.component.html',
   styleUrl: './identity-flow.component.css'
 })
@@ -14,6 +16,24 @@ export class PlatformIdentityPanelComponent {
   readonly platform = inject(PlatformIdentityApiService);
   readonly panel = signal<'casos' | 'sesiones' | 'perfil' | 'seguridad' | 'monitor'>('casos');
   readonly busy = signal(false); readonly message = signal(''); readonly error = signal('');
+  readonly navigationItems = computed(() =>
+    operatorSections.map(({ id, label }) => ({ id, label, disabled: this.busy() })));
+  readonly activeSection = computed(() =>
+    operatorSections.find(section => section.id === this.panel()) ?? operatorSections[0]);
+
+  // Switching views is a UI-only intent. Operator authentication, roles and
+  // ownership remain enforced exclusively by the platform backend.
+  selectPanel(requested: string): void {
+    const next = operatorSectionFor(requested);
+    if (!next || this.busy() || next === this.panel()) return;
+    this.error.set('');
+    this.message.set('');
+    if (next === 'seguridad') {
+      void this.openSecurity(); // Preserve the pre-existing policy load contract.
+    } else {
+      this.panel.set(next);
+    }
+  }
   async action(event: Event, action: string): Promise<void> {
     event.preventDefault(); const form = event.currentTarget as HTMLFormElement; const data = new FormData(form);
     const field = (name: string): string => String(data.get(name) ?? '');
@@ -45,7 +65,10 @@ export class PlatformIdentityPanelComponent {
       form.reset(); this.message.set('Solicitud procesada por el ámbito de identidad de plataforma.');
     });
   }
-  async logout(): Promise<void> { await this.run(() => this.platform.logout()); }
+  async logout(): Promise<void> {
+    await this.run(() => this.platform.logout());
+    if (this.platform.state() === 'anonymous') this.panel.set('casos');
+  }
   async loadProfile(): Promise<void> { await this.run(() => this.platform.loadProfile()); }
   async loadAbuse(): Promise<void> { await this.run(() => this.platform.loadAbuse()); }
   async openSecurity(): Promise<void> {
