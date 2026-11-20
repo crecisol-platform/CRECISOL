@@ -22,6 +22,7 @@ public static class OperationalIdentityModule
         ["factor/replace"] = ["currentPassword", "code"],
         ["mailbox/request"] = ["mailbox", "code"],
         ["mailbox/complete"] = ["token", "code"],
+        ["memberships/pending"] = ["offset"],
         ["memberships/decide"] = ["membershipId", "decision", "reason", "code"],
         ["memberships/request"] = ["mailbox", "password", "code", "proofId", "proofCode", "version", "hash", "accepted"],
         ["private/read"] = ["branchId", "resourceId"]
