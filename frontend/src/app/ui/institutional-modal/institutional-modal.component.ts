@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject, input, output, signal } from '@angular/core';
+import { OperationFeedbackComponent } from '../feedback/operation-feedback.component';
 
 /**
  * Modal institucional C05. Usa la top layer nativa (<dialog>.showModal):
@@ -10,6 +11,7 @@ export type InstitutionalModalKind = 'simple' | 'form' | 'destructive' | 'wizard
 @Component({
   selector: 'cs-institutional-modal',
   standalone: true,
+  imports: [OperationFeedbackComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './institutional-modal.component.html',
   styleUrl: './institutional-modal.component.css'
@@ -51,7 +53,7 @@ export class InstitutionalModalComponent implements OnDestroy {
   @ViewChild('scrollBody', { static: true }) private scrollBody?: ElementRef<HTMLElement>;
   private previouslyFocused: HTMLElement | null = null;
   private submittedWhileOpen = false;
-  private actionStartedHere = false;
+  readonly actionStartedHere = signal(false);
   private presentedWizardStep = 1;
 
   constructor() {
@@ -71,7 +73,7 @@ export class InstitutionalModalComponent implements OnDestroy {
     effect(() => {
       const busy = this.busy(), feedback = this.feedback(), error = this.error();
       if (!this.surface?.nativeElement.open) return;
-      if (busy && this.actionStartedHere) this.submittedWhileOpen = true;
+      if (busy && this.actionStartedHere()) this.submittedWhileOpen = true;
       if (busy || !this.submittedWhileOpen) return;
       this.submittedWhileOpen = false;
       if (error) {
@@ -86,7 +88,7 @@ export class InstitutionalModalComponent implements OnDestroy {
   }
 
   onDialogSubmit(): void {
-    this.actionStartedHere = true;
+    this.actionStartedHere.set(true);
     this.localFeedback.set('');
     this.localError.set('');
   }
@@ -110,7 +112,7 @@ export class InstitutionalModalComponent implements OnDestroy {
     this.previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.localFeedback.set('');
     this.localError.set('');
-    this.actionStartedHere = false;
+    this.actionStartedHere.set(false);
     this.submittedWhileOpen = false;
     this.presentedWizardStep = this.activeStep();
     dialog.showModal();
@@ -142,7 +144,7 @@ export class InstitutionalModalComponent implements OnDestroy {
     if (this.previouslyFocused?.isConnected) this.previouslyFocused.focus();
     this.previouslyFocused = null;
     this.submittedWhileOpen = false;
-    this.actionStartedHere = false;
+    this.actionStartedHere.set(false);
     this.localFeedback.set('');
     this.localError.set('');
   }

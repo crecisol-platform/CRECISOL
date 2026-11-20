@@ -1,7 +1,10 @@
-import { ChangeDetectionStrategy, Component, ElementRef, afterRenderEffect, computed, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, afterRenderEffect, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { IdentityApiService } from '../identity/identity-api.service';
+import { OperationFeedbackComponent } from '../ui/feedback/operation-feedback.component';
+import { SecureFieldFeedbackDirective, clearSensitiveInputValues } from '../ui/feedback/secure-field-feedback.directive';
+import { activityLabel, contextualFeedback } from '../ui/feedback/operation-feedback.model';
 import { PublicBrandService } from '../branding/public-brand.service';
 import { PlatformIdentityPanelComponent } from './platform-identity-panel.component';
 import { InstitutionalThemeDirective } from '../ui/institutional-system';
@@ -13,7 +16,7 @@ import { IdentityGuestComponent, IdentityMfaComponent, IdentityRecoveryComponent
 
 @Component({
   selector: 'cs-identity-portal', standalone: true,
-  imports: [RouterLink, InstitutionalThemeDirective, PlatformIdentityPanelComponent, IdentityGuestComponent, IdentityMfaComponent, IdentityRecoveryComponent, IdentityWorkspaceComponent],
+  imports: [RouterLink, InstitutionalThemeDirective, PlatformIdentityPanelComponent, IdentityGuestComponent, IdentityMfaComponent, IdentityRecoveryComponent, IdentityWorkspaceComponent, OperationFeedbackComponent, SecureFieldFeedbackDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './identity-portal.component.html',
   styleUrl: './identity-portal.component.css'
@@ -81,8 +84,27 @@ export class IdentityPortalComponent {
   readonly busy = signal(false);
   readonly message = signal('');
   readonly error = signal('');
+  readonly activity = signal('');
+  readonly feedbackScope = signal('');
+  readonly visibleFeedback = computed(() => contextualFeedback(
+    this.feedbackScope(), this.view(), this.busy(), this.message(), this.error(), this.activity()));
+  private feedbackGeneration = 0;
+  private lastFeedbackView = this.view();
 
   constructor() {
+    // Never replay a result in another account section or expose old backup codes.
+    effect(() => {
+      const next = this.view();
+      untracked(() => {
+        if (next === this.lastFeedbackView) return;
+        this.lastFeedbackView = next;
+        this.feedbackGeneration++;
+        this.feedbackScope.set('');
+        this.message.set('');
+        this.error.set('');
+        this.identity.recoveryCodes.set([]);
+      });
+    });
     // Keep the current account tab visible when opening a deep link on narrow
     // screens; scrolling only the tab rail must never move the whole document.
     // DOM layout reads and the subsequent write run after Angular renders.
@@ -120,7 +142,7 @@ export class IdentityPortalComponent {
       await this.identity.beginLogin(mailbox, password);
       form.reset();
       this.message.set('Ingresa el código de verificación.');
-    });
+    }, 'login', event.currentTarget as HTMLFormElement);
   }
 
   async register(event: Event): Promise<void> {
@@ -131,7 +153,7 @@ export class IdentityPortalComponent {
       await this.identity.requestRegistration(mailbox);
       form.reset();
       this.message.set('Solicitud recibida. Esto todavía no crea una cuenta ni concede acceso.');
-    });
+    }, 'register', event.currentTarget as HTMLFormElement);
   }
 
   async confirmRegistration(event: Event): Promise<void> {
@@ -144,7 +166,7 @@ export class IdentityPortalComponent {
         String(values.get('completionMailbox') ?? ''), String(values.get('completionPassword') ?? ''));
       form.reset();
       this.message.set('Solicitud recibida. La cuenta queda pendiente de aprobación y todavía no concede acceso.');
-    });
+    }, 'confirmation', event.currentTarget as HTMLFormElement);
   }
 
   async verify(event: Event): Promise<void> {
@@ -155,40 +177,41 @@ export class IdentityPortalComponent {
       await this.identity.verifyMfa(code);
       form.reset();
       this.message.set('Verificación completada.');
-    });
+    }, 'verify', event.currentTarget as HTMLFormElement);
   }
 
   async logout(): Promise<void> {
     await this.run(async () => {
       await this.identity.logout();
       this.message.set('La solicitud de cierre de sesión terminó.');
-    });
+    }, 'logout');
   }
 
-  async enroll(): Promise<void> { await this.run(() => this.identity.enrollMfa()); }
-  async passkeyLogin(): Promise<void> { await this.run(() => this.identity.loginPasskey()); }
-  async passkeyList(): Promise<void> { await this.run(() => this.identity.refreshPasskeys()); }
+  async enroll(): Promise<void> { await this.run(() => this.identity.enrollMfa(), 'enroll'); }
+  async passkeyLogin(): Promise<void> { await this.run(() => this.identity.loginPasskey(), 'passkey-login'); }
+  async passkeyList(): Promise<void> { await this.run(() => this.identity.refreshPasskeys(), 'passkey-list'); }
   async pendingMemberships(next: boolean): Promise<void> {
-    await this.run(() => this.identity.loadPendingMemberships(next));
+    await this.run(() => this.identity.loadPendingMemberships(next), 'pending-memberships');
   }
-  async loadTerms(): Promise<void> { await this.run(() => this.identity.loadTerms()); }
-  async startPairing(): Promise<void> { await this.run(() => this.identity.startPairing()); }
-  async completePairing(): Promise<void> { await this.run(() => this.identity.completePairing()); }
-  async securityEvents(): Promise<void> { await this.run(() => this.identity.loadSecurityEvents()); }
-  async loadProfile(): Promise<void> { await this.run(() => this.identity.loadProfile()); }
-  async removePhoto(): Promise<void> { await this.run(() => this.identity.removePhoto()); }
+  async loadTerms(): Promise<void> { await this.run(() => this.identity.loadTerms(), 'terms-read'); }
+  async startPairing(): Promise<void> { await this.run(() => this.identity.startPairing(), 'pair-start'); }
+  async completePairing(): Promise<void> { await this.run(() => this.identity.completePairing(), 'pair-complete'); }
+  async securityEvents(): Promise<void> { await this.run(() => this.identity.loadSecurityEvents(), 'security-events'); }
+  async loadProfile(): Promise<void> { await this.run(() => this.identity.loadProfile(), 'profile-read'); }
+  async removePhoto(): Promise<void> { await this.run(() => this.identity.removePhoto(), 'profile-photo-remove'); }
   async uploadPhoto(event: Event): Promise<void> {
     event.preventDefault(); const form = event.currentTarget as HTMLFormElement;
     const file = new FormData(form).get('photo');
     await this.run(async () => {
       if (!(file instanceof File)) throw new Error('identity_unavailable');
       await this.identity.uploadPhoto(file); form.reset();
-    });
+    }, 'profile-photo', form);
   }
   async sessionAction(action: 'list' | 'rotate'): Promise<void> {
-    await this.run(() => action === 'list' ? this.identity.refreshSessions() : this.identity.rotateSession());
+    await this.run(() => action === 'list' ? this.identity.refreshSessions() : this.identity.rotateSession(),
+      action === 'list' ? 'sessions-list' : 'sessions-rotate');
   }
-  async revoke(id: string): Promise<void> { await this.run(() => this.identity.revokeSession(id)); }
+  async revoke(id: string): Promise<void> { await this.run(() => this.identity.revokeSession(id), 'sessions-revoke'); }
 
   async securityAction(event: Event, action: string): Promise<void> {
     event.preventDefault();
@@ -260,22 +283,40 @@ export class IdentityPortalComponent {
         'recovery-complete': 'La recuperación terminó. Puedes comprobar tu nuevo acceso.'
       };
       this.message.set(acknowledgements[action] ?? 'La operación terminó. Verifica el estado actualizado de tu cuenta.');
-    });
+    }, action, form);
   }
 
-  private async run(operation: () => Promise<void>): Promise<void> {
+  private async run(
+    operation: () => Promise<void>, command = 'operation', form?: HTMLFormElement
+  ): Promise<void> {
     if (this.busy()) return;
+    const generation = ++this.feedbackGeneration;
+    const origin = this.view();
+    this.feedbackScope.set(origin);
+    this.activity.set(activityLabel(command));
     this.busy.set(true);
     this.error.set('');
     this.message.set('');
     try {
       await operation();
+      if (generation === this.feedbackGeneration && this.view() === origin &&
+          !this.message() && !this.error()) {
+        this.message.set(command === 'enroll'
+          ? 'La configuración está preparada. Verifica tu nuevo autenticador antes de activarlo.'
+          : 'La solicitud finalizó. Comprueba el estado autorizado antes de continuar.');
+      }
     } catch (caught) {
-      this.error.set(IdentityApiService.publicError(caught));
+      if (generation === this.feedbackGeneration && this.view() === origin)
+        this.error.set(IdentityApiService.publicError(caught));
     } finally {
+      // Values read into FormData are never echoed; input secrets are cleared on failure too.
+      clearSensitiveInputValues(form);
+      if (generation !== this.feedbackGeneration || this.view() !== origin) {
+        this.message.set('');
+        this.error.set('');
+        this.feedbackScope.set('');
+      }
       this.busy.set(false);
     }
   }
 }
-
-

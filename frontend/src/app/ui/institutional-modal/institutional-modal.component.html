@@ -39,8 +39,15 @@
         </ol>
       </nav>
     }
-    @if (localError()) { <p class="cs-modal__feedback cs-modal__feedback--error" role="alert">{{ localError() }}</p> }
-    @if (localFeedback()) { <p class="cs-modal__feedback" role="status" aria-live="polite">{{ localFeedback() }}</p> }
+    @if (busy() && actionStartedHere()) {
+      <cs-operation-feedback kind="pending" text="Verificando la solicitud en el servidor…" context="Operación protegida" />
+    }
+    @if (localError()) {
+      <cs-operation-feedback kind="error" [text]="localError()" context="Operación protegida" />
+    }
+    @if (localFeedback()) {
+      <cs-operation-feedback kind="success" [text]="localFeedback()" context="Operación protegida" />
+    }
     <ng-content></ng-content>
   </div>
   <footer class="cs-modal__footer">

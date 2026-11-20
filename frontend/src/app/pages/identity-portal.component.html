@@ -38,8 +38,9 @@
           <li aria-current="page">{{ sectionName() }}</li>
         </ol>
       </nav>
-      @if (message()) { <p class="feedback feedback--success" role="status" aria-live="polite">{{ message() }}</p> }
-      @if (error()) { <p class="feedback feedback--error" role="alert">{{ error() }}</p> }
+      @if (visibleFeedback(); as feedback) {
+        <cs-operation-feedback [kind]="feedback.kind" [text]="feedback.text" context="Cuenta y seguridad" />
+      }
       @if (view() === 'operadores') {
         <div class="page-heading page-heading--operator">
           <p class="eyebrow">ÁMBITO DE PLATAFORMA · PERSONAL AUTORIZADO</p>

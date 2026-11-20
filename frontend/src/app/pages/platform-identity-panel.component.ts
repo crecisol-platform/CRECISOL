@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { PlatformIdentityApiService } from '../identity/platform-identity-api.service';
 import { IdentityApiService } from '../identity/identity-api.service';
+import { OperationFeedbackComponent } from '../ui/feedback/operation-feedback.component';
+import { SecureFieldFeedbackDirective, clearSensitiveInputValues } from '../ui/feedback/secure-field-feedback.directive';
+import { activityLabel, contextualFeedback } from '../ui/feedback/operation-feedback.model';
 import { InstitutionalModalComponent } from '../ui/institutional-modal/institutional-modal.component';
 import { InstitutionalNavigationComponent } from '../ui/institutional-system';
 import { operatorSections, operatorSectionFor } from './c05-navigation.model';
@@ -8,7 +11,7 @@ import { PlatformOperatorSessionsComponent, PlatformOperatorProfileComponent, Pl
 
 @Component({
   selector: 'cs-platform-identity-panel', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [InstitutionalModalComponent, InstitutionalNavigationComponent, PlatformOperatorSessionsComponent, PlatformOperatorProfileComponent, PlatformOperatorMonitorComponent, PlatformOperatorSecurityComponent, PlatformOperatorCasesComponent],
+  imports: [InstitutionalModalComponent, InstitutionalNavigationComponent, PlatformOperatorSessionsComponent, PlatformOperatorProfileComponent, PlatformOperatorMonitorComponent, PlatformOperatorSecurityComponent, PlatformOperatorCasesComponent, OperationFeedbackComponent, SecureFieldFeedbackDirective],
   templateUrl: './platform-identity-panel.component.html',
   styleUrl: './identity-flow.component.css'
 })
@@ -18,6 +21,11 @@ export class PlatformIdentityPanelComponent {
   // Separate anonymous recovery flow state from the operator authenticated realm.
   readonly recoveryStep = signal<1 | 2>(1);
   readonly busy = signal(false); readonly message = signal(''); readonly error = signal('');
+  readonly activity = signal('');
+  readonly feedbackScope = signal('');
+  readonly visibleFeedback = computed(() => contextualFeedback(
+    this.feedbackScope(), this.panel(), this.busy(), this.message(), this.error(), this.activity()));
+  private feedbackGeneration = 0;
   readonly navigationItems = computed(() =>
     operatorSections.map(({ id, label }) => ({ id, label, disabled: this.busy() })));
   readonly activeSection = computed(() =>
@@ -28,8 +36,11 @@ export class PlatformIdentityPanelComponent {
   selectPanel(requested: string): void {
     const next = operatorSectionFor(requested);
     if (!next || this.busy() || next === this.panel()) return;
+    this.feedbackGeneration++;
+    this.feedbackScope.set('');
     this.error.set('');
     this.message.set('');
+    this.platform.recoveryCodes.set([]);
     if (next === 'seguridad') {
       void this.openSecurity(); // Preserve the pre-existing policy load contract.
     } else {
@@ -84,31 +95,56 @@ export class PlatformIdentityPanelComponent {
         'factor-confirm': 'Autenticador actualizado; vuelve a iniciar sesión.'
       };
       this.message.set(receipts[action] ?? 'Solicitud procesada en identidad de plataforma.');
-    });
+    }, action, form);
   }
   async logout(): Promise<void> {
-    await this.run(() => this.platform.logout());
+    await this.run(() => this.platform.logout(), 'logout');
     if (this.platform.state() === 'anonymous') this.panel.set('casos');
   }
-  async loadProfile(): Promise<void> { await this.run(() => this.platform.loadProfile()); }
-  async loadAbuse(): Promise<void> { await this.run(() => this.platform.loadAbuse()); }
+  async loadProfile(): Promise<void> { await this.run(() => this.platform.loadProfile(), 'profile-read'); }
+  async loadAbuse(): Promise<void> { await this.run(() => this.platform.loadAbuse(), 'load-abuse'); }
   async openSecurity(): Promise<void> {
     this.panel.set('seguridad');
-    await this.run(() => this.platform.loadSessionPolicy());
+    await this.run(() => this.platform.loadSessionPolicy(), 'session-policy');
   }
-  async loadSessions(): Promise<void> { await this.run(() => this.platform.loadSessions()); }
+  async loadSessions(): Promise<void> { await this.run(() => this.platform.loadSessions(), 'sessions-list'); }
   async rotateSession(): Promise<void> {
-    await this.run(async () => { await this.platform.rotateSession(); this.message.set('Sesión de operador renovada y vinculada a nuevas credenciales de navegador.'); });
+    await this.run(async () => { await this.platform.rotateSession(); this.message.set('Sesión de operador renovada y vinculada a nuevas credenciales de navegador.'); }, 'sessions-rotate');
   }
   async revokeSession(id: string): Promise<void> {
-    await this.run(async () => { await this.platform.revokeSession(id); this.message.set('Sesión seleccionada revocada en el servidor.'); });
+    await this.run(async () => { await this.platform.revokeSession(id); this.message.set('Sesión seleccionada revocada en el servidor.'); }, 'sessions-revoke');
   }
   async photo(event: Event): Promise<void> {
     event.preventDefault(); const form = event.currentTarget as HTMLFormElement; const file = new FormData(form).get('photo');
-    await this.run(async () => { if (!(file instanceof File)) throw new Error('identity_unavailable'); await this.platform.uploadPhoto(file); form.reset(); });
+    await this.run(async () => { if (!(file instanceof File)) throw new Error('identity_unavailable'); await this.platform.uploadPhoto(file); form.reset(); }, 'profile-photo', form);
   }
-  private async run(action: () => Promise<void>): Promise<void> {
-    if (this.busy()) return; this.busy.set(true); this.error.set(''); this.message.set('');
-    try { await action(); } catch (e) { this.error.set(IdentityApiService.publicError(e)); } finally { this.busy.set(false); }
+  private async run(
+    action: () => Promise<void>, command = 'operation', form?: HTMLFormElement
+  ): Promise<void> {
+    if (this.busy()) return;
+    const generation = ++this.feedbackGeneration;
+    const origin = this.panel();
+    this.feedbackScope.set(origin);
+    this.activity.set(activityLabel(command));
+    this.busy.set(true);
+    this.error.set('');
+    this.message.set('');
+    try {
+      await action();
+      if (generation === this.feedbackGeneration && this.panel() === origin &&
+          !this.message() && !this.error())
+        this.message.set('La solicitud de plataforma terminó. Comprueba el resultado autorizado.');
+    } catch (caught) {
+      if (generation === this.feedbackGeneration && this.panel() === origin)
+        this.error.set(IdentityApiService.publicError(caught));
+    } finally {
+      clearSensitiveInputValues(form);
+      if (generation !== this.feedbackGeneration || this.panel() !== origin) {
+        this.feedbackScope.set('');
+        this.message.set('');
+        this.error.set('');
+      }
+      this.busy.set(false);
+    }
   }
 }

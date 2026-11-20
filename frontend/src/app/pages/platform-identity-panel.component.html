@@ -4,8 +4,9 @@
         <h2>Identidad de plataforma</h2>
         <p>El acceso global exige una identidad de operador verificada y permisos propios. Una cuenta de negocio no concede ese acceso.</p>
       }
-      @if (message()) { <p class="operator-feedback" role="status" aria-live="polite">{{ message() }}</p> }
-      @if (error()) { <p class="operator-feedback operator-feedback--error" role="alert">{{ error() }}</p> }
+      @if (visibleFeedback(); as feedback) {
+        <cs-operation-feedback [kind]="feedback.kind" [text]="feedback.text" context="Identidad de plataforma" />
+      }
       @if (platform.state() === 'anonymous') {
         <form (submit)="action($event, 'login')">
           <label for="platform-mailbox">Correo del operador de identidad</label><input id="platform-mailbox" name="mailbox" type="email" autocomplete="username" required maxlength="254">
