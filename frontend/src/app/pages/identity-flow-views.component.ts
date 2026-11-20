@@ -56,6 +56,12 @@ export class IdentityWorkspaceComponent {
       actionLabel: identityEventLabel(event.action),
       outcomeLabel: identityOutcomeLabel(event.outcome)
     })));
+  readonly pendingRows = computed(() => this.identity.pendingMemberships().map(request => ({
+    ...request,
+    requestedLabel: identityDateLabel(request.requestedAtUtc, this.identity.profile()?.timeZone),
+    referenceLabel: identityReferenceLabel(request.id)
+  })));
+  readonly selectedMembershipId = signal('');
   readonly sessionRows = computed(() => this.identity.sessions().map(session => ({
     ...session,
     lastActivityLabel: identityDateLabel(session.lastSeenAtUtc, this.identity.profile()?.timeZone),
@@ -82,6 +88,7 @@ export class IdentityWorkspaceComponent {
   readonly passkeyListRequested = output<void>();
   readonly sessionRequested = output<'list' | 'rotate'>();
   readonly revokeRequested = output<string>();
+  readonly pendingRequested = output<boolean>();
   readonly logoutRequested = output<void>();
 
   requestHistory(): void {
