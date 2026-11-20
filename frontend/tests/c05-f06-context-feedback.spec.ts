@@ -479,5 +479,8 @@ test('F06 PREMIUM operator mobile page eliminates redundant summary but keeps pe
   await expect(page.getByRole('heading', { name: 'Casos de recuperación y revisión' })).toBeVisible();
   await expect(page.locator('details.operator-scope-disclosure')).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Áreas de la consola de identidad' })).toBeVisible();
-  await noHorizontalClip(page);
+  // The initial operator view has no status/field message. Assert page geometry
+  // directly instead of waiting for a feedback element that must not exist.
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
 });
