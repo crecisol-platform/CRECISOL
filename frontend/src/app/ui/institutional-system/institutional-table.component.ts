@@ -4,7 +4,7 @@ import { validColumns, type TableColumn, type TableRow } from '../patterns/patte
 /** Read-only, display-ready rows. Host passes only backend-authorized data.
  * rowsScopeKey must match current scopeKey to prevent stale-tenant presentation
  * after switching realms; this is NOT a replacement for backend authorization.
- * Text interpolation escapes HTML: no innerHTML, exports, fetch or storage.
+ * Text interpolation escapes HTML: no raw markup insertion, exports, fetch or storage.
  */
 @Component({
   selector: 'cs-ui-table',
