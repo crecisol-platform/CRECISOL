@@ -7,6 +7,7 @@ export { InstitutionalNavigationComponent } from './institutional-navigation.com
 export type { InstitutionalNavigationItem } from './institutional-navigation.component';
 export { InstitutionalCardComponent } from './institutional-card.component';
 export { InstitutionalFieldComponent } from './institutional-field.component';
+export { InstitutionalFormComponent } from './institutional-form.component';
 export { InstitutionalTableComponent } from './institutional-table.component';
 export { InstitutionalActionComponent } from './institutional-action.component';
 export { InstitutionalNoticeComponent } from './institutional-notice.component';
