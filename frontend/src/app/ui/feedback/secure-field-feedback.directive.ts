@@ -48,8 +48,8 @@ export class SecureFieldFeedbackDirective implements AfterViewInit, OnDestroy {
     if (this.form.checkValidity()) return;
     event.preventDefault();
     event.stopImmediatePropagation(); // The Angular submit output must never fire on invalid data.
-    const first = this.form.querySelector<EditableField>(
-      'input:invalid, select:invalid, textarea:invalid');
+    const first = this.form.querySelector(
+      'input:invalid, select:invalid, textarea:invalid') as EditableField | null;
     first?.focus();
   };
 

@@ -724,7 +724,8 @@ try {
   const expiredLogin = await api('login', { mailbox: 'member.changed@example.test', password });
   check(expiredLogin.status === 200, 'login prepares an expirable challenge');
   sql(`UPDATE c05_identity_challenge SET expires_at_utc=UTC_TIMESTAMP(6)-INTERVAL 1 SECOND WHERE account_id=UNHEX('${actor}') AND consumed_at_utc IS NULL`);
-  check((await api('mfa/verify', { challenge: expiredLogin.data.challenge, code: replacementData.recoveryCodes[0] })).status === 401, 'expired MFA challenge denied');
+  const expiredStatus = (await api('mfa/verify', { challenge: expiredLogin.data.challenge, code: replacementData.recoveryCodes[0] })).status;
+  check(expiredStatus === 401, 'expired MFA challenge denied (HTTP ' + expiredStatus + ')');
   check((await api('mfa/verify', { challenge: expiredLogin.data.challenge, code: replacementData.recoveryCodes[0] }, undefined, 'tenant-b.example.test')).status === 401, 'challenge bound to tenant A cannot authorize B');
   check((await api('recovery/request', { mailbox: 'member.changed@example.test' })).status === 202, 'prepare expirable recovery proof');
   const expiredRecovery = await mailFor('member.changed@example.test'); confidential.push(expiredRecovery);

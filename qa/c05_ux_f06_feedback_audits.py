@@ -37,6 +37,7 @@ ALLOWED = {
     "frontend/tests/c05-f06-context-feedback.spec.ts",
     "frontend/playwright.c05-f06-feedback.config.ts",
     "qa/c05_ux_f05_modal_audits.py",
+    "qa/c05_operational_flow_e2e.mjs",
     "qa/c05_ux_f06_feedback_audits.py",
     "qa/c05_ux_f06_feedback_evidence.py",
     ".github/workflows/c05-ux-f06-feedback.yml",
