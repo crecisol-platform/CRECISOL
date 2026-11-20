@@ -77,9 +77,11 @@ def b() -> None:
 
 
 def c() -> None:
-    css = read(PAGES / "identity-flow.component.css")
+    css = read(PAGES / "identity-flow.component.css") + "\n" + read(PAGES / "identity-workspace.component.css")
     test = read(ROOT / "frontend/tests/c05-f03-account.spec.ts")
     config = read(ROOT / "frontend/playwright.c05-f03-account.config.ts")
+    require("identity-workspace.component.css" in read(PAGES / "identity-flow-views.component.ts"),
+            "workspace component must explicitly own the new scoped CSS")
     for cls in ("identity-workspace", "identity-profile", "identity-activity",
                 "identity-device-region", "identity-session-overview",
                 "identity-security-intro", "identity-approval-context",
