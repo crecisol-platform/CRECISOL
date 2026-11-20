@@ -148,6 +148,7 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   await page.getByRole('dialog', { name: 'Renovar la sesión de plataforma', exact: true })
     .getByRole('button', { name: 'Confirmar renovación de sesión', exact: true }).click();
   check((await rotated).status() === 200, 'Angular rotates the independent platform session cookie and CSRF binding');
+  await page.getByRole('dialog', { name: 'Renovar la sesión de plataforma', exact: true }).waitFor({ state: 'hidden' });
   const afterRotation = (await subject.cookies()).find(c => c.name === '__Host-crecisol-platform-c05').value; confidential.push(afterRotation);
   check((await platform('session', {}, beforeRotation)).status === 401 && (await platform('session', {}, afterRotation)).status === 200,
     'rotated platform cookie cannot be replayed and its replacement stays valid');
