@@ -492,7 +492,9 @@ test('F06 PREMIUM operator mobile summary is compact and retains visible securit
 
 test('F06 premium recovery keeps signed-out options accessible without a four-row mobile menu', async ({ page }) => {
   await page.setViewportSize({width:320,height:720});
-  await account(page, 'recuperar', 'anonymous');
+  await syntheticApi(page, 'anonymous');
+  await page.goto('/cuenta?vista=recuperar');
+  await expect(page.locator('cs-identity-portal')).toBeVisible();
   await expect(page.getByRole('heading', { name:'Recuperar contraseña' })).toBeVisible();
   await expect(page.getByRole('button', {name:'Solicitar recuperación'})).toBeVisible();
   const secondary=page.locator('.account-more');
@@ -511,8 +513,11 @@ test('F06 premium approval queue leads; security details remain accessible by ke
   await expect(queue.getByRole('button',{name:'Consultar solicitudes'})).toBeVisible();
   const rail=page.locator('details.identity-approval-context');
   await expect(rail).not.toHaveAttribute('open','');
-  const q=await queue.boundingBox(),r=await rail.boundingBox();
-  expect((q?.top??9999)).toBeLessThan(r?.top??0);
+  const taskFirst = await queue.evaluate(element => {
+    const rail = document.querySelector('details.identity-approval-context');
+    return !!rail && !!(element.compareDocumentPosition(rail) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  expect(taskFirst, 'approval queue must precede the optional explanation').toBe(true);
   await rail.locator('summary').focus();
   await page.keyboard.press('Enter');
   await expect(rail).toHaveAttribute('open','');
@@ -528,8 +533,11 @@ test('F06 premium case lookup leads without exposing unauthorized data or concea
   await expect(lookup.getByRole('button',{name:'Consultar caso de identidad'})).toBeVisible();
   await expect(result.getByRole('heading',{name:'Sin expediente seleccionado'})).toBeVisible();
   await expect(result.getByRole('heading',{name:'Estado y prioridad del caso'})).toHaveCount(0);
-  const a=await lookup.boundingBox(), b=await notice.boundingBox();
-  expect(a?.top??9999).toBeLessThan(b?.top??0);
+  const taskFirst = await lookup.evaluate(element => {
+    const privacy = document.querySelector('details.operator-scope-details');
+    return !!privacy && !!(element.compareDocumentPosition(privacy) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  expect(taskFirst, 'protected case lookup must precede optional policy details').toBe(true);
   await notice.locator('summary').focus();
   await page.keyboard.press('Enter');
   await expect(notice).toHaveAttribute('open','');
