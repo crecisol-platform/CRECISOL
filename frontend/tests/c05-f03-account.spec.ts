@@ -283,3 +283,48 @@ test('F03 ACCOUNT long secure modal: heading, footer, focus and scroll contained
     await expect(opener).toBeFocused();
     await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden');
   });
+
+test('F03 ACCOUNT desktop: navigation is a true vertical sidebar at 1440px',
+  async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await syntheticAccount(page); await visit(page, 'perfil');
+    const layout = await page.evaluate(() => {
+      const nav = document.querySelector<HTMLElement>('.account-nav--workspace')!;
+      const body = document.querySelector<HTMLElement>('.account-workspace-body')!;
+      const rail = document.querySelector<HTMLElement>('.account-workspace-rail')!;
+      const first = nav.querySelector('a')!;
+      const next = first.nextElementSibling!;
+      return {
+        railRight: rail.getBoundingClientRect().right,
+        bodyLeft: body.getBoundingClientRect().left,
+        firstY: first.getBoundingClientRect().y,
+        nextY: next.getBoundingClientRect().y,
+        navDirection: getComputedStyle(nav).flexDirection
+      };
+    });
+    expect(layout.navDirection).toBe('column');
+    expect(layout.railRight).toBeLessThan(layout.bodyLeft);
+    expect(layout.nextY).toBeGreaterThan(layout.firstY);
+    await noHorizontalOverflow(page);
+  });
+
+test('F03 ACCOUNT mobile: six tabs stay keyboard-reachable in an inner horizontal rail',
+  async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await syntheticAccount(page); await visit(page, 'historial');
+    const nav = page.getByRole('navigation', { name: 'Mi cuenta' });
+    await expect(nav.getByRole('link')).toHaveCount(6);
+    const before = await nav.evaluate(element => ({
+      width: element.clientWidth,
+      scroll: element.scrollWidth,
+      orientation: getComputedStyle(element).flexDirection
+    }));
+    expect(before.orientation).toBe('row');
+    expect(before.scroll).toBeGreaterThan(before.width);
+    const last = nav.getByRole('link', { name: 'Aprobaciones' });
+    await last.focus();
+    await expect(last).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/vista=administracion/);
+    await noHorizontalOverflow(page);
+  });
