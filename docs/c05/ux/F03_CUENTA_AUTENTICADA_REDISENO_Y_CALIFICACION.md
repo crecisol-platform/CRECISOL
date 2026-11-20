@@ -44,20 +44,28 @@ La calificación exige captura real de cada vista en al menos 320, 390, 768, 102
 
 **NO-GO** si una sola vista obtiene menos de **9,0/10**, si falta un estado esencial, o si hay P0/P1, texto técnico crudo, permisos aparentes, fuga de datos, duplicación de foco, regresiones de modal o overflow. **CI SUCCESS no convierte automáticamente una pantalla en 9/10.** El acta debe registrar nota y evidencia individual por pantalla; no basta la media.
 
-### Valoración provisional de capturas sintéticas — no certificación
+### Evaluación visual provisional por pantalla — evidencia sintética
 
-Las capturas iniciales posteriores al rediseño (run #44651963391, SHA `1514fcc3b14a51906ca335215fdee0248cb03117`) fueron inspeccionadas como referencia visual y para detectar problemas. Es una **apreciación editorial provisional**, no una evaluación humana de datos reales ni nota final. Se observaron mejoras significativas respecto de F01 (4,02/10 inicial), pero todavía es necesaria la verificación del último SHA sobre los ajustes posteriores y la aceptación individual:
+Se evaluaron capturas reales de Chromium (no maquetas) de las seis áreas en **390 y 1440 px** del run [#44653376832](https://github.com/crecisol-platform/CRECISOL/actions/runs/44653376832), SHA `7d05f47817de2823785db3be277544aa5c94fc4f`, además del manifiesto de cinco anchos. Las notas siguientes son **estimaciones editoriales del asistente**, con escala y criterios declarados, no certificación estética ni aprobación del propietario. Los datos representados son sintéticos; otros estados deben examinarse por separado. No se atribuye al código una aprobación visual que no existe.
 
-| Vista | Observación provisional | Gate 9/10 |
-| --- | --- | --- |
-| Resumen | Jerarquía mucho más clara y dispositivo principal visible; verificar densidad móvil, estado sin sesiones y detalles expandidos | **PENDIENTE** |
-| Perfil | Datos ya son legibles, formulario precargado; completar evaluación de foto y estados alternativos | **PENDIENTE** |
-| Llaves | Método y fecha legibles, selección segura; evaluar múltiples dispositivos y acciones de riesgo | **PENDIENTE** |
-| Seguridad | Mejor agrupación y modales; evaluar la claridad final de cada una de las cuatro operaciones delicadas | **PENDIENTE** |
-| Historial | Cronología comprensible y separada; evaluar más de ocho eventos, ausencia de datos y fechas inusuales | **PENDIENTE** |
-| Aprobaciones | Sigue sin bandeja autorizada de pendientes y requiere introducir la referencia | **NO-GO para 9/10 integral** |
+| Vista | Nota visual provisional /10 | Observación que impide 9/10 |
+| --- | ---: | --- |
+| **Resumen** | **8,6** | Jerarquía y dispositivos más claros, pero aún hay redundancia entre el resumen de sesión y acciones; falta evaluar vacíos/error y revocaciones complejas |
+| **Perfil** | **8,7** | Nombre/idioma/zona legibles, foto y cancelación; falta pulir jerarquía de foto/edición y estados de imagen fallida |
+| **Llaves** | **8,8** | Referencia enmascarada y selección de llave, pero la ficha no expone información adicional del dispositivo permitida por el contrato ni todos los estados críticos |
+| **Seguridad** | **8,4** | Acciones más contextualizadas y modales protegidos; recuperación MFA sigue siendo un flujo largo con distintas etapas en un único diálogo |
+| **Historial** | **8,8** | Cronología semántica y estado legible; faltan filtros/contexto de volumen y evaluación de paginación completa más allá de los 50 registros del contrato |
+| **Aprobaciones** | **7,4** | Falta bandeja autorizada de expedientes pendientes; introducir una referencia técnica sigue siendo una barrera operativa |
 
-**La F03 completa no puede calificarse ni certificarse como 9/10 mientras exista un NO-GO.**
+**Resultado: 0/6 vistas acreditadas con nota >=9,0/10.** La tabla es una autoevaluación conservadora, no un benchmark. Incluso con suites técnicas verdes, **el entregable de F03 permanece NO CERTIFICADO**, tal como exige la especificación del usuario.
+
+### Integridad arquitectónica posterior al primer run
+
+- Se separó el CSS de la cuenta en `frontend/src/app/pages/identity-workspace.component.css`, acoplado exclusivamente a `IdentityWorkspaceComponent` mediante `styleUrls`, conservando `identity-flow.component.css` para operadores y componentes base. Se evitó subir artificialmente el presupuesto CSS Angular; se restauró la compilación de producción.
+- Se rediseñó la navegación de escritorio en una **barra lateral vertical** de seis áreas desde 1040 px, conservando el rail interno horizontal con guía y teclado para móvil. Se añadieron tests explícitos de disposición y navegación por Enter.
+- Los CTA de Seguridad y Aprobaciones ahora tienen pistas contextuales subordinadas y el resumen mantiene tareas raras/delicadas bajo `details`, sin esconder la revocación individual de cada sesión.
+
+**F03 completa: NO-GO hasta 6/6 vistas >=9,0 con evidencia sobre el SHA final y solución de la bandeja autorizada.**
 
 ## V. Matriz A/B/C y evidencia obligatoria
 
