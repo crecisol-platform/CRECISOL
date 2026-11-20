@@ -442,3 +442,17 @@ test('F06 PREMIUM protected-modal error never suggests unrelated account recover
   await expect(notice).toContainText('Comprueba los datos y el estado de esta solicitud');
   await expect(notice).not.toContainText('recuperación de cuenta');
 });
+
+
+test('F06 PREMIUM operator monitor reflows at 320px and 200% text without horizontal scroll', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' });
+  await operator(page);
+  await page.getByRole('navigation', { name: 'Áreas de la consola de identidad' })
+    .getByRole('button', { name: 'Monitor', exact: true }).click();
+  await page.addStyleTag({ content: ':root { font-size: 200% !important; }' });
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+  await expect(page.getByRole('heading', { name: 'Monitor de identidad' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Consultar señales agregadas' })).toBeVisible();
+});

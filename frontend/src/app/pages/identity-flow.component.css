@@ -272,3 +272,14 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
 @media (forced-colors: active) {
  .operator-context, .operator-scope-disclosure { border: 1px solid CanvasText; background: Canvas; }
 }
+
+
+/* Preserve native 200% text enlargement while allowing narrower intrinsic
+   content and reflow; never hide overflow as a substitute for fixing it. */
+.operator-panel, .operator-content, .operator-context,
+.operator-context__section, .operator-nav-hint,
+.operator-scope-disclosure { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+@media (max-width: 480px) {
+  .operator-context { padding: 9px 12px; }
+  .operator-scope-disclosure summary { padding: 8px 10px; }
+}

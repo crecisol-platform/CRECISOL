@@ -453,3 +453,14 @@
   .account-workspace-intro { padding: .88rem .95rem; }
   .account-workspace-intro h1 { font-size: 1.37rem; }
 }
+
+
+/* F06 premium: at 200% text zoom, fixed pixel padding keeps the actual task
+   readable without suppressing page overflow or scaling text down. */
+@media (max-width: 480px) {
+  .account-layout--single { padding-inline: 10px; }
+  .account-layout--single .account-main { padding-inline: 12px; }
+  .page-heading--operator { padding: 12px; }
+  .page-heading--operator h1,
+  .page-heading--operator p { overflow-wrap: anywhere; min-width: 0; }
+}

@@ -115,3 +115,23 @@
 @media (forced-colors: active) {
   .operator-card--session-list { border-color: CanvasText; background: Canvas; }
 }
+
+
+/* F06 accessibility regression: 320px viewport and 200% browser text. */
+.operator-workspace,
+.operator-workspace .operator-card,
+.operator-workspace .operator-section-head,
+.operator-workspace .operator-stat,
+.operator-workspace .operator-stat span,
+.operator-workspace .operator-stat strong {
+  min-width: 0; max-width: 100%; overflow-wrap: anywhere;
+}
+@media (max-width: 480px) {
+  .operator-workspace .operator-card { padding: 10px; }
+  .operator-monitor-stats { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .operator-monitor-stats .operator-stat:first-child { grid-column: auto; }
+  .operator-monitor-stats .operator-stat span { display: block; }
+  .operator-section-head { gap: 8px; }
+  .operator-workspace .operator-card--result,
+  .operator-workspace .operator-card--session-list { padding: 0; }
+}
