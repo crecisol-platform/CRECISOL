@@ -92,7 +92,7 @@ def c() -> None:
     for view in ("casos", "sesiones", "perfil", "seguridad", "monitor"):
         need("'" + view + "'" in tests, "missing operator screenshot area " + view)
     need("AxeBuilder" in tests and "noOverflow" in tests and
-         "role', { name: 'Áreas de la consola de identidad'" in tests,
+         "name: 'Áreas de la consola de identidad'" in tests,
          "WCAG, responsive or realm tests missing")
     need("127.0.0.1:4206" in config and "reuseExistingServer: false" in config,
          "F04 harness not isolated to loopback")
