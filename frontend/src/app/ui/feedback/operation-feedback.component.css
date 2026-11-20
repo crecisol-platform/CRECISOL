@@ -68,3 +68,7 @@
 @media (prefers-reduced-motion: reduce) {
   .cs-operation-feedback, .cs-operation-feedback__pulse { animation: none; transition: none; }
 }
+
+
+.cs-operation-feedback__next { margin: .35rem 0 0; font-size: .79rem; line-height: 1.5; color: #76504a; overflow-wrap: anywhere; }
+@media (forced-colors: active) { .cs-operation-feedback__next { color: CanvasText; } }

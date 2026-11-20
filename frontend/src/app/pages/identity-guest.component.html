@@ -61,9 +61,9 @@
         </details>
   }
   @default {
-    <section aria-labelledby="login-heading">
+    <section class="login-surface" aria-labelledby="login-heading">
           <h2 id="login-heading">Iniciar sesión</h2>
-          <form csFieldFeedback (submit)="loginRequested.emit($event)">
+          <form class="login-form" csFieldFeedback (submit)="loginRequested.emit($event)">
             <label for="login-mailbox">Correo electrónico</label>
             <input id="login-mailbox" name="mailbox" type="email" autocomplete="username"
               required maxlength="254">
@@ -72,8 +72,10 @@
               autocomplete="current-password" required maxlength="256">
             <button type="submit" [disabled]="busy() || identity.restoring()">{{ busy() ? 'Verificando…' : 'Continuar' }}</button>
           </form>
-          <p>Para usar una llave de acceso en este entorno local, abre <a href="http://localhost:4200/cuenta">la cuenta en localhost</a>.</p>
-          <button type="button" [disabled]="busy() || identity.restoring()" (click)="passkeyLoginRequested.emit()">Entrar con llave de acceso</button>
+          @if (!passkeyAvailable) {
+            <p class="login-compatibility-note">Las llaves de acceso necesitan un navegador compatible y una conexión segura.</p>
+          }
+          <button type="button" class="login-passkey-action" [disabled]="busy() || identity.restoring()" (click)="passkeyLoginRequested.emit()">Entrar con llave de acceso</button>
           <details><summary>Entrar vinculando un navegador</summary>
             <p>Genera una solicitud y apruébala desde otro navegador donde ya tengas una sesión verificada. También puedes copiar los datos; no necesitas escanear el QR en este mismo dispositivo. La solicitud vence en dos minutos.</p>
             <button type="button" [disabled]="busy() || identity.restoring()" (click)="startPairingRequested.emit()">Crear solicitud de vinculación</button>

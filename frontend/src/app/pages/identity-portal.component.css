@@ -410,3 +410,26 @@
 @media (forced-colors: active) and (min-width: 1040px) {
   .account-workspace-body { border-left-color: CanvasText; }
 }
+
+
+/* F06 premium | Mobile entry: the sign-in task leads, not the illustration. */
+@media (max-width: 850px) {
+ .account-layout--guest { gap: .65rem; padding-top: 0; }
+ .account-layout--guest .account-aside { min-height: 0; gap: .35rem; padding: 1rem 1.25rem; border-radius: 1rem; background: #edf5fd; box-shadow: none; }
+ .account-layout--guest .account-aside::before { opacity: .26; }
+ .account-layout--guest .aside-top .eyebrow { margin-bottom: .2rem; font-size: .64rem; letter-spacing: .09em; }
+ .account-layout--guest .account-aside h1 { margin: 0 0 .15rem; max-width: none; font-size: clamp(1.34rem, 4vw, 1.75rem); letter-spacing: -.03em; line-height: 1.2; }
+ .account-layout--guest .account-aside .aside-top > p:last-child { max-width: 52ch; margin: 0; font-size: .83rem; line-height: 1.45; }
+ .account-layout--guest .account-main { padding-block: 1rem 1.2rem; }
+ .account-layout--guest .account-breadcrumb { margin-bottom: .85rem; padding-bottom: .6rem; }
+ .account-layout--guest .account-navigation-group { margin-bottom: .95rem; }
+ .account-layout--guest .account-navigation-label { margin-bottom: .35rem; font-size: .66rem; }
+}
+@media (max-width: 480px) {
+ .account-layout--guest .account-aside { padding: .88rem 1rem; }
+ .account-layout--guest .account-main { padding: 1rem; }
+ .account-layout--guest .account-nav a { min-height: 2.6rem; padding-block: .5rem; }
+}
+@media (forced-colors: active) {
+ .account-layout--guest .account-aside { background: Canvas; border-color: CanvasText; }
+}

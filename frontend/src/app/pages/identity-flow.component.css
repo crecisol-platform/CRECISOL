@@ -233,3 +233,19 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
 .operator-scope-banner { margin: -.4rem 0 1.1rem; padding: .85rem 1.1rem;
   border-left: 4px solid var(--cs-color-accent-text, #174b77); border-radius: .45rem;
   background: #f3f8fc; color: #3c5975; font-size: .87rem; line-height: 1.65; }
+
+
+/* F06 premium | Login hierarchy, with a quieter passkey alternative. */
+.login-surface h2 { margin-bottom: .55rem; }
+.login-surface .login-form { gap: .45rem; margin: .7rem 0 .75rem; }
+.login-surface .login-form label { margin-top: .2rem; }
+.login-surface .login-form button[type='submit'] { margin-top: .35rem; }
+.login-surface .login-passkey-action { display: block; width: 100%; margin: .4rem 0 .5rem; background: #f3f8fd; border-color: #ccdfef; color: #174a79; }
+.login-surface .login-passkey-action:hover:not(:disabled) { background: #e5f0fa; }
+.login-surface .login-compatibility-note { margin: .45rem 0; padding: .65rem .8rem; font-size: .82rem; border-left: 2px solid #679bc2; background: #f5f9fd; border-radius: .35rem; }
+.login-surface details { padding: .6rem 0; margin-top: .4rem; }
+@media (max-width: 480px) {
+ .login-surface h2 { font-size: 1.45rem; }
+ .login-surface .login-form { gap: .3rem; margin-block: .6rem; }
+ .login-surface .login-form label { margin-top: .1rem; }
+}

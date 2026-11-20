@@ -22,5 +22,12 @@
       }
     </strong>
     <p class="cs-operation-feedback__message">{{ text() }}</p>
+    @if (kind() === 'error') {
+      <p class="cs-operation-feedback__next">
+        {{ context() === 'Identidad de plataforma' ?
+          'Comprueba la referencia y tu autorización. Si persiste, contacta al responsable de seguridad.' :
+          'Revisa los datos y vuelve a intentarlo. También puedes utilizar las opciones de recuperación.' }}
+      </p>
+    }
   </div>
 </section>
