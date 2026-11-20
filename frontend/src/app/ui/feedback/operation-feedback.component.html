@@ -1,0 +1,26 @@
+<section class="cs-operation-feedback" [attr.data-feedback-kind]="kind()"
+  [attr.role]="kind() === 'error' ? 'alert' : 'status'"
+  [attr.aria-live]="kind() === 'error' ? 'assertive' : 'polite'"
+  [attr.aria-busy]="kind() === 'pending' ? 'true' : null"
+  aria-atomic="true">
+  <span class="cs-operation-feedback__mark" aria-hidden="true">
+    @switch (kind()) {
+      @case ('success') { ✓ }
+      @case ('error') { ! }
+      @case ('pending') { <span class="cs-operation-feedback__pulse"></span> }
+      @default { i }
+    }
+  </span>
+  <div class="cs-operation-feedback__body">
+    <span class="cs-operation-feedback__context">{{ context() }}</span>
+    <strong class="cs-operation-feedback__title">
+      @switch (kind()) {
+        @case ('success') { Operación completada }
+        @case ('error') { Revisa esta operación }
+        @case ('pending') { Operación en curso }
+        @default { Información }
+      }
+    </strong>
+    <p class="cs-operation-feedback__message">{{ text() }}</p>
+  </div>
+</section>
