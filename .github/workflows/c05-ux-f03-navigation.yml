@@ -162,11 +162,16 @@ jobs:
           dotnet build backend/tests/Crecisol.LoopbackSmtpReceiver/Crecisol.LoopbackSmtpReceiver.csproj -c Release --nologo -warnaserror
       - name: Install locked Angular test dependencies and Chromium
         shell: bash
+        timeout-minutes: 8
         run: |
           set -euo pipefail
           npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
           cd frontend
-          timeout 300s npx playwright install --with-deps chromium
+          # The previous --with-deps attempted slow apt font downloads and hit
+          # its 300s timeout. Ubuntu 24.04 runner already has the system
+          # libraries verified by the successful navigation/Chromium job.
+          # Browser-only install avoids an unrelated apt/network dependency.
+          timeout 420s npx playwright install chromium
       - name: Real disposable MySQL 8.4, loopback .NET 10 API, Angular E2E, MFA and tenant B negatives
         shell: bash
         timeout-minutes: 35
