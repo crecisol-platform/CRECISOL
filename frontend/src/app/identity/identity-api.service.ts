@@ -15,6 +15,12 @@ interface LoginReceipt {
   readonly enrollmentRequired?: boolean;
 }
 interface MfaReceipt { readonly csrfToken: string; readonly expiresAtUtc: string; readonly idleMinutes: number; readonly recoveryCodes?: readonly string[]; }
+/** Only minimal, tenant-authorized, masked applicant data may reach Angular. */
+export interface PendingMembershipView {
+  readonly id: string;
+  readonly requestedAtUtc: string;
+  readonly mailboxHint: string;
+}
 
 const API = '/api/v1/identity';
 
@@ -83,6 +89,9 @@ export class IdentityApiService {
   private pairingKey: CryptoKey | null = null;
   private pairingNonce = '';
   readonly securityEvents = signal<ReadonlyArray<{ action: string; outcome: number; atUtc: string }>>([]);
+  readonly pendingMemberships = signal<readonly PendingMembershipView[]>([]);
+  readonly pendingNextCursor = signal<string | null>(null);
+  readonly pendingLoaded = signal(false);
   readonly assistedReference = signal('');
   readonly profile = signal<{ displayName: string; language: string; timeZone: string } | null>(null);
   readonly photo = signal('');
@@ -389,8 +398,33 @@ export class IdentityApiService {
     this.clear();
   }
 
+  async loadPendingMemberships(next = false): Promise<void> {
+    const revision = this.sessionRevision;
+    const cursor = next ? this.pendingNextCursor() : 'start';
+    if (!cursor) return;
+    const result = await this.post<{ requests: PendingMembershipView[]; nextCursor: string | null }>(
+      'memberships/pending', { cursor });
+    if (revision !== this.sessionRevision || this.state() !== 'authenticated') return;
+    const incoming = Array.isArray(result.requests) ? result.requests : [];
+    if (next) {
+      const seen = new Set(this.pendingMemberships().map(item => item.id));
+      this.pendingMemberships.update(previous => [
+        ...previous, ...incoming.filter(item => !seen.has(item.id))
+      ]);
+    } else {
+      this.pendingMemberships.set(incoming);
+    }
+    this.pendingNextCursor.set(result.nextCursor || null);
+    this.pendingLoaded.set(true);
+  }
+
   async decideMembership(membershipId: string, decision: string, reason: string, code: string): Promise<void> {
     await this.post('memberships/decide', { membershipId, decision, reason, code });
+    // Never leave a stale, potentially already decided item actionable.
+    this.pendingMemberships.set([]);
+    this.pendingNextCursor.set(null);
+    this.pendingLoaded.set(false);
+    try { await this.loadPendingMemberships(); } catch { /* The approved decision stays committed; reload can be retried. */ }
   }
 
   async readPrivate(branchId: string, resourceId: string): Promise<void> {
@@ -465,6 +499,9 @@ export class IdentityApiService {
     this.passkeys.set([]);
     this.pairingKey = null; this.pairingNonce = ''; this.pairing.set(null);
     this.securityEvents.set([]);
+    this.pendingMemberships.set([]);
+    this.pendingNextCursor.set(null);
+    this.pendingLoaded.set(false);
     this.profile.set(null); this.photo.set('');
   }
 
