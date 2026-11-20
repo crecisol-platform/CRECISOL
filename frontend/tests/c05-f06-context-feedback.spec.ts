@@ -103,7 +103,7 @@ async function openBusyModal(page: Page): Promise<void> {
     modal.onDialogSubmit();
     owner.busy.set(true);
   });
-  await expect(page.locator('dialog.cs-modal cs-operation-feedback[data-feedback-kind="pending"]')).toBeVisible();
+  await expect(page.locator('dialog.cs-modal cs-operation-feedback [data-feedback-kind="pending"]')).toBeVisible();
 }
 
 async function scene(page: Page, selected: Scene): Promise<void> {
@@ -142,7 +142,7 @@ for (const viewport of viewports) for (const selected of scenes) {
     if (selected !== 'field-error') {
       const tone = selected === 'account-pending' || selected === 'modal-pending' ? 'pending'
         : selected === 'account-success' ? 'success' : 'error';
-      const rendered = page.locator('cs-operation-feedback[data-feedback-kind="' + tone + '"]');
+      const rendered = page.locator('cs-operation-feedback [data-feedback-kind="' + tone + '"]');
       await expect(rendered).toHaveCount(1);
       await expect(rendered.locator('section')).toHaveAttribute('role', tone === 'error' ? 'alert' : 'status');
       await expect(rendered).not.toContainText('undefined');
@@ -183,7 +183,7 @@ test('F06 failed login leaves mailbox editable but scrubs password without echoi
   await page.getByLabel('Correo electrónico').fill('persona@example.test');
   await page.getByLabel('Contraseña', { exact: true }).fill('F06-FAKE-SECRET-DO-NOT-PERSIST');
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
-  await expect(page.locator('cs-operation-feedback[data-feedback-kind="error"]')).toBeVisible();
+  await expect(page.locator('cs-operation-feedback [data-feedback-kind="error"]')).toBeVisible();
   await expect(page.getByLabel('Correo electrónico')).toHaveValue('persona@example.test');
   await expect(page.getByLabel('Contraseña', { exact: true })).toHaveValue('');
   await expect(page.locator('cs-operation-feedback')).not.toContainText('F06-FAKE-SECRET');
@@ -196,7 +196,7 @@ test('F06 failed operator login scrubs its credentials in the separate realm', a
   await page.getByLabel('Correo del operador de identidad').fill('operador@example.test');
   await page.getByLabel('Contraseña del operador').fill('F06-SYNTHETIC-NO-CREDENTIAL');
   await page.getByRole('button', { name: 'Acceder a identidad de plataforma' }).click();
-  await expect(page.locator('cs-platform-identity-panel cs-operation-feedback[data-feedback-kind="error"]')).toBeVisible();
+  await expect(page.locator('cs-platform-identity-panel cs-operation-feedback [data-feedback-kind="error"]')).toBeVisible();
   await expect(page.getByLabel('Correo del operador de identidad')).toHaveValue('operador@example.test');
   await expect(page.getByLabel('Contraseña del operador')).toHaveValue('');
 });
@@ -229,7 +229,7 @@ test('F06 late response from a departed section does not resurrect a success not
   });
   await page.getByRole('button', { name: 'Actualizar datos' }).click();
   await expect.poll(() => delivered).toBe(1);
-  await expect(page.locator('cs-operation-feedback[data-feedback-kind="pending"]')).toBeVisible();
+  await expect(page.locator('cs-operation-feedback [data-feedback-kind="pending"]')).toBeVisible();
   await page.getByRole('link', { name: 'Historial', exact: true }).click();
   await expect(page.locator('cs-operation-feedback')).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => {
@@ -253,8 +253,8 @@ test('F06 no premature modal receipt and no closing of a pending protected trans
     owner.message.set('Solicitud registrada por el servidor.');
     owner.busy.set(false);
   });
-  await expect(dialog.locator('cs-operation-feedback[data-feedback-kind="success"]')).toBeVisible();
-  await expect(dialog.locator('cs-operation-feedback[data-feedback-kind="pending"]')).toHaveCount(0);
+  await expect(dialog.locator('cs-operation-feedback [data-feedback-kind="success"]')).toBeVisible();
+  await expect(dialog.locator('cs-operation-feedback [data-feedback-kind="pending"]')).toHaveCount(0);
 });
 
 test('F06 reduced motion, high-contrast and 200-percent text retain context and focus', async ({ page }) => {
@@ -263,7 +263,7 @@ test('F06 reduced motion, high-contrast and 200-percent text retain context and 
   await account(page, 'seguridad');
   await setAccountStatus(page, 'error', 'seguridad');
   await page.addStyleTag({ content: ':root { font-size: 200% !important; }' });
-  await expect(page.locator('cs-operation-feedback[data-feedback-kind="error"]')).toBeVisible();
+  await expect(page.locator('cs-operation-feedback [data-feedback-kind="error"]')).toBeVisible();
   await noHorizontalClip(page);
   const animation = await page.locator('cs-operation-feedback section').evaluate(el =>
     getComputedStyle(el).animationName);
