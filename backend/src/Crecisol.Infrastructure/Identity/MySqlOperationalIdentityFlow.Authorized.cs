@@ -62,8 +62,13 @@ public sealed partial class MySqlOperationalIdentityFlow
         if (r.Operation == "factor/recover-passkey")
             return await RecoverUsingPasskey(u, tenant, account, session, factor, r);
         if (r.Operation.StartsWith("profile/", StringComparison.Ordinal)) return await Profile(u, tenant, actor, r);
-        if ((r.Operation is "private/read" or "memberships/decide" or "invitations/issue") &&
+        if ((r.Operation is "private/read" or "memberships/pending" or "memberships/decide" or "invitations/issue") &&
             !await HasCurrentTerms(u, tenant, actor)) return new(false);
+        // A tenant-wide approver may read only verified, pending memberships.
+        // The authorization grant is independently revalidated inside this
+        // same tenant-scoped transaction before any applicant data is fetched.
+        if (r.Operation == "memberships/pending")
+            return await PendingMemberships(u, tenant, actor, r);
         if (r.Operation == "sessions")
         {
             var rows = await u.All("""

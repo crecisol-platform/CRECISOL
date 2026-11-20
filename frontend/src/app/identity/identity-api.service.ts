@@ -15,6 +15,12 @@ interface LoginReceipt {
   readonly enrollmentRequired?: boolean;
 }
 interface MfaReceipt { readonly csrfToken: string; readonly expiresAtUtc: string; readonly idleMinutes: number; readonly recoveryCodes?: readonly string[]; }
+/** Only minimal, tenant-authorized, masked applicant data may reach Angular. */
+export interface PendingMembershipView {
+  readonly id: string;
+  readonly requestedAtUtc: string;
+  readonly mailboxHint: string;
+}
 
 const API = '/api/v1/identity';
 
@@ -27,6 +33,8 @@ export class IdentityApiService {
   private csrfValue: string | null = null;
   // Invalidate responses created under an older session or MFA enrollment.
   private sessionRevision = 0;
+  // A later denial or decision invalidates older pending-approval responses.
+  private pendingRequestRevision = 0;
   private enrollmentRevision = 0;
   private pairingRevision = 0;
   readonly idleMinutes = signal(30);
@@ -49,8 +57,10 @@ export class IdentityApiService {
     if (this.state() !== 'authenticated' || this.activityInFlight ||
         Date.now() - this.activityLastSent < 60_000) return;
     this.activityLastSent = Date.now(); this.activityInFlight = true;
+    const revision = this.sessionRevision;
     void this.post('sessions/keepalive', {}).catch((error: unknown) => {
-      if (error instanceof HttpErrorResponse && error.status === 401) this.clear();
+      // A late 401 from an older cookie may not close a newer authenticated session.
+      if (revision === this.sessionRevision && error instanceof HttpErrorResponse && error.status === 401) this.clear();
     }).finally(() => { this.activityInFlight = false; });
   }
 
@@ -83,6 +93,10 @@ export class IdentityApiService {
   private pairingKey: CryptoKey | null = null;
   private pairingNonce = '';
   readonly securityEvents = signal<ReadonlyArray<{ action: string; outcome: number; atUtc: string }>>([]);
+  readonly pendingMemberships = signal<readonly PendingMembershipView[]>([]);
+  readonly pendingNextCursor = signal<string | null>(null);
+  readonly pendingLoaded = signal(false);
+  readonly pendingDenied = signal(false);
   readonly assistedReference = signal('');
   readonly profile = signal<{ displayName: string; language: string; timeZone: string } | null>(null);
   readonly photo = signal('');
@@ -389,8 +403,53 @@ export class IdentityApiService {
     this.clear();
   }
 
+  async loadPendingMemberships(next = false): Promise<void> {
+    const revision = this.sessionRevision;
+    const cursor = next ? this.pendingNextCursor() : 'start';
+    if (!cursor) return;
+    const loadRevision = ++this.pendingRequestRevision;
+    let result: { requests: PendingMembershipView[]; nextCursor: string | null };
+    try {
+      result = await this.post<{ requests: PendingMembershipView[]; nextCursor: string | null }>(
+        'memberships/pending', { cursor });
+    } catch (error) {
+      if (revision === this.sessionRevision && loadRevision === this.pendingRequestRevision) {
+        // Never retain applicant identifiers or masked PII after a failed
+        // authorization revalidation, session invalidation or network error.
+        this.pendingMemberships.set([]);
+        this.pendingNextCursor.set(null);
+        this.pendingLoaded.set(false);
+        this.pendingDenied.set(error instanceof HttpErrorResponse &&
+          (error.status === 401 || error.status === 403));
+      }
+      throw error;
+    }
+    if (revision !== this.sessionRevision || loadRevision !== this.pendingRequestRevision ||
+        this.state() !== 'authenticated') return;
+    const incoming = Array.isArray(result.requests) ? result.requests : [];
+    if (next) {
+      const seen = new Set(this.pendingMemberships().map(item => item.id));
+      this.pendingMemberships.update(previous => [
+        ...previous, ...incoming.filter(item => !seen.has(item.id))
+      ]);
+    } else {
+      this.pendingMemberships.set(incoming);
+    }
+    this.pendingNextCursor.set(result.nextCursor || null);
+    this.pendingLoaded.set(true);
+    this.pendingDenied.set(false);
+  }
+
   async decideMembership(membershipId: string, decision: string, reason: string, code: string): Promise<void> {
+    const revision = this.sessionRevision;
     await this.post('memberships/decide', { membershipId, decision, reason, code });
+    if (revision !== this.sessionRevision || this.state() !== 'authenticated') return;
+    ++this.pendingRequestRevision;
+    // Never leave a stale, potentially already decided item actionable.
+    this.pendingMemberships.set([]);
+    this.pendingNextCursor.set(null);
+    this.pendingLoaded.set(false);
+    try { await this.loadPendingMemberships(); } catch { /* The approved decision stays committed; reload can be retried. */ }
   }
 
   async readPrivate(branchId: string, resourceId: string): Promise<void> {
@@ -445,6 +504,7 @@ export class IdentityApiService {
 
   clear(): void {
     ++this.sessionRevision;
+    ++this.pendingRequestRevision;
     ++this.enrollmentRevision;
     ++this.pairingRevision;
     if (this.challengeTimer) clearTimeout(this.challengeTimer);
@@ -465,6 +525,10 @@ export class IdentityApiService {
     this.passkeys.set([]);
     this.pairingKey = null; this.pairingNonce = ''; this.pairing.set(null);
     this.securityEvents.set([]);
+    this.pendingMemberships.set([]);
+    this.pendingNextCursor.set(null);
+    this.pendingLoaded.set(false);
+    this.pendingDenied.set(false);
     this.profile.set(null); this.photo.set('');
   }
 

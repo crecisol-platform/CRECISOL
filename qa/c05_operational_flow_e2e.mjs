@@ -189,7 +189,7 @@ async function browserSession(page) {
   await page.getByRole('link', { name: 'Resumen', exact: true }).click();
   const request = page.waitForRequest(r => r.url().endsWith('/sessions') && r.method() === 'POST');
   const response = page.waitForResponse(r => r.url().endsWith('/sessions'));
-  await page.getByRole('button', { name: 'Consultar sesiones', exact: true }).click();
+  await page.getByRole('button', { name: 'Actualizar dispositivos', exact: true }).click();
   await request;
   const token = (await page.context().cookies()).find(c => c.name === '__Host-crecisol-c05')?.value;
   check((await response).status() === 200, 'Angular validates its HttpOnly session cookie against the persistent session endpoint');
@@ -424,9 +424,28 @@ try {
   await register('member@example.test', page);
   const memberId = membershipId('member@example.test');
   sql(`UPDATE c05_identity_resource_grant SET branch_id=UUID_TO_BIN('${otherBranch}',0) WHERE permission_code='MEMBERSHIP_APPROVE'`);
+  check((await api('memberships/pending', { cursor: 'start' }, approver.token)).status === 401,
+    'branch-scoped grant cannot list pending enterprise memberships');
   check((await api('memberships/decide', { membershipId: memberId, decision: 'approve', reason: 'Wrong authority scope', code: approver.backups.pop() }, approver.token)).status === 401,
     'branch-scoped approval permission cannot become tenant-wide administrative authority');
   sql(`UPDATE c05_identity_resource_grant SET branch_id=tenant_id WHERE permission_code='MEMBERSHIP_APPROVE'`);
+  check((await api('memberships/decide', { membershipId: memberId, decision: 'approve',
+    reason: '   ', code: '000000' }, approver.token)).status === 400,
+    'blank administrative justification is rejected at the HTTP boundary before step-up');
+  check((await api('memberships/decide', { membershipId: memberId, decision: 'approve',
+    reason: 'X'.repeat(241), code: '000000' }, approver.token)).status === 400,
+    'oversize administrative justification is rejected at the HTTP boundary');
+  const pendingInventory = await api('memberships/pending', { cursor: 'start' }, approver.token);
+  check(pendingInventory.status === 200 &&
+    Array.isArray(pendingInventory.data?.requests) &&
+    pendingInventory.data.requests.some(entry => entry.id === memberId) &&
+    pendingInventory.data.requests.every(entry => entry.mailboxHint !== 'member@example.test'),
+    'authorized tenant-scoped approval inbox returns pending verified records with redacted contact');
+  check((await api('memberships/pending', { cursor: 'start' }, approver.token,
+    'tenant-b.example.test')).status === 401,
+    'token from tenant A cannot enumerate tenant B approval inbox');
+  check((await api('memberships/pending', { cursor: 'malformed' }, approver.token)).status === 401,
+    'malformed keyset cursor fails closed without applicant details');
   // Registration completion is now an independent screen; return to the login view.
   await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
   await page.getByRole('region', { name: 'Iniciar sesión', exact: true }).getByLabel('Correo electrónico', { exact: true }).fill('approver@example.test');
@@ -435,10 +454,15 @@ try {
   await page.getByLabel('Código de tu aplicación de autenticación').fill(approver.backups.pop());
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   await page.getByRole('link', { name: 'Aprobaciones', exact: true }).click();
-  await page.getByRole('button', { name: 'Revisar membresía con permiso administrativo', exact: true }).click();
-  await page.getByLabel('Membresía pendiente', { exact: true }).fill(memberId);
-  await page.getByLabel('Motivo', { exact: true }).fill('Synthetic local approval');
+  const queueResponse = page.waitForResponse(response => response.url().endsWith('/memberships/pending'));
+  await page.getByRole('button', { name: 'Consultar solicitudes', exact: true }).click();
+  check((await queueResponse).status() === 200, 'Angular obtains allowed pending memberships through real tenant-authorized API');
+  await page.getByRole('button', { name: 'Revisar solicitud', exact: true }).first().click();
+  await page.getByLabel('Solicitud pendiente seleccionada', { exact: true }).selectOption(memberId);
+  await page.getByLabel('Decisión', { exact: true }).selectOption('approve');
+  await page.getByLabel('Motivo de la decisión', { exact: true }).fill('Synthetic local approval');
   await page.getByLabel('Código MFA del aprobador', { exact: true }).fill(approver.backups.pop());
+  await page.getByLabel('Revisé la solicitud y confirmo que esta es la decisión que deseo registrar.').check();
   const approvalResponse = page.waitForResponse(r => r.url().endsWith('/memberships/decide'));
   await page.getByRole('button', { name: 'Registrar decisión', exact: true }).click();
   check((await approvalResponse).status() === 200, 'Angular real MFA approver activates pending membership through API');
@@ -479,7 +503,7 @@ try {
   const verified = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   check((await verified).status() === 200, 'Angular MFA request accepted by the real backend');
-  await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
   const backupCodes = await page.getByLabel('Códigos de respaldo MFA').locator('code').allTextContents(); confidential.push(...backupCodes);
   check(backupCodes.length === 10, 'MFA enrollment returns ten one-use backup codes once');
   let token = await browserSession(page);
@@ -524,7 +548,7 @@ try {
   const restoredRequest = page.waitForResponse(r => r.url().endsWith('/browser/restore'));
   await page.reload();
   check((await restoredRequest).status() === 200, 'reload restores only a server-validated cookie session and CSRF material');
-  await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
   await page.getByText('Condiciones de la cuenta', { exact: true }).click();
   await page.getByRole('button', { name: 'Leer condiciones vigentes', exact: true }).click();
   await page.getByLabel('Acepto esta versión de las condiciones', { exact: true }).check();
@@ -544,6 +568,9 @@ try {
   sql(`INSERT INTO c05_identity_branch VALUES(UNHEX('${A}'),UUID_TO_BIN('${branch}',0),TRUE),(UNHEX('${A}'),UUID_TO_BIN('${otherBranch}',0),TRUE);
     INSERT INTO c05_identity_private_resource VALUES(UNHEX('${A}'),UUID_TO_BIN('${branch}',0),UUID_TO_BIN('${resource}',0),UNHEX('${actor}'),1,'LOCAL-PRIVATE-REFERENCE');
     INSERT INTO c05_identity_resource_grant VALUES(UNHEX('${A}'),UUID_TO_BIN(UUID(),0),UNHEX('${actor}'),UUID_TO_BIN('${branch}',0),UUID_TO_BIN('${resource}',0),1,'RESOURCE_READ',UNHEX('${accountId('approver@example.test')}'),UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)+INTERVAL 1 HOUR,NULL,1);`);
+  // Rare/advanced operations are intentionally collapsed in the redesigned
+  // account summary; E2E must follow the same contextual journey as a user.
+  await page.locator('details.identity-summary-extras > summary').click();
   await page.getByRole('button', { name: 'Comprobar un acceso privado', exact: true }).click();
   await page.getByLabel('Sucursal del recurso').fill(branch); await page.getByLabel('Identificador del recurso').fill(resource);
   await page.getByRole('button', { name: 'Consultar recurso autorizado' }).click();
@@ -585,7 +612,7 @@ try {
   const mfaRace = await Promise.all(Array.from({ length: 6 }, () => api('mfa/verify', { challenge: login.data.challenge, code: mfaCode })));
   check(mfaRace.filter(r => r.status === 200).length === 1, 'concurrent TOTP/challenge consumption has one winner');
   check((await api('mfa/verify', { challenge: login.data.challenge, code: mfaCode })).status === 401, 'MFA replay denied');
-  await page.getByRole('button', { name: 'Consultar sesiones' }).click();
+  await page.getByRole('button', { name: 'Actualizar dispositivos', exact: true }).click();
   await page.getByRole('heading', { name: 'Iniciar sesión', exact: true }).waitFor();
   check(true, 'Angular clears revoked session on server validation');
   await reserveTestWindow(35);
@@ -625,7 +652,7 @@ try {
     const response = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
     await page.getByRole('button', { name: 'Verificar', exact: true }).click();
     const result = await response; check(result.status() === 200, 'Angular persistent login with one-use backup factor');
-    await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+    await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
     return await browserSession(page);
   }
   token = await uiLogin('member@example.test', newPassword);
@@ -638,6 +665,7 @@ try {
   await page.getByRole('button', { name: 'Solicitar cambio de correo', exact: true }).click();
   check((await mailboxRequest).status() === 200, 'Angular mailbox change requires authenticated fresh second factor');
   const mailboxProof = await mailFor('member.changed@example.test'); confidential.push(mailboxProof);
+  await page.getByText('Ya tengo el token del nuevo correo', { exact: true }).click();
   await page.getByLabel('Token del nuevo correo').fill(mailboxProof);
   await page.getByLabel('Código MFA para confirmar correo').fill(backupCodes.pop());
   const mailboxConfirmation = page.waitForResponse(r => r.url().endsWith('/mailbox/complete'));
@@ -657,7 +685,7 @@ try {
   check((await api('sessions', {}, token)).status === 401, 'password change revokes prior session');
   token = await uiLogin('member.changed@example.test', password);
   const rotatedUi = page.waitForResponse(r => r.url().endsWith('/sessions/rotate'));
-  await page.getByRole('button', { name: 'Rotar sesión', exact: true }).click();
+  await page.getByRole('button', { name: 'Renovar sesión', exact: true }).click();
   const rotationResponse = await rotatedUi;
   check(rotationResponse.status() === 200, 'Angular rotates persistent session');
   const logoutUi = page.waitForResponse(r => r.url().endsWith('/logout'));
@@ -684,7 +712,10 @@ try {
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   const replacedReceipt = await reverified;
   check(replacedReceipt.status() === 200, 'replacement TOTP enrollment issues a fresh MFA-bound session');
-  await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  // The restored account keeps its Seguridad deep link. Open Resumen
+  // before asserting a heading that exists only on the summary screen.
+  await page.getByRole('link', { name: 'Resumen', exact: true }).click();
+  await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
   const replacementData = { sessionToken: await browserSession(page), recoveryCodes: await page.getByLabel('Códigos de respaldo MFA').locator('code').allTextContents() };
   confidential.push(...replacementData.recoveryCodes);
   check(sql(`SELECT COUNT(*) FROM c05_identity_mfa_factor WHERE account_id=UNHEX('${actor}') AND factor_state=1`) === '1', 'replacement leaves exactly one active TOTP factor');

@@ -29,7 +29,8 @@ export async function verifyPairing({ browser, api, check, confidential, mailbox
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await page.getByLabel('Código de tu aplicación de autenticación').fill(backups.pop());
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
-  await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
+  await page.locator('details.identity-summary-extras > summary').click();
   await page.getByRole('button', { name: 'Aprobar otro navegador', exact: true }).click();
   check(await page.getByLabel('Solicitud del navegador nuevo', { exact: true }).inputValue() === token &&
     await page.getByLabel('Huella del navegador nuevo', { exact: true }).inputValue() === fingerprint,
@@ -46,7 +47,7 @@ export async function verifyPairing({ browser, api, check, confidential, mailbox
   const completed = target.waitForResponse(r => r.url().endsWith('/pairings/complete'));
   await target.getByRole('button', { name: 'Completar vinculación aprobada', exact: true }).click();
   check((await completed).status() === 200, 'initiating browser proves P-256 private-key possession and receives an HttpOnly session');
-  await target.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  await target.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
   const pairedToken = (await requester.cookies()).find(c => c.name === '__Host-crecisol-c05').value; confidential.push(pairedToken);
   check((await api('sessions', {}, pairedToken)).status === 200, 'paired session is persisted and revocable in the same tenant');
   check((await api('pairings/complete', { token, signature: '00'.repeat(64) })).status === 401,

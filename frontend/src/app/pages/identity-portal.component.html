@@ -1,5 +1,5 @@
-<main class="account-page" id="contenido" tabindex="-1">
-  <a class="skip-link" href="#account-content">Ir al formulario de cuenta</a>
+<main class="account-page" id="contenido" tabindex="-1" [csInstitutionalTheme]="publishedTheme()">
+  <a class="skip-link" href="#account-content" (click)="focusContent($event)">Ir al contenido principal</a>
   <header class="account-header">
     <a routerLink="/" class="brand" aria-label="Volver al inicio de CRECISOL">
       @if (brandState(); as published) {
@@ -15,7 +15,7 @@
         }
       }
     </a>
-    <span class="header-context">Identidad y acceso</span>
+    <span class="header-context">{{ view() === 'operadores' ? 'Consola de plataforma' : identity.state() === 'authenticated' ? 'Mi cuenta' : 'Identidad y acceso' }}</span>
   </header>
 
   <div class="account-layout" [class.account-layout--single]="identity.state() !== 'anonymous' || view() === 'operadores'">
@@ -30,55 +30,94 @@
     </aside>
     }
 
-    <div class="account-main" id="account-content" tabindex="-1">
+    <div #accountContent class="account-main" id="account-content" tabindex="-1">
+      <nav class="account-breadcrumb" aria-label="Ruta de navegación">
+        <ol>
+          <li><a routerLink="/">Inicio</a></li>
+          <li><span>Cuenta</span></li>
+          <li aria-current="page">{{ sectionName() }}</li>
+        </ol>
+      </nav>
       @if (message()) { <p class="feedback feedback--success" role="status" aria-live="polite">{{ message() }}</p> }
       @if (error()) { <p class="feedback feedback--error" role="alert">{{ error() }}</p> }
       @if (view() === 'operadores') {
-        <div class="page-heading"><p class="eyebrow">ÁREA RESTRINGIDA</p><h2>Identidad de plataforma</h2>
-          <p>Exclusiva para personal autorizado y previamente provisionado.</p></div>
+        <div class="page-heading page-heading--operator">
+          <p class="eyebrow">ÁMBITO DE PLATAFORMA · PERSONAL AUTORIZADO</p>
+          <h1>Identidad de plataforma</h1>
+          <p>Una consola independiente de las cuentas de negocio, con verificación y permisos propios.</p>
+        </div>
         <cs-platform-identity-panel />
         <a class="back-link" routerLink="/cuenta">Volver al acceso de cuentas</a>
       } @else {
         @if (identity.state() === 'anonymous') {
-          <nav class="account-nav" aria-label="Opciones de identidad">
-            <a routerLink="/cuenta" [queryParams]="{ vista: 'ingresar' }" [attr.aria-current]="view() === 'ingresar' ? 'page' : null">Iniciar sesión</a>
-            <a routerLink="/cuenta" [queryParams]="{ vista: 'registro' }" [attr.aria-current]="view() === 'registro' ? 'page' : null">Solicitar cuenta</a>
-          </nav>
+          <div class="account-navigation-group">
+            <p class="account-navigation-label">ACCESO Y REGISTRO</p>
+            <nav class="account-nav" aria-label="Opciones de identidad">
+              <a routerLink="/cuenta" [queryParams]="{ vista: 'ingresar' }" [attr.aria-current]="guestView() === 'ingresar' ? 'page' : null">Iniciar sesión</a>
+              <a routerLink="/cuenta" [queryParams]="{ vista: 'registro' }" [attr.aria-current]="guestView() === 'registro' ? 'page' : null">Solicitar cuenta</a>
+            </nav>
+          </div>
           @if (view() === 'recuperar') {
             <cs-identity-recovery [busy]="busy()" (securityActionRequested)="securityAction($event.event, $event.action)" />
           } @else {
-            <cs-identity-guest [busy]="busy()" [view]="view()"
+            <cs-identity-guest [busy]="busy()" [view]="guestView()"
               (loginRequested)="login($event)" (registerRequested)="register($event)"
               (confirmRequested)="confirmRegistration($event)"
               (securityActionRequested)="securityAction($event.event, $event.action)"
               (passkeyLoginRequested)="passkeyLogin()" (startPairingRequested)="startPairing()"
               (completePairingRequested)="completePairing()" />
           }
-          <nav class="account-subnav" aria-label="Otras opciones de cuenta">
-            <a routerLink="/cuenta" [queryParams]="{vista:'confirmar'}" [attr.aria-current]="view() === 'confirmar' ? 'page' : null">Confirmar correo</a>
-            <a routerLink="/cuenta" [queryParams]="{vista:'recuperar'}" [attr.aria-current]="view() === 'recuperar' ? 'page' : null">Recuperar acceso</a>
-            <a routerLink="/cuenta" [queryParams]="{vista:'invitacion'}" [attr.aria-current]="view() === 'invitacion' ? 'page' : null">Aceptar invitación</a>
-            <a routerLink="/cuenta" [queryParams]="{vista:'acceso-existente'}" [attr.aria-current]="view() === 'acceso-existente' ? 'page' : null">Ya tengo cuenta</a>
-          </nav>
+          <details class="account-more" [open]="supplementaryGuestView()">
+            <summary>Otras gestiones de acceso <span class="account-more__hint">Recuperación, confirmación e invitaciones</span></summary>
+            <nav class="account-subnav" aria-label="Otras opciones de cuenta">
+              <a routerLink="/cuenta" [queryParams]="{vista:'confirmar'}" [attr.aria-current]="guestView() === 'confirmar' ? 'page' : null">Confirmar correo</a>
+              <a routerLink="/cuenta" [queryParams]="{vista:'recuperar'}" [attr.aria-current]="guestView() === 'recuperar' ? 'page' : null">Recuperar acceso</a>
+              <a routerLink="/cuenta" [queryParams]="{vista:'invitacion'}" [attr.aria-current]="guestView() === 'invitacion' ? 'page' : null">Aceptar invitación</a>
+              <a routerLink="/cuenta" [queryParams]="{vista:'acceso-existente'}" [attr.aria-current]="guestView() === 'acceso-existente' ? 'page' : null">Ya tengo cuenta</a>
+            </nav>
+          </details>
         } @else if (identity.state() === 'challenge') {
+          <div class="account-workspace-intro account-workspace-intro--challenge">
+            <p class="eyebrow">SEGUNDO PASO · VERIFICACIÓN</p>
+            <h1>Confirma que eres tú</h1>
+            <p>El acceso a tu cuenta se habilita solo después de verificar el segundo factor.</p>
+          </div>
           <cs-identity-mfa [busy]="busy()" (verifyRequested)="verify($event)"
             (enrollRequested)="enroll()" />
         } @else {
-          <nav class="account-nav account-nav--workspace" aria-label="Mi cuenta">
-            <a routerLink="/cuenta" [queryParams]="{vista:'resumen'}" [attr.aria-current]="view() === 'resumen' || view() === 'ingresar' ? 'page' : null">Resumen</a>
-            <a routerLink="/cuenta" [queryParams]="{vista:'perfil'}" [attr.aria-current]="view() === 'perfil' ? 'page' : null">Mi perfil en esta empresa</a>
-            <a routerLink="/cuenta" [queryParams]="{vista:'llaves'}" [attr.aria-current]="view() === 'llaves' ? 'page' : null">Llaves</a>
-            <a routerLink="/cuenta" [queryParams]="{vista:'seguridad'}" [attr.aria-current]="view() === 'seguridad' ? 'page' : null">Seguridad</a>
-            <a routerLink="/cuenta" [queryParams]="{vista:'administracion'}" [attr.aria-current]="view() === 'administracion' ? 'page' : null">Aprobaciones</a>
-          </nav>
-          <cs-identity-workspace [busy]="busy()" [feedback]="message()" [error]="error()" [view]="view()" [incomingPairToken]="incomingPairToken"
+          <div class="account-workspace-intro">
+            <div>
+              <p class="eyebrow">CRECISOL · MI CUENTA</p>
+              <h1>{{ workspaceTitle() }}</h1>
+              <p>{{ workspaceDescription() }}</p>
+            </div>
+            <span class="account-workspace-scope">Ámbito de cuenta</span>
+          </div>
+          <div class="account-workspace-shell">
+            <div class="account-workspace-rail">
+              <p class="account-nav-mobile-help" id="account-nav-mobile-help">Desliza las pestañas para explorar las seis áreas de tu cuenta.</p>
+              <nav #workspaceTabRail class="account-nav account-nav--workspace" aria-label="Mi cuenta" aria-describedby="account-nav-mobile-help">
+            <a routerLink="/cuenta" [queryParams]="{vista:'resumen'}" [attr.aria-current]="workspaceView() === 'resumen' ? 'page' : null">Resumen</a>
+            <a routerLink="/cuenta" [queryParams]="{vista:'perfil'}" [attr.aria-current]="workspaceView() === 'perfil' ? 'page' : null">Mi perfil</a>
+            <a routerLink="/cuenta" [queryParams]="{vista:'llaves'}" [attr.aria-current]="workspaceView() === 'llaves' ? 'page' : null">Llaves</a>
+            <a routerLink="/cuenta" [queryParams]="{vista:'seguridad'}" [attr.aria-current]="workspaceView() === 'seguridad' ? 'page' : null">Seguridad</a>
+            <a routerLink="/cuenta" [queryParams]="{vista:'historial'}" [attr.aria-current]="workspaceView() === 'historial' ? 'page' : null">Historial</a>
+            <a routerLink="/cuenta" [queryParams]="{vista:'administracion'}" [attr.aria-current]="workspaceView() === 'administracion' ? 'page' : null">Aprobaciones</a>
+              </nav>
+            </div>
+            <div class="account-workspace-body">
+              <p class="account-view-announcement" role="status" aria-live="polite" aria-atomic="true">Sección actual: {{ sectionName() }}</p>
+          <cs-identity-workspace [busy]="busy()" [feedback]="message()" [error]="error()" [view]="workspaceView()" [incomingPairToken]="incomingPairToken"
             [incomingPairFingerprint]="incomingPairFingerprint"
             (securityActionRequested)="securityAction($event.event, $event.action)"
             (uploadPhotoRequested)="uploadPhoto($event)"
             (loadProfileRequested)="loadProfile()" (removePhotoRequested)="removePhoto()"
             (securityEventsRequested)="securityEvents()" (passkeyListRequested)="passkeyList()"
+            (pendingRequested)="pendingMemberships($event)"
             (sessionRequested)="sessionAction($event)" (revokeRequested)="revoke($event)"
             (logoutRequested)="logout()" />
+            </div>
+          </div>
         }
         <details class="account-terms"><summary>Condiciones de la cuenta</summary>
           <button type="button" [disabled]="busy() || identity.restoring()" (click)="loadTerms()">Leer condiciones vigentes</button>

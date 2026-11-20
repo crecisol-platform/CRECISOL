@@ -1,5 +1,14 @@
-<section aria-labelledby="session-heading">
-          <h2 id="session-heading">Sesión verificada</h2>
+<section class="identity-workspace">
+          <h2 id="session-heading">
+            @switch (view()) {
+              @case ('perfil') { Datos y preferencias }
+              @case ('llaves') { Métodos registrados }
+              @case ('seguridad') { Gestionar seguridad }
+              @case ('historial') { Actividad reciente }
+              @case ('administracion') { Decisiones e invitaciones }
+              @default { Estado de la sesión }
+            }
+          </h2>
           @if (identity.recoveryCodes().length) {
             <aside aria-label="Códigos de respaldo MFA">
               <p>Guarda estos códigos fuera del navegador. Cada código sirve una sola vez y no volverá a mostrarse.</p>
@@ -7,20 +16,45 @@
               <button type="button" (click)="identity.recoveryCodes.set([])">Ya guardé mis códigos</button>
             </aside>
           }
-          <p>La autenticación no concede por sí sola autorización a recursos privados.</p>
-          <p role="status">La sesión vence tras {{ identity.idleMinutes() }} minutos de inactividad. La actividad legítima renueva el plazo desde el servidor.</p>
-          @if (view() === 'perfil') {
-<section class="operator-readonly-panel" aria-label="Perfil de mi empresa"><h3>Mi perfil en esta empresa</h3>
-            <button type="button" [disabled]="busy()" (click)="loadProfileRequested.emit()">Consultar mi perfil</button>
-            @if (identity.profile(); as profile) {
-              <p aria-label="Nombre de mi perfil">{{ profile.displayName }}</p>
-              <p>{{ profile.language }} · {{ profile.timeZone }}</p>
+          <p class="identity-workspace__lead">
+            @switch (view()) {
+              @case ('perfil') { Gestiona tu presentación personal y las preferencias de esta empresa. }
+              @case ('llaves') { Consulta tus llaves registradas y elige cuál administrar sin escribir identificadores técnicos. }
+              @case ('seguridad') { Protege tus credenciales y revisa cada operación antes de confirmar cambios delicados. }
+              @case ('historial') { Comprende qué ocurrió en tu cuenta, cuándo y con qué resultado, sin códigos internos. }
+              @case ('administracion') { Invita o revisa solicitudes únicamente cuando el servidor autorice tu permiso administrativo. }
+              @default { Gestiona los navegadores con acceso y protege tu sesión sin perder el control de tus dispositivos. }
             }
-            @if (identity.photo()) { <img [src]="identity.photo()" width="64" height="64" alt="Mi foto de perfil en esta empresa"> }
-            
-            
-            
-          </section>
+          </p>
+          @if (view() === 'perfil') {
+<section class="operator-readonly-panel identity-profile" aria-label="Perfil de mi empresa">
+  <div class="identity-panel-heading">
+    <div>
+      <h3>Mi perfil en esta empresa</h3>
+      <p>Datos de tu identidad en el contexto empresarial actual.</p>
+    </div>
+    <button type="button" [disabled]="busy()" (click)="loadProfileRequested.emit()">Actualizar datos</button>
+  </div>
+  <div class="identity-profile-body">
+    @if (identity.photo()) {
+      <img class="identity-profile-avatar" [src]="identity.photo()" width="64" height="64" alt="Mi foto de perfil en esta empresa">
+    } @else {
+      <span class="identity-profile-avatar identity-profile-avatar--empty" aria-hidden="true">{{ profileInitials() }}</span>
+    }
+    <div class="identity-profile-details">
+      @if (identity.profile(); as profile) {
+        <p class="identity-profile-name" aria-label="Nombre de mi perfil">{{ profile.displayName }}</p>
+        <dl class="identity-meta">
+          <div><dt>Idioma</dt><dd>{{ profileLanguage() }}</dd></div>
+          <div><dt>Zona horaria</dt><dd>{{ profileTimeZone() }}</dd></div>
+        </dl>
+      } @else {
+        <cs-ui-state kind="empty" heading="Perfil aún no consultado"
+          message="Actualiza tus datos para mostrar tu información empresarial verificada. No completaremos valores por suposición."/>
+      }
+    </div>
+  </div>
+</section>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal11.open()">
     <span>Editar perfil de mi empresa</span><span aria-hidden="true">›</span>
@@ -28,16 +62,20 @@
   <cs-institutional-modal #workspaceModal11 title="Editar perfil de mi empresa" description="Solo se actualiza el perfil del contexto empresarial autenticado."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form (submit)="securityActionRequested.emit({ event: $event, action: 'profile' })">
-              <label for="profile-name">Nombre visible en esta empresa</label><input id="profile-name" name="displayName" required maxlength="80" autocomplete="nickname">
-              <label for="profile-language">Idioma preferido</label><select id="profile-language" name="language"><option value="es-HN">Español de Honduras</option><option value="es">Español</option><option value="en">English</option></select>
-              <label for="profile-zone">Zona horaria de tu perfil</label><input id="profile-zone" name="timeZone" value="America/Tegucigalpa" required maxlength="64" autocomplete="off">
+              <label for="profile-name">Nombre visible en esta empresa</label><input id="profile-name" name="displayName" [attr.value]="identity.profile()?.displayName ?? ''" required maxlength="80" autocomplete="nickname">
+              <label for="profile-language">Idioma preferido</label><select id="profile-language" name="language">
+                <option value="es-HN" [attr.selected]="(identity.profile()?.language ?? 'es-HN') === 'es-HN' ? '' : null">Español de Honduras</option>
+                <option value="es" [attr.selected]="identity.profile()?.language === 'es' ? '' : null">Español</option>
+                <option value="en" [attr.selected]="identity.profile()?.language === 'en' ? '' : null">English</option>
+              </select>
+              <label for="profile-zone">Zona horaria de tu perfil</label><input id="profile-zone" name="timeZone" [attr.value]="identity.profile()?.timeZone ?? 'America/Tegucigalpa'" required maxlength="64" autocomplete="off">
               <button [disabled]="busy()">Guardar mi perfil</button>
             </form>
   </cs-institutional-modal>
 </div>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal12.open()">
-    <span>Actualizar foto de perfil</span><span aria-hidden="true">›</span>
+    <span>{{ identity.photo() ? 'Actualizar foto de perfil' : 'Añadir foto de perfil' }}</span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal12 title="Actualizar foto de perfil" description="Foto cuadrada de hasta 2 MB; sin metadatos del archivo original."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -48,6 +86,7 @@
             </form>
   </cs-institutional-modal>
 </div>
+@if (identity.photo()) {
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal13.open()">
     <span>Eliminar foto de perfil</span><span aria-hidden="true">›</span>
@@ -58,22 +97,88 @@
 <button type="button" [disabled]="busy()" (click)="removePhotoRequested.emit()">Confirmar eliminación de mi foto</button>
   </cs-institutional-modal>
 </div>
-          <section class="operator-readonly-panel" aria-label="Historial de seguridad"><h3>Mi historial de seguridad</h3>
-            <button type="button" [disabled]="busy()" (click)="securityEventsRequested.emit()">Consultar mis eventos</button>
-            <ul>@for (event of identity.securityEvents(); track $index) { <li>{{ event.atUtc }} · {{ event.action }} · resultado {{ event.outcome }}</li> }</ul>
-          </section>
+}
+
+          
+} @else if (view() === 'historial') {
+<section class="identity-history-shell" aria-label="Actividad de la cuenta">
+  <section class="operator-readonly-panel identity-activity" aria-label="Historial de seguridad">
+  <div class="identity-panel-heading">
+    <div>
+      <h3>Mi historial de seguridad</h3>
+      <p>Actividad reciente de tu cuenta, sin identificadores técnicos innecesarios.</p>
+    </div>
+    <button type="button" [disabled]="busy()" (click)="requestHistory()">Actualizar historial</button>
+  </div>
+  <div class="identity-history-filters">
+    <label for="security-history-filter">Mostrar eventos</label>
+    <select id="security-history-filter" [value]="historyFilter()"
+      (change)="setHistoryFilter($any($event.target).value)">
+      <option value="all">Toda la actividad</option>
+      <option value="success">Acciones completadas</option>
+      <option value="attention">Actividad por revisar</option>
+    </select>
+  </div>
+  @if (securityEventRows().length) {
+    <ol class="identity-activity-list">
+      @for (event of securityEventRows(); track $index) {
+        <li class="identity-activity-item">
+          <span class="identity-activity-mark" [class.identity-activity-mark--pending]="event.outcome !== 1" aria-hidden="true"></span>
+          <div class="identity-activity-copy">
+            <strong>{{ event.actionLabel }}</strong>
+            <time [attr.datetime]="event.atUtc">{{ event.dateLabel }}</time>
+          </div>
+          <span class="identity-activity-status" [class.identity-activity-status--warning]="event.outcome !== 1">{{ event.outcomeLabel }}</span>
+        </li>
+      }
+    </ol>
+    @if (identity.securityEvents().length > 8) {
+      <button type="button" class="identity-more-action" [attr.aria-expanded]="showAllEvents()"
+        (click)="showAllEvents.set(!showAllEvents())">
+        {{ showAllEvents() ? 'Mostrar solo los recientes' : 'Mostrar hasta 50 eventos' }}
+      </button>
+    }
+  } @else {
+    <cs-ui-state kind="empty" heading="Sin actividad disponible"
+          message="No hay eventos para el filtro elegido. Actualiza el historial o selecciona otra categoría."/>
+  }
+</section>
+</section>
           
 } @else if (view() === 'llaves') {
-<section class="operator-readonly-panel" aria-label="Llaves de acceso"><h3>Mis llaves registradas</h3>
-            <p>Registra una llave con verificación de usuario. Se necesita un código MFA o de respaldo para agregarla o revocarla.</p>
-            
-            <button type="button" [disabled]="busy() || identity.restoring()" (click)="passkeyListRequested.emit()">Consultar llaves</button>
-            @for (key of identity.passkeys(); track key.id) { <p>Llave {{ key.id }} · registrada {{ key.createdAtUtc }}</p> }
-            
-          </section>
+<section class="operator-readonly-panel identity-key-panel" aria-label="Llaves de acceso">
+  <div class="identity-panel-heading">
+    <div>
+      <h3>Mis llaves de acceso</h3>
+      <p>Administra los métodos registrados para esta cuenta; cada cambio exige verificación adicional.</p>
+    </div>
+    <button type="button" [disabled]="busy() || identity.restoring()" (click)="passkeyListRequested.emit()">Actualizar llaves</button>
+  </div>
+  @if (passkeyRows().length) {
+    <ul class="identity-key-list">
+      @for (key of passkeyRows(); track key.id) {
+        <li class="identity-key-item">
+          <span class="identity-key-symbol" aria-hidden="true"></span>
+          <div>
+            <strong>Llave de acceso</strong>
+            <p>{{ key.referenceLabel }} · Registrada {{ key.registrationLabel }}</p>
+          </div>
+          <button type="button" class="identity-key-revoke"
+            [disabled]="busy() || identity.restoring()"
+            (click)="selectedPasskeyId.set(key.id); workspaceModal22.open()">
+            Revocar esta llave
+          </button>
+        </li>
+      }
+    </ul>
+  } @else {
+    <cs-ui-state kind="empty" heading="Ninguna llave visible"
+          message="Actualiza las llaves para consultar los métodos disponibles en esta sesión. Si no hay registros, puedes añadir una llave después de verificarte."/>
+  }
+</section>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal21.open()">
-    <span>Llaves de acceso</span><span aria-hidden="true">›</span>
+    <span>Registrar nueva llave de acceso</span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal21 title="Registrar nueva llave de acceso" [closeOnSuccess]="true" description="Requiere MFA vigente y verificación de usuario en el navegador."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -83,24 +188,33 @@
             </form>
   </cs-institutional-modal>
 </div>
-<div class="institutional-task">
-  <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal22.open()">
-    <span>Revocar llave de acceso</span><span aria-hidden="true">›</span>
-  </button>
-  <cs-institutional-modal #workspaceModal22 title="Revocar llave de acceso" description="Revocar una llave no debe afectar cuentas de otras empresas."
-    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
+<cs-institutional-modal #workspaceModal22 title="Revocar llave de acceso" description="Revocar una llave no debe afectar cuentas de otras empresas."
+    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true"
+    (dismissed)="selectedPasskeyId.set('')">
     <form (submit)="securityActionRequested.emit({ event: $event, action: 'passkey-revoke' })">
-              <label for="passkey-id">Identificador de llave a revocar</label><input id="passkey-id" name="factorId" required maxlength="36">
+              <label for="passkey-id">Llave de acceso a revocar</label>
+              <select id="passkey-id" name="factorId" required [value]="selectedPasskeyId()"
+                (change)="selectedPasskeyId.set($any($event.target).value)">
+                <option value="">Selecciona una llave registrada</option>
+                @for (key of passkeyRows(); track key.id) {
+                  <option [value]="key.id">{{ key.referenceLabel }} · {{ key.registrationLabel }}</option>
+                }
+              </select>
+              @if (!passkeyRows().length) { <p class="identity-field-help">Consulta primero las llaves registradas para seleccionar la correcta.</p> }
               <label for="passkey-revoke-code">Código MFA para revocar llave</label><input id="passkey-revoke-code" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
               <button [disabled]="busy() || identity.restoring()">Revocar llave de acceso</button>
             </form>
   </cs-institutional-modal>
-</div>
+
           
 } @else if (view() === 'seguridad') {
+<div class="identity-security-intro" role="note">
+  <strong>Protección de tu identidad</strong>
+  <p>Cada cambio exige su propia verificación. Abrir una opción nunca actualiza automáticamente tus credenciales.</p>
+</div>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal31.open()">
-    <span>Cambiar contraseña</span><span aria-hidden="true">›</span>
+    <span>Cambiar contraseña<small class="identity-task-caption" aria-hidden="true">Protege tu acceso con una contraseña renovada</small></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal31 title="Cambiar contraseña"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -114,7 +228,7 @@
 </div>
           <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal32.open()">
-    <span>Reemplazar segundo factor</span><span aria-hidden="true">›</span>
+    <span>Reemplazar segundo factor<small class="identity-task-caption" aria-hidden="true">Necesitarás el método actual o un respaldo</small></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal32 title="Reemplazar segundo factor"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -128,7 +242,7 @@
 </div>
           <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal33.open()">
-    <span>Recuperar MFA con una llave de acceso</span><span aria-hidden="true">›</span>
+    <span>Recuperar MFA con una llave de acceso<small class="identity-task-caption" aria-hidden="true">Solo para recuperación con verificación adicional</small></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal33 title="Recuperación del segundo factor con llave"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -137,16 +251,19 @@
               <label for="passkey-recovery-mail">Correo verificado para recuperar MFA</label><input id="passkey-recovery-mail" name="mailbox" type="email" required maxlength="254" autocomplete="email">
               <button [disabled]="busy()">Pedir token para recuperar MFA</button>
             </form>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'passkey-recovery' })">
+            <details class="identity-security-step">
+              <summary>Ya tengo el token de recuperación</summary>
+              <form (submit)="securityActionRequested.emit({ event: $event, action: 'passkey-recovery' })">
               <label for="passkey-recovery-token">Token de correo para recuperar MFA</label><input id="passkey-recovery-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
               <label for="passkey-recovery-password">Nueva contraseña tras recuperar MFA</label><input id="passkey-recovery-password" name="newPassword" type="password" required minlength="15" maxlength="128" autocomplete="new-password">
               <button [disabled]="busy()">Recuperar autenticadores con llave</button>
-            </form>
+              </form>
+            </details>
   </cs-institutional-modal>
 </div>
           <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal34.open()">
-    <span>Cambiar correo</span><span aria-hidden="true">›</span>
+    <span>Cambiar correo<small class="identity-task-caption" aria-hidden="true">Verifica tu dirección nueva antes de activarla</small></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal34 title="Cambiar correo"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -155,34 +272,112 @@
               <label for="mailbox-mfa">Código MFA para solicitar correo</label><input id="mailbox-mfa" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
               <button [disabled]="busy() || identity.restoring()">Solicitar cambio de correo</button>
             </form>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'mailbox-complete' })">
+            <details class="identity-security-step">
+              <summary>Ya tengo el token del nuevo correo</summary>
+              <form (submit)="securityActionRequested.emit({ event: $event, action: 'mailbox-complete' })">
               <label for="mailbox-token">Token del nuevo correo</label><input id="mailbox-token" name="token" autocomplete="off" required pattern="[0-9a-fA-F]{64}">
               <label for="mailbox-confirm-mfa">Código MFA para confirmar correo</label><input id="mailbox-confirm-mfa" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
               <button [disabled]="busy() || identity.restoring()">Confirmar cambio de correo</button>
-            </form>
+              </form>
+            </details>
   </cs-institutional-modal>
 </div>
           
 } @else if (view() === 'administracion') {
-<div class="institutional-task">
-  <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal35.open()">
-    <span>Revisar membresía con permiso administrativo</span><span aria-hidden="true">›</span>
-  </button>
-  <cs-institutional-modal #workspaceModal35 title="Revisar membresía con permiso administrativo"
-    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <p>Esta acción requiere autorización vigente del servidor. No concede permisos al solicitante.</p>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'membership' })">
-              <label for="membership-id">Membresía pendiente</label><input id="membership-id" name="membershipId" required maxlength="36">
-              <label for="membership-decision">Decisión</label><select id="membership-decision" name="decision"><option value="approve">Aprobar</option><option value="reject">Rechazar</option></select>
-              <label for="membership-reason">Motivo</label><input id="membership-reason" name="reason" required maxlength="240">
-              <label for="membership-code">Código MFA del aprobador</label><input id="membership-code" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
-              <button [disabled]="busy() || identity.restoring()">Registrar decisión</button>
-            </form>
+  <div class="identity-approval-context" role="note">
+    <strong>Las solicitudes se revisan dentro de tu empresa</strong>
+    <p>Solo el servidor puede autorizar la consulta y las decisiones. Comprueba la identidad del solicitante antes de aprobar; ningún expediente se acepta automáticamente.</p>
+  </div>
+
+  <cs-institutional-modal #workspaceModal35
+    title="Revisar membresía con permiso administrativo"
+    description="Selecciona un expediente obtenido del servidor y verifica la decisión con tu segundo factor."
+    [busy]="busy()" [feedback]="feedback()" [error]="error()"
+    [wide]="true" (dismissed)="selectedMembershipId.set('')">
+    <p>La solicitud debe pertenecer a la empresa autenticada y mantener el estado pendiente. La comprobación definitiva se realiza en el servidor.</p>
+    <form (submit)="securityActionRequested.emit({ event: $event, action: 'membership' })">
+      <label for="membership-id">Solicitud pendiente seleccionada</label>
+      <select id="membership-id" name="membershipId" required [value]="selectedMembershipId()"
+        (change)="selectedMembershipId.set($any($event.target).value)">
+        <option value="" selected disabled>Selecciona una solicitud pendiente</option>
+        @for (request of pendingRows(); track request.id) {
+          <option [value]="request.id">{{ request.mailboxHint }} · {{ request.referenceLabel }}</option>
+        }
+      </select>
+      <p class="identity-field-help">La referencia completa se envía solo al backend para esta decisión; no necesitas escribirla.</p>
+      <label for="membership-decision">Decisión</label>
+      <select id="membership-decision" name="decision" required>
+        <option value="" selected disabled>Selecciona una decisión</option>
+        <option value="approve">Aprobar como miembro básico</option>
+        <option value="reject">Rechazar solicitud</option>
+      </select>
+      <label for="membership-reason">Motivo de la decisión</label>
+      <input id="membership-reason" name="reason" required minlength="8" maxlength="240" autocomplete="off">
+      <label for="membership-code">Código MFA del aprobador</label>
+      <input id="membership-code" name="code" autocomplete="one-time-code"
+        required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
+      <label class="identity-approval-confirm">
+        <input type="checkbox" name="confirmed" required>
+        Revisé la solicitud y confirmo que esta es la decisión que deseo registrar.
+      </label>
+      <button [disabled]="busy() || identity.restoring()">Registrar decisión</button>
+    </form>
   </cs-institutional-modal>
-</div>
-          <div class="institutional-task">
+
+  <section class="identity-approval-queue" aria-label="Solicitudes de membresía pendientes">
+    <div class="identity-panel-heading">
+      <div>
+        <h3>Solicitudes de acceso pendientes</h3>
+        <p>Consulta expedientes autorizados con fecha y correo parcialmente oculto. Se muestran hasta doce por página.</p>
+      </div>
+      <button type="button" [disabled]="busy() || identity.restoring()"
+        (click)="pendingRequested.emit(false)">
+        {{ identity.pendingLoaded() ? 'Actualizar solicitudes' : 'Consultar solicitudes' }}
+      </button>
+    </div>
+
+    @if (identity.pendingDenied()) {
+      <cs-ui-state kind="error" heading="Consulta administrativa no autorizada"
+        message="Esta sesión no tiene la autorización necesaria para ver solicitudes. No se han conservado datos de expedientes en la pantalla."/>
+    } @else if (busy() && !identity.pendingLoaded()) {
+      <cs-ui-state kind="loading" heading="Consultando expedientes"
+        message="Se verifica tu permiso administrativo antes de mostrar solicitudes."/>
+    } @else if (identity.pendingLoaded()) {
+      @if (pendingRows().length) {
+        <ol class="identity-pending-list">
+          @for (request of pendingRows(); track request.id) {
+            <li class="identity-pending-card">
+              <div class="identity-pending-main">
+                <span class="identity-pending-state">Pendiente de decisión</span>
+                <strong>{{ request.mailboxHint }}</strong>
+                <p>Solicitud · {{ request.referenceLabel }} ·
+                  <time [attr.datetime]="request.requestedAtUtc">{{ request.requestedLabel }}</time>
+                </p>
+              </div>
+              <button type="button" [disabled]="busy() || identity.restoring()"
+                (click)="selectedMembershipId.set(request.id); workspaceModal35.open()">
+                Revisar solicitud
+              </button>
+            </li>
+          }
+        </ol>
+        @if (identity.pendingNextCursor()) {
+          <button type="button" class="identity-more-action" [disabled]="busy()"
+            (click)="pendingRequested.emit(true)">Mostrar siguientes solicitudes pendientes</button>
+        }
+      } @else {
+        <cs-ui-state kind="empty" heading="Sin solicitudes pendientes"
+          message="La consulta autorizada no devolvió solicitudes por revisar en esta empresa."/>
+      }
+    } @else {
+      <cs-ui-state kind="empty" heading="Bandeja de aprobación protegida"
+        message="Pulsa «Consultar solicitudes» para verificar tus permisos y recuperar las solicitudes pendientes de esta empresa."/>
+    }
+  </section>
+
+<div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal36.open()">
-    <span>Invitar a una cuenta</span><span aria-hidden="true">›</span>
+    <span>Invitar a una cuenta<small class="identity-task-caption" aria-hidden="true">Emite una invitación protegida de vigencia limitada</small></span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal36 title="Invitar a una cuenta"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
@@ -196,9 +391,64 @@
 </div>
           
 } @else {
-<button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRequested.emit('list')">Consultar sesiones</button>
-          <button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRequested.emit('rotate')">Rotar sesión</button>
-          <div class="institutional-task">
+          <cs-ui-card headingId="identity-session-card-heading" heading="Acceso verificado"
+            headingLevel="h3" eyebrow="SESIÓN DE CUENTA" tone="accent"
+            description="El acceso a recursos privados sigue dependiendo de tus permisos efectivos en el servidor.">
+            <div class="identity-session-overview">
+              <div>
+                <span class="identity-session-overview__eyebrow">POLÍTICA DE INACTIVIDAD</span>
+                <strong>{{ identity.idleMinutes() }} minutos</strong>
+                <p>El servidor cierra la sesión tras ese tiempo sin actividad. La actividad legítima puede renovar el plazo.</p>
+              </div>
+              <span class="identity-session-overview__status">Sesión verificada</span>
+            </div>
+          </cs-ui-card>
+          <div class="identity-session-actions">
+            <button type="button" [disabled]="busy() || identity.restoring()" (click)="requestSessions()">Actualizar dispositivos</button>
+            <button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRequested.emit('rotate')">Renovar sesión</button>
+          </div>
+          <section class="identity-device-region" aria-label="Sesiones de cuenta">
+            <div class="identity-panel-heading">
+              <div><h3>Dispositivos con sesión</h3><p>Revisa cuándo se usó cada sesión antes de revocarla.</p></div>
+            </div>
+            @if (sessionRows().length) {
+              <ul class="identity-device-list">
+                @for (session of sessionRows(); track session.id) {
+                  <li class="identity-device-card">
+                    <div class="identity-device-top">
+                      <span class="identity-device-icon" aria-hidden="true"></span>
+                      <div class="identity-device-title">
+                        <strong>{{ session.device }}</strong>
+                        <span>{{ session.factorLabel }} · {{ session.referenceLabel }}</span>
+                      </div>
+                    </div>
+                    <dl class="identity-meta identity-device-meta">
+                      <div><dt>Última actividad</dt><dd><time [attr.datetime]="session.lastSeenAtUtc">{{ session.lastActivityLabel }}</time></dd></div>
+                      <div><dt>Caducidad informada</dt><dd><time [attr.datetime]="session.expiresAtUtc">{{ session.expiryLabel }}</time></dd></div>
+                    </dl>
+                    <button type="button" class="identity-revoke" [disabled]="busy() || identity.restoring()"
+                      (click)="sessionRevocation.open()">Revocar esta sesión</button>
+                    <cs-institutional-modal #sessionRevocation title="Revocar sesión"
+                      description="Esta operación cierra únicamente la sesión seleccionada; las demás no se modifican."
+                      [busy]="busy()" [feedback]="feedback()" [error]="error()">
+                      <p><strong>{{ session.device }}</strong> · {{ session.referenceLabel }}</p>
+                      <p>Última actividad: {{ session.lastActivityLabel }}</p>
+                      <button type="button" class="identity-danger-confirm" [disabled]="busy()" (click)="revokeRequested.emit(session.id)">Confirmar revocación</button>
+                    </cs-institutional-modal>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <cs-ui-state kind="empty" heading="Sin dispositivos visibles"
+          message="Actualiza dispositivos para consultar las sesiones asociadas a tu cuenta y revocar las que no reconozcas."/>
+            }
+          </section>
+          <details class="identity-summary-extras">
+            <summary>Gestiones adicionales de sesión
+              <span>Vincular navegadores, cerrar sesiones y consultar recursos autorizados</span>
+            </summary>
+            <div class="identity-summary-extras__actions">
+              <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal37.open()">
     <span>Revocar todas mis sesiones</span><span aria-hidden="true">›</span>
   </button>
@@ -226,16 +476,7 @@
             </form>
   </cs-institutional-modal>
 </div>
-          @for (session of identity.sessions(); track session.id) {
-            <p>Sesión {{ session.id }} · {{ session.device }} · {{ session.factor }} · última actividad UTC {{ session.lastSeenAtUtc }} · vence {{ session.expiresAtUtc }}</p>
-            <button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRevocation.open()">Revocar sesión {{ session.id }}</button>
-            <cs-institutional-modal #sessionRevocation title="Revocar sesión" description="Se revoca solo este dispositivo; los demás no se modifican."
-              [busy]="busy()" [feedback]="feedback()" [error]="error()">
-              <p>{{ session.device }} · {{ session.factor }} · última actividad UTC {{ session.lastSeenAtUtc }}</p>
-              <button type="button" [disabled]="busy()" (click)="revokeRequested.emit(session.id)">Confirmar revocación</button>
-            </cs-institutional-modal>
-          }
-          <div class="institutional-task">
+              <div class="institutional-task">
   <button type="button" class="institutional-task__trigger"
     [disabled]="busy() || identity.restoring()" (click)="privateAccessModal.open()">
     <span>Comprobar un acceso privado</span><span aria-hidden="true">›</span>
@@ -251,6 +492,8 @@
           </form>
   </cs-institutional-modal>
 </div>
+            </div>
+          </details>
           @if (identity.privateReference()) { <p aria-label="Referencia privada">{{ identity.privateReference() }}</p> }
           
 }
