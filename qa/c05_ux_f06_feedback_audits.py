@@ -22,6 +22,7 @@ ALLOWED = {
     "frontend/src/app/pages/identity-portal.component.ts",
     "frontend/src/app/pages/identity-portal.component.html",
     "frontend/src/app/pages/identity-flow.component.css",
+    "frontend/src/app/pages/platform-operator-f04.component.css",
     "frontend/src/app/pages/identity-portal.component.css",
     "frontend/src/app/pages/identity-flow-views.component.ts",
     "frontend/src/app/pages/platform-identity-panel.component.ts",
