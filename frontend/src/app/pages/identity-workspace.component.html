@@ -361,7 +361,6 @@
           message="Actualiza dispositivos para consultar las sesiones asociadas a tu cuenta y revocar las que no reconozcas."/>
             }
           </section>
-          >
           <details class="identity-summary-extras">
             <summary>Gestiones adicionales de sesión
               <span>Vincular navegadores, cerrar sesiones y consultar recursos autorizados</span>
@@ -410,7 +409,7 @@
             <button [disabled]="busy() || identity.restoring()">Consultar recurso autorizado</button>
           </form>
   </cs-institutional-modal>
-</div
+</div>
             </div>
           </details>
           @if (identity.privateReference()) { <p aria-label="Referencia privada">{{ identity.privateReference() }}</p> }
