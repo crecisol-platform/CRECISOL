@@ -145,6 +145,9 @@ export class IdentityPortalComponent {
   async enroll(): Promise<void> { await this.run(() => this.identity.enrollMfa()); }
   async passkeyLogin(): Promise<void> { await this.run(() => this.identity.loginPasskey()); }
   async passkeyList(): Promise<void> { await this.run(() => this.identity.refreshPasskeys()); }
+  async pendingMemberships(next: boolean): Promise<void> {
+    await this.run(() => this.identity.loadPendingMemberships(next));
+  }
   async loadTerms(): Promise<void> { await this.run(() => this.identity.loadTerms()); }
   async startPairing(): Promise<void> { await this.run(() => this.identity.startPairing()); }
   async completePairing(): Promise<void> { await this.run(() => this.identity.completePairing()); }
