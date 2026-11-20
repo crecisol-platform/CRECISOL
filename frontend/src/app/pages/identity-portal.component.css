@@ -350,3 +350,63 @@
   .account-nav a { transition: none; }
   .account-nav--workspace { scroll-behavior: auto; }
 }
+
+/* C05 F03: give authenticated desktop a task-focused vertical navigator
+   while retaining real router links and the accessible mobile tab rail. */
+.account-workspace-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+  min-width: 0;
+}
+.account-workspace-rail,
+.account-workspace-body {
+  box-sizing: border-box;
+  min-width: 0;
+}
+@media (min-width: 1040px) {
+  .account-workspace-shell {
+    grid-template-columns: minmax(11.5rem, 13.25rem) minmax(0, 1fr);
+    gap: clamp(1.25rem, 2.6vw, 2rem);
+  }
+  .account-workspace-rail {
+    align-self: start;
+    position: sticky;
+    top: 1.25rem;
+  }
+  .account-nav--workspace {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: .2rem;
+    width: 100%;
+    padding: .5rem;
+    background: var(--cs-color-surface-soft, #f5f9fd);
+    border: 1px solid var(--cs-color-border, #d3e1ee);
+    border-radius: var(--cs-radius-md, .85rem);
+    margin: 0;
+  }
+  .account-nav--workspace a {
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    min-height: var(--cs-hit-target, 2.75rem);
+    min-width: 0;
+    width: 100%;
+    text-align: left;
+    padding: .76rem .9rem;
+    font-size: .9rem;
+  }
+  .account-nav--workspace a[aria-current='page'] {
+    box-shadow: inset 3px 0 0 var(--cs-color-action, #103f75),
+      0 2px 10px rgba(18, 58, 88, .06);
+  }
+  .account-workspace-body {
+    padding-left: clamp(.85rem, 1.5vw, 1.1rem);
+    border-left: 1px solid var(--cs-color-border, #d3e1ee);
+  }
+}
+@media (forced-colors: active) and (min-width: 1040px) {
+  .account-workspace-body { border-left-color: CanvasText; }
+}
