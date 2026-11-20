@@ -1,6 +1,9 @@
-<section class="operator-panel"><p class="eyebrow">Personal autorizado de identidad CRECISOL</p>
-      <h2>Identidad de plataforma</h2>
-      <p>Acceso exclusivo de operadores previamente provisionados. Una cuenta de negocio no concede acceso a esta consola ni permite recuperar identidades globales.</p>
+<section class="operator-panel">
+      @if (platform.state() !== 'authenticated') {
+        <p class="eyebrow">PERSONAL AUTORIZADO</p>
+        <h2>Identidad de plataforma</h2>
+        <p>El acceso global exige una identidad de operador verificada y permisos propios. Una cuenta de negocio no concede ese acceso.</p>
+      }
       @if (message()) { <p class="operator-feedback" role="status" aria-live="polite">{{ message() }}</p> }
       @if (error()) { <p class="operator-feedback operator-feedback--error" role="alert">{{ error() }}</p> }
       @if (platform.state() === 'anonymous') {
@@ -58,7 +61,6 @@
       }
       @if (platform.state() === 'authenticated') {
         <div class="operator-context">
-          <p class="operator-context__eyebrow">CONSOLA VERIFICADA · ÁMBITO DE PLATAFORMA</p>
           <p class="operator-context__section" role="status" aria-live="polite" aria-atomic="true">
             <strong>{{ activeSection().label }}</strong>
             <span>{{ activeSection().description }}</span>
