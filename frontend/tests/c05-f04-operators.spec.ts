@@ -127,7 +127,7 @@ for (const size of sizes) {
       }
       if (section === 'seguridad') await expect(panel).toContainText('30 minutos sin actividad');
       if (section === 'monitor') {
-        await expect(panel).toContainText('Otra señal de protección');
+        await expect(panel).toContainText('Otras señales de protección');
         await expect(panel).toContainText('Atención alta');
       }
       const axe = await new AxeBuilder({ page }).include('cs-platform-identity-panel')
@@ -207,5 +207,19 @@ test('F04 monitor filters only aggregate bands and never prints unrecognized bac
   await expect(monitor).toContainText('Intentos de acceso limitados');
   await expect(monitor).not.toContainText('UNKNOWN_INTERNAL_PRIVATE_CODE');
   await monitor.getByLabel('Filtrar atención').selectOption('all');
-  await expect(monitor.locator('.operator-list > li')).toHaveCount(3);
+  await expect(monitor.locator('.operator-list > li')).toHaveCount(2);
+});
+
+
+test('F04 200 percent text, forced colors and reduced motion preserve operator navigation', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' });
+  await fixture(page); await visit(page, 'seguridad');
+  await page.addStyleTag({ content: ':root { font-size: 200% !important; }' });
+  await noOverflow(page);
+  const nav = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
+  await nav.getByRole('button', { name: 'Monitor', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  await expect(nav.getByRole('button', { name: 'Monitor', exact: true })).toHaveAttribute('aria-current', 'page');
+  await noOverflow(page);
 });
