@@ -74,6 +74,11 @@ jobs:
         run: |
           set -euo pipefail
           python3 qa/c05_ux_f06_feedback_evidence.py frontend/test-results-f06-feedback
+      - name: Require 70 individual premium UI captures on exact SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_ux_f06_premium_evidence.py frontend/test-results-f06-feedback
       - name: F05 secure modal and four-pattern regression
         shell: bash
         run: |

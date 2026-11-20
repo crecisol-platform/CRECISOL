@@ -44,7 +44,9 @@ ALLOWED = {
     "qa/c05_ux_f06_feedback_audits.py",
     "qa/c05_ux_f06_feedback_evidence.py",
     ".github/workflows/c05-ux-f06-feedback.yml",
-    "docs/c05/ux/F06_MENSAJERIA_ESTADOS_MATRIZ_RIESGOS.md"
+    "docs/c05/ux/F06_MENSAJERIA_ESTADOS_MATRIZ_RIESGOS.md",
+    "docs/c05/ux/F06_REVISION_PREMIUM_INTERFAZ_POR_INTERFAZ.md",
+    "qa/c05_ux_f06_premium_evidence.py"
 }
 
 def text(path: str) -> str:
