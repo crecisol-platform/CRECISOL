@@ -32,6 +32,7 @@ ALLOWED = {
     "frontend/src/app/pages/identity-mfa.component.html",
     "frontend/src/app/pages/identity-recovery.component.html",
     "frontend/src/app/pages/identity-workspace.component.html",
+    "frontend/src/app/pages/identity-workspace.component.css",
     "frontend/src/app/pages/platform-operator-cases.component.html",
     "frontend/src/app/pages/platform-operator-monitor.component.html",
     "frontend/src/app/pages/platform-operator-profile.component.html",

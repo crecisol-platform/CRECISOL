@@ -464,3 +464,29 @@
   .page-heading--operator h1,
   .page-heading--operator p { overflow-wrap: anywhere; min-width: 0; }
 }
+
+
+/* C05 UX F06 premium: operator access header is concise on small screens;
+   policy context and full actions remain available inside the console. */
+@media (max-width: 720px) {
+  .page-heading--operator {
+    margin-bottom: .45rem;
+    padding: .82rem 1rem;
+    border-radius: .85rem;
+  }
+  .page-heading--operator .eyebrow {
+    margin: 0 0 .2rem;
+    font-size: .62rem;
+    line-height: 1.25;
+  }
+  .page-heading--operator h1 {
+    font-size: clamp(1.28rem, 4.5vw, 1.62rem);
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+  }
+  .page-heading--operator p:last-child {
+    margin-top: .3rem;
+    font-size: .8rem;
+    line-height: 1.42;
+  }
+}

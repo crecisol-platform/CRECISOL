@@ -283,3 +283,13 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
   .operator-context { padding: 9px 12px; }
   .operator-scope-disclosure summary { padding: 8px 10px; }
 }
+
+
+/* C05 UX F06 premium: mobile operators already have page title, selected tab
+   and area heading. Suppress the redundant context strip, not permissions. */
+@media (max-width: 720px) {
+  .operator-context { display: none; }
+  .operator-navigation { margin-top: .1rem; }
+  .operator-nav-hint { margin-top: .15rem; }
+  .operator-scope-disclosure { margin-bottom: .55rem; }
+}

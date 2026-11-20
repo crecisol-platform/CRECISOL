@@ -38,7 +38,7 @@
   <div class="identity-profile-body">
     @if (identity.photo()) {
       <img class="identity-profile-avatar" [src]="identity.photo()" width="64" height="64" alt="Mi foto de perfil en esta empresa">
-    } @else {
+    } @else if (identity.profile()) {
       <span class="identity-profile-avatar identity-profile-avatar--empty" aria-hidden="true">{{ profileInitials() }}</span>
     }
     <div class="identity-profile-details">

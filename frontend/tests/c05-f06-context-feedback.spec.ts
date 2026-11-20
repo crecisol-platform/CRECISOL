@@ -456,3 +456,28 @@ test('F06 PREMIUM operator monitor reflows at 320px and 200% text without horizo
   await expect(page.getByRole('heading', { name: 'Monitor de identidad' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Consultar señales agregadas' })).toBeVisible();
 });
+
+
+test('F06 PREMIUM empty business profile uses full width rather than a cramped fake avatar', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await account(page, 'perfil');
+  const layout = page.locator('.identity-profile-body');
+  await expect(layout.locator('cs-ui-state')).toBeVisible();
+  await expect(layout.locator('.identity-profile-avatar')).toHaveCount(0);
+  const metrics = await layout.evaluate(element => ({
+    body: element.getBoundingClientRect().width,
+    state: element.querySelector('cs-ui-state')?.getBoundingClientRect().width ?? 0
+  }));
+  expect(metrics.state).toBeGreaterThan(190);
+  expect(metrics.body - metrics.state).toBeLessThan(4);
+});
+
+test('F06 PREMIUM operator mobile page eliminates redundant summary but keeps permissions accessible', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await operator(page);
+  await expect(page.locator('.operator-context')).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'Casos de recuperación y revisión' })).toBeVisible();
+  await expect(page.locator('details.operator-scope-disclosure')).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Áreas de la consola de identidad' })).toBeVisible();
+  await noHorizontalClip(page);
+});

@@ -649,3 +649,21 @@
   .identity-security-step,
   .identity-history-filters select { border: 1px solid CanvasText; }
 }
+
+
+/* C05 UX F06 premium: no fake avatar beside an empty profile state.
+ * The status now takes the entire width on narrow and wide screens. */
+.identity-profile-body:not(:has(.identity-profile-avatar)) {
+  display: block;
+}
+.identity-profile-body:not(:has(.identity-profile-avatar)) .identity-profile-details {
+  width: 100%;
+  min-width: 0;
+}
+@media (max-width: 620px) {
+  .identity-profile-body:not(:has(.identity-profile-avatar)) cs-ui-state {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+}
