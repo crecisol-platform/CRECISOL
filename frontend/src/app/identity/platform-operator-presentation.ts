@@ -52,7 +52,7 @@ export function operatorAbuseViews(input: readonly { kind: string; count: number
   return input.slice(0, 50).map((entry, index) => {
     const raw = Number(entry.count);
     const count = Number.isSafeInteger(raw) && raw >= 0 ? raw : 0;
-    return { id: String(index), label: names[entry.kind] ?? 'Otra señal de protección',
-      count, priority: count >= 10 ? 'alta' : count >= 3 ? 'revision' : 'informativa' };
+    const priority: OperatorSignalPriority = count >= 10 ? 'alta' : count >= 3 ? 'revision' : 'informativa';
+    return { id: String(index), label: names[entry.kind] ?? 'Otra señal de protección', count, priority };
   }).sort((a, b) => b.count - a.count);
 }
