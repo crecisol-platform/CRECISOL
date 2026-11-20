@@ -80,3 +80,9 @@ QA nuevo `frontend/tests/c05-f03-account.spec.ts`, config `playwright.c05-f03-ac
 ## VI. Resolución de esta corrección
 
 **Estado F03:** REDISEÑO DE CUENTA EN IMPLEMENTACIÓN Y VALIDACIÓN; NOTA 9/10 **NO CERTIFICADA**. La subfase anterior de navegación conserva su evidencia pero no reemplaza el entregable. No se inicia F04 ni se fusiona el PR. No desplegar producción.
+
+## V. Actualización del contrato de Aprobaciones (19-11-2026)
+
+La sección III es el hallazgo **histórico anterior** a la ampliación del PR #176; no debe interpretarse como estado actual. La rama F03 ahora incorpora `memberships/pending` (consulta autenticada y paginada de 12 solicitudes, filtrada por tenant y permiso `MEMBERSHIP_APPROVE`), correo enmascarado, selección de solicitudes obtenidas del backend y decisión con motivo, confirmación y MFA. El endpoint `memberships/decide` mantiene la autorización transaccional por tenant y el step-up del segundo factor. El frontend ya no debe solicitar escribir manualmente el UUID de una membresía.
+
+**Pendiente de demostrar en ejecución real:** regresiones Angular 22, .NET 10 y MySQL 8.4 en el SHA definitivo; pruebas adversariales de aislamiento entre tenants, permisos y cursores; evidencia responsive/accesibilidad sobre el último cambio; evaluación visual independiente >=9/10 para cada una de las seis vistas. La presencia del código y de pruebas definidas no sustituye su ejecución. **NO CERTIFICAR F03 ni fusionar el PR #176** sin superar esas puertas y actualizar el acta con referencias verificables.
