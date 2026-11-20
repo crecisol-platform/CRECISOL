@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 import { identityDateLabel, identityEventLabel, identityOutcomeLabel, identityReferenceLabel } from '../identity/identity-presentation';
 import { IdentityApiService } from '../identity/identity-api.service';
 import { InstitutionalModalComponent } from '../ui/institutional-modal/institutional-modal.component';
+import { InstitutionalCardComponent, InstitutionalStateComponent } from '../ui/institutional-system';
 
 @Component({
   selector: 'cs-identity-guest', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,7 +38,7 @@ export class IdentityMfaComponent {
 
 @Component({
   selector: 'cs-identity-workspace', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [InstitutionalModalComponent],
+  imports: [InstitutionalModalComponent, InstitutionalCardComponent, InstitutionalStateComponent],
   templateUrl: './identity-workspace.component.html', styleUrl: './identity-flow.component.css'
 })
 export class IdentityWorkspaceComponent {
