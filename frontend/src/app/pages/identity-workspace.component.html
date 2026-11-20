@@ -318,7 +318,10 @@
       </button>
     </div>
 
-    @if (busy() && !identity.pendingLoaded()) {
+    @if (identity.pendingDenied()) {
+      <cs-ui-state kind="error" heading="Consulta administrativa no autorizada"
+        message="Esta sesión no tiene la autorización necesaria para ver solicitudes. No se han conservado datos de expedientes en la pantalla."/>
+    } @else if (busy() && !identity.pendingLoaded()) {
       <cs-ui-state kind="loading" heading="Consultando expedientes"
         message="Se verifica tu permiso administrativo antes de mostrar solicitudes."/>
     } @else if (identity.pendingLoaded()) {
