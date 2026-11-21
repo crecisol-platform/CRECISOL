@@ -8,7 +8,7 @@ export async function verifyProfile({ browser, api, check, confidential, owner, 
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await page.getByLabel('Código de tu aplicación de autenticación').fill(owner.backups.pop());
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
-  await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Tu sesión actual', exact: true }).waitFor();
   const token = (await context.cookies()).find(c => c.name === '__Host-crecisol-c05').value; confidential.push(token);
   await page.getByRole('link', { name: 'Mi perfil', exact: true }).click();
   await page.getByRole('button', { name: 'Editar perfil de mi empresa', exact: true }).click();
