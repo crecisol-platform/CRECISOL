@@ -574,3 +574,31 @@ cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] cs-ui-action {
     padding-top: .8rem;
   }
 }
+
+/* F03 regression: mobile guest pages must retain their accessible H1.
+   Keep a single compact institutional heading but no bulky marketing card.
+   Recovery continues to suppress this aside while presenting its own task. */
+@media (max-width: 720px) {
+  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest:not(.account-layout--recovery) .account-aside {
+    display: block;
+    min-height: 0;
+    margin: 0;
+    padding: .2rem .35rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest:not(.account-layout--recovery) .account-aside::before,
+  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest:not(.account-layout--recovery) .aside-bottom,
+  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest:not(.account-layout--recovery) .account-aside .aside-top > p:last-child {
+    display: none;
+  }
+  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest:not(.account-layout--recovery) .account-aside h1 {
+    max-width: none;
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.28;
+    letter-spacing: -.012em;
+  }
+}

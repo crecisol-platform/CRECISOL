@@ -733,11 +733,15 @@ test('F06 buyer operator realm disclosure follows the protected work and is acce
   await expect(disclosure).toContainText('Ninguna pestaña concede autorización por sí misma');
 });
 
-test('F06 buyer public login places the actual task before the decorative hero on phones', async ({ page }) => {
+test('F06 buyer public login keeps compact accessible H1 and main action above the fold', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
   await syntheticApi(page, 'anonymous');
   await page.goto('/cuenta?vista=ingresar');
-  await expect(page.locator('.account-layout--guest .account-aside')).toBeHidden();
+  const aside = page.locator('.account-layout--guest .account-aside');
+  await expect(aside).toBeVisible();
+  await expect(aside.getByRole('heading', { level: 1, name: 'Tu cuenta, a tu manera.' })).toBeVisible();
+  const height = await aside.evaluate(el => el.getBoundingClientRect().height);
+  expect(height, 'institutional heading must be compact on a 320px viewport').toBeLessThanOrEqual(70);
   const submit = page.getByRole('button', { name: 'Continuar', exact: true });
   await expect(submit).toBeVisible();
   expect(await submit.evaluate(el => el.getBoundingClientRect().bottom))
