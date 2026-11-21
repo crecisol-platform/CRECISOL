@@ -40,6 +40,7 @@ ALLOWED = {
     "frontend/src/app/pages/platform-operator-security.component.html",
     "frontend/src/app/pages/platform-operator-sessions.component.html",
     "frontend/src/styles.css",
+    "frontend/tests/c05-f03-navigation.spec.ts",  # Exact F03 recovery keyboard regression forward-adjusted in F06.
     "frontend/tests/c05-f06-context-feedback.spec.ts",
     "frontend/playwright.c05-f06-feedback.config.ts",
     "qa/c05_ux_f05_modal_audits.py",
@@ -103,6 +104,12 @@ def audit_a() -> None:
         need("IdentityApiService.publicError(caught)" in code,
              "raw API failure may appear in notifications")
     need("cs-operation-feedback" in modal, "dialogs are not using semantic feedback")
+    # The F03 regression must prove secondary recovery routes remain reachable
+    # after the initial menu is collapsed, without concealing recovery methods.
+    f03_navigation = text("frontend/tests/c05-f03-navigation.spec.ts")
+    need("const disclosure = page.locator('details.account-more')" in f03_navigation and
+         "await page.keyboard.press('Enter')" in f03_navigation,
+         "F03 recovery keyboard access regression was weakened")
     for template in ("frontend/src/app/pages/identity-portal.component.html",
                      "frontend/src/app/pages/platform-identity-panel.component.html"):
         markup = text(template)
