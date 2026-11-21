@@ -79,3 +79,7 @@ La última evaluación editorial sobre `ced06a9ccd756203fe1c676189612c77c43fa0bc
 - EXT-06 Humanizer, `blader/humanizer@9862685f575c65a8247f90369951df1b3416e3d6`, `SKILL.md`; textos claros sin alterar mensajes de seguridad.
 
 No se incorporó código, dependencias, herramientas ni scripts de estas referencias. La única Skill operativa local sigue siendo `crecisol-project-governance`.
+
+### Segunda corrección fundamentada en capturas del baseline anterior
+
+Inspección visual directa de 14 capturas originales a 320px y muestras de escritorio a 1440px del artefacto `#14688776929` sobre `ced06a9c`. Se constató repetición de encabezados, textos auxiliares pequeños y estados vacíos con bordes anidados. Se preservó todo el contenido, las acciones y la semántica; se aplanaron las tarjetas de estado vacío dentro de paneles, ampliaron pistas de navegación y ocultaron únicamente etiquetas decorativas redundantes en móvil. `forced-colors` conserva fronteras visibles. Nuevas regresiones comprueban estados y legibilidad. Este juicio es del baseline anterior: no concede 9.5 ni afirma que el nuevo HEAD está probado.
