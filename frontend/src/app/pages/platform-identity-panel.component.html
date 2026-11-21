@@ -7,12 +7,11 @@
       <!-- Session validation overrides old async results until authority is known. -->
       @if (platform.restoring()) {
         <cs-operation-feedback kind="pending" text="Verificando tu sesión de operador con el servidor…" context="Identidad de plataforma" />
+      } @else if (platform.state() === 'anonymous' && platform.sessionEndedNotice()) {
+        <cs-operation-feedback kind="info" text="La sesión de operador terminó o fue revocada. Accede de nuevo con tus credenciales y MFA." context="Identidad de plataforma" />
       } @else {
         @if (visibleFeedback(); as feedback) {
           <cs-operation-feedback [kind]="feedback.kind" [text]="feedback.text" context="Identidad de plataforma" />
-        }
-        @if (platform.state() === 'anonymous' && platform.sessionEndedNotice() && !visibleFeedback()) {
-          <cs-operation-feedback kind="info" text="La sesión de operador terminó o fue revocada. Accede de nuevo con tus credenciales y MFA." context="Identidad de plataforma" />
         }
       }
       @if (platform.state() === 'anonymous') {
