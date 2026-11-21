@@ -1175,6 +1175,11 @@ test('F06 buyer: MFA challenge and QR enrollment have one clear heading and no d
   await syntheticApi(page, 'anonymous');
   await page.goto('/cuenta?vista=ingresar');
   await expect(page.getByRole('heading', { name: 'Iniciar sesión', exact: true })).toBeVisible();
+  // Never inject a second state while the service's initial restore is unsettled.
+  await expect.poll(() => page.evaluate(() => {
+    const host = document.querySelector('cs-identity-portal')!;
+    return (window as DebugWindow).ng!.getComponent(host).identity.restoring();
+  })).toBe(false);
   await page.evaluate(() => {
     const host = document.querySelector('cs-identity-portal')!;
     const owner = (window as DebugWindow).ng!.getComponent(host);
@@ -1203,6 +1208,10 @@ test('F06 buyer: platform login and operator challenge avoid duplicate headings 
   const action = page.getByRole('button', { name: 'Acceder a identidad de plataforma' });
   await expect(action).toBeVisible();
   expect(await action.evaluate(node => node.getBoundingClientRect().bottom)).toBeLessThanOrEqual(720);
+  await expect.poll(() => page.evaluate(() => {
+    const host = document.querySelector('cs-platform-identity-panel')!;
+    return (window as DebugWindow).ng!.getComponent(host).platform.restoring();
+  })).toBe(false);
   await page.evaluate(() => {
     const host = document.querySelector('cs-platform-identity-panel')!;
     const owner = (window as DebugWindow).ng!.getComponent(host);
