@@ -411,4 +411,22 @@
   .account-workspace-body { border-left-color: CanvasText; }
 }
 
-
+/* F06 editorial: invitation and membership are mandatory, task-first flows.
+   Retain a direct way back without promoting unrelated login tabs above fields. */
+.account-guest-return {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--cs-hit-target, 2.75rem);
+  margin: -.3rem 0 .4rem;
+  padding: .35rem .15rem;
+  color: var(--cs-color-accent-text, #174b77);
+  font-size: .875rem;
+  font-weight: 720;
+  line-height: 1.45;
+  text-underline-offset: .2rem;
+}
+.account-guest-return:focus-visible {
+  outline: 3px solid var(--cs-color-focus, #126aaf);
+  outline-offset: 3px;
+}
