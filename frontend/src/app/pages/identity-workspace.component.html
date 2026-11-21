@@ -78,12 +78,21 @@
     <span>{{ identity.photo() ? 'Actualizar foto de perfil' : 'Añadir foto de perfil' }}</span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #workspaceModal12 kind="form" title="Actualizar foto de perfil" description="Foto cuadrada de hasta 2 MB; sin metadatos del archivo original."
-    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form csFieldFeedback (submit)="uploadPhotoRequested.emit($event)">
-              <label for="profile-photo">Foto de perfil (PNG, JPEG o WebP, hasta 2 MB)</label><input id="profile-photo" name="photo" type="file" accept="image/png,image/jpeg,image/webp" required>
-              <p>Se guarda una miniatura cuadrada sin los metadatos del original.</p>
-              <button [disabled]="busy()">Guardar mi foto de perfil</button>
-            </form>
+    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true"
+    (dismissed)="photoFileName.set(''); photoFileError.set('')">
+    <form csFieldFeedback (reset)="photoFileName.set(''); photoFileError.set('')"
+      (submit)="uploadPhotoRequested.emit($event)">
+      <label for="profile-photo">Foto de perfil (PNG, JPEG o WebP, hasta 2 MB)</label>
+      <div class="cs-photo-picker">
+        <span aria-hidden="true">Seleccionar imagen del dispositivo</span>
+        <input class="cs-photo-picker__input" id="profile-photo" name="photo" type="file"
+          accept="image/png,image/jpeg,image/webp" required (change)="onPhotoFileChange($event)">
+      </div>
+      <output class="cs-photo-picker__filename" for="profile-photo" aria-live="polite">{{ photoFileName() || 'Ninguna imagen seleccionada' }}</output>
+      @if (photoFileError()) { <p class="cs-photo-picker__error" role="alert">{{ photoFileError() }}</p> }
+      <p>Se guarda una miniatura cuadrada sin los metadatos del original.</p>
+      <button [disabled]="busy() || !!photoFileError()">Guardar mi foto de perfil</button>
+    </form>
   </cs-institutional-modal>
 </div>
 @if (identity.photo()) {

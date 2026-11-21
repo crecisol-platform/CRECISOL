@@ -50,6 +50,19 @@ export class PlatformOperatorProfileComponent {
   readonly actionRequested = output<OperatorAction>();
   readonly loadProfileRequested = output<void>();
   readonly photoRequested = output<Event>();
+  readonly photoFileName = signal('');
+  readonly photoFileError = signal('');
+  onPhotoFileChange(event: Event): void {
+    const control = event.target;
+    const file = control instanceof HTMLInputElement ? control.files?.item(0) : null;
+    this.photoFileName.set(file?.name ?? '');
+    this.photoFileError.set(!file ? ''
+      : file.size > 2 * 1024 * 1024
+        ? 'La imagen supera 2 MB. Elige un archivo más pequeño.'
+        : !['image/png', 'image/jpeg', 'image/webp'].includes(file.type)
+          ? 'Selecciona una imagen PNG, JPEG o WebP.'
+          : '');
+  }
   readonly profileName = computed(() => this.platform.profile()?.displayName.trim() || 'Nombre no configurado');
   readonly profileLanguage = computed(() => operatorLanguageLabel(this.platform.profile()?.language ?? ''));
   readonly profileZone = computed(() => identityTimeZoneLabel(this.platform.profile()?.timeZone));

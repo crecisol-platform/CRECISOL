@@ -125,6 +125,8 @@ export class PlatformIdentityPanelComponent {
     if (this.busy()) return;
     const generation = ++this.feedbackGeneration;
     const origin = this.panel();
+    const passiveRead = ['session-policy-read', 'profile-read', 'load-abuse',
+      'sessions-list'].includes(command);
     this.feedbackScope.set(origin);
     this.activity.set(activityLabel(command));
     this.busy.set(true);
@@ -133,7 +135,7 @@ export class PlatformIdentityPanelComponent {
     try {
       await action();
       if (generation === this.feedbackGeneration && this.panel() === origin &&
-          !this.message() && !this.error() && command !== 'session-policy-read')
+          !this.message() && !this.error() && !passiveRead)
         this.message.set('La solicitud de plataforma terminó. Comprueba el resultado autorizado.');
     } catch (caught) {
       if (generation === this.feedbackGeneration && this.panel() === origin)

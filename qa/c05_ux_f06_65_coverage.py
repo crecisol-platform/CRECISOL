@@ -45,6 +45,8 @@ def main(root: Path, catalog: Path) -> None:
               "umbral comercial inconsistente: "+item["id"])
     viewports={320,390,768,1024,1440}
     found=defaultdict(set)
+    scrolled=defaultdict(int)
+    catalog_types={r["id"]:r["tipo"] for r in items}
     scanned=0
     pngs=set()
     diagnostics=[]
@@ -75,15 +77,30 @@ def main(root: Path, catalog: Path) -> None:
         pngs.add(png.as_posix())
         for surface in data["inventoryIds"]:
             check(surface in required, "id desconocido "+str(surface)+" en "+str(file))
+            if catalog_types[surface] == "modal":
+                check(data.get("dialogsOpen")==1 and bool(data.get("modalTitle")),
+                      "modal inventariado sin dialogo visible: "+str(file))
+            if surface == "C05-F01-057":
+                check("-empty-" in data.get("id", ""),
+                      "F01-057 registra una captura poblada en lugar de estado vacio")
             found[width].add(surface)
         if data.get("dialogsOpen")==1:
             modal=data.get("dialog") or {}
             check(modal.get("inViewport") is True, "modal recortado: "+str(file))
             check(modal.get("horizontalOverflow",99)<=2, "modal con overflow: "+str(file))
+            check(modal.get("footerInViewport") is True,
+                  "pie del modal fuera de pantalla: "+str(file))
+        if "-scrolled-footer" in data.get("id", ""):
+            check(data.get("dialogsOpen")==1 and
+                  (data.get("dialog") or {}).get("scrollTop", 0)>0,
+                  "captura de scroll que no desplazo el contenido: "+str(file))
+            scrolled[width]+=1
     check(scanned>=325,f"capturas insuficientes: {scanned}, requeridas al menos 325")
     for width in sorted(viewports):
         miss=sorted(required-found[width])
-        diagnostics.append({"width":width,"captured":len(found[width]),"missing":miss})
+        check(scrolled[width]>=1, f"{width}px no tiene prueba del pie de un modal largo")
+        diagnostics.append({"width":width,"captured":len(found[width]),
+                            "longDialogsScrolled":scrolled[width],"missing":miss})
     summary={
       "status":"PASS" if all(not r["missing"] for r in diagnostics) else "NO_GO",
       "sha":sha,"catalog":len(items),"screenshots":scanned,

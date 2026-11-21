@@ -294,6 +294,10 @@ export class IdentityPortalComponent {
     if (this.busy()) return;
     const generation = ++this.feedbackGeneration;
     const origin = this.view();
+    // A successful read is not a completed security mutation. Only actual
+    // protected commands may produce the generic completion receipt.
+    const passiveRead = ['terms-read', 'passkey-list', 'pending-memberships',
+      'security-events', 'profile-read', 'sessions-list'].includes(command);
     this.feedbackScope.set(origin);
     this.activity.set(activityLabel(command));
     this.busy.set(true);
@@ -302,7 +306,7 @@ export class IdentityPortalComponent {
     try {
       await operation();
       if (generation === this.feedbackGeneration && this.view() === origin &&
-          !this.message() && !this.error()) {
+          !this.message() && !this.error() && !passiveRead) {
         this.message.set(command === 'enroll'
           ? 'La configuración está preparada. Verifica tu nuevo autenticador antes de activarlo.'
           : 'La solicitud finalizó. Comprueba el estado autorizado antes de continuar.');

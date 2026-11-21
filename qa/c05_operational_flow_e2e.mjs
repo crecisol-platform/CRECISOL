@@ -503,7 +503,7 @@ try {
   const verified = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   check((await verified).status() === 200, 'Angular MFA request accepted by the real backend');
-  await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Tu sesión actual', exact: true }).waitFor();
   const backupCodes = await page.getByLabel('Códigos de respaldo MFA').locator('code').allTextContents(); confidential.push(...backupCodes);
   check(backupCodes.length === 10, 'MFA enrollment returns ten one-use backup codes once');
   let token = await browserSession(page);
@@ -548,7 +548,7 @@ try {
   const restoredRequest = page.waitForResponse(r => r.url().endsWith('/browser/restore'));
   await page.reload();
   check((await restoredRequest).status() === 200, 'reload restores only a server-validated cookie session and CSRF material');
-  await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Tu sesión actual', exact: true }).waitFor();
   await page.getByText('Condiciones de la cuenta', { exact: true }).click();
   await page.getByRole('button', { name: 'Leer condiciones vigentes', exact: true }).click();
   await page.getByLabel('Acepto esta versión de las condiciones', { exact: true }).check();
@@ -652,7 +652,7 @@ try {
     const response = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
     await page.getByRole('button', { name: 'Verificar', exact: true }).click();
     const result = await response; check(result.status() === 200, 'Angular persistent login with one-use backup factor');
-    await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
+    await page.getByRole('heading', { name: 'Tu sesión actual', exact: true }).waitFor();
     return await browserSession(page);
   }
   token = await uiLogin('member@example.test', newPassword);
@@ -715,7 +715,7 @@ try {
   // The restored account keeps its Seguridad deep link. Open Resumen
   // before asserting a heading that exists only on the summary screen.
   await page.getByRole('link', { name: 'Resumen', exact: true }).click();
-  await page.getByRole('heading', { name: 'Estado de la sesión', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Tu sesión actual', exact: true }).waitFor();
   const replacementData = { sessionToken: await browserSession(page), recoveryCodes: await page.getByLabel('Códigos de respaldo MFA').locator('code').allTextContents() };
   confidential.push(...replacementData.recoveryCodes);
   check(sql(`SELECT COUNT(*) FROM c05_identity_mfa_factor WHERE account_id=UNHEX('${actor}') AND factor_state=1`) === '1', 'replacement leaves exactly one active TOTP factor');

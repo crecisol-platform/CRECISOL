@@ -35,11 +35,23 @@
   }
   @case ('invitacion') {
     <details open><summary>Aceptar una invitación</summary>
-          <p>Primero confirma tu correo y crea una cuenta. Lee las condiciones vigentes antes de aceptar la invitación. Si todavía no tienes MFA, escribe enroll; si ya lo tienes, usa un código vigente o de respaldo.</p>
-          <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'invitation-accept' })">
+          <p>Confirma tu correo y crea tu identidad antes de aceptar. Revisa las condiciones vigentes. Si aún no tienes una aplicación de autenticación, selecciona la opción para configurarla de forma segura.</p>
+          <form csFieldFeedback (reset)="inviteNeedsEnrollment.set(false)" (submit)="securityActionRequested.emit({ event: $event, action: 'invitation-accept' })">
             <label for="invite-mailbox">Correo invitado</label><input id="invite-mailbox" name="mailbox" type="email" autocomplete="username" required maxlength="254">
             <label for="invite-password">Contraseña de la cuenta invitada</label><input id="invite-password" name="password" type="password" autocomplete="current-password" required maxlength="128">
-            <label for="invite-code">Código MFA del invitado</label><input id="invite-code" name="code" required maxlength="32" autocomplete="one-time-code">
+            <label class="cs-choice-line">
+              <input type="checkbox" [checked]="inviteNeedsEnrollment()"
+                (change)="inviteNeedsEnrollment.set($any($event.target).checked)">
+              Todavía no tengo configurado el segundo factor
+            </label>
+            @if (inviteNeedsEnrollment()) {
+              <p class="identity-field-help">Después de aceptar, necesitarás configurar una aplicación de autenticación antes de iniciar sesión. Esta opción no concede acceso sin verificación.</p>
+              <input type="hidden" name="code" value="enroll">
+            } @else {
+              <label for="invite-code">Código de tu autenticador o de respaldo</label>
+              <input id="invite-code" name="code" required maxlength="32"
+                autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
+            }
             <label for="invite-token">Token de invitación</label><input id="invite-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
             <label><input name="accepted" type="checkbox" required> He leído y acepto las condiciones vigentes para esta invitación</label>
             <button [disabled]="busy() || !identity.terms()">Aceptar invitación de cuenta</button>

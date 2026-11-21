@@ -602,3 +602,83 @@ cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] cs-ui-action {
     letter-spacing: -.012em;
   }
 }
+
+/* F06 buyer/accessibility: fully Spanish, keyboard-usable native file chooser.
+   The actual input remains focusable and validates with the backend unchanged. */
+dialog.cs-modal .cs-photo-picker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 3rem;
+  padding: .75rem 1rem;
+  border: 1px solid #b7cfdf;
+  border-radius: .75rem;
+  background: #f1f7fc;
+  color: #164874;
+  font-weight: 750;
+  text-align: center;
+  line-height: 1.35;
+  cursor: pointer;
+}
+dialog.cs-modal .cs-photo-picker:hover { background: #e7f2fa; }
+dialog.cs-modal .cs-photo-picker:focus-within {
+  outline: 3px solid #126aaf;
+  outline-offset: 3px;
+}
+dialog.cs-modal .cs-photo-picker__input {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+dialog.cs-modal .cs-photo-picker__filename {
+  display: block;
+  max-width: 100%;
+  margin: -.2rem 0 .35rem;
+  color: #355673;
+  font-size: .86rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+dialog.cs-modal .cs-photo-picker__error {
+  margin: 0 0 .6rem;
+  padding: .6rem .75rem;
+  border: 1px solid #e7c2bc;
+  border-radius: .6rem;
+  background: #fff3f1;
+  color: #842e27;
+  font-size: .85rem;
+}
+cs-identity-guest .cs-choice-line {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  padding: .65rem .7rem;
+  border: 1px solid #ccdeeb;
+  border-radius: .7rem;
+  background: #f6fafd;
+  line-height: 1.5;
+}
+cs-identity-guest .cs-choice-line input {
+  flex: 0 0 auto;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: .12rem;
+}
+@media (forced-colors: active) {
+  dialog.cs-modal .cs-photo-picker,
+  cs-identity-guest .cs-choice-line {
+    background: Canvas; color: CanvasText; border-color: CanvasText;
+  }
+  dialog.cs-modal .cs-photo-picker__error {
+    background: Canvas; color: CanvasText; border-color: CanvasText;
+  }
+}

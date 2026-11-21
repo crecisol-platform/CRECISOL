@@ -17,6 +17,7 @@ export class IdentityGuestComponent {
     typeof PublicKeyCredential.parseRequestOptionsFromJSON === 'function' &&
     !!navigator.credentials;
   readonly busy = input(false);
+  readonly inviteNeedsEnrollment = signal(false);
   readonly view = input('ingresar');
   readonly loginRequested = output<Event>();
   readonly registerRequested = output<Event>();
@@ -50,6 +51,19 @@ export class IdentityWorkspaceComponent {
   readonly showAllEvents = signal(false);
   readonly historyFilter = signal<'all' | 'success' | 'attention'>('all');
   readonly selectedPasskeyId = signal('');
+  readonly photoFileName = signal('');
+  readonly photoFileError = signal('');
+  onPhotoFileChange(event: Event): void {
+    const control = event.target;
+    const file = control instanceof HTMLInputElement ? control.files?.item(0) : null;
+    this.photoFileName.set(file?.name ?? '');
+    this.photoFileError.set(!file ? ''
+      : file.size > 2 * 1024 * 1024
+        ? 'La imagen supera 2 MB. Elige un archivo más pequeño.'
+        : !['image/png', 'image/jpeg', 'image/webp'].includes(file.type)
+          ? 'Selecciona una imagen PNG, JPEG o WebP.'
+          : '');
+  }
   readonly historyRequested = signal(false);
   readonly sessionsRequested = signal(false);
   readonly securityEventRows = computed(() => [...this.identity.securityEvents()]

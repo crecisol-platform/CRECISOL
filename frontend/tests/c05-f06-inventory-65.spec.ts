@@ -70,8 +70,7 @@ const pageInventory: Record<string, string> = {
   'resumen': 'C05-F01-009', 'perfil': 'C05-F01-010',
   'llaves': 'C05-F01-011', 'seguridad': 'C05-F01-012',
   'administracion': 'C05-F01-013',
-  // F03 separated Historial after original F01 grouped history with Perfil.
-  'historial': 'C05-F01-057',
+  // F03 Historial is independent; F01-057 is reserved for EMPTY history only.
   'Casos': 'C05-F01-019', 'Sesiones': 'C05-F01-020',
   'Perfil': 'C05-F01-021', 'Seguridad': 'C05-F01-022',
   'Monitor': 'C05-F01-023'
@@ -101,7 +100,8 @@ function surfaceIdsFor(id: string, modalTitle: string): readonly string[] {
   if (id.startsWith('account-session-cleared')) add('C05-F01-054');
   if (id.startsWith('account-resumen-empty')) add('C05-F01-055');
   if (id.startsWith('account-llaves-empty')) add('C05-F01-056');
-  if (id.startsWith('account-perfil-empty')) add('C05-F01-057');
+  if (id.startsWith('account-perfil-empty') ||
+      id.startsWith('account-historial-empty')) add('C05-F01-057');
   if (id.startsWith('account-backup-codes')) add('C05-F01-058');
   if (id.startsWith('operator-restoring')) add('C05-F01-059');
   if (id.startsWith('operator-error')) add('C05-F01-060');
@@ -128,10 +128,11 @@ async function capture(page: Page, testInfo: TestInfo, id: string): Promise<void
       if (!dialog) return null;
       const rect = dialog.getBoundingClientRect();
       const footer = dialog.querySelector('.cs-modal__footer')?.getBoundingClientRect();
+      const body = dialog.querySelector('.cs-modal__content');
       return {
-        scrollTop: dialog.scrollTop, scrollHeight: dialog.scrollHeight,
-        clientHeight: dialog.clientHeight,
-        horizontalOverflow: Math.max(0, dialog.scrollWidth - dialog.clientWidth),
+        scrollTop: body?.scrollTop ?? 0, scrollHeight: body?.scrollHeight ?? 0,
+        clientHeight: body?.clientHeight ?? 0,
+        horizontalOverflow: body ? Math.max(0, body.scrollWidth - body.clientWidth) : 99,
         inViewport: rect.left >= -1 && rect.top >= -1 &&
           rect.right <= innerWidth + 1 && rect.bottom <= innerHeight + 1,
         footerInViewport: Boolean(footer && footer.top >= rect.top && footer.bottom <= rect.bottom)
@@ -253,10 +254,15 @@ async function seedOperator(page: Page): Promise<void> {
 }
 
 async function captureDialogBottom(page: Page, testInfo: TestInfo, id: string): Promise<void> {
-  const dialog = page.locator('dialog.cs-modal:modal');
-  if (await dialog.evaluate(element => element.scrollHeight > element.clientHeight + 6)) {
-    await dialog.evaluate(element => { element.scrollTop = element.scrollHeight; });
+  const body = page.locator('dialog.cs-modal:modal .cs-modal__content');
+  if (await body.evaluate(element => element.scrollHeight > element.clientHeight + 6)) {
+    await body.evaluate(element => {
+      element.scrollTop = element.scrollHeight;
+      element.dispatchEvent(new Event('scroll'));
+    });
+    await expect.poll(() => body.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
     await capture(page, testInfo, id + '-scrolled-footer');
+    await body.evaluate(element => { element.scrollTop = 0; });
   }
 }
 
@@ -272,6 +278,14 @@ async function captureModals(page: Page, testInfo: TestInfo, prefix: string): Pr
     await expect(dialog).toHaveCount(1);
     const id = prefix + '-modal-' + String(i + 1).padStart(2, '0') + '-' + label;
     await capture(page, testInfo, id);
+    const fileInput = dialog.locator('input[type=file]');
+    if (await fileInput.count() === 1) {
+      // Synthetic image fixture verifies local selection UI without server upload.
+      await fileInput.setInputFiles({ name: 'foto-sintetica.png', mimeType: 'image/png',
+        buffer: Buffer.from([137,80,78,71,13,10,26,10]) });
+      await expect(dialog.getByText('foto-sintetica.png')).toBeVisible();
+      await capture(page, testInfo, id + '-synthetic-photo-selected');
+    }
     await captureDialogBottom(page, testInfo, id);
     await dialog.locator('button.cs-modal__cancel').click();
     await expect(dialog).toHaveCount(0);
@@ -287,6 +301,13 @@ for (const size of sizes) {
       await page.goto('/cuenta?vista=' + view);
       await expect(page.locator('#account-content')).toBeVisible();
       await capture(page, testInfo, 'public-' + view + '-' + size.name);
+      if (view === 'invitacion') {
+        const enrollment = page.getByRole('checkbox', { name: 'Todavía no tengo configurado el segundo factor' });
+        await enrollment.check();
+        await expect(page.locator('cs-identity-guest input[type=hidden][name=code]')).toHaveValue('enroll');
+        await capture(page, testInfo, 'public-invitation-mfa-setup-choice-' + size.name);
+        await enrollment.uncheck();
+      }
     }
     await page.goto('/cuenta?vista=ingresar');
     const terms = page.locator('details.account-terms');

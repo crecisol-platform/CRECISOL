@@ -760,3 +760,91 @@ test('F06 buyer passive security-policy read does not invent a success notificat
   await expect(page.getByText('La solicitud de plataforma terminó. Comprueba el resultado autorizado.'))
     .toHaveCount(0);
 });
+
+test('F06 buyer invitation enrollment choice is legible and never exposes the transport sentinel', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'anonymous');
+  await page.goto('/cuenta?vista=invitacion');
+  const option = page.getByRole('checkbox', { name: 'Todavía no tengo configurado el segundo factor' });
+  await expect(option).toBeVisible();
+  await expect(page.getByLabel('Código de tu autenticador o de respaldo')).toBeVisible();
+  await expect(page.getByText('escribe enroll')).toHaveCount(0);
+  await option.check();
+  await expect(page.locator('cs-identity-guest input[type=hidden][name=code]')).toHaveValue('enroll');
+  await expect(page.getByLabel('Código de tu autenticador o de respaldo')).toHaveCount(0);
+  await expect(page.getByText(/Esta opción no concede acceso sin verificación/)).toBeVisible();
+  await option.uncheck();
+  await expect(page.locator('cs-identity-guest input[type=hidden][name=code]')).toHaveCount(0);
+  await expect(page.getByLabel('Código de tu autenticador o de respaldo')).toBeVisible();
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+});
+
+test('F06 buyer account photo picker is localized, validates client size and clears after cancel', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'business');
+  await page.goto('/cuenta?vista=perfil');
+  await page.getByRole('button', { name: 'Añadir foto de perfil' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Actualizar foto de perfil' });
+  const input = dialog.getByLabel(/Foto de perfil \(PNG, JPEG o WebP, hasta 2 MB\)/);
+  const save = dialog.getByRole('button', { name: 'Guardar mi foto de perfil' });
+  await expect(input).toHaveAttribute('type', 'file');
+  await expect(dialog.getByText('Seleccionar imagen del dispositivo')).toBeVisible();
+  await expect(dialog.getByText('Ninguna imagen seleccionada')).toBeVisible();
+  await input.setInputFiles({ name: 'imagen.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg/>') });
+  await expect(dialog.getByRole('alert')).toContainText('PNG, JPEG o WebP');
+  await expect(save).toBeDisabled();
+  await input.setInputFiles({ name: 'ejemplo.png', mimeType: 'image/png',
+    buffer: Buffer.from([137,80,78,71,13,10,26,10]) });
+  await expect(dialog.getByText('ejemplo.png')).toBeVisible();
+  await expect(dialog.getByRole('alert')).toHaveCount(0);
+  await expect(save).toBeEnabled();
+  const a11y = await new AxeBuilder({ page }).include('dialog.cs-modal:modal')
+    .withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();
+  expect(a11y.violations).toEqual([]);
+  await dialog.getByRole('button', { name: 'Cerrar ventana' }).click();
+  await page.getByRole('button', { name: 'Añadir foto de perfil' }).click();
+  await expect(page.getByRole('dialog', { name: 'Actualizar foto de perfil' })
+    .getByText('Ninguna imagen seleccionada')).toBeVisible();
+});
+
+test('F06 buyer operator photo picker rejects oversized file with safe Spanish feedback', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await operator(page);
+  await page.getByRole('navigation', { name: 'Áreas de la consola de identidad' })
+    .getByRole('button', { name: 'Perfil', exact: true }).click();
+  await page.getByRole('button', { name: 'Actualizar foto de operador' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Actualizar foto de operador' });
+  const input = dialog.getByLabel(/Foto del operador \(PNG, JPEG o WebP, hasta 2 MB\)/);
+  const save = dialog.getByRole('button', { name: 'Guardar foto de operador' });
+  await expect(dialog.getByText('Seleccionar imagen del dispositivo')).toBeVisible();
+  await input.setInputFiles({ name: 'grande.webp', mimeType: 'image/webp',
+    buffer: Buffer.alloc(2 * 1024 * 1024 + 1) });
+  await expect(dialog.getByRole('alert')).toContainText('supera 2 MB');
+  await expect(save).toBeDisabled();
+  await input.setInputFiles({ name: 'perfil.webp', mimeType: 'image/webp',
+    buffer: Buffer.from([82,73,70,70]) });
+  await expect(dialog.getByText('perfil.webp')).toBeVisible();
+  await expect(save).toBeEnabled();
+  const a11y = await new AxeBuilder({ page }).include('dialog.cs-modal:modal')
+    .withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();
+  expect(a11y.violations).toEqual([]);
+});
+
+test('F06 buyer terms read does not impersonate a completed account mutation', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'anonymous');
+  await page.route('**/api/v1/identity/terms', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ version: 'qa-f06', hash: 'b'.repeat(64),
+      text: 'Condiciones de prueba sin datos personales.' })
+  }));
+  await page.goto('/cuenta?vista=ingresar');
+  const terms = page.locator('details.account-terms');
+  await terms.locator('summary').click();
+  await terms.getByRole('button', { name: 'Leer condiciones vigentes' }).click();
+  await expect(terms).toContainText('Condiciones de prueba sin datos personales.');
+  await expect(page.getByText('La solicitud finalizó. Comprueba el estado autorizado antes de continuar.'))
+    .toHaveCount(0);
+  await expect(page.getByText('Operación completada')).toHaveCount(0);
+});
