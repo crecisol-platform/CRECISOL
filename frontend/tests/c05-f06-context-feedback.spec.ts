@@ -1253,3 +1253,27 @@ test('F06 recovery secondary navigation stays folded while all real recovery met
   await expect.poll(() => page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
 });
+
+test('F06 secondary routes reset when navigating between public identity tasks without reload', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'anonymous');
+  await page.goto('/cuenta?vista=recuperar');
+  const options = page.locator('details.account-more');
+  await expect(options).not.toHaveAttribute('open');
+  await options.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(options).toHaveAttribute('open', '');
+  await options.getByRole('link', { name: 'Confirmar correo' }).click();
+  await expect(page).toHaveURL(/vista=confirmar/);
+  await expect(page.getByRole('heading', { name: 'Confirmar correo' })).toBeVisible();
+  await expect(options).not.toHaveAttribute('open');
+  await options.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(options).toHaveAttribute('open', '');
+  await options.getByRole('link', { name: 'Recuperar acceso' }).click();
+  await expect(page).toHaveURL(/vista=recuperar/);
+  await expect(options).not.toHaveAttribute('open');
+  await expect(page.getByRole('button', { name: 'Solicitar recuperación' })).toBeVisible();
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+});

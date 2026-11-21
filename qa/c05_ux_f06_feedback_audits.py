@@ -110,6 +110,9 @@ def audit_a() -> None:
     need("const disclosure = page.locator('details.account-more')" in f03_navigation and
          "await page.keyboard.press('Enter')" in f03_navigation,
          "F03 recovery keyboard access regression was weakened")
+    need("secondaryRoutesOpen.set(false)" in portal and
+         "secondaryRoutesToggled(event: Event)" in portal,
+         "secondary account menu may persist open after a route change")
     for template in ("frontend/src/app/pages/identity-portal.component.html",
                      "frontend/src/app/pages/platform-identity-panel.component.html"):
         markup = text(template)

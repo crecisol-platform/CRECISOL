@@ -85,6 +85,12 @@ export class IdentityPortalComponent {
   readonly error = signal('');
   readonly activity = signal('');
   readonly feedbackScope = signal('');
+  // UI-only disclosure; changing views must not carry an expanded menu
+  // into a different recovery or confirmation task.
+  readonly secondaryRoutesOpen = signal(false);
+  secondaryRoutesToggled(event: Event): void {
+    this.secondaryRoutesOpen.set((event.currentTarget as HTMLDetailsElement).open);
+  }
   readonly visibleFeedback = computed(() => contextualFeedback(
     this.feedbackScope(), this.view(), this.busy(), this.message(), this.error(), this.activity()));
   private feedbackGeneration = 0;
@@ -97,6 +103,7 @@ export class IdentityPortalComponent {
       untracked(() => {
         if (next === this.lastFeedbackView) return;
         this.lastFeedbackView = next;
+        this.secondaryRoutesOpen.set(false);
         this.feedbackGeneration++;
         this.feedbackScope.set('');
         this.message.set('');
