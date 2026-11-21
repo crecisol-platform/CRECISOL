@@ -969,3 +969,39 @@ test('F06 buyer invitation and existing-account management stay progressively di
       document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
   }
 });
+
+
+test('F06 buyer mandatory invitation and membership flows stay visible, direct and privacy-safe at 320px', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'anonymous');
+  const cases = [
+    { view: 'invitacion', heading: 'Aceptar una invitación', first: 'Correo invitado',
+      fields: ['mailbox', 'password', 'code', 'token', 'accepted'] },
+    { view: 'acceso-existente', heading: 'Solicitar acceso con mi cuenta', first: 'Correo de mi identidad existente',
+      fields: ['mailbox', 'password', 'code', 'proofId', 'proofCode', 'accepted'] }
+  ] as const;
+  for (const scenario of cases) {
+    await page.goto('/cuenta?vista=' + scenario.view);
+    const flow = page.locator('cs-identity-guest section.cs-guest-process');
+    await expect(flow).toBeVisible();
+    await expect(flow.getByRole('heading', { name: scenario.heading, level: 2 })).toBeVisible();
+    await expect(page.locator('cs-identity-guest > details[open]')).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Opciones de identidad' })).toHaveCount(0);
+    const returnLink = page.getByRole('link', { name: 'Volver a iniciar sesión', exact: true });
+    await expect(returnLink).toBeVisible();
+    const form = flow.locator('form[csFieldFeedback]');
+    await expect(form).toHaveCount(1);
+    for (const field of scenario.fields) {
+      await expect(form.locator('[name="' + field + '"]')).toHaveCount(1);
+    }
+    await expect(form.locator('input[name="accepted"]')).toHaveAttribute('required', '');
+    const first = form.getByRole('textbox', { name: scenario.first, exact: true });
+    const firstTop = await first.evaluate(el => el.getBoundingClientRect().top);
+    expect(firstTop, scenario.view + ' first verified field must lead the phone flow')
+      .toBeLessThanOrEqual(480);
+    await expect.poll(() => page.evaluate(() =>
+      document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+    await returnLink.click();
+    await expect(page.getByRole('heading', { name: 'Iniciar sesión', level: 2 })).toBeVisible();
+  }
+});
