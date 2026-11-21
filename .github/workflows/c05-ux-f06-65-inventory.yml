@@ -4,6 +4,10 @@ on:
     branches: [feature/c05-ux-f06-mensajeria-estados-20261120]
     paths:
       - 'frontend/tests/c05-f06-inventory-65.spec.ts'
+      - 'frontend/src/app/ui/institutional-modal/**'
+      - 'frontend/src/styles.css'
+      - 'frontend/src/app/pages/identity-*'
+      - 'frontend/src/app/pages/platform-*'
       - 'frontend/playwright.c05-f06-inventory65.config.ts'
       - 'qa/c05_ux_f06_65_coverage.py'
       - 'docs/c05/ux/F06_65_*'

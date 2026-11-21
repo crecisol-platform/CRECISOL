@@ -70,6 +70,8 @@ const pageInventory: Record<string, string> = {
   'resumen': 'C05-F01-009', 'perfil': 'C05-F01-010',
   'llaves': 'C05-F01-011', 'seguridad': 'C05-F01-012',
   'administracion': 'C05-F01-013',
+  // F03 separated Historial after original F01 grouped history with Perfil.
+  'historial': 'C05-F01-057',
   'Casos': 'C05-F01-019', 'Sesiones': 'C05-F01-020',
   'Perfil': 'C05-F01-021', 'Seguridad': 'C05-F01-022',
   'Monitor': 'C05-F01-023'
@@ -323,7 +325,7 @@ for (const size of sizes) {
     async ({ page }, testInfo) => {
     await page.setViewportSize({ width: size.width, height: size.height });
     await setup(page, 'account');
-    for (const view of ['resumen', 'perfil', 'llaves', 'seguridad', 'administracion']) {
+    for (const view of ['resumen', 'perfil', 'llaves', 'seguridad', 'historial', 'administracion']) {
       await page.goto('/cuenta?vista=' + view);
       await expect(page.getByRole('navigation', { name: 'Mi cuenta' })).toBeVisible();
       await capture(page, testInfo, 'account-' + view + '-empty-' + size.name);

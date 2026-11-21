@@ -537,3 +537,29 @@ cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] cs-ui-action {
     line-height: 1.42;
   }
 }
+
+/* F06 buyer review: one clean plane for six authenticated mobile views.
+   This removes only nested decorative chrome, not the H1 or task description. */
+@media (max-width: 720px) {
+  cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro {
+    padding: .25rem .15rem .65rem;
+    margin-bottom: .55rem;
+    border: 0;
+    border-bottom: 1px solid #d5e4f0;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    gap: .22rem;
+  }
+  cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro p:last-child {
+    margin: .2rem 0 0;
+  }
+  cs-identity-portal .account-workspace-shell.account-workspace-shell.account-workspace-shell {
+    gap: .55rem;
+  }
+}
+@media (forced-colors: active) and (max-width: 720px) {
+  cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro {
+    border-bottom: 1px solid CanvasText;
+  }
+}

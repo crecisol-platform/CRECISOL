@@ -327,3 +327,21 @@ test('F05 zoom 200 percent, landscape, reduced motion and forced colors keep sec
   await dlg.getByRole('button', { name: 'Cerrar ventana' }).click();
   await expect(dlg).toHaveCount(0);
 });
+
+test('F05 secure mobile wizard reveals continuation and clears it at the bottom', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'anonymous');
+  await openScenario(page, 'recuperacion-operador-doble-control');
+  const dialog = page.getByRole('dialog', { name: 'Recuperación segura de operador', exact: true });
+  await expect(dialog).toBeVisible();
+  const content = dialog.locator('.cs-modal__content');
+  await expect.poll(() => content.evaluate(el => el.scrollHeight - el.clientHeight)).toBeGreaterThan(12);
+  const cue = dialog.locator('.cs-modal__scroll-cue');
+  await expect(cue).toBeVisible();
+  await expect(cue).toContainText('Desplaza el contenido');
+  await content.evaluate(el => { el.scrollTop = el.scrollHeight; el.dispatchEvent(new Event('scroll')); });
+  await expect(cue).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Cerrar ventana' }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden');
+});

@@ -24,8 +24,25 @@ def main(root: Path, catalog: Path) -> None:
     actual=[r["id"] for r in items]
     check(set(actual)==required and len(set(actual))==65,
           "IDs C05-F01-001..065 ausentes o duplicados")
-    check(all(r["nota_comercial_0_10"]=="" for r in items),
-          "las notas no se inventan antes de una revisión de comprador")
+    # Ratings are optional, but every issued score requires evidence and
+    # an explicit buyer decision. Never auto-grade based on browser PASS.
+    for item in items:
+        score=item.get("nota_comercial_0_10", "").strip()
+        decision=item.get("dictamen_compraria", "").strip()
+        if not score:
+            check(decision == "PENDIENTE",
+                  "no emitir dictamen sin calificación: " + item["id"])
+            continue
+        check(item.get("defecto_observado", "").strip()
+              and item.get("evidencia_png_por_viewport", "").strip()
+              and item.get("seguridad_y_privacidad", "").strip(),
+              "calificación sin argumento/evidencia/seguridad: "+item["id"])
+        value=float(score)
+        check(0 <= value <= 10, "calificación fuera de escala: "+item["id"])
+        check(decision in {"COMPRARIA", "NO_COMPRARIA"},
+              "dictamen no emitido: "+item["id"])
+        check((value >= 9.5) == (decision == "COMPRARIA"),
+              "umbral comercial inconsistente: "+item["id"])
     viewports={320,390,768,1024,1440}
     found=defaultdict(set)
     scanned=0

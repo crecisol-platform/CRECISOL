@@ -54,7 +54,9 @@ export class InstitutionalModalComponent implements OnDestroy {
   private previouslyFocused: HTMLElement | null = null;
   private submittedWhileOpen = false;
   readonly actionStartedHere = signal(false);
+  readonly hasMoreContent = signal(false);
   private presentedWizardStep = 1;
+  private contentResizeObserver: ResizeObserver | undefined;
 
   constructor() {
     effect(() => {
@@ -68,6 +70,7 @@ export class InstitutionalModalComponent implements OnDestroy {
         if (!this.surface?.nativeElement.open || this.activeStep() !== step) return;
         if (this.scrollBody) this.scrollBody.nativeElement.scrollTop = 0;
         this.heading?.nativeElement.focus({ preventScroll: true });
+        requestAnimationFrame(() => this.updateScrollCue());
       });
     });
     effect(() => {
@@ -87,6 +90,14 @@ export class InstitutionalModalComponent implements OnDestroy {
         if (this.closeOnSuccess()) this.surface.nativeElement.close();
       }
     });
+  }
+
+  /** The continuation hint is driven by real overflow, not by the form type. */
+  updateScrollCue(): void {
+    const region = this.scrollBody?.nativeElement;
+    const open = this.surface?.nativeElement.open === true;
+    this.hasMoreContent.set(Boolean(open && region &&
+      region.scrollHeight - region.scrollTop - region.clientHeight > 12));
   }
 
   onDialogSubmit(): void {
@@ -124,6 +135,12 @@ export class InstitutionalModalComponent implements OnDestroy {
     document.body.style.overflow = 'hidden';
     if (this.scrollBody) this.scrollBody.nativeElement.scrollTop = 0;
     this.heading?.nativeElement.focus();
+    this.contentResizeObserver?.disconnect();
+    if (this.scrollBody) {
+      this.contentResizeObserver = new ResizeObserver(() => this.updateScrollCue());
+      this.contentResizeObserver.observe(this.scrollBody.nativeElement);
+    }
+    requestAnimationFrame(() => this.updateScrollCue());
   }
 
   close(): void {
@@ -138,6 +155,9 @@ export class InstitutionalModalComponent implements OnDestroy {
   }
 
   onClosed(): void {
+    this.contentResizeObserver?.disconnect();
+    this.contentResizeObserver = undefined;
+    this.hasMoreContent.set(false);
     this.releasePageScroll();
     // No retener contraseñas/códigos de formularios cancelados en el DOM.
     this.surface?.nativeElement.querySelectorAll('form').forEach(form => form.reset());
@@ -158,6 +178,8 @@ export class InstitutionalModalComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.contentResizeObserver?.disconnect();
+    this.contentResizeObserver = undefined;
     const dialog = this.surface?.nativeElement;
     if (dialog?.open) dialog.close();
     this.releasePageScroll();

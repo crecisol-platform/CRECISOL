@@ -220,3 +220,17 @@
   .cs-modal__warning, .cs-modal__steps > li { border-color: CanvasText; background: Canvas; color: CanvasText; }
   .cs-modal__step-number { color: CanvasText; background: Canvas; border: 1px solid CanvasText; }
 }
+
+/* Buyer review: discreet guidance when protected form content continues below.
+   The secure footer and native focus trap remain visible and functional. */
+.cs-modal__scroll-cue {
+  display: block;
+  margin-top: .28rem;
+  color: #14547c;
+  font-size: .82rem;
+  font-weight: 780;
+  line-height: 1.35;
+}
+@media (forced-colors: active) {
+  .cs-modal__scroll-cue { color: CanvasText; }
+}

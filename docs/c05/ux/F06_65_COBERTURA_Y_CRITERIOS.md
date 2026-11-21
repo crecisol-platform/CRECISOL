@@ -13,3 +13,10 @@ Puntuar individualmente 0–2 por: (1) jerarquía/CTA, (2) composición y densid
 Esto es validación de **rendering sintético**, no verifica permisos, MFA, CSRF, passkey WebAuthn ni aislamiento multitenant. Requiere pasar además la batería E2E real Angular→.NET10→MySQL8.4 y auditorías A/B/C sobre el **SHA final**; preservar 30 min inactividad configurables por administrador, protección de QR/respaldos, sesiones y flujos de doble aprobación. Ninguna modificación a backend, database, producción, `dev`, `main` ni SOLQARYN. F07 **NO HABILITADA** hasta 65 dictámenes ≥9.5 con evidencias.
 
 Referencias originales revisadas solo en lectura: Impeccable EXT-03 `pbakaus/impeccable@2149fcce39a90bb409df5f16515f316a76dc6199`, Angular Developer EXT-10 `angular/angular@6808966993bf2b2d455d9b6245e960a59a01b9a9`, Motion EXT-04 `emilkowalski/skills@d23d7f88a2e21c9e4b1418c7abe420f5c1052ba7`. Ninguna skill externa fue instalada ni ejecutada.
+
+## Ronda visual posterior al inventario completo
+El workflow [#44941735080](https://github.com/crecisol-platform/CRECISOL/actions/runs/44941735080) obtuvo PASS sobre `1f1dd2b7b7b3caefd1194555d61072c0aebeb93d`: 30/30 pruebas y 390 capturas PNG, con 65/65 IDs visibles en 320, 390, 768, 1024 y 1440. Esto demuestra **cobertura sintética**, no compra 9.5 ni autorización de servidor del nuevo SHA.
+
+La inspección de los PNG originales a 320 px descubrió falta de una indicación visual de continuación en diálogos protegidos largos. La mejora añade un aviso solo cuando realmente queda contenido por desplazar; desaparece al llegar al final y no elimina ninguna instrucción de seguridad. En la cuenta móvil se elimina la tarjeta decorativa anidada del encabezado, conservando título, descripción y navegación. Se incorpora también la vista separada de **Historial**, creada en F03 después del inventario original F01.
+
+El guard de valoraciones permite futuras notas solo si contienen justificación, evidencia visual, comprobación de privacidad y decisión individual coherente con ≥9.5, sin otorgarlas automáticamente. Cualquier cambio exige repetir QA sobre el SHA final. F07 permanece bloqueada.
