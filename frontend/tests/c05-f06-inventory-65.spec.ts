@@ -216,6 +216,15 @@ async function seedAccount(page: Page): Promise<void> {
       id: '33333333-4444-4555-8666-777777777777',
       createdAtUtc: new Date().toISOString()
     }]);
+    // A guarded decision dialog is only available after a server-scoped list.
+    // This is synthetic UI state and never bypasses backend authorization.
+    owner.identity.pendingMemberships.set([{
+      id: '55555555-6666-4777-8888-999999999999',
+      requestedAtUtc: '2026-11-19T11:00:00Z',
+      mailboxHint: 'so•••@example.test'
+    }]);
+    owner.identity.pendingLoaded.set(true);
+    owner.identity.pendingNextCursor.set(null);
   });
 }
 
@@ -232,6 +241,7 @@ async function seedOperator(page: Page): Promise<void> {
       lastSeenAtUtc: new Date().toISOString(),
       expiresAtUtc: new Date(Date.now() + 30 * 60_000).toISOString()
     }]);
+    owner.platform.sessionsLoaded.set(true);
     owner.platform.abuse.set([
       { kind: 'Intentos de acceso rechazados', count: 3 },
       { kind: 'Revisión de factor', count: 1 }
@@ -338,7 +348,31 @@ for (const size of sizes) {
           (window as DebugWindow).ng!.getComponent(el).identity.recoveryCodes.set([]);
         });
       }
+      if (view === 'resumen') {
+        const extras = page.locator('details.identity-summary-extras');
+        await extras.locator('summary').click();
+        await expect(extras).toHaveAttribute('open','');
+        await capture(page,testInfo,'account-resumen-session-more-open-'+size.name);
+      }
       await captureModals(page, testInfo, 'account-' + view + '-' + size.name);
+      if (view === 'llaves') {
+        const key=page.getByRole('button',{name:'Revocar esta llave',exact:true}).first();
+        await expect(key).toBeVisible();
+        await key.click();
+        const dialog=page.getByRole('dialog',{name:'Revocar llave de acceso'});
+        await expect(dialog).toBeVisible();
+        await capture(page,testInfo,'account-llaves-revoke-protected-'+size.name);
+        await dialog.locator('button.cs-modal__cancel').click();
+      }
+      if (view === 'administracion') {
+        const review=page.getByRole('button',{name:'Revisar solicitud',exact:true}).first();
+        await expect(review).toBeVisible();
+        await review.click();
+        const dialog=page.getByRole('dialog',{name:'Revisar membresía con permiso administrativo'});
+        await expect(dialog).toBeVisible();
+        await capture(page,testInfo,'account-administracion-review-protected-'+size.name);
+        await dialog.locator('button.cs-modal__cancel').click();
+      }
       if (view === 'seguridad') {
         await page.getByRole('button', { name: 'Cambiar contraseña', exact: true }).click();
         const dialog = page.getByRole('dialog', { name: 'Cambiar contraseña' });
@@ -359,7 +393,7 @@ for (const size of sizes) {
         await expect(dialog).toHaveCount(0);
       }
       if (view === 'resumen') {
-        const revoke = page.getByRole('button', { name: /Revocar sesión / }).first();
+        const revoke = page.getByRole('button', { name: 'Revocar esta sesión', exact: true }).first();
         if (await revoke.count()) {
           await revoke.click();
           await capture(page, testInfo, 'account-revoke-single-session-' + size.name);
@@ -381,6 +415,10 @@ for (const size of sizes) {
         .getByRole('button', { name: tab, exact: true }).click();
       await capture(page, testInfo, 'operator-' + tab + '-' + size.name);
       await captureModals(page, testInfo, 'operator-' + tab + '-' + size.name);
+      if (tab === 'Sesiones') {
+        await expect(page.getByRole('button', { name: /Revocar sesión de operador / }).first())
+          .toBeVisible();
+      }
       if (tab === 'Sesiones') {
         const revoke = page.getByRole('button', { name: /Revocar sesión de operador / }).first();
         if (await revoke.count()) {
