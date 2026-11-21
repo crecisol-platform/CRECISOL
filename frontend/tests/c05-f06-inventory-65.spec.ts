@@ -123,6 +123,8 @@ async function capture(page: Page, testInfo: TestInfo, id: string): Promise<void
       .filter(x => x.getBoundingClientRect().height > 0)
       .map(x => x.textContent?.trim()).filter(Boolean).slice(0, 20),
     dialogsOpen: document.querySelectorAll('dialog:modal').length,
+    feedbackKinds: [...document.querySelectorAll<HTMLElement>('.cs-operation-feedback[data-feedback-kind]')]
+      .map(node => node.getAttribute('data-feedback-kind')).filter(Boolean),
     dialog: (() => {
       const dialog = document.querySelector('dialog.cs-modal:modal');
       if (!dialog) return null;
@@ -472,13 +474,18 @@ for (const size of sizes) {
       const owner = (window as DebugWindow).ng!.getComponent(el);
       owner.identity.restoring.set(true);
     });
+    await expect(page.locator('cs-operation-feedback [data-feedback-kind="pending"]')).toBeVisible();
     await capture(page, testInfo, 'account-loading-synthetic-' + size.name);
     await page.evaluate(() => {
       const el = document.querySelector('cs-identity-portal')!;
       const owner = (window as DebugWindow).ng!.getComponent(el);
       owner.identity.restoring.set(false);
+      owner.feedbackScope.set('resumen');
+      owner.message.set('');
       owner.error.set('No se pudo completar la solicitud. Inténtalo nuevamente.');
     });
+    await expect(page.locator('cs-operation-feedback [data-feedback-kind="error"]'))
+      .toContainText('No se pudo completar la solicitud.');
     await capture(page, testInfo, 'account-error-synthetic-' + size.name);
     await page.evaluate(() => {
       const el = document.querySelector('cs-identity-portal')!;
@@ -486,13 +493,20 @@ for (const size of sizes) {
       owner.error.set('');
       owner.message.set('Solicitud recibida en el entorno ficticio.');
     });
+    await expect(page.locator('cs-operation-feedback [data-feedback-kind="success"]'))
+      .toContainText('Solicitud recibida en el entorno ficticio.');
     await capture(page, testInfo, 'account-success-synthetic-' + size.name);
     await page.evaluate(() => {
       const el = document.querySelector('cs-identity-portal')!;
       const owner = (window as DebugWindow).ng!.getComponent(el);
       owner.message.set('');
+      owner.feedbackScope.set('');
       owner.identity.clear();
+      // Synthetic timer/revocation event; actual server enforcement is tested separately.
+      owner.identity.sessionEndedNotice.set(true);
     });
+    await expect(page.locator('cs-operation-feedback [data-feedback-kind="info"]'))
+      .toContainText('Tu sesión dejó de estar disponible.');
     await capture(page, testInfo, 'account-session-cleared-synthetic-' + size.name);
   });
   test('F06 COMPLETE-65 | challenge and TOTP QR with synthetic enrollment only ' + size.name,
@@ -556,11 +570,14 @@ for (const size of sizes) {
       const el = document.querySelector('cs-platform-identity-panel')!;
       (window as DebugWindow).ng!.getComponent(el).platform.restoring.set(true);
     });
+    await expect(page.locator('cs-platform-identity-panel cs-operation-feedback [data-feedback-kind="pending"]'))
+      .toContainText('Verificando tu sesión de operador');
     await capture(page, testInfo, 'operator-restoring-synthetic-' + size.name);
     await page.evaluate(() => {
       const el = document.querySelector('cs-platform-identity-panel')!;
       (window as DebugWindow).ng!.getComponent(el).platform.restoring.set(false);
     });
+    await expect(page.locator('cs-platform-identity-panel cs-operation-feedback [data-feedback-kind="pending"]')).toHaveCount(0);
     await nav.getByRole('button', { name: 'Sesiones' }).click();
     await capture(page, testInfo, 'operator-sessions-empty-synthetic-' + size.name);
     await nav.getByRole('button', { name: 'Monitor' }).click();
@@ -611,15 +628,23 @@ for (const size of sizes) {
     await page.evaluate(() => {
       const el = document.querySelector('cs-platform-identity-panel')!;
       const owner = (window as DebugWindow).ng!.getComponent(el);
+      owner.feedbackScope.set('seguridad');
       owner.error.set('No se pudo completar la solicitud. Revisa los datos.');
     });
+    await expect(page.locator('cs-platform-identity-panel cs-operation-feedback [data-feedback-kind="error"]'))
+      .toContainText('No se pudo completar la solicitud.');
     await capture(page, testInfo, 'operator-error-synthetic-' + size.name);
     await page.evaluate(() => {
       const el = document.querySelector('cs-platform-identity-panel')!;
       const owner = (window as DebugWindow).ng!.getComponent(el);
       owner.error.set('');
+      owner.feedbackScope.set('');
       owner.platform.clear();
+      // Synthetic expiry callback only; server rejects the actual expired cookie in integration.
+      owner.platform.sessionEndedNotice.set(true);
     });
+    await expect(page.locator('cs-platform-identity-panel cs-operation-feedback [data-feedback-kind="info"]'))
+      .toContainText('La sesión de operador terminó o fue revocada.');
     await capture(page, testInfo, 'operator-session-expired-simulated-' + size.name);
   });
 
