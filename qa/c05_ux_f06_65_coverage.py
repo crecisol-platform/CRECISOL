@@ -49,7 +49,7 @@ def main(root: Path, catalog: Path) -> None:
         png=file.parent/str(data.get("screenshot",""))
         check(png.is_file(),"PNG ausente para "+str(file))
         raw=png.open("rb").read(24)
-        check(raw[:8]==b"\\x89PNG\\r\\n\\x1a\\n" and raw[12:16]==b"IHDR",
+        check(raw[:8]==b"\x89PNG\r\n\x1a\n" and raw[12:16]==b"IHDR",
               "encabezado PNG inválido: "+str(png))
         pw,ph=struct.unpack(">II",raw[16:24])
         check(pw==width and ph>=viewport.get("height",10**9),
