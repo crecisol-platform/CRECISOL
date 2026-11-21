@@ -711,3 +711,24 @@ test('F06 buyer operator security preserves 30-minute policy and protected actio
   await expect.poll(() => page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
 });
+
+// No duplicate policy box before the real operator work. The disclosure
+// remains keyboard reachable after the workspace and before sign-out.
+test('F06 buyer operator realm disclosure follows the protected work and is accessible', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await operator(page);
+  const work = page.locator('.operator-content');
+  const disclosure = page.locator('details.operator-scope-disclosure');
+  const order = await work.evaluate(element => {
+    const details = document.querySelector('details.operator-scope-disclosure');
+    const signout = document.querySelector('.operator-exit');
+    return !!details && !!signout &&
+      !!(element.compareDocumentPosition(details) & Node.DOCUMENT_POSITION_FOLLOWING) &&
+      !!(details.compareDocumentPosition(signout) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  expect(order, 'privacy details must stay after tasks and before sign out').toBe(true);
+  await disclosure.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(disclosure).toHaveAttribute('open', '');
+  await expect(disclosure).toContainText('Ninguna pestaña concede autorización por sí misma');
+});

@@ -89,10 +89,6 @@
           [items]="navigationItems()" [activeId]="panel()"
           ariaLabel="Áreas de la consola de identidad"
           (selected)="selectPanel($event)"/>
-        <details class="operator-scope-banner operator-scope-disclosure">
-          <summary>Privacidad y permisos</summary>
-          <p>El acceso de plataforma utiliza una identidad, sesión y permisos distintos de las cuentas empresariales. Ninguna pestaña concede autorización por sí misma.</p>
-        </details>
         <div class="operator-content">
           @switch (panel()) {
             @case ('sesiones') {
@@ -117,6 +113,13 @@
             }
           }
         </div>
+        <!-- Disclosure is accessible after the active task; the identity realm
+             remains explicit in the heading, and each sensitive task has
+             its own focused privacy and authorization explanation. -->
+        <details class="operator-scope-banner operator-scope-disclosure">
+          <summary>Privacidad y permisos</summary>
+          <p>El acceso de plataforma utiliza una identidad, sesión y permisos distintos de las cuentas empresariales. Ninguna pestaña concede autorización por sí misma.</p>
+        </details>
         <div class="operator-exit"><button type="button" [disabled]="busy()" (click)="logout()">Cerrar sesión de plataforma</button></div>
       }
       @if (platform.recoveryCodes().length) {
