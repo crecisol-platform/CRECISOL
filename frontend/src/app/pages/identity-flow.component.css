@@ -357,3 +357,47 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
 @media (forced-colors: active) and (max-width: 720px) {
   .operator-context, .operator-scope-disclosure { border: 1px solid CanvasText; }
 }
+
+/* F06 editorial: the principal identity task must not be dismissible.
+   Compact its presentation; keep all server-required credentials, consent,
+   one-use proofs and MFA as full-size native controls. */
+.cs-guest-process > h2 {
+  margin: .1rem 0 .45rem;
+  font-size: clamp(1.32rem, 3.4vw, 1.65rem);
+  line-height: 1.2;
+}
+.cs-guest-process > p {
+  max-width: 58ch;
+  margin: 0 0 .7rem;
+  color: #435f79;
+  font-size: .915rem;
+  line-height: 1.52;
+}
+.cs-guest-process > form {
+  margin: .55rem 0 .8rem;
+  gap: .36rem;
+}
+.cs-guest-process > form label { margin-top: .18rem; }
+.cs-guest-process > form .cs-choice-line {
+  margin: .3rem 0 .15rem;
+  min-height: var(--cs-hit-target, 2.75rem);
+}
+.cs-guest-process > form .cs-guest-terms {
+  margin: .4rem 0 .15rem;
+  padding: .35rem 0;
+}
+.cs-guest-process > form .cs-guest-terms > summary {
+  box-sizing: border-box;
+  display: list-item;
+  min-height: var(--cs-hit-target, 2.75rem);
+  padding: .65rem .15rem;
+  line-height: 1.45;
+}
+.cs-guest-process > form .cs-guest-terms[open] > summary { margin-bottom: .4rem; }
+@media (max-width: 480px) {
+  .cs-guest-process > p { font-size: .9rem; line-height: 1.48; }
+  .cs-guest-process > form { gap: .3rem; }
+}
+@media (forced-colors: active) {
+  .cs-guest-process > form .cs-guest-terms { border-top: 1px solid CanvasText; }
+}
