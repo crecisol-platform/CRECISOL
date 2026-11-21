@@ -106,7 +106,7 @@ export class PlatformIdentityPanelComponent {
   async loadAbuse(): Promise<void> { await this.run(() => this.platform.loadAbuse(), 'load-abuse'); }
   async openSecurity(): Promise<void> {
     this.panel.set('seguridad');
-    await this.run(() => this.platform.loadSessionPolicy(), 'session-policy');
+    await this.run(() => this.platform.loadSessionPolicy(), 'session-policy-read');
   }
   async loadSessions(): Promise<void> { await this.run(() => this.platform.loadSessions(), 'sessions-list'); }
   async rotateSession(): Promise<void> {
@@ -133,7 +133,7 @@ export class PlatformIdentityPanelComponent {
     try {
       await action();
       if (generation === this.feedbackGeneration && this.panel() === origin &&
-          !this.message() && !this.error())
+          !this.message() && !this.error() && command !== 'session-policy-read')
         this.message.set('La solicitud de plataforma terminó. Comprueba el resultado autorizado.');
     } catch (caught) {
       if (generation === this.feedbackGeneration && this.panel() === origin)

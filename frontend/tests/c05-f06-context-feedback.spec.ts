@@ -732,3 +732,27 @@ test('F06 buyer operator realm disclosure follows the protected work and is acce
   await expect(disclosure).toHaveAttribute('open', '');
   await expect(disclosure).toContainText('Ninguna pestaña concede autorización por sí misma');
 });
+
+test('F06 buyer public login places the actual task before the decorative hero on phones', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'anonymous');
+  await page.goto('/cuenta?vista=ingresar');
+  await expect(page.locator('.account-layout--guest .account-aside')).toBeHidden();
+  const submit = page.getByRole('button', { name: 'Continuar', exact: true });
+  await expect(submit).toBeVisible();
+  expect(await submit.evaluate(el => el.getBoundingClientRect().bottom))
+    .toBeLessThanOrEqual(720);
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+});
+
+test('F06 buyer passive security-policy read does not invent a success notification', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await operator(page);
+  await page.getByRole('navigation', { name: 'Áreas de la consola de identidad' })
+    .getByRole('button', { name: 'Seguridad', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Política vigente de inactividad' }))
+    .toContainText('30 minutos sin actividad');
+  await expect(page.getByText('La solicitud de plataforma terminó. Comprueba el resultado autorizado.'))
+    .toHaveCount(0);
+});

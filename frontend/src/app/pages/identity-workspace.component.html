@@ -1,12 +1,12 @@
 <section class="identity-workspace">
           <h2 id="session-heading">
             @switch (view()) {
-              @case ('perfil') { Datos y preferencias }
-              @case ('llaves') { Métodos registrados }
-              @case ('seguridad') { Gestionar seguridad }
-              @case ('historial') { Actividad reciente }
-              @case ('administracion') { Decisiones e invitaciones }
-              @default { Estado de la sesión }
+              @case ('perfil') { Datos verificados }
+              @case ('llaves') { Tus dispositivos de acceso }
+              @case ('seguridad') { Cambios protegidos }
+              @case ('historial') { Cronología de seguridad }
+              @case ('administracion') { Solicitudes por revisar }
+              @default { Tu sesión actual }
             }
           </h2>
           @if (identity.recoveryCodes().length) {
@@ -30,7 +30,7 @@
 <section class="operator-readonly-panel identity-profile" aria-label="Perfil de mi empresa">
   <div class="identity-panel-heading">
     <div>
-      <h3>Mi perfil en esta empresa</h3>
+      <h3>Información visible</h3>
       <p>Datos verificados del perfil de esta empresa.</p>
     </div>
     <button type="button" [disabled]="busy()" (click)="loadProfileRequested.emit()">Actualizar datos</button>
@@ -105,7 +105,7 @@
   <section class="operator-readonly-panel identity-activity" aria-label="Historial de seguridad">
   <div class="identity-panel-heading">
     <div>
-      <h3>Mi historial de seguridad</h3>
+      <h3>Movimientos recientes</h3>
       <p>Eventos recientes de tu cuenta.</p>
     </div>
     <button type="button" [disabled]="busy()" (click)="requestHistory()">Actualizar historial</button>
@@ -149,7 +149,7 @@
 <section class="operator-readonly-panel identity-key-panel" aria-label="Llaves de acceso">
   <div class="identity-panel-heading">
     <div>
-      <h3>Mis llaves de acceso</h3>
+      <h3>Llaves disponibles</h3>
       <p>Métodos registrados y revocación protegida.</p>
     </div>
     <button type="button" [disabled]="busy() || identity.restoring()" (click)="passkeyListRequested.emit()">Actualizar llaves</button>
@@ -327,7 +327,7 @@
   <section class="identity-approval-queue" aria-label="Solicitudes de membresía pendientes">
     <div class="identity-panel-heading">
       <div>
-        <h3>Solicitudes de acceso pendientes</h3>
+        <h3>Bandeja de solicitudes</h3>
         <p>Verás solo las solicitudes autorizadas, con el correo protegido.</p>
       </div>
       <button type="button" [disabled]="busy() || identity.restoring()"

@@ -563,3 +563,14 @@ cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] cs-ui-action {
     border-bottom: 1px solid CanvasText;
   }
 }
+
+/* Mobile public access: the task itself replaces the repeated marketing hero.
+   Branding remains in the header and the full institutional aside on desktop. */
+@media (max-width: 720px) {
+  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-aside {
+    display: none;
+  }
+  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-main {
+    padding-top: .8rem;
+  }
+}
