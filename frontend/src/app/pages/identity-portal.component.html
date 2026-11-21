@@ -38,13 +38,17 @@
           <li aria-current="page">{{ sectionName() }}</li>
         </ol>
       </nav>
-      @if (visibleFeedback(); as feedback) {
-        <cs-operation-feedback [kind]="feedback.kind" [text]="feedback.text" context="Cuenta y seguridad" />
-      }
-      @if (view() !== 'operadores' && identity.restoring() && !visibleFeedback()) {
+      <!-- A server-verified session restoration takes precedence over any stale
+           contextual receipt; never imply success during uncertain authority. -->
+      @if (view() !== 'operadores' && identity.restoring()) {
         <cs-operation-feedback kind="pending" text="Comprobando si tu sesión sigue disponible…" context="Cuenta y seguridad" />
-      } @else if (view() !== 'operadores' && identity.state() === 'anonymous' && identity.sessionEndedNotice() && !visibleFeedback()) {
-        <cs-operation-feedback kind="info" text="Tu sesión dejó de estar disponible. Para continuar, inicia sesión de nuevo." context="Cuenta y seguridad" />
+      } @else {
+        @if (visibleFeedback(); as feedback) {
+          <cs-operation-feedback [kind]="feedback.kind" [text]="feedback.text" context="Cuenta y seguridad" />
+        }
+        @if (view() !== 'operadores' && identity.state() === 'anonymous' && identity.sessionEndedNotice() && !visibleFeedback()) {
+          <cs-operation-feedback kind="info" text="Tu sesión dejó de estar disponible. Para continuar, inicia sesión de nuevo." context="Cuenta y seguridad" />
+        }
       }
       @if (view() === 'operadores') {
         <div class="page-heading page-heading--operator">
