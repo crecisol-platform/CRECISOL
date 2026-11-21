@@ -113,6 +113,10 @@ def audit_a() -> None:
     need("secondaryRoutesOpen.set(false)" in portal and
          "secondaryRoutesToggled(event: Event)" in portal,
          "secondary account menu may persist open after a route change")
+    guest_markup = text("frontend/src/app/pages/identity-portal.component.html")
+    for task in ("invitacion", "acceso-existente", "confirmar", "recuperar"):
+        need("guestView() === '" + task + "'" in guest_markup,
+             "focused guest workflow may regress to unrelated login tabs: " + task)
     for template in ("frontend/src/app/pages/identity-portal.component.html",
                      "frontend/src/app/pages/platform-identity-panel.component.html"):
         markup = text(template)

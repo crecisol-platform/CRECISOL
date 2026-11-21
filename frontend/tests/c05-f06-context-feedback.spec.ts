@@ -1313,3 +1313,24 @@ test('F06 buyer: desktop MFA and platform login retain focused reading widths', 
   await expect.poll(() => page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
 });
+
+test('F06 premium editorial: confirmation and recovery prioritize their own forms over unrelated tabs', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'anonymous');
+  for (const task of [
+    { view: 'confirmar', heading: 'Confirmar correo', action: 'Crear cuenta pendiente' },
+    { view: 'recuperar', heading: 'Recuperar contraseña', action: 'Solicitar recuperación' }
+  ]) {
+    await page.goto('/cuenta?vista=' + task.view);
+    await expect(page.getByRole('heading', { name: task.heading })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Opciones de identidad' })).toHaveCount(0);
+    await expect(page.locator('.account-guest-return')).toBeVisible();
+    await expect(page.getByRole('button', { name: task.action })).toBeVisible();
+    await expect(page.locator('details.account-more')).not.toHaveAttribute('open');
+    await expect.poll(() => page.evaluate(() =>
+      document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+  }
+  await page.locator('.account-guest-return').click();
+  await expect(page).toHaveURL(/vista=ingresar/);
+  await expect(page.getByRole('navigation', { name: 'Opciones de identidad' })).toBeVisible();
+});

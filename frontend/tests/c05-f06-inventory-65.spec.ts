@@ -306,6 +306,15 @@ for (const size of sizes) {
       await expect(secondary, 'secondary routes must not crowd the task in ' + view)
         .not.toHaveAttribute('open');
       await expect(secondary.locator('summary')).toBeVisible();
+      if (view === 'ingresar' || view === 'registro') {
+        await expect(page.getByRole('navigation', { name: 'Opciones de identidad' })).toBeVisible();
+        await expect(page.locator('.account-guest-return')).toHaveCount(0);
+      } else {
+        // A protected or focused task must not show unrelated login/register tabs.
+        await expect(page.getByRole('navigation', { name: 'Opciones de identidad' })).toHaveCount(0);
+        await expect(page.locator('.account-guest-return')).toBeVisible();
+        await expect(page.locator('.account-guest-return')).toHaveAttribute('href', /vista=ingresar/);
+      }
       await capture(page, testInfo, 'public-' + view + '-' + size.name);
       if (view === 'invitacion' || view === 'acceso-existente') {
         const readTerms = page.locator('cs-identity-guest')

@@ -59,7 +59,7 @@
         <a class="back-link" routerLink="/cuenta">Volver al acceso de cuentas</a>
       } @else {
         @if (identity.state() === 'anonymous') {
-          @if (guestView() === 'invitacion' || guestView() === 'acceso-existente') {
+          @if (guestView() === 'invitacion' || guestView() === 'acceso-existente' || guestView() === 'confirmar' || guestView() === 'recuperar') {
             <a class="account-guest-return" routerLink="/cuenta" [queryParams]="{ vista: 'ingresar' }">Volver a iniciar sesión</a>
           } @else {
           <div class="account-navigation-group">
