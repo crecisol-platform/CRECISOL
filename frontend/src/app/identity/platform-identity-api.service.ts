@@ -25,6 +25,8 @@ export class PlatformIdentityApiService {
   private activityInFlight = false;
   readonly state = signal<'anonymous' | 'challenge' | 'authenticated'>('anonymous');
   readonly restoring = signal(true);
+  // In-memory, unprivileged notice for revoked/expired operator sessions only.
+  readonly sessionEndedNotice = signal(false);
   readonly handoffShare = signal('');
   readonly profile = signal<{ displayName: string; language: string; timeZone: string } | null>(null);
   readonly photo = signal('');
@@ -53,7 +55,9 @@ export class PlatformIdentityApiService {
   private shareTimeout: ReturnType<typeof setTimeout> | undefined;
   // A suspended tab must not log out another active tab sharing this HttpOnly cookie.
   // Server expiry/revocation is enforced independently on every API call.
-  private readonly sessionWindow = new BrowserSessionWindow(() => { this.clear(); });
+  private readonly sessionWindow = new BrowserSessionWindow(() => {
+    this.clear(); this.sessionEndedNotice.set(true);
+  });
   readonly case = signal<{ caseId: string; readyAtUtc: string | null; blocked: boolean; consumed: boolean } | null>(null);
   constructor() {
     if (typeof document !== 'undefined') {
@@ -70,7 +74,9 @@ export class PlatformIdentityApiService {
     this.activityLastSent = Date.now(); this.activityInFlight = true;
     const revision = this.sessionRevision;
     void this.post('sessions/keepalive', {}).catch((error: unknown) => {
-      if (revision === this.sessionRevision && error instanceof HttpErrorResponse && error.status === 401) this.clear();
+      if (revision === this.sessionRevision && error instanceof HttpErrorResponse && error.status === 401) {
+        this.clear(); this.sessionEndedNotice.set(true);
+      }
     }).finally(() => { this.activityInFlight = false; });
   }
   private async restore(): Promise<void> {
@@ -308,7 +314,9 @@ export class PlatformIdentityApiService {
       return response.body as T;
     } catch (error) {
       if (requestRevision === this.sessionRevision && error instanceof HttpErrorResponse &&
-          error.status === 401 && ['session', 'sessions', 'sessions/keepalive'].includes(route)) this.clear();
+          error.status === 401 && ['session', 'sessions', 'sessions/keepalive'].includes(route)) {
+        this.clear(); this.sessionEndedNotice.set(true);
+      }
       throw error;
     }
   }
@@ -325,6 +333,7 @@ export class PlatformIdentityApiService {
     this.operatorRecoverySeed.set(''); this.operatorRecoveryQr.set('');
   }
   clear(): void {
+    this.sessionEndedNotice.set(false);
     ++this.sessionRevision;
     ++this.caseRequestRevision;
     ++this.sessionsRequestRevision;
