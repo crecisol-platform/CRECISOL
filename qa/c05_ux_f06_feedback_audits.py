@@ -113,6 +113,11 @@ def audit_a() -> None:
     need("secondaryRoutesOpen.set(false)" in portal and
          "secondaryRoutesToggled(event: Event)" in portal,
          "secondary account menu may persist open after a route change")
+    inventory = text("frontend/tests/c05-f06-inventory-65.spec.ts")
+    for marker in ("section.operator-workspace:visible h2",
+                   "wrong operator tab before screenshot",
+                   "operator tab changed during screenshot capture"):
+        need(marker in inventory, "65-surface inventory permits mislabeled operator captures: " + marker)
     guest_markup = text("frontend/src/app/pages/identity-portal.component.html")
     for task in ("invitacion", "acceso-existente", "confirmar", "recuperar"):
         need("guestView() === '" + task + "'" in guest_markup,

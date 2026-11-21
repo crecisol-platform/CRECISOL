@@ -151,7 +151,28 @@ async function capture(page: Page, testInfo: TestInfo, id: string): Promise<void
     ? ((await page.locator('dialog.cs-modal:modal h2').first().textContent()) ?? '').trim()
     : '';
   const inventoryIds = surfaceIdsFor(id, modalTitle);
+  // Surface IDs cannot be established from filenames alone. A rapid operator
+  // tab change can otherwise photograph another tab while reporting PASS.
+  const operatorHeadingByTab: Record<string, string> = {
+    Casos: 'Casos de recuperación y revisión',
+    Sesiones: 'Sesiones de plataforma',
+    Perfil: 'Mi perfil de operador',
+    Seguridad: 'Seguridad de plataforma',
+    Monitor: 'Monitor de identidad'
+  };
+  const operatorTab = id.match(/^operator-(Casos|Sesiones|Perfil|Seguridad|Monitor)-(mobile|tablet|desktop|wide|small|\d+)/)?.[1];
+  if (operatorTab) {
+    expect(measurements.visibleHeadings, 'wrong operator tab before screenshot: ' + id)
+      .toContain(operatorHeadingByTab[operatorTab]);
+  }
   await page.screenshot({ path, fullPage: measurements.dialogsOpen === 0, animations: 'disabled' });
+  if (operatorTab) {
+    const afterHeadings = await page.locator('section.operator-workspace:visible h2')
+      .allTextContents();
+    expect(afterHeadings.map(s => s.trim()),
+      'operator tab changed during screenshot capture: ' + id)
+      .toEqual([operatorHeadingByTab[operatorTab]]);
+  }
   await writeFile(testInfo.outputPath(name + '.json'), JSON.stringify({
     id, inventoryIds, modalTitle, sourceSha: TARGET_SHA, runnerSha: TARGET_SHA,
     synthetic: true, ...measurements,
@@ -457,9 +478,19 @@ for (const size of sizes) {
     await page.goto('/cuenta?vista=operadores');
     await expect(page.getByRole('navigation', { name: 'Áreas de la consola de identidad' })).toBeVisible();
     await seedOperator(page);
+    const tabHeadings: Record<string, string> = {
+      Casos: 'Casos de recuperación y revisión',
+      Sesiones: 'Sesiones de plataforma',
+      Perfil: 'Mi perfil de operador',
+      Seguridad: 'Seguridad de plataforma',
+      Monitor: 'Monitor de identidad'
+    };
     for (const tab of ['Casos', 'Sesiones', 'Perfil', 'Seguridad', 'Monitor']) {
       await page.getByRole('navigation', { name: 'Áreas de la consola de identidad' })
         .getByRole('button', { name: tab, exact: true }).click();
+      await expect(page.locator('section.operator-workspace:visible h2'),
+        'the selected operator tab must render before recording ' + tab)
+        .toHaveText(tabHeadings[tab]);
       await capture(page, testInfo, 'operator-' + tab + '-' + size.name);
       await captureModals(page, testInfo, 'operator-' + tab + '-' + size.name);
       if (tab === 'Sesiones') {
