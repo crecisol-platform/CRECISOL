@@ -73,9 +73,9 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
   width: 100%; min-height: 3.75rem; border: 1px solid #d5e3f0; border-radius: .9rem;
   background: #fff !important; color: #1c466b !important; padding: 1rem 1.2rem;
   font-weight: 700; text-align: left; box-shadow: 0 4px 16px #173c5810;
-  transition: background .16s ease, border-color .16s ease, transform .16s ease; }
+  transition: background-color .16s ease-out, border-color .16s ease-out; }
 .institutional-task__trigger:hover:not(:disabled) { background: #f1f7fd !important;
-  border-color: #aac9e1; transform: translateY(-1px); }
+  border-color: #aac9e1; }
 .institutional-task__trigger > span:last-child { font-size: 1.3rem; font-weight: 400; }
 .institutional-task__trigger:focus-visible { outline: 3px solid #126aaf; outline-offset: 3px; }
 .institutional-task + .institutional-task { margin-top: .75rem; }
@@ -242,7 +242,7 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
 .login-surface .login-form button[type='submit'] { margin-top: .35rem; }
 .login-surface .login-passkey-action { display: block; width: 100%; margin: .4rem 0 .5rem; background: #f3f8fd; border-color: #ccdfef; color: #174a79; }
 .login-surface .login-passkey-action:hover:not(:disabled) { background: #e5f0fa; }
-.login-surface .login-compatibility-note { margin: .45rem 0; padding: .65rem .8rem; font-size: .82rem; border-left: 2px solid #679bc2; background: #f5f9fd; border-radius: .35rem; }
+.login-surface .login-compatibility-note { margin: .45rem 0; padding: .65rem .8rem; font-size: .875rem; border-left: 2px solid #679bc2; background: #f5f9fd; border-radius: .35rem; }
 .login-surface details { padding: .6rem 0; margin-top: .4rem; }
 @media (max-width: 480px) {
  .login-surface h2 { font-size: 1.45rem; }
@@ -255,7 +255,7 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
 .operator-context__eyebrow { font-size: .64rem; letter-spacing: .075em; }
 .operator-context__section { flex: 1 1 18rem; font-size: .84rem; gap: .2rem .65rem; }
 .operator-context__section strong { font-size: .95rem; }
-.operator-nav-hint { margin: .15rem 0 .35rem; color: #536d83; font-size: .79rem; line-height: 1.4; }
+.operator-nav-hint { margin: .15rem 0 .35rem; color: #536d83; font-size: .875rem; line-height: 1.4; }
 .operator-navigation { margin: .25rem 0 .7rem; }
 .operator-scope-disclosure { padding: 0; margin: .15rem 0 .9rem; border-left-width: 2px; background: transparent; font-size: .83rem; }
 .operator-scope-disclosure summary { padding: .5rem .8rem; color: #28577c; font-weight: 700; cursor: pointer; line-height: 1.4; }
@@ -303,10 +303,10 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
     flex-wrap: wrap;
     align-items: baseline;
     gap: .1rem .5rem;
-    font-size: .74rem;
-    line-height: 1.33;
+    font-size: .875rem;
+    line-height: 1.42;
   }
-  .operator-context__section strong { font-size: .78rem; }
+  .operator-context__section strong { font-size: .9375rem; }
   .operator-context__section span { display: inline; overflow-wrap: anywhere; }
   .operator-navigation { margin-top: .1rem; }
   .operator-nav-hint { margin-top: .15rem; }
@@ -317,11 +317,11 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
 /* F06 buyer refinement: keep the F03-visible section/policy context but
    make navigation and disclosure compact in five operator workspaces. */
 @media (max-width: 720px) {
-  .operator-nav-hint { font-size: .75rem; line-height: 1.4; margin-bottom: .2rem; }
+  .operator-nav-hint { font-size: .875rem; line-height: 1.45; margin-bottom: .2rem; }
   .operator-context { margin-bottom: .25rem; }
   .operator-scope-disclosure { margin: .1rem 0 .4rem; border-left-width: 2px; }
   .operator-scope-disclosure summary {
-    padding: .47rem .68rem; font-size: .8rem; line-height: 1.35;
+    padding: .65rem .68rem; font-size: .875rem; line-height: 1.45;
   }
   .operator-content { padding-top: .45rem; }
 }
