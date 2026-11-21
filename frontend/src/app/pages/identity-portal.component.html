@@ -51,6 +51,9 @@
         <a class="back-link" routerLink="/cuenta">Volver al acceso de cuentas</a>
       } @else {
         @if (identity.state() === 'anonymous') {
+          @if (guestView() === 'invitacion' || guestView() === 'acceso-existente') {
+            <a class="account-guest-return" routerLink="/cuenta" [queryParams]="{ vista: 'ingresar' }">Volver a iniciar sesión</a>
+          } @else {
           <div class="account-navigation-group">
             <p class="account-navigation-label">ACCESO Y REGISTRO</p>
             <nav class="account-nav" aria-label="Opciones de identidad">
@@ -58,6 +61,7 @@
               <a routerLink="/cuenta" [queryParams]="{ vista: 'registro' }" [attr.aria-current]="guestView() === 'registro' ? 'page' : null">Solicitar cuenta</a>
             </nav>
           </div>
+          }
           @if (view() === 'recuperar') {
             <cs-identity-recovery [busy]="busy()" (securityActionRequested)="securityAction($event.event, $event.action)" />
           } @else {
