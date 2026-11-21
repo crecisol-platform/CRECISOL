@@ -160,7 +160,7 @@ async function capture(page: Page, testInfo: TestInfo, id: string): Promise<void
     Seguridad: 'Seguridad de plataforma',
     Monitor: 'Monitor de identidad'
   };
-  const operatorTab = id.match(/^operator-(Casos|Sesiones|Perfil|Seguridad|Monitor)-(mobile|tablet|desktop|wide|small|\d+)/)?.[1];
+  const operatorTab = id.match(/^operator-(Casos|Sesiones|Perfil|Seguridad|Monitor)-(mobile-320|mobile-390|tablet-768|laptop-1024|desktop-1440)$/)?.[1];
   if (operatorTab) {
     expect(measurements.visibleHeadings, 'wrong operator tab before screenshot: ' + id)
       .toContain(operatorHeadingByTab[operatorTab]);
