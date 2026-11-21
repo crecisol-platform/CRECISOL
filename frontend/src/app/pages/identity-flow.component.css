@@ -325,3 +325,35 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
   }
   .operator-content { padding-top: .45rem; }
 }
+
+/* F06 purchase gate: one readable realm cue, not three tall pre-task cards.
+   Disclosure stays in the reading order and fully keyboard accessible. */
+@media (max-width: 720px) {
+  .operator-context {
+    margin: .12rem 0 .22rem;
+    padding: .1rem 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+  }
+  .operator-context__section { gap: .1rem .45rem; line-height: 1.38; }
+  .operator-nav-hint { margin: .1rem 0 .2rem; line-height: 1.4; }
+  .operator-navigation { margin: .1rem 0 .38rem; }
+  .operator-scope-disclosure {
+    margin: .08rem 0 .3rem;
+    padding: 0;
+    border: 0;
+    border-top: 1px solid #d7e5f1;
+    border-radius: 0;
+  }
+  .operator-scope-disclosure summary {
+    box-sizing: border-box;
+    min-height: 2.75rem;
+    padding: .6rem .25rem;
+    line-height: 1.45;
+  }
+  .operator-content { padding-top: .35rem; }
+}
+@media (forced-colors: active) and (max-width: 720px) {
+  .operator-context, .operator-scope-disclosure { border: 1px solid CanvasText; }
+}

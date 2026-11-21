@@ -663,3 +663,51 @@ test('F06 premium mobile account navigation explains all six areas readably', as
   const size = await hint.evaluate(el => Number.parseFloat(getComputedStyle(el).fontSize));
   expect(size).toBeGreaterThanOrEqual(14);
 });
+
+// Buyer acceptance: the main operator action must be reachable without
+// a first-screen scroll at 320x720; decorative headings do not block a task.
+test('F06 buyer mobile case lookup action fits in first viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await operator(page);
+  const lookup = page.locator('section[aria-label="Consulta puntual de caso"]');
+  await expect(lookup).toBeVisible();
+  await expect(lookup.getByRole('heading')).toHaveCount(0);
+  await expect(lookup.getByRole('textbox', { name: 'Referencia del caso' })).toBeVisible();
+  const action = lookup.getByRole('button', { name: 'Consultar caso de identidad' });
+  await expect(action).toBeVisible();
+  const bottom = await action.evaluate(el => el.getBoundingClientRect().bottom);
+  expect(bottom, 'case query must be visible without scrolling a 320x720 phone').toBeLessThanOrEqual(720);
+  const disclosure = page.locator('details.operator-scope-disclosure');
+  await disclosure.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(disclosure).toHaveAttribute('open', '');
+  await expect(disclosure).toContainText('Ninguna pestaña concede autorización por sí misma');
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+});
+
+test('F06 buyer mobile recovery prioritizes a safe request over the decorative aside', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'anonymous');
+  await page.goto('/cuenta?vista=recuperar');
+  await expect(page.locator('.account-layout--recovery .account-aside')).toBeHidden();
+  const main = page.getByRole('button', { name: 'Solicitar recuperación' });
+  await expect(main).toBeVisible();
+  const bottom = await main.evaluate(el => el.getBoundingClientRect().bottom);
+  expect(bottom, 'primary recovery task should lead in the first phone viewport').toBeLessThan(600);
+  await expect(page.locator('.account-more')).toHaveAttribute('open', '');
+  await expect(page.getByRole('link', { name: 'Recuperar acceso' })).toHaveAttribute('aria-current', 'page');
+});
+
+test('F06 buyer operator security preserves 30-minute policy and protected actions', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await operator(page);
+  const nav = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
+  await nav.getByRole('button', { name: 'Seguridad', exact: true }).click();
+  const policy = page.getByRole('region', { name: 'Política vigente de inactividad' });
+  await expect(policy).toContainText('30 minutos sin actividad');
+  await expect(policy.locator('.operator-tag')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Cambiar contraseña de operador', exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+});

@@ -512,3 +512,28 @@ cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] cs-ui-action {
     background: Canvas;
   }
 }
+
+/* F06 buyer review: mobile recovery begins with its actual request, not a
+   second marketing hero. The signed-out navigation and privacy copy remain. */
+@media (max-width: 720px) {
+  cs-identity-portal .account-layout--recovery.account-layout--recovery.account-layout--recovery .account-aside {
+    display: none;
+  }
+  /* Keep platform identity visible as a heading, but stop nesting a full card
+     inside another card before the actual secured operator task. */
+  cs-identity-portal .page-heading--operator.page-heading--operator.page-heading--operator {
+    padding: .3rem .15rem;
+    margin-bottom: .3rem;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  cs-identity-portal .page-heading--operator.page-heading--operator.page-heading--operator h1 {
+    font-size: 1.25rem;
+  }
+  cs-identity-portal .page-heading--operator.page-heading--operator.page-heading--operator p:last-child {
+    margin-top: .1rem;
+    line-height: 1.42;
+  }
+}

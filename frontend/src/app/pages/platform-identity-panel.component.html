@@ -84,13 +84,13 @@
             <span>{{ activeSection().description }}</span>
           </p>
         </div>
-        <p class="operator-nav-hint">Desliza las pestañas o usa Tab para recorrer las cinco áreas.</p>
+        <p class="operator-nav-hint">Más áreas: desliza o usa Tab.</p>
         <cs-ui-navigation class="operator-navigation"
           [items]="navigationItems()" [activeId]="panel()"
           ariaLabel="Áreas de la consola de identidad"
           (selected)="selectPanel($event)"/>
         <details class="operator-scope-banner operator-scope-disclosure">
-          <summary>Permisos y privacidad de plataforma</summary>
+          <summary>Privacidad y permisos</summary>
           <p>El acceso de plataforma utiliza una identidad, sesión y permisos distintos de las cuentas empresariales. Ninguna pestaña concede autorización por sí misma.</p>
         </details>
         <div class="operator-content">

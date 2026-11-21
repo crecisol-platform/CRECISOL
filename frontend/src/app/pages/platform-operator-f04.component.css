@@ -189,3 +189,17 @@
     background: #f8fbfe;
   }
 }
+
+/* F06 purchase gate: case lookup first, readable on a 320px phone.
+   Keep 44px summary targets and avoid narrowing labels at 200% text zoom. */
+@media (max-width: 720px) {
+  .operator-workspace > .operator-section-head h2 { margin: .1rem 0 .2rem; }
+  .operator-workspace > .operator-section-head p { margin: 0; }
+  .operator-workspace .operator-card[aria-label='Consulta puntual de caso'] {
+    padding: .75rem .85rem;
+  }
+  .operator-workspace .operator-card[aria-label='Consulta puntual de caso'] form { gap: .3rem; }
+  .operator-workspace .operator-card[aria-label='Consulta puntual de caso'] label { font-size: .875rem; }
+  .operator-card--policy .operator-tag { display: none; }
+  .operator-workspace .operator-scope-details summary { min-height: 2.75rem; }
+}

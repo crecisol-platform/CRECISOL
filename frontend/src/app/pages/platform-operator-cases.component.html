@@ -2,14 +2,12 @@
   <header class="operator-section-head">
     <div><span class="operator-kicker">GESTIÓN DE IDENTIDAD / CASOS</span>
       <h2>Casos de recuperación y revisión</h2>
-      <p>Consulta una referencia y decide con evidencia verificable.</p>
+      <p>Consulta un caso por su referencia.</p>
     </div>
   </header>
   <section class="operator-card operator-card--quiet" aria-label="Consulta puntual de caso">
-    <h3>Consultar un expediente</h3>
-    <p>Introduce la referencia del caso que necesitas revisar.</p>
     <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'case' })">
-          <label for="platform-case">Referencia del caso de recuperación</label><input id="platform-case" name="caseId" required maxlength="36">
+          <label for="platform-case">Referencia del caso</label><input id="platform-case" name="caseId" required maxlength="36">
           <button [disabled]="busy()">Consultar caso de identidad</button>
         </form>
   </section>
