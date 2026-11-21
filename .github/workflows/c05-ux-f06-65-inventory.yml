@@ -6,6 +6,8 @@ on:
       - 'frontend/tests/c05-f06-inventory-65.spec.ts'
       - 'frontend/src/app/ui/institutional-modal/**'
       - 'frontend/src/styles.css'
+      - 'frontend/src/app/identity/identity-api.service.ts'
+      - 'frontend/src/app/identity/platform-identity-api.service.ts'
       - 'frontend/src/app/pages/identity-*'
       - 'frontend/src/app/pages/platform-*'
       - 'frontend/playwright.c05-f06-inventory65.config.ts'
