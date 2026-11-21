@@ -423,7 +423,7 @@
   .identity-workspace__lead { margin: -.2rem 0 .15rem; font-size: .86rem; line-height: 1.42; }
   .identity-approval-queue { padding: .8rem; }
   .identity-approval-queue .identity-panel-heading { gap: .6rem; margin-bottom: .65rem; }
-  .identity-approval-queue .identity-panel-heading p { font-size: .82rem; line-height: 1.45; }
+  .identity-approval-queue .identity-panel-heading p { font-size: .875rem; line-height: 1.5; }
   .identity-policy-disclosure > summary { padding: .62rem .8rem; }
   .identity-policy-disclosure[open] > p { padding: 0 .8rem .7rem; }
 }
