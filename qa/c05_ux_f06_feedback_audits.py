@@ -17,6 +17,7 @@ ALLOWED = {
     "frontend/src/app/ui/feedback/operation-feedback.component.css",
     "frontend/src/app/ui/feedback/secure-field-feedback.directive.ts",
     "frontend/src/app/identity/identity-api.service.ts",
+    "frontend/src/app/identity/platform-identity-api.service.ts",
     "frontend/src/app/ui/institutional-modal/institutional-modal.component.ts",
     "frontend/src/app/ui/institutional-modal/institutional-modal.component.html",
     "frontend/src/app/pages/identity-portal.component.ts",
@@ -102,6 +103,11 @@ def audit_a() -> None:
         need("IdentityApiService.publicError(caught)" in code,
              "raw API failure may appear in notifications")
     need("cs-operation-feedback" in modal, "dialogs are not using semantic feedback")
+    for template in ("frontend/src/app/pages/identity-portal.component.html",
+                     "frontend/src/app/pages/platform-identity-panel.component.html"):
+        markup = text(template)
+        for expected in ("sessionEndedNotice()", "restoring()", 'kind="pending"', 'kind="info"'):
+            need(expected in markup, "lost authentic session feedback in " + template + ": " + expected)
     # This regression previously escaped F06 when only shared E2E helpers
     # changed. Their visual selectors must remain aligned with the UI.
     for helper in ("qa/c05_passkey_browser_checks.mjs",
@@ -134,6 +140,12 @@ def audit_b() -> None:
         need("clearSensitiveInputValues(form);" in code and "this.feedbackScope.set('');" in code,
              "field cleanup or stale-message revocation missing")
     service = text("frontend/src/app/identity/identity-api.service.ts")
+    platform_service = text("frontend/src/app/identity/platform-identity-api.service.ts")
+    for source in (service, platform_service):
+        for expected in ("readonly sessionEndedNotice = signal(false)",
+                         "this.sessionEndedNotice.set(false);",
+                         "this.clear(); this.sessionEndedNotice.set(true);"):
+            need(expected in source, "session-ended notice not bound to real expiry/revocation: " + expected)
     need("this.identity.hideRecoveryCodes()" in portal and
          "showRecoveryCodes(result.recoveryCodes ?? [])" in service and
          "this.backupCodesTimer = setTimeout" in service and
