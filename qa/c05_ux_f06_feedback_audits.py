@@ -48,7 +48,16 @@ ALLOWED = {
     ".github/workflows/c05-ux-f06-feedback.yml",
     "docs/c05/ux/F06_MENSAJERIA_ESTADOS_MATRIZ_RIESGOS.md",
     "docs/c05/ux/F06_REVISION_PREMIUM_INTERFAZ_POR_INTERFAZ.md",
-    "qa/c05_ux_f06_premium_evidence.py"
+    "qa/c05_ux_f06_premium_evidence.py",
+    # F01 inventory reconciliation: explicitly enumerated files only.
+    "frontend/src/app/ui/institutional-modal/institutional-modal.component.css",
+    "frontend/tests/c05-f05-secure-modals.spec.ts",
+    "frontend/tests/c05-f06-inventory-65.spec.ts",
+    "frontend/playwright.c05-f06-inventory65.config.ts",
+    "qa/c05_ux_f06_65_coverage.py",
+    ".github/workflows/c05-ux-f06-65-inventory.yml",
+    "docs/c05/ux/F06_65_COBERTURA_Y_CRITERIOS.md",
+    "docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv"
 }
 
 def text(path: str) -> str:
