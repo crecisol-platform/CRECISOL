@@ -1230,3 +1230,26 @@ test('F06 buyer: platform login and operator challenge avoid duplicate headings 
   await expect.poll(() => page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
 });
+
+test('F06 recovery secondary navigation stays folded while all real recovery methods remain discoverable', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'anonymous');
+  await page.goto('/cuenta?vista=recuperar');
+  const summary = page.locator('details.account-more summary');
+  const secondary = page.locator('details.account-more');
+  await expect(secondary).not.toHaveAttribute('open');
+  await expect(summary).toBeVisible();
+  for (const method of [
+    'Ya tengo mi código de recuperación',
+    'Reportar un cambio que no reconozco',
+    'Perdí todos mis métodos de acceso'
+  ]) {
+    await expect(page.locator('cs-identity-recovery summary').filter({ hasText: method })).toBeVisible();
+  }
+  await summary.focus();
+  await page.keyboard.press('Enter');
+  await expect(secondary).toHaveAttribute('open', '');
+  await expect(secondary.getByRole('navigation', { name: 'Otras opciones de cuenta' })).toBeVisible();
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+});

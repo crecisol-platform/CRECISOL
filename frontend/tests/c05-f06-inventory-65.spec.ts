@@ -302,6 +302,10 @@ for (const size of sizes) {
     for (const view of views) {
       await page.goto('/cuenta?vista=' + view);
       await expect(page.locator('#account-content')).toBeVisible();
+      const secondary = page.locator('details.account-more');
+      await expect(secondary, 'secondary routes must not crowd the task in ' + view)
+        .not.toHaveAttribute('open');
+      await expect(secondary.locator('summary')).toBeVisible();
       await capture(page, testInfo, 'public-' + view + '-' + size.name);
       if (view === 'invitacion' || view === 'acceso-existente') {
         const readTerms = page.locator('cs-identity-guest')
