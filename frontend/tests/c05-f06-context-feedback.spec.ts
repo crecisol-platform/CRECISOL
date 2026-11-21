@@ -877,3 +877,44 @@ test('F06 buyer public invitation and existing identity load terms in context be
       .toHaveCount(0);
   }
 });
+
+test('F06 buyer newly issued operator backup codes appear before console tasks and can be hidden', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await operator(page);
+  await page.evaluate(() => {
+    const host = document.querySelector('cs-platform-identity-panel');
+    const owner = host && (window as DebugWindow).ng?.getComponent(host);
+    if (!owner) throw Error('operator fixture missing');
+    owner.platform.recoveryCodes.set(['A'.repeat(32), 'B'.repeat(32)]);
+  });
+  const backup = page.locator('cs-platform-identity-panel aside[aria-label="Códigos de respaldo del operador"]');
+  await expect(backup).toBeVisible();
+  const geometry = await backup.evaluate(el => {
+    const work = document.querySelector('.operator-content');
+    return {
+      beforeWork: !!work && !!(el.compareDocumentPosition(work) & Node.DOCUMENT_POSITION_FOLLOWING),
+      top: el.getBoundingClientRect().top
+    };
+  });
+  expect(geometry.beforeWork, 'one-use codes must precede the operator console').toBe(true);
+  expect(geometry.top, 'operator must see one-use code panel in first phone viewport').toBeLessThan(720);
+  await backup.getByRole('button', { name: 'Ocultar respaldos de operador' }).click();
+  await expect(backup).toHaveCount(0);
+});
+
+test('F06 buyer success-feedback contrast stays WCAG-compliant during entry motion', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await account(page, 'resumen');
+  await setAccountStatus(page, 'success', 'resumen');
+  const feedback = page.locator('cs-operation-feedback .cs-operation-feedback[data-feedback-kind="success"]');
+  await expect(feedback).toBeVisible();
+  // A fade-from-transparent animation temporarily rendered an inaccessible
+  // contrast ratio during a real successful terms-acceptance transaction.
+  await expect(feedback).toHaveCSS('opacity', '1');
+  for (const width of [320, 390, 1440]) {
+    await page.setViewportSize({ width, height: width < 500 ? 720 : 900 });
+    const violations = await new AxeBuilder({ page }).include('cs-operation-feedback')
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+    expect(violations.violations.filter(v => v.id === 'color-contrast')).toEqual([]);
+  }
+});

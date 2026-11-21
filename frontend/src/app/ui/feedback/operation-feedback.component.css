@@ -17,6 +17,7 @@
   box-shadow: 0 3px 14px rgba(21, 54, 80, .035);
   color: #193c56;
   overflow-wrap: anywhere;
+  /* Never fade security messages through sub-WCAG contrast while appearing. */
   animation: feedback-enter .16s ease-out both;
 }
 .cs-operation-feedback[data-feedback-kind="success"] {
@@ -42,7 +43,7 @@
 }
 .cs-operation-feedback__body { display: grid; gap: .17rem; min-width: 0; }
 .cs-operation-feedback__context {
-  color: #4c6881; font-size: .67rem; font-weight: 800;
+  color: #314f67; font-size: .67rem; font-weight: 800;
   letter-spacing: .08em; text-transform: uppercase; line-height: 1.4;
 }
 .cs-operation-feedback__title { font-size: .96rem; font-weight: 760; line-height: 1.45; }
@@ -55,7 +56,7 @@
   animation: feedback-pulse 1.2s ease-in-out infinite;
 }
 @keyframes feedback-pulse { 50% { opacity: .28; transform: scale(.72); } }
-@keyframes feedback-enter { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes feedback-enter { from { transform: translateY(3px); } to { transform: translateY(0); } }
 @media (max-width: 390px) {
   .cs-operation-feedback { grid-template-columns: 1.8rem minmax(0,1fr); gap: .7rem; padding: .85rem; }
   .cs-operation-feedback__mark { width: 1.75rem; height: 1.75rem; }

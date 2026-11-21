@@ -76,6 +76,15 @@
           <button [disabled]="busy()">Verificar operador</button>
         </form>
       }
+      <!-- Newly issued one-use backup codes are the primary task.
+           Place them before the account console rather than after every
+           panel and sign-out; do not persist or echo them elsewhere. -->
+      @if (platform.recoveryCodes().length) {
+        <aside aria-label="Códigos de respaldo del operador"><p>Guarda estos códigos fuera del navegador. Cada uno sirve una sola vez.</p>
+          <ul>@for (code of platform.recoveryCodes(); track code) { <li><code>{{ code }}</code></li> }</ul>
+          <button type="button" (click)="platform.recoveryCodes.set([])">Ocultar respaldos de operador</button>
+        </aside>
+      }
       @if (platform.state() === 'authenticated') {
         <div class="operator-context">
           <p class="operator-context__eyebrow">CONSOLA INSTITUCIONAL / ÁMBITO AISLADO</p>
@@ -121,12 +130,6 @@
           <p>El acceso de plataforma utiliza una identidad, sesión y permisos distintos de las cuentas empresariales. Ninguna pestaña concede autorización por sí misma.</p>
         </details>
         <div class="operator-exit"><button type="button" [disabled]="busy()" (click)="logout()">Cerrar sesión de plataforma</button></div>
-      }
-      @if (platform.recoveryCodes().length) {
-        <aside aria-label="Códigos de respaldo del operador"><p>Guarda estos códigos fuera del navegador. Cada uno sirve una sola vez.</p>
-          <ul>@for (code of platform.recoveryCodes(); track code) { <li><code>{{ code }}</code></li> }</ul>
-          <button type="button" (click)="platform.recoveryCodes.set([])">Ocultar respaldos de operador</button>
-        </aside>
       }
 
     </section>
