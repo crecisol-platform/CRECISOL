@@ -1032,3 +1032,30 @@ test('F06 buyer recovery wizard shows its first operator input above the protect
   await expect.poll(() => page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
 });
+
+
+test('F06 buyer protected wizard step list stays compact and fully readable on 320px', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'anonymous');
+  await page.goto('/cuenta?vista=operadores');
+  await page.getByRole('button', { name: 'Recuperar acceso de operador de plataforma' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Recuperación segura de operador' });
+  const stepper = dialog.getByRole('navigation', { name: 'Etapas del proceso' });
+  await expect(stepper).toBeVisible();
+  for (const label of ['Solicitar revisión', 'Aportar dos revisiones', 'Activar nuevo MFA']) {
+    await expect(stepper.getByText(label, { exact: true })).toBeVisible();
+  }
+  const metrics = await stepper.evaluate(element => {
+    const box = element.getBoundingClientRect();
+    const steps = [...element.querySelectorAll('li')].map(li => li.getBoundingClientRect());
+    return { height: box.height, horizontalOverflow: element.scrollWidth - element.clientWidth,
+      ordered: steps.every((item, index) => index === 0 || item.left >= steps[index - 1].left) };
+  });
+  expect(metrics.height, 'three step labels should not consume the whole first viewport')
+    .toBeLessThanOrEqual(125);
+  expect(metrics.horizontalOverflow, 'step list must not clip security or process text')
+    .toBeLessThanOrEqual(2);
+  expect(metrics.ordered, 'visual step order must follow the DOM').toBe(true);
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+});
