@@ -1118,6 +1118,16 @@ test('F06 authentic restoring status is visible and never mistaken for a complet
   await page.setViewportSize({ width: 320, height: 720 });
   await syntheticApi(page, 'business');
   await page.goto('/cuenta?vista=resumen');
+  // The real initial restore is asynchronous: wait for its finally block before
+  // injecting a second synthetic restoring state, so an old response cannot
+  // overwrite the fixture and produce a false failure.
+  await expect(page.getByRole('navigation', { name: 'Mi cuenta' })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const el = document.querySelector('cs-identity-portal');
+    const owner = el && (window as DebugWindow).ng?.getComponent(el);
+    if (!owner) throw new Error('Account component unavailable during restore gate');
+    return owner.identity.restoring();
+  })).toBe(false);
   await page.evaluate(() => {
     const el = document.querySelector('cs-identity-portal')!;
     const owner = (window as DebugWindow).ng!.getComponent(el);
