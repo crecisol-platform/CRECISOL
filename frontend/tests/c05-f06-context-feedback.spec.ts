@@ -1059,3 +1059,70 @@ test('F06 buyer protected wizard step list stays compact and fully readable on 3
   await expect.poll(() => page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
 });
+
+
+test('F06 ended sessions show safe notices in their own realm and manual logout clears them', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'business');
+  await page.goto('/cuenta?vista=resumen');
+  await expect(page.getByRole('navigation', { name: 'Mi cuenta' })).toBeVisible();
+  await page.evaluate(() => {
+    const el = document.querySelector('cs-identity-portal')!;
+    const owner = (window as DebugWindow).ng!.getComponent(el);
+    owner.identity.clear();
+    owner.identity.sessionEndedNotice.set(true); // Synthetic server expiry: no credential reuse.
+  });
+  await expect(page.locator('cs-operation-feedback [data-feedback-kind="info"]'))
+    .toContainText('Tu sesión dejó de estar disponible.');
+  await expect(page.getByRole('heading', { name: 'Iniciar sesión', exact: true })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Mi cuenta' })).toHaveCount(0);
+  await page.evaluate(() => {
+    const el = document.querySelector('cs-identity-portal')!;
+    const owner = (window as DebugWindow).ng!.getComponent(el);
+    owner.identity.clear(); // A deliberate logout cannot masquerade as expiry.
+  });
+  await expect(page.getByText('Tu sesión dejó de estar disponible.')).toHaveCount(0);
+
+  await syntheticApi(page, 'operator');
+  await page.goto('/cuenta?vista=operadores');
+  const operatorHost = page.locator('cs-platform-identity-panel');
+  await expect(operatorHost.getByRole('navigation', { name: 'Áreas de la consola de identidad' }))
+    .toBeVisible();
+  await page.evaluate(() => {
+    const el = document.querySelector('cs-platform-identity-panel')!;
+    const owner = (window as DebugWindow).ng!.getComponent(el);
+    owner.platform.clear();
+    owner.platform.sessionEndedNotice.set(true); // Synthetic server expiry in platform only.
+  });
+  await expect(operatorHost.locator('cs-operation-feedback [data-feedback-kind="info"]'))
+    .toContainText('La sesión de operador terminó o fue revocada.');
+  await expect(operatorHost.getByRole('button', { name: 'Acceder a identidad de plataforma' }))
+    .toBeVisible();
+  await expect(operatorHost.getByRole('navigation', { name: 'Áreas de la consola de identidad' }))
+    .toHaveCount(0);
+  await expect(page.getByText('Tu sesión dejó de estar disponible.')).toHaveCount(0);
+  await page.evaluate(() => {
+    const el = document.querySelector('cs-platform-identity-panel')!;
+    (window as DebugWindow).ng!.getComponent(el).platform.clear();
+  });
+  await expect(page.getByText('La sesión de operador terminó o fue revocada.')).toHaveCount(0);
+});
+
+test('F06 authentic restoring status is visible and never mistaken for a completed action', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'business');
+  await page.goto('/cuenta?vista=resumen');
+  await page.evaluate(() => {
+    const el = document.querySelector('cs-identity-portal')!;
+    (window as DebugWindow).ng!.getComponent(el).identity.restoring.set(true);
+  });
+  const pending = page.locator('cs-operation-feedback [data-feedback-kind="pending"]');
+  await expect(pending).toContainText('Comprobando si tu sesión sigue disponible');
+  await expect(pending).toHaveAttribute('aria-busy', 'true');
+  await expect(page.getByText('Operación completada')).toHaveCount(0);
+  await page.evaluate(() => {
+    const el = document.querySelector('cs-identity-portal')!;
+    (window as DebugWindow).ng!.getComponent(el).identity.restoring.set(false);
+  });
+  await expect(pending).toHaveCount(0);
+});
