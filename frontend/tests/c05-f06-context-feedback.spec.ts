@@ -557,3 +557,31 @@ test('F06 premium account security keeps MFA confirmation behind a protected dia
   await expect(modal).toBeVisible();
   await expect(modal.locator('input[type=password]')).toHaveCount(2);
 });
+
+
+// Buyer-quality guard: compact empty feedback must not impersonate loaded
+// private account data, nor consume another full mobile viewport.
+for (const view of ['resumen', 'perfil', 'llaves', 'historial', 'administracion'] as const) {
+  test('F06 premium compact empty account state '+view+' at 320px', async ({ page }) => {
+    await page.setViewportSize({width:320,height:720});
+    await account(page, view);
+    const empty=page.locator('cs-identity-workspace cs-ui-state .cs-state[data-kind="empty"]').first();
+    await expect(empty).toBeVisible();
+    await expect(empty.locator('h3')).toBeVisible();
+    await expect(empty.locator('p')).toBeVisible();
+    const box=await empty.boundingBox();
+    expect(box?.height??9999,'empty state should be compact without clipping its explanation').toBeLessThan(218);
+    const hasOverflow=await empty.evaluate(el=>el.scrollWidth>el.clientWidth+2);
+    expect(hasOverflow).toBe(false);
+    await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+  });
+}
+test('F06 premium empty state scales to 200 percent without scrollbars or hidden text', async({page})=>{
+  await page.setViewportSize({width:320,height:720});
+  await account(page, 'llaves');
+  await page.addStyleTag({content:':root { font-size: 200% !important; }'});
+  const state=page.locator('cs-identity-workspace cs-ui-state .cs-state[data-kind="empty"]').first();
+  await expect(state).toBeVisible();
+  await expect(state.getByRole('heading',{name:'Ninguna llave visible'})).toBeVisible();
+  await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+});
