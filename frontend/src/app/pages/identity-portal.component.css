@@ -234,7 +234,10 @@
   font-size: var(--cs-text-sm, .875rem);
   color: var(--cs-color-muted, #455f79);
 }
-.account-workspace-intro--challenge { max-width: 43rem; }
+/* Authentication challenges are a focused task, not a full-width dashboard.
+   A single column keeps the H1 and six-digit code field aligned on desktop. */
+.account-workspace-intro--challenge { max-width: 43rem; display: block; }
+.account-main > cs-identity-mfa { display: block; width: 100%; max-width: 43rem; }
 .account-workspace-scope {
   flex: 0 0 auto;
   align-self: start;

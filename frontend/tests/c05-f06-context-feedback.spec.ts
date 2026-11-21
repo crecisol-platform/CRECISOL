@@ -1277,3 +1277,39 @@ test('F06 secondary routes reset when navigating between public identity tasks w
   await expect.poll(() => page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
 });
+
+test('F06 buyer: desktop MFA and platform login retain focused reading widths', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await syntheticApi(page, 'anonymous');
+  await page.goto('/cuenta?vista=ingresar');
+  await expect(page.getByRole('heading', { name: 'Iniciar sesión', exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const host = document.querySelector('cs-identity-portal')!;
+    return (window as DebugWindow).ng!.getComponent(host).identity.restoring();
+  })).toBe(false);
+  await page.evaluate(() => {
+    const host = document.querySelector('cs-identity-portal')!;
+    (window as DebugWindow).ng!.getComponent(host).identity.stateValue.set('challenge');
+  });
+  const intro = page.locator('.account-workspace-intro--challenge');
+  const otp = page.locator('cs-identity-mfa');
+  await expect(intro).toHaveCSS('display', 'block');
+  await expect(page.getByRole('heading', { name: 'Verificación en dos pasos', level: 1 })).toBeVisible();
+  const [introBox, otpBox] = await Promise.all([intro.boundingBox(), otp.boundingBox()]);
+  expect(introBox, 'MFA heading must remain in a readable column').not.toBeNull();
+  expect(otpBox, 'MFA form must remain in a readable column').not.toBeNull();
+  expect(introBox!.width).toBeLessThanOrEqual(700);
+  expect(otpBox!.width).toBeLessThanOrEqual(700);
+  expect(Math.abs(introBox!.x - otpBox!.x)).toBeLessThanOrEqual(2);
+  await page.goto('/cuenta?vista=operadores');
+  const button = page.getByRole('button', { name: 'Recuperar acceso de operador de plataforma' });
+  const form = page.locator('cs-platform-identity-panel > section.operator-panel > form');
+  await expect(button).toBeVisible();
+  const [buttonBox, formBox] = await Promise.all([button.boundingBox(), form.boundingBox()]);
+  expect(buttonBox).not.toBeNull();
+  expect(formBox).not.toBeNull();
+  expect(buttonBox!.width).toBeLessThanOrEqual(650);
+  expect(Math.abs(buttonBox!.x - formBox!.x)).toBeLessThanOrEqual(2);
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+});
