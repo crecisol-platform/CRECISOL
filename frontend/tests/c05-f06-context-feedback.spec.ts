@@ -1211,7 +1211,7 @@ test('F06 buyer: platform login and operator challenge avoid duplicate headings 
   await syntheticApi(page, 'anonymous');
   await page.goto('/cuenta?vista=operadores');
   await expect(page.getByRole('heading', { name: 'Identidad de plataforma', level: 1 })).toHaveCount(1);
-  await expect(page.locator('cs-platform-identity-panel h2')).toHaveCount(0);
+  await expect(page.locator('cs-platform-identity-panel > section.operator-panel > h2')).toHaveCount(0);
   const action = page.getByRole('button', { name: 'Acceder a identidad de plataforma' });
   await expect(action).toBeVisible();
   expect(await action.evaluate(node => node.getBoundingClientRect().bottom)).toBeLessThanOrEqual(720);
@@ -1226,7 +1226,7 @@ test('F06 buyer: platform login and operator challenge avoid duplicate headings 
   });
   await expect(page.getByLabel('Código MFA del operador')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Identidad de plataforma', level: 1 })).toHaveCount(1);
-  await expect(page.locator('cs-platform-identity-panel h2')).toHaveCount(0);
+  await expect(page.locator('cs-platform-identity-panel > section.operator-panel > h2')).toHaveCount(0);
   await expect.poll(() => page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
 });

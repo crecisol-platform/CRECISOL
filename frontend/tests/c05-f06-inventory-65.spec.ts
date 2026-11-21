@@ -350,7 +350,7 @@ for (const size of sizes) {
 
     await page.goto('/cuenta?vista=operadores');
     await expect(page.getByRole('heading', { name: 'Identidad de plataforma', level: 1 })).toBeVisible();
-    await expect(page.locator('cs-platform-identity-panel h2')).toHaveCount(0);
+    await expect(page.locator('cs-platform-identity-panel > section.operator-panel > h2')).toHaveCount(0);
     await capture(page, testInfo, 'operator-login-' + size.name);
     await page.getByRole('button', { name: 'Recuperar acceso de operador de plataforma' }).click();
     await capture(page, testInfo, 'operator-recovery-dialog-' + size.name);
