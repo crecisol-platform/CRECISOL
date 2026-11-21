@@ -1,7 +1,7 @@
 <section class="operator-panel">
       @if (platform.state() !== 'authenticated') {
-        <p class="eyebrow">PERSONAL AUTORIZADO</p>
-        <h2>Identidad de plataforma</h2>
+        <!-- La cabecera H1 ya identifica el ámbito de plataforma. Evitar duplicarla
+             para mantener una sola jerarquía de pantalla en móvil y lectores. -->
         <p>El acceso global exige una identidad de operador verificada y permisos propios. Una cuenta de negocio no concede ese acceso.</p>
       }
       <!-- Session validation overrides old async results until authority is known. -->

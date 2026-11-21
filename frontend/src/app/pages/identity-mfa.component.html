@@ -1,5 +1,5 @@
 <section aria-labelledby="mfa-heading">
-  <h2 id="mfa-heading">Verificación en dos pasos</h2>
+  <h2 id="mfa-heading">{{ identity.enrollmentRequired() ? 'Configura tu autenticador' : 'Introduce tu código' }}</h2>
   @if (identity.enrollmentRequired()) {
     <p>Vincula una aplicación TOTP compatible, como Google Authenticator, Microsoft Authenticator o Aegis. La configuración se realiza una sola vez.</p>
     @if (!identity.enrollmentSecret()) {

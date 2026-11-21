@@ -92,9 +92,9 @@
           </details>
         } @else if (identity.state() === 'challenge') {
           <div class="account-workspace-intro account-workspace-intro--challenge">
-            <p class="eyebrow">SEGUNDO PASO · VERIFICACIÓN</p>
-            <h1>Confirma que eres tú</h1>
-            <p>El acceso a tu cuenta se habilita solo después de verificar el segundo factor.</p>
+            <p class="eyebrow">SEGURIDAD DE TU CUENTA</p>
+            <h1>Verificación en dos pasos</h1>
+            <p>Para continuar, usa un código de tu aplicación o un código de respaldo de un solo uso.</p>
           </div>
           <cs-identity-mfa [busy]="busy()" (verifyRequested)="verify($event)"
             (enrollRequested)="enroll()" />

@@ -345,7 +345,8 @@ for (const size of sizes) {
     await capture(page, testInfo, 'public-pairing-qr-FAKE-ONLY-' + size.name);
 
     await page.goto('/cuenta?vista=operadores');
-    await expect(page.getByRole('heading', { name: 'Identidad de plataforma' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Identidad de plataforma', level: 1 })).toBeVisible();
+    await expect(page.locator('cs-platform-identity-panel h2')).toHaveCount(0);
     await capture(page, testInfo, 'operator-login-' + size.name);
     await page.getByRole('button', { name: 'Recuperar acceso de operador de plataforma' }).click();
     await capture(page, testInfo, 'operator-recovery-dialog-' + size.name);
@@ -522,13 +523,17 @@ for (const size of sizes) {
       if (!owner) throw new Error('Angular account debug component unavailable');
       owner.identity.stateValue.set('challenge');
     });
-    await expect(page.getByRole('heading', { name: 'Verificación en dos pasos' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Verificación en dos pasos', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Introduce tu código', level: 2 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Verificación en dos pasos' })).toHaveCount(1);
     await capture(page, testInfo, 'account-mfa-challenge-synthetic-' + size.name);
     await page.evaluate(() => {
       const el = document.querySelector('cs-identity-portal')!;
       const owner = (window as DebugWindow).ng!.getComponent(el);
       owner.identity.enrollmentRequired.set(true);
     });
+    await expect(page.getByRole('heading', { name: 'Configura tu autenticador', level: 2 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Introduce tu código' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Configurar segundo factor' })).toBeVisible();
     await capture(page, testInfo, 'account-mfa-enrollment-required-synthetic-' + size.name);
     const { default: QRCode } = await import('qrcode');
