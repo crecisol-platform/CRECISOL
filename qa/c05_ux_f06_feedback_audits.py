@@ -43,6 +43,10 @@ ALLOWED = {
     "frontend/playwright.c05-f06-feedback.config.ts",
     "qa/c05_ux_f05_modal_audits.py",
     "qa/c05_operational_flow_e2e.mjs",
+    # Exact helpers used by the real F06 E2E (no unrestricted QA wildcard).
+    "qa/c05_passkey_browser_checks.mjs",
+    "qa/c05_pairing_browser_checks.mjs",
+    "qa/c05_profile_browser_checks.mjs",
     "qa/c05_ux_f06_feedback_audits.py",
     "qa/c05_ux_f06_feedback_evidence.py",
     ".github/workflows/c05-ux-f06-feedback.yml",
@@ -98,6 +102,20 @@ def audit_a() -> None:
         need("IdentityApiService.publicError(caught)" in code,
              "raw API failure may appear in notifications")
     need("cs-operation-feedback" in modal, "dialogs are not using semantic feedback")
+    # This regression previously escaped F06 when only shared E2E helpers
+    # changed. Their visual selectors must remain aligned with the UI.
+    for helper in ("qa/c05_passkey_browser_checks.mjs",
+                   "qa/c05_pairing_browser_checks.mjs",
+                   "qa/c05_profile_browser_checks.mjs"):
+        source = text(helper)
+        need("getByRole('heading', { name: 'Estado de la sesión'" not in source,
+             "outdated account heading in real E2E helper: " + helper)
+        need("getByRole('heading', { name: 'Tu sesión actual'" in source,
+             "real E2E helper lacks current account heading: " + helper)
+    passkeys = text("qa/c05_passkey_browser_checks.mjs")
+    need("getByRole('heading', { name: 'Llaves disponibles'" in passkeys and
+         "getByRole('heading', { name: 'Cambios protegidos'" in passkeys,
+         "passkey E2E navigation must match current visible sections")
     need(len(changes) >= 15, "partial integration only")
     print("F06/A PASS: contextual async states, C05-only scope and Unicode text integrity")
 
