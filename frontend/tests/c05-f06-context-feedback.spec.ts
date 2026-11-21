@@ -1069,11 +1069,14 @@ test('F06 ended sessions show safe notices in their own realm and manual logout 
   await page.evaluate(() => {
     const el = document.querySelector('cs-identity-portal')!;
     const owner = (window as DebugWindow).ng!.getComponent(el);
+    owner.feedbackScope.set('resumen');
+    owner.message.set('Recibo anterior al cierre de sesión.');
     owner.identity.clear();
     owner.identity.sessionEndedNotice.set(true); // Synthetic server expiry: no credential reuse.
   });
   await expect(page.locator('cs-operation-feedback [data-feedback-kind="info"]'))
     .toContainText('Tu sesión dejó de estar disponible.');
+  await expect(page.getByText('Recibo anterior al cierre de sesión.')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Iniciar sesión', exact: true })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Mi cuenta' })).toHaveCount(0);
   await page.evaluate(() => {
@@ -1091,11 +1094,14 @@ test('F06 ended sessions show safe notices in their own realm and manual logout 
   await page.evaluate(() => {
     const el = document.querySelector('cs-platform-identity-panel')!;
     const owner = (window as DebugWindow).ng!.getComponent(el);
+    owner.feedbackScope.set('casos');
+    owner.message.set('Recibo anterior del operador.');
     owner.platform.clear();
     owner.platform.sessionEndedNotice.set(true); // Synthetic server expiry in platform only.
   });
   await expect(operatorHost.locator('cs-operation-feedback [data-feedback-kind="info"]'))
     .toContainText('La sesión de operador terminó o fue revocada.');
+  await expect(page.getByText('Recibo anterior del operador.')).toHaveCount(0);
   await expect(operatorHost.getByRole('button', { name: 'Acceder a identidad de plataforma' }))
     .toBeVisible();
   await expect(operatorHost.getByRole('navigation', { name: 'Áreas de la consola de identidad' }))
@@ -1114,12 +1120,16 @@ test('F06 authentic restoring status is visible and never mistaken for a complet
   await page.goto('/cuenta?vista=resumen');
   await page.evaluate(() => {
     const el = document.querySelector('cs-identity-portal')!;
-    (window as DebugWindow).ng!.getComponent(el).identity.restoring.set(true);
+    const owner = (window as DebugWindow).ng!.getComponent(el);
+    owner.feedbackScope.set('resumen');
+    owner.message.set('Recibo caducado mientras se valida la sesión.');
+    owner.identity.restoring.set(true);
   });
   const pending = page.locator('cs-operation-feedback [data-feedback-kind="pending"]');
   await expect(pending).toContainText('Comprobando si tu sesión sigue disponible');
   await expect(pending).toHaveAttribute('aria-busy', 'true');
   await expect(page.getByText('Operación completada')).toHaveCount(0);
+  await expect(page.getByText('Recibo caducado mientras se valida la sesión.')).toHaveCount(0);
   await page.evaluate(() => {
     const el = document.querySelector('cs-identity-portal')!;
     (window as DebugWindow).ng!.getComponent(el).identity.restoring.set(false);
