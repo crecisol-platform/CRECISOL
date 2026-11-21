@@ -73,9 +73,9 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
   width: 100%; min-height: 3.75rem; border: 1px solid #d5e3f0; border-radius: .9rem;
   background: #fff !important; color: #1c466b !important; padding: 1rem 1.2rem;
   font-weight: 700; text-align: left; box-shadow: 0 4px 16px #173c5810;
-  transition: background .16s ease, border-color .16s ease, transform .16s ease; }
+  transition: background-color .16s ease-out, border-color .16s ease-out; }
 .institutional-task__trigger:hover:not(:disabled) { background: #f1f7fd !important;
-  border-color: #aac9e1; transform: translateY(-1px); }
+  border-color: #aac9e1; }
 .institutional-task__trigger > span:last-child { font-size: 1.3rem; font-weight: 400; }
 .institutional-task__trigger:focus-visible { outline: 3px solid #126aaf; outline-offset: 3px; }
 .institutional-task + .institutional-task { margin-top: .75rem; }
@@ -233,3 +233,127 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
 .operator-scope-banner { margin: -.4rem 0 1.1rem; padding: .85rem 1.1rem;
   border-left: 4px solid var(--cs-color-accent-text, #174b77); border-radius: .45rem;
   background: #f3f8fc; color: #3c5975; font-size: .87rem; line-height: 1.65; }
+
+
+/* F06 premium | Login hierarchy, with a quieter passkey alternative. */
+.login-surface h2 { margin-bottom: .55rem; }
+.login-surface .login-form { gap: .45rem; margin: .7rem 0 .75rem; }
+.login-surface .login-form label { margin-top: .2rem; }
+.login-surface .login-form button[type='submit'] { margin-top: .35rem; }
+.login-surface .login-passkey-action { display: block; width: 100%; margin: .4rem 0 .5rem; background: #f3f8fd; border-color: #ccdfef; color: #174a79; }
+.login-surface .login-passkey-action:hover:not(:disabled) { background: #e5f0fa; }
+.login-surface .login-compatibility-note { margin: .45rem 0; padding: .65rem .8rem; font-size: .875rem; border-left: 2px solid #679bc2; background: #f5f9fd; border-radius: .35rem; }
+.login-surface details { padding: .6rem 0; margin-top: .4rem; }
+@media (max-width: 480px) {
+ .login-surface h2 { font-size: 1.45rem; }
+ .login-surface .login-form { gap: .3rem; margin-block: .6rem; }
+ .login-surface .login-form label { margin-top: .1rem; }
+}
+
+/* F06 premium · Parent-only operator header, tab hint and permission disclosure. */
+.operator-context { display: flex; flex-wrap: wrap; align-items: baseline; gap: .28rem 1rem; padding: .65rem 1rem; margin: .65rem 0 .7rem; background: #f7fafd; box-shadow: none; border-radius: .8rem; }
+.operator-context__eyebrow { font-size: .64rem; letter-spacing: .075em; }
+.operator-context__section { flex: 1 1 18rem; font-size: .84rem; gap: .2rem .65rem; }
+.operator-context__section strong { font-size: .95rem; }
+.operator-nav-hint { margin: .15rem 0 .35rem; color: #536d83; font-size: .875rem; line-height: 1.4; }
+.operator-navigation { margin: .25rem 0 .7rem; }
+.operator-scope-disclosure { padding: 0; margin: .15rem 0 .9rem; border-left-width: 2px; background: transparent; font-size: .83rem; }
+.operator-scope-disclosure summary { padding: .5rem .8rem; color: #28577c; font-weight: 700; cursor: pointer; line-height: 1.4; }
+.operator-scope-disclosure p { margin: 0; padding: .35rem .85rem .8rem; }
+.operator-content { padding-top: .65rem; border-top-color: #e6edf4; }
+
+@media (min-width: 721px) { .operator-nav-hint { display: none; } }
+@media (max-width: 720px) {
+ .operator-context { padding: .7rem .85rem; margin: .45rem 0 .6rem; }
+ .operator-context__eyebrow { display: none; }
+ .operator-navigation { position: relative; margin: .1rem 0 .55rem; }
+ .operator-nav-hint { font-weight: 600; }
+}
+@media (forced-colors: active) {
+ .operator-context, .operator-scope-disclosure { border: 1px solid CanvasText; background: Canvas; }
+}
+
+
+/* Preserve native 200% text enlargement while allowing narrower intrinsic
+   content and reflow; never hide overflow as a substitute for fixing it. */
+.operator-panel, .operator-content, .operator-context,
+.operator-context__section, .operator-nav-hint,
+.operator-scope-disclosure { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+@media (max-width: 480px) {
+  .operator-context { padding: 9px 12px; }
+  .operator-scope-disclosure summary { padding: 8px 10px; }
+}
+
+
+/* C05 UX F06 premium: preserve F03's explicit live section description,
+   but compact it into a readable line rather than repeating a large card. */
+@media (max-width: 720px) {
+  .operator-context {
+    display: flex;
+    padding: .4rem .65rem;
+    margin: .2rem 0 .4rem;
+    gap: .2rem .6rem;
+    border-radius: .55rem;
+    box-shadow: none;
+  }
+  .operator-context__section {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .1rem .5rem;
+    font-size: .875rem;
+    line-height: 1.42;
+  }
+  .operator-context__section strong { font-size: .9375rem; }
+  .operator-context__section span { display: inline; overflow-wrap: anywhere; }
+  .operator-navigation { margin-top: .1rem; }
+  .operator-nav-hint { margin-top: .15rem; }
+  .operator-scope-disclosure { margin-bottom: .55rem; }
+}
+
+
+/* F06 buyer refinement: keep the F03-visible section/policy context but
+   make navigation and disclosure compact in five operator workspaces. */
+@media (max-width: 720px) {
+  .operator-nav-hint { font-size: .875rem; line-height: 1.45; margin-bottom: .2rem; }
+  .operator-context { margin-bottom: .25rem; }
+  .operator-scope-disclosure { margin: .1rem 0 .4rem; border-left-width: 2px; }
+  .operator-scope-disclosure summary {
+    padding: .65rem .68rem; font-size: .875rem; line-height: 1.45;
+  }
+  .operator-content { padding-top: .45rem; }
+}
+
+/* F06 purchase gate: one readable realm cue, not three tall pre-task cards.
+   Disclosure stays in the reading order and fully keyboard accessible. */
+@media (max-width: 720px) {
+  .operator-context {
+    margin: .12rem 0 .22rem;
+    padding: .1rem 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+  }
+  .operator-context__section { gap: .1rem .45rem; line-height: 1.38; }
+  .operator-nav-hint { margin: .1rem 0 .2rem; line-height: 1.4; }
+  .operator-navigation { margin: .1rem 0 .38rem; }
+  .operator-scope-disclosure {
+    margin: .08rem 0 .3rem;
+    padding: 0;
+    border: 0;
+    border-top: 1px solid #d7e5f1;
+    border-radius: 0;
+  }
+  .operator-scope-disclosure summary {
+    box-sizing: border-box;
+    min-height: 2.75rem;
+    padding: .6rem .25rem;
+    line-height: 1.45;
+  }
+  .operator-content { padding-top: .35rem; }
+}
+@media (forced-colors: active) and (max-width: 720px) {
+  .operator-context, .operator-scope-disclosure { border: 1px solid CanvasText; }
+}

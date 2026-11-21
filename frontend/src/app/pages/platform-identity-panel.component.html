@@ -4,10 +4,11 @@
         <h2>Identidad de plataforma</h2>
         <p>El acceso global exige una identidad de operador verificada y permisos propios. Una cuenta de negocio no concede ese acceso.</p>
       }
-      @if (message()) { <p class="operator-feedback" role="status" aria-live="polite">{{ message() }}</p> }
-      @if (error()) { <p class="operator-feedback operator-feedback--error" role="alert">{{ error() }}</p> }
+      @if (visibleFeedback(); as feedback) {
+        <cs-operation-feedback [kind]="feedback.kind" [text]="feedback.text" context="Identidad de plataforma" />
+      }
       @if (platform.state() === 'anonymous') {
-        <form (submit)="action($event, 'login')">
+        <form csFieldFeedback (submit)="action($event, 'login')">
           <label for="platform-mailbox">Correo del operador de identidad</label><input id="platform-mailbox" name="mailbox" type="email" autocomplete="username" required maxlength="254">
           <label for="platform-password">Contraseña del operador</label><input id="platform-password" name="password" type="password" autocomplete="current-password" required maxlength="128">
           <button [disabled]="busy() || platform.restoring()">Acceder a identidad de plataforma</button>
@@ -22,7 +23,7 @@
           
           <p>Se necesitan otros dos operadores de identidad, verificación independiente y al menos 24 horas. Ninguna aprobación de un negocio sirve para este ámbito.</p>
           @if (recoveryStep() === 1 && !platform.operatorRecoverySeed()) {
-          <form (submit)="action($event, 'operator-recovery-request')">
+          <form csFieldFeedback (submit)="action($event, 'operator-recovery-request')">
             <label for="operator-recovery-mail">Correo del operador sin acceso</label><input id="operator-recovery-mail" name="mailbox" type="email" required maxlength="254" autocomplete="email">
             <label><input name="unavailable" type="checkbox" required> No tengo disponibles mis métodos seguros de operador</label>
             <button [disabled]="busy()">Solicitar recuperación de operador</button>
@@ -34,7 +35,7 @@
               <p>Referencia de tu solicitud para entregar a los dos operadores independientes:</p>
               <output aria-label="Referencia de recuperación de operador">{{ platform.recoveryReference() }}</output>
             }
-          <form (submit)="action($event, 'operator-recovery-complete')">
+          <form csFieldFeedback (submit)="action($event, 'operator-recovery-complete')">
             <label for="operator-recovery-case">Caso aprobado de operador</label><input id="operator-recovery-case" name="caseId" required maxlength="36">
             <label for="operator-share-a">Parte del primer revisor de operador</label><input id="operator-share-a" name="shareA" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
             <label for="operator-share-b">Parte del segundo revisor de operador</label><input id="operator-share-b" name="shareB" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
@@ -53,7 +54,7 @@
                 <output aria-label="Semilla MFA del operador recuperado">{{ platform.operatorRecoverySeed() }}</output>
               </details>
             </div>
-            <form (submit)="action($event, 'operator-recovery-enroll')">
+            <form csFieldFeedback (submit)="action($event, 'operator-recovery-enroll')">
               <label for="operator-recovery-code">Código del nuevo MFA de operador</label><input id="operator-recovery-code" name="code" required pattern="[0-9]{6}" autocomplete="one-time-code">
               <button [disabled]="busy()">Confirmar nuevo MFA de operador</button>
             </form>
@@ -61,7 +62,7 @@
           <details class="identity-security-step">
             <summary>Reportar actividad de operador no reconocida</summary>
             <p>La denuncia revoca sesiones e impide usar cambios sospechosos. No recupera una cuenta ni concede acceso.</p>
-          <form (submit)="action($event, 'operator-incident')">
+          <form csFieldFeedback (submit)="action($event, 'operator-incident')">
             <label for="operator-incident-token">Código del aviso de seguridad de operador</label><input id="operator-incident-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
             <button [disabled]="busy()">Reportar incidente de operador</button>
           </form>
@@ -70,7 +71,7 @@
         </cs-institutional-modal>
       }
       @if (platform.state() === 'challenge') {
-        <form (submit)="action($event, 'mfa')">
+        <form csFieldFeedback (submit)="action($event, 'mfa')">
           <label for="platform-mfa">Código MFA del operador</label><input id="platform-mfa" name="code" inputmode="numeric" autocomplete="one-time-code" required pattern="([0-9]{6}|[0-9a-fA-F]{32})">
           <button [disabled]="busy()">Verificar operador</button>
         </form>
@@ -83,11 +84,11 @@
             <span>{{ activeSection().description }}</span>
           </p>
         </div>
+        <p class="operator-nav-hint">Más áreas: desliza o usa Tab.</p>
         <cs-ui-navigation class="operator-navigation"
           [items]="navigationItems()" [activeId]="panel()"
           ariaLabel="Áreas de la consola de identidad"
           (selected)="selectPanel($event)"/>
-        <p class="operator-scope-banner">El acceso de plataforma utiliza una identidad, sesión y permisos distintos de las cuentas empresariales. Ninguna pestaña concede autorización por sí misma.</p>
         <div class="operator-content">
           @switch (panel()) {
             @case ('sesiones') {
@@ -112,6 +113,13 @@
             }
           }
         </div>
+        <!-- Disclosure is accessible after the active task; the identity realm
+             remains explicit in the heading, and each sensitive task has
+             its own focused privacy and authorization explanation. -->
+        <details class="operator-scope-banner operator-scope-disclosure">
+          <summary>Privacidad y permisos</summary>
+          <p>El acceso de plataforma utiliza una identidad, sesión y permisos distintos de las cuentas empresariales. Ninguna pestaña concede autorización por sí misma.</p>
+        </details>
         <div class="operator-exit"><button type="button" [disabled]="busy()" (click)="logout()">Cerrar sesión de plataforma</button></div>
       }
       @if (platform.recoveryCodes().length) {

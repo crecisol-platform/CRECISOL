@@ -3,12 +3,13 @@ import { identityDateLabel, identityReferenceLabel, identityTimeZoneLabel, opera
   operatorCaseView, operatorDeviceLabel, operatorLanguageLabel } from '../identity/platform-operator-presentation';
 import { PlatformIdentityApiService } from '../identity/platform-identity-api.service';
 import { InstitutionalModalComponent } from '../ui/institutional-modal/institutional-modal.component';
+import { SecureFieldFeedbackDirective } from '../ui/feedback/secure-field-feedback.directive';
 
 type OperatorAction = { event: Event; action: string };
 
 @Component({
   selector: 'cs-platform-operator-sessions', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [InstitutionalModalComponent],
+  imports: [InstitutionalModalComponent, SecureFieldFeedbackDirective],
   templateUrl: './platform-operator-sessions.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css']
 })
 export class PlatformOperatorSessionsComponent {
@@ -39,7 +40,7 @@ export class PlatformOperatorSessionsComponent {
 }
 @Component({
   selector: 'cs-platform-operator-profile', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [InstitutionalModalComponent],
+  imports: [InstitutionalModalComponent, SecureFieldFeedbackDirective],
   templateUrl: './platform-operator-profile.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css']
 })
 export class PlatformOperatorProfileComponent {
@@ -49,6 +50,19 @@ export class PlatformOperatorProfileComponent {
   readonly actionRequested = output<OperatorAction>();
   readonly loadProfileRequested = output<void>();
   readonly photoRequested = output<Event>();
+  readonly photoFileName = signal('');
+  readonly photoFileError = signal('');
+  onPhotoFileChange(event: Event): void {
+    const control = event.target;
+    const file = control instanceof HTMLInputElement ? control.files?.item(0) : null;
+    this.photoFileName.set(file?.name ?? '');
+    this.photoFileError.set(!file ? ''
+      : file.size > 2 * 1024 * 1024
+        ? 'La imagen supera 2 MB. Elige un archivo más pequeño.'
+        : !['image/png', 'image/jpeg', 'image/webp'].includes(file.type)
+          ? 'Selecciona una imagen PNG, JPEG o WebP.'
+          : '');
+  }
   readonly profileName = computed(() => this.platform.profile()?.displayName.trim() || 'Nombre no configurado');
   readonly profileLanguage = computed(() => operatorLanguageLabel(this.platform.profile()?.language ?? ''));
   readonly profileZone = computed(() => identityTimeZoneLabel(this.platform.profile()?.timeZone));
@@ -70,7 +84,7 @@ export class PlatformOperatorMonitorComponent {
 }
 @Component({
   selector: 'cs-platform-operator-security', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [InstitutionalModalComponent],
+  imports: [InstitutionalModalComponent, SecureFieldFeedbackDirective],
   templateUrl: './platform-operator-security.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css']
 })
 export class PlatformOperatorSecurityComponent {
@@ -81,7 +95,7 @@ export class PlatformOperatorSecurityComponent {
 }
 @Component({
   selector: 'cs-platform-operator-cases', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [InstitutionalModalComponent],
+  imports: [InstitutionalModalComponent, SecureFieldFeedbackDirective],
   templateUrl: './platform-operator-cases.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css']
 })
 export class PlatformOperatorCasesComponent {

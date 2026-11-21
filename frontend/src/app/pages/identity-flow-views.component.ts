@@ -2,10 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 import { identityDateLabel, identityEventLabel, identityOutcomeLabel, identityReferenceLabel, identityFactorLabel, identityTimeZoneLabel } from '../identity/identity-presentation';
 import { IdentityApiService } from '../identity/identity-api.service';
 import { InstitutionalModalComponent } from '../ui/institutional-modal/institutional-modal.component';
+import { SecureFieldFeedbackDirective } from '../ui/feedback/secure-field-feedback.directive';
 import { InstitutionalCardComponent, InstitutionalStateComponent } from '../ui/institutional-system';
 
 @Component({
   selector: 'cs-identity-guest', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [SecureFieldFeedbackDirective],
   templateUrl: './identity-guest.component.html', styleUrl: './identity-flow.component.css'
 })
 export class IdentityGuestComponent {
@@ -15,6 +17,7 @@ export class IdentityGuestComponent {
     typeof PublicKeyCredential.parseRequestOptionsFromJSON === 'function' &&
     !!navigator.credentials;
   readonly busy = input(false);
+  readonly inviteNeedsEnrollment = signal(false);
   readonly view = input('ingresar');
   readonly loginRequested = output<Event>();
   readonly registerRequested = output<Event>();
@@ -27,6 +30,7 @@ export class IdentityGuestComponent {
 
 @Component({
   selector: 'cs-identity-mfa', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [SecureFieldFeedbackDirective],
   templateUrl: './identity-mfa.component.html', styleUrl: './identity-flow.component.css'
 })
 export class IdentityMfaComponent {
@@ -38,7 +42,7 @@ export class IdentityMfaComponent {
 
 @Component({
   selector: 'cs-identity-workspace', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [InstitutionalModalComponent, InstitutionalCardComponent, InstitutionalStateComponent],
+  imports: [InstitutionalModalComponent, InstitutionalCardComponent, InstitutionalStateComponent, SecureFieldFeedbackDirective],
   templateUrl: './identity-workspace.component.html',
   styleUrls: ['./identity-flow.component.css', './identity-workspace.component.css']
 })
@@ -47,6 +51,19 @@ export class IdentityWorkspaceComponent {
   readonly showAllEvents = signal(false);
   readonly historyFilter = signal<'all' | 'success' | 'attention'>('all');
   readonly selectedPasskeyId = signal('');
+  readonly photoFileName = signal('');
+  readonly photoFileError = signal('');
+  onPhotoFileChange(event: Event): void {
+    const control = event.target;
+    const file = control instanceof HTMLInputElement ? control.files?.item(0) : null;
+    this.photoFileName.set(file?.name ?? '');
+    this.photoFileError.set(!file ? ''
+      : file.size > 2 * 1024 * 1024
+        ? 'La imagen supera 2 MB. Elige un archivo más pequeño.'
+        : !['image/png', 'image/jpeg', 'image/webp'].includes(file.type)
+          ? 'Selecciona una imagen PNG, JPEG o WebP.'
+          : '');
+  }
   readonly historyRequested = signal(false);
   readonly sessionsRequested = signal(false);
   readonly securityEventRows = computed(() => [...this.identity.securityEvents()]
@@ -125,6 +142,7 @@ export class IdentityWorkspaceComponent {
 
 @Component({
   selector: 'cs-identity-recovery', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [SecureFieldFeedbackDirective],
   templateUrl: './identity-recovery.component.html', styleUrl: './identity-flow.component.css'
 })
 export class IdentityRecoveryComponent {

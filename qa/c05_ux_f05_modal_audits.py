@@ -29,7 +29,7 @@ def audit_a() -> None:
     ]
     for needle in checks: need(needle in comp, "modal behavior missing: " + needle)
     need("aria-current" in modal and "cs-modal__stepper" in modal, "wizard progress absent")
-    need("cs-modal__warning" in modal and "role=\"alert\"" in modal, "warning/alert feedback missing")
+    need("cs-modal__warning" in modal and ("role=\"alert\"" in modal or "cs-operation-feedback" in modal), "warning/alert feedback missing")
     work = text(PAGES / "identity-workspace.component.html")
     operator = text(PAGES / "platform-identity-panel.component.html")
     security = text(PAGES / "platform-operator-security.component.html")

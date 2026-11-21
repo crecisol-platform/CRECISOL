@@ -18,13 +18,13 @@
     <span class="header-context">{{ view() === 'operadores' ? 'Consola de plataforma' : identity.state() === 'authenticated' ? 'Mi cuenta' : 'Identidad y acceso' }}</span>
   </header>
 
-  <div class="account-layout" [class.account-layout--single]="identity.state() !== 'anonymous' || view() === 'operadores'">
+  <div class="account-layout" [class.account-layout--single]="identity.state() !== 'anonymous' || view() === 'operadores'" [class.account-layout--guest]="identity.state() === 'anonymous' && view() !== 'operadores'" [class.account-layout--recovery]="identity.state() === 'anonymous' && view() === 'recuperar'">
     @if (identity.state() === 'anonymous' && view() !== 'operadores') {
     <aside class="account-aside" aria-label="Acerca del acceso">
       <div class="aside-top">
         <p class="eyebrow">CRECISOL · IDENTIDAD</p>
         <h1>Tu cuenta, a tu manera.</h1>
-        <p>Una experiencia privada, clara y controlada. Cada empresa se identifica por su dominio verificado, nunca por un selector de acceso.</p>
+        <p>Tu negocio se reconoce por su dominio verificado. No necesitas elegir una empresa para entrar.</p>
       </div>
       <div class="aside-bottom"><span class="aside-rule" aria-hidden="true"></span><p>Protección con segundo factor y control de tus sesiones.</p></div>
     </aside>
@@ -38,13 +38,14 @@
           <li aria-current="page">{{ sectionName() }}</li>
         </ol>
       </nav>
-      @if (message()) { <p class="feedback feedback--success" role="status" aria-live="polite">{{ message() }}</p> }
-      @if (error()) { <p class="feedback feedback--error" role="alert">{{ error() }}</p> }
+      @if (visibleFeedback(); as feedback) {
+        <cs-operation-feedback [kind]="feedback.kind" [text]="feedback.text" context="Cuenta y seguridad" />
+      }
       @if (view() === 'operadores') {
         <div class="page-heading page-heading--operator">
           <p class="eyebrow">ÁMBITO DE PLATAFORMA · PERSONAL AUTORIZADO</p>
           <h1>Identidad de plataforma</h1>
-          <p>Una consola independiente de las cuentas de negocio, con verificación y permisos propios.</p>
+          <p>Gestión interna verificada, separada de las cuentas de negocio.</p>
         </div>
         <cs-platform-identity-panel />
         <a class="back-link" routerLink="/cuenta">Volver al acceso de cuentas</a>
@@ -124,7 +125,7 @@
           @if (identity.terms(); as terms) {
             <h3>Condiciones {{ terms.version }}</h3><p class="terms-content">{{ terms.text }}</p>
             @if (identity.state() === 'authenticated') {
-              <form (submit)="securityAction($event, 'terms')">
+              <form csFieldFeedback (submit)="securityAction($event, 'terms')">
                 <label><input name="accepted" type="checkbox" required> Acepto esta versión de las condiciones</label>
                 <button [disabled]="busy() || identity.restoring()">Registrar aceptación</button>
               </form>

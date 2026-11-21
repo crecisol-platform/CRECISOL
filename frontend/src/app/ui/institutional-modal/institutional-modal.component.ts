@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject, input, output, signal } from '@angular/core';
+import { OperationFeedbackComponent } from '../feedback/operation-feedback.component';
 
 /**
  * Modal institucional C05. Usa la top layer nativa (<dialog>.showModal):
@@ -10,6 +11,7 @@ export type InstitutionalModalKind = 'simple' | 'form' | 'destructive' | 'wizard
 @Component({
   selector: 'cs-institutional-modal',
   standalone: true,
+  imports: [OperationFeedbackComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './institutional-modal.component.html',
   styleUrl: './institutional-modal.component.css'
@@ -51,8 +53,10 @@ export class InstitutionalModalComponent implements OnDestroy {
   @ViewChild('scrollBody', { static: true }) private scrollBody?: ElementRef<HTMLElement>;
   private previouslyFocused: HTMLElement | null = null;
   private submittedWhileOpen = false;
-  private actionStartedHere = false;
+  readonly actionStartedHere = signal(false);
+  readonly hasMoreContent = signal(false);
   private presentedWizardStep = 1;
+  private contentResizeObserver: ResizeObserver | undefined;
 
   constructor() {
     effect(() => {
@@ -66,14 +70,17 @@ export class InstitutionalModalComponent implements OnDestroy {
         if (!this.surface?.nativeElement.open || this.activeStep() !== step) return;
         if (this.scrollBody) this.scrollBody.nativeElement.scrollTop = 0;
         this.heading?.nativeElement.focus({ preventScroll: true });
+        requestAnimationFrame(() => this.updateScrollCue());
       });
     });
     effect(() => {
       const busy = this.busy(), feedback = this.feedback(), error = this.error();
       if (!this.surface?.nativeElement.open) return;
-      if (busy && this.actionStartedHere) this.submittedWhileOpen = true;
+      if (busy && this.actionStartedHere()) this.submittedWhileOpen = true;
       if (busy || !this.submittedWhileOpen) return;
       this.submittedWhileOpen = false;
+      // A later unrelated request cannot impersonate another modal transaction.
+      this.actionStartedHere.set(false);
       if (error) {
         this.localError.set(error);
         this.localFeedback.set('');
@@ -85,8 +92,16 @@ export class InstitutionalModalComponent implements OnDestroy {
     });
   }
 
+  /** The continuation hint is driven by real overflow, not by the form type. */
+  updateScrollCue(): void {
+    const region = this.scrollBody?.nativeElement;
+    const open = this.surface?.nativeElement.open === true;
+    this.hasMoreContent.set(Boolean(open && region &&
+      region.scrollHeight - region.scrollTop - region.clientHeight > 12));
+  }
+
   onDialogSubmit(): void {
-    this.actionStartedHere = true;
+    this.actionStartedHere.set(true);
     this.localFeedback.set('');
     this.localError.set('');
   }
@@ -110,7 +125,7 @@ export class InstitutionalModalComponent implements OnDestroy {
     this.previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.localFeedback.set('');
     this.localError.set('');
-    this.actionStartedHere = false;
+    this.actionStartedHere.set(false);
     this.submittedWhileOpen = false;
     this.presentedWizardStep = this.activeStep();
     dialog.showModal();
@@ -120,6 +135,12 @@ export class InstitutionalModalComponent implements OnDestroy {
     document.body.style.overflow = 'hidden';
     if (this.scrollBody) this.scrollBody.nativeElement.scrollTop = 0;
     this.heading?.nativeElement.focus();
+    this.contentResizeObserver?.disconnect();
+    if (this.scrollBody) {
+      this.contentResizeObserver = new ResizeObserver(() => this.updateScrollCue());
+      this.contentResizeObserver.observe(this.scrollBody.nativeElement);
+    }
+    requestAnimationFrame(() => this.updateScrollCue());
   }
 
   close(): void {
@@ -134,6 +155,9 @@ export class InstitutionalModalComponent implements OnDestroy {
   }
 
   onClosed(): void {
+    this.contentResizeObserver?.disconnect();
+    this.contentResizeObserver = undefined;
+    this.hasMoreContent.set(false);
     this.releasePageScroll();
     // No retener contraseñas/códigos de formularios cancelados en el DOM.
     this.surface?.nativeElement.querySelectorAll('form').forEach(form => form.reset());
@@ -142,7 +166,7 @@ export class InstitutionalModalComponent implements OnDestroy {
     if (this.previouslyFocused?.isConnected) this.previouslyFocused.focus();
     this.previouslyFocused = null;
     this.submittedWhileOpen = false;
-    this.actionStartedHere = false;
+    this.actionStartedHere.set(false);
     this.localFeedback.set('');
     this.localError.set('');
   }
@@ -154,6 +178,8 @@ export class InstitutionalModalComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.contentResizeObserver?.disconnect();
+    this.contentResizeObserver = undefined;
     const dialog = this.surface?.nativeElement;
     if (dialog?.open) dialog.close();
     this.releasePageScroll();

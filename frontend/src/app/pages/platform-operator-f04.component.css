@@ -45,7 +45,7 @@
 .operator-reassurance { margin: 0; font-size: .85rem; color: #48657d; line-height: 1.6; }
 .operator-reassurance strong { color: #234c70; }
 .operator-task-note { display: block; margin-top: .25rem; color: #586f85;
-  font-size: .83rem; font-weight: 500; line-height: 1.5; }
+  font-size: .875rem; font-weight: 500; line-height: 1.5; }
 .operator-avatar { display: inline-grid; place-items: center; flex: 0 0 auto;
   width: 4.4rem; height: 4.4rem; border-radius: 1.1rem; background: #e4f0fa;
   color: #1d5682; font-size: 1.6rem; font-weight: 850; }
@@ -62,4 +62,144 @@
 @media (forced-colors: active) {
   .operator-card, .operator-scope-note, .operator-empty, .operator-tag { border-color: CanvasText; }
   .operator-tag { background: Canvas; color: CanvasText; }
+}
+
+
+/* F06 premium - child workspace density; parent navigation rules live in identity-flow CSS. */
+.operator-workspace { gap: .85rem; }
+.operator-section-head h2 { font-size: clamp(1.25rem, 2.7vw, 1.7rem); }
+.operator-section-head p { font-size: .89rem; line-height: 1.5; }
+.operator-scope-details { padding: 0; margin: 0; border-left-width: 2px; background: transparent; }
+.operator-scope-details summary { display: list-item; cursor: pointer; padding: .65rem .9rem; font-size: .83rem; font-weight: 750; color: #24587e; }
+.operator-scope-details[open] p { margin: 0; padding: .15rem .95rem .85rem; font-size: .83rem; }
+.operator-card--result { padding: 0; box-shadow: none; background: transparent; border: 0; }
+.operator-card--result > .operator-section-head { margin-bottom: .55rem; }
+.operator-card--result .operator-empty--result { padding: 1.05rem 1.2rem; border-style: solid; border-color: #dbe6ee; background: #f8fbfe; }
+.operator-empty--result h3 { font-size: .95rem; margin: 0; }
+.operator-empty--result p { font-size: .85rem; line-height: 1.5; }
+.operator-task-secondary { margin: .2rem 0 .65rem; }
+.operator-task-secondary .institutional-task__trigger { box-shadow: none; background: #f6f9fc !important; min-height: 2.9rem; font-size: .84rem; border-style: dashed; }
+@media (max-width: 720px) {
+ .operator-section-head h2 { font-size: 1.25rem; }
+ .operator-card { padding: .9rem; }
+ .operator-card--result { padding: 0; }
+}
+@media (forced-colors: active) {
+ .operator-scope-details, .operator-card--result .operator-empty--result {
+   border: 1px solid CanvasText; background: Canvas;
+ }
+}
+
+
+/* F06 premium - compact state summaries per platform workspace. */
+.operator-card--session-list { padding: 0; border: 0; background: transparent; box-shadow: none; }
+.operator-card--session-list > .operator-section-head { margin-bottom: .6rem; }
+.operator-card--session-list .operator-card--quiet { background: #f8fbfe; }
+.operator-card--policy { padding-block: .85rem; }
+.operator-card--policy h3 { margin-bottom: .25rem; }
+.operator-card--policy p { margin: .35rem 0; font-size: .875rem; }
+.operator-profile-head { gap: .7rem; }
+.operator-profile-head h3 { margin: .1rem 0 .3rem; }
+.operator-profile-head + .operator-facts { margin: .85rem 0 .2rem; }
+.operator-monitor-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.operator-monitor-stats .operator-card { padding: .9rem; }
+.operator-monitor-stats .operator-stat strong { font-size: clamp(1.25rem, 3vw, 1.7rem); }
+.operator-monitor-stats .operator-stat span { font-size: .76rem; }
+@media (max-width: 620px) {
+  .operator-monitor-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
+  .operator-monitor-stats .operator-stat:first-child { grid-column: 1 / -1; }
+  .operator-monitor-stats .operator-card { padding: .7rem .85rem; }
+  .operator-profile-head + .operator-facts { grid-template-columns: repeat(2,minmax(0,1fr)); gap: .75rem; }
+  .operator-card--session-list { padding: 0; }
+}
+@media (forced-colors: active) {
+  .operator-card--session-list { border-color: CanvasText; background: Canvas; }
+}
+
+
+/* F06 accessibility regression: 320px viewport and 200% browser text. */
+.operator-workspace,
+.operator-workspace .operator-card,
+.operator-workspace .operator-section-head,
+.operator-workspace .operator-stat,
+.operator-workspace .operator-stat span,
+.operator-workspace .operator-stat strong {
+  min-width: 0; max-width: 100%; overflow-wrap: anywhere;
+}
+@media (max-width: 480px) {
+  .operator-workspace .operator-card { padding: 10px; }
+  .operator-monitor-stats { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .operator-monitor-stats .operator-stat:first-child { grid-column: auto; }
+  .operator-monitor-stats .operator-stat span { display: block; }
+  .operator-section-head { gap: 8px; }
+  .operator-workspace .operator-card--result,
+  .operator-workspace .operator-card--session-list { padding: 0; }
+}
+
+
+/* F06 premium polish · Operator cases prioritize exact-lookup and secondary actions. */
+.operator-workspace .operator-case-caution { margin: .35rem .2rem; color: #506780; font-size: .875rem; line-height: 1.5; }
+.operator-card--result:has(.operator-empty--result) { padding: 0; }
+.operator-card--result .operator-empty--result { padding: .8rem 1rem; border-radius: .8rem; }
+.operator-card--result .operator-empty--result h3 { font-size: .9rem; margin: 0 0 .15rem; }
+.operator-card--result .operator-empty--result p { font-size: .875rem; margin: .2rem 0 0; }
+@media (max-width: 720px) {
+  .operator-workspace { gap: .65rem; }
+  .operator-section-head p { margin: .25rem 0 0; }
+  .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] {
+    padding: .8rem .9rem;
+  }
+  .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] > p {
+    font-size: .875rem; margin: .3rem 0 .65rem;
+  }
+  .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] h3 { margin: 0; font-size: 1rem; }
+  .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] form { gap: .35rem; }
+  .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] input { min-height: 2.65rem; }
+}
+
+
+/* F06 buyer refinement: one editorial rhythm on the five platform areas. */
+.operator-workspace .operator-section-head { gap: .5rem; }
+.operator-workspace .operator-section-head p { margin-top: .18rem; font-size: .875rem; line-height: 1.5; }
+.operator-workspace .operator-kicker { font-size: .78rem; letter-spacing: .06em; }
+/* The workspace title already identifies its area; avoid a duplicate eyebrow. */
+.operator-workspace > .operator-section-head .operator-kicker { display: none; }
+.operator-workspace .operator-empty { padding: .9rem 1rem; border-radius: .8rem; }
+.operator-workspace .operator-empty h3 { margin: 0 0 .2rem; font-size: .98rem; }
+.operator-workspace .operator-empty p { margin: .2rem 0 0; font-size: .875rem; line-height: 1.5; }
+.operator-workspace .operator-card__header h3 { margin: 0; }
+.operator-workspace .operator-scope-details { margin: .1rem 0; }
+.operator-workspace .operator-scope-details summary { box-sizing: border-box; min-height: 2.75rem; padding: .65rem .8rem; font-size: .875rem; }
+@media (max-width: 720px) {
+  .operator-workspace .operator-section-head h2 { font-size: 1.2rem; line-height: 1.19; }
+  .operator-workspace .operator-section-head p { font-size: .875rem; }
+  .operator-workspace .operator-empty { padding: .78rem .9rem; }
+  .operator-workspace .operator-card--policy { padding: .78rem .85rem; }
+  .operator-workspace .operator-card--session-list { padding: 0; }
+  .operator-workspace .institutional-task__trigger { min-height: 3rem; }
+}
+
+
+/* Exact-reference lookup leads; the privacy explanation is still available
+   immediately after the protected form and before review/recovery actions. */
+@media (max-width: 720px) {
+  .operator-workspace .operator-scope-details { margin-top: -.2rem; }
+  .operator-workspace .operator-card[aria-label='Consulta puntual de caso'] {
+    border-color: #c9ddeb;
+    background: #f8fbfe;
+  }
+}
+
+/* F06 purchase gate: case lookup first, readable on a 320px phone.
+   Keep 44px summary targets and avoid narrowing labels at 200% text zoom. */
+@media (max-width: 720px) {
+  .operator-workspace > .operator-section-head h2 { margin: .1rem 0 .2rem; }
+  .operator-workspace > .operator-section-head p { margin: 0; }
+  .operator-workspace .operator-card[aria-label='Consulta puntual de caso'] {
+    padding: .75rem .85rem;
+  }
+  .operator-workspace .operator-card[aria-label='Consulta puntual de caso'] form { gap: .3rem; }
+  .operator-workspace .operator-card[aria-label='Consulta puntual de caso'] label { font-size: .875rem; }
+  .operator-card--policy .operator-tag { display: none; }
+  .operator-workspace .operator-scope-details summary { min-height: 2.75rem; }
 }

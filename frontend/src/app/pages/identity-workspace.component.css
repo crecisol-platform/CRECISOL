@@ -1,188 +1,6 @@
 /* C05 F03 institutional workspace-only style sheet; does not leak into operator or C01/C02. */
 /* C05 F03 workspace visual system, selectively ported from account UX draft. */
 
-/* C05 PREMIUM ACCOUNT SURFACES — information first; no fabricated status. */
-:host {
-  --identity-ink: #173650;
-  --identity-muted: #49647e;
-  --identity-border: #d8e4ed;
-  --identity-surface: #f6f9fc;
-  --identity-accent: #15588c;
-}
-.identity-panel-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: .85rem 1.25rem;
-  margin-bottom: 1.3rem;
-}
-.identity-panel-heading h3 {
-  margin: 0 0 .35rem;
-  font-size: 1.12rem;
-  line-height: 1.35;
-  letter-spacing: -.015em;
-  color: var(--identity-ink);
-}
-.identity-panel-heading p { max-width: 53ch; margin: 0; font-size: .88rem; color: var(--identity-muted); }
-.identity-panel-heading > button {
-  flex: 0 0 auto;
-  min-height: 2.6rem;
-  padding: .55rem .85rem;
-  background: #fff;
-  border: 1px solid var(--identity-border);
-  color: var(--identity-accent);
-  font-size: .86rem;
-}
-.identity-profile-body { display: flex; gap: 1.2rem; align-items: flex-start; }
-.identity-profile-avatar {
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  width: 4.5rem;
-  height: 4.5rem;
-  border: 1px solid #cbdeee;
-  border-radius: 1rem;
-  background: #e9f3fc;
-  object-fit: cover;
-}
-.identity-profile-avatar--empty { color: #246496; font-weight: 800; font-size: 1.55rem; }
-.identity-profile-details { flex: 1; min-width: 0; }
-.identity-profile-name {
-  margin: 0 0 .65rem;
-  font-size: 1.22rem;
-  color: var(--identity-ink);
-  font-weight: 740;
-  line-height: 1.35;
-}
-.identity-meta { display: grid; gap: .4rem; margin: .5rem 0 0; }
-.identity-meta > div { display: grid; grid-template-columns: minmax(6rem, 9rem) minmax(0, 1fr); gap: .5rem; }
-.identity-meta dt { font-size: .82rem; color: var(--identity-muted); }
-.identity-meta dd { margin: 0; font-size: .87rem; font-weight: 650; color: var(--identity-ink); overflow-wrap: anywhere; }
-.identity-empty-copy {
-  border: 1px dashed #c9d9e7;
-  border-radius: .85rem;
-  padding: 1.15rem;
-  background: #fff;
-  color: var(--identity-muted);
-  margin: .25rem 0;
-  font-size: .92rem;
-}
-.identity-activity-list, .identity-key-list, .identity-device-list {
-  display: grid;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.identity-activity-list { gap: 0; }
-.identity-activity-item {
-  display: grid;
-  grid-template-columns: .8rem minmax(0, 1fr) auto;
-  align-items: center;
-  gap: .75rem;
-  padding: .85rem .2rem;
-  border-bottom: 1px solid #e3edf4;
-}
-.identity-activity-item:last-child { border-bottom: 0; }
-.identity-activity-mark { width: .65rem; height: .65rem; background: #21806d; border-radius: 50%; }
-.identity-activity-mark--pending { background: #a16e21; }
-.identity-activity-copy { display: grid; gap: .15rem; min-width: 0; }
-.identity-activity-copy strong { color: var(--identity-ink); font-size: .92rem; font-weight: 690; }
-.identity-activity-copy time { font-size: .8rem; color: var(--identity-muted); font-variant-numeric: tabular-nums; }
-.identity-activity-status { color: #176d58; font-size: .79rem; font-weight: 700; text-align: right; }
-.identity-activity-status--warning { color: #845618; }
-.identity-more-action {
-  width: 100%;
-  margin-top: .75rem;
-  background: #fff;
-  color: var(--identity-accent);
-  border: 1px solid var(--identity-border);
-  font-size: .86rem;
-}
-.identity-key-list { gap: .6rem; }
-.identity-key-item {
-  display: flex;
-  align-items: center;
-  gap: .9rem;
-  min-width: 0;
-  padding: .95rem 1rem;
-  border: 1px solid var(--identity-border);
-  border-radius: .9rem;
-  background: #fff;
-}
-.identity-key-item strong { color: var(--identity-ink); font-size: .94rem; }
-.identity-key-item p { margin: .2rem 0 0; font-size: .83rem; color: var(--identity-muted); }
-.identity-key-symbol {
-  flex: 0 0 auto;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: .7rem;
-  border: 1px solid #cfe0ee;
-  background: #ecf4fc;
-  position: relative;
-}
-.identity-key-symbol::before {
-  content: '';
-  position: absolute;
-  left: .64rem;
-  top: .65rem;
-  width: .55rem;
-  height: .55rem;
-  border: 2px solid #225d8b;
-  border-radius: 50%;
-}
-.identity-key-symbol::after {
-  content: '';
-  position: absolute;
-  left: 1.22rem;
-  top: 1.05rem;
-  width: .45rem;
-  height: .12rem;
-  background: #225d8b;
-  box-shadow: .2rem .2rem 0 -.015rem #225d8b;
-}
-.identity-device-region { margin: 1.4rem 0; }
-.identity-device-list { gap: .8rem; }
-.identity-device-card {
-  min-width: 0;
-  padding: 1.15rem;
-  border: 1px solid var(--identity-border);
-  border-radius: 1rem;
-  background: #fff;
-}
-.identity-device-top { display: flex; align-items: flex-start; gap: .85rem; }
-.identity-device-title { display: grid; min-width: 0; gap: .2rem; }
-.identity-device-title strong { color: var(--identity-ink); font-size: 1rem; overflow-wrap: anywhere; }
-.identity-device-title span { color: var(--identity-muted); font-size: .82rem; overflow-wrap: anywhere; }
-.identity-device-icon { flex: 0 0 auto; display: block; position: relative; width: 2.2rem; height: 2.1rem; border: 1px solid #cedfec; border-radius: .5rem; background: #edf5fb; }
-.identity-device-icon::before { content: ''; position: absolute; inset: .43rem .4rem .67rem; border: 1.5px solid #32688d; border-radius: .12rem; }
-.identity-device-icon::after { content: ''; position: absolute; left: .78rem; right: .78rem; bottom: .35rem; height: 2px; background: #32688d; }
-.identity-device-meta { margin: 1rem 0; border-top: 1px solid #e5ecf3; padding-top: .85rem; }
-.identity-device-card > .identity-revoke {
-  min-height: 2.5rem;
-  padding: .5rem .8rem;
-  background: #fff;
-  color: #8b3136;
-  border: 1px solid #e7c7c9;
-  font-size: .85rem;
-}
-.identity-device-card > .identity-revoke:hover:not(:disabled) { background: #fff4f4; }
-.identity-danger-confirm { background: #90333a; border-color: #90333a; color: white; }
-.identity-danger-confirm:hover:not(:disabled) { background: #72272e; }
-.identity-field-help { font-size: .82rem; color: var(--identity-muted); margin: .3rem 0 .6rem; }
-@media (max-width: 620px) {
-  .identity-profile-body { gap: .85rem; }
-  .identity-profile-avatar { width: 3.6rem; height: 3.6rem; }
-  .identity-meta > div { grid-template-columns: minmax(0, 1fr); gap: .12rem; }
-  .identity-activity-item { grid-template-columns: .8rem minmax(0, 1fr); }
-  .identity-activity-status { grid-column: 2; justify-self: start; }
-  .identity-panel-heading > button { width: 100%; }
-  .identity-device-card { padding: .95rem; }
-}
-@media (forced-colors: active) {
-  .identity-activity-mark, .identity-key-symbol, .identity-device-icon { forced-color-adjust: none; border-color: CanvasText; }
-}
-
 /* C05 UX F03 correction — authenticated workspace, six functional views.
  * Editorial hierarchy and density are shared with F02 institutional tokens.
  * Permission is NOT implemented with these classes or with navigation state.
@@ -487,104 +305,6 @@
   .identity-workspace .identity-task-caption { color: GrayText; }
 }
 
-/* F03 approvals inbox: permission-gated server records, no hand-entered UUIDs. */
-.identity-workspace > .identity-approval-queue {
-  grid-column: 1 / -1;
-  min-width: 0;
-  margin: 0;
-  padding: clamp(1rem, 2.3vw, 1.45rem);
-  border: 1px solid var(--cs-color-border, #d3e1ee);
-  border-radius: var(--cs-radius-lg, 1.15rem);
-  background: var(--cs-color-surface-soft, #f5f9fd);
-}
-.identity-approval-queue .identity-panel-heading { margin-bottom: 1rem; }
-.identity-pending-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-  gap: .8rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.identity-pending-card {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.15rem;
-  min-width: 0;
-  background: var(--cs-color-surface, #fff);
-  border: 1px solid var(--cs-color-border, #d3e1ee);
-  border-radius: var(--cs-radius-md, .85rem);
-}
-.identity-pending-main { min-width: 0; display: grid; gap: .3rem; }
-.identity-pending-state {
-  color: #775219;
-  font-weight: 750;
-  font-size: .72rem;
-  letter-spacing: .025em;
-}
-.identity-pending-card strong {
-  display: block;
-  font-size: 1rem;
-  color: var(--cs-color-text-strong, #102e4c);
-  font-weight: 760;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-}
-.identity-pending-card p {
-  margin: 0;
-  font-size: .83rem;
-  line-height: 1.6;
-  color: var(--cs-color-muted, #455f79);
-  overflow-wrap: anywhere;
-}
-.identity-pending-card button {
-  width: 100%;
-  min-width: 0;
-  min-height: var(--cs-hit-target, 2.75rem);
-  margin: 0;
-  color: var(--cs-color-accent-text, #174b77);
-  background: #eff6fc;
-  border: 1px solid #b9d3e6;
-}
-.identity-pending-card button:hover:not(:disabled) { background: #e1f0fa; }
-.identity-approval-queue > .identity-more-action {
-  margin-top: .9rem;
-  min-height: var(--cs-hit-target, 2.75rem);
-}
-.identity-workspace .identity-approval-confirm {
-  display: flex;
-  align-items: flex-start;
-  gap: .6rem;
-  font-size: .85rem;
-  line-height: 1.5;
-  max-width: 70ch;
-  min-width: 0;
-}
-.identity-workspace .identity-approval-confirm input[type='checkbox'] {
-  width: 1.25rem;
-  height: 1.25rem;
-  min-width: 1.25rem;
-  min-height: 1.25rem;
-  flex: 0 0 auto;
-  margin: .15rem 0 0;
-  accent-color: var(--cs-color-action, #103f75);
-}
-@media (max-width: 920px) {
-  .identity-pending-list { grid-template-columns: minmax(0, 1fr); }
-}
-@media (max-width: 480px) {
-  .identity-workspace > .identity-approval-queue { padding: .9rem; }
-  .identity-pending-card { padding: .95rem; }
-}
-@media (forced-colors: active) {
-  .identity-approval-queue,
-  .identity-pending-card,
-  .identity-pending-card button { border: 1px solid CanvasText; }
-}
-
 /* F03 interaction polish: contextual credential action, timeline filters and step-up. */
 .identity-key-item > div { flex: 1 1 9rem; }
 .identity-key-revoke {
@@ -648,4 +368,79 @@
   .identity-key-revoke,
   .identity-security-step,
   .identity-history-filters select { border: 1px solid CanvasText; }
+}
+
+
+/* C05 UX F06 premium: no fake avatar beside an empty profile state.
+ * The status now takes the entire width on narrow and wide screens. */
+.identity-profile-body:not(:has(.identity-profile-avatar)) {
+  display: block;
+}
+.identity-profile-body:not(:has(.identity-profile-avatar)) .identity-profile-details {
+  width: 100%;
+  min-width: 0;
+}
+@media (max-width: 620px) {
+  .identity-profile-body:not(:has(.identity-profile-avatar)) cs-ui-state {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+
+/* F06 premium polish · Compact explanation rails, not hidden security gates.
+   Destructive confirmation and permission checks remain in modal/API. */
+.identity-workspace__lead { max-width: 58ch; line-height: 1.5; font-size: .9rem; }
+.identity-workspace > h2 { line-height: 1.18; }
+.identity-policy-disclosure {
+  margin: 0; padding: 0 !important; min-width: 0;
+  border: 1px solid var(--cs-color-border, #d3e1ee);
+  border-left: 3px solid var(--cs-color-action, #103f75);
+  border-radius: .85rem;
+  background: #f5f9fd;
+}
+.identity-policy-disclosure > summary {
+  cursor: pointer;
+  display: list-item;
+  padding: .75rem .9rem;
+  font-weight: 740; color: #174b77;
+  font-size: .85rem; line-height: 1.42;
+}
+.identity-policy-disclosure > summary:focus-visible { outline: 3px solid #126aaf; outline-offset: 3px; }
+.identity-policy-disclosure[open] > p {
+  margin: 0; padding: 0 .9rem .85rem;
+  font-size: .84rem; line-height: 1.55;
+}
+.identity-approval-queue .identity-panel-heading > button:not(:disabled) {
+  background: #154879; border-color: #154879; color: #fff; font-weight: 740;
+}
+.identity-approval-queue .identity-panel-heading > button:hover:not(:disabled) { background: #103b65; }
+.identity-approval-queue .identity-panel-heading > button:focus-visible { outline: 3px solid #126aaf; outline-offset: 3px; }
+@media (max-width: 720px) {
+  .identity-workspace { row-gap: .65rem; }
+  .identity-workspace > h2 { font-size: 1.32rem; }
+  .identity-workspace__lead { margin: -.2rem 0 .15rem; font-size: .86rem; line-height: 1.42; }
+  .identity-approval-queue { padding: .8rem; }
+  .identity-approval-queue .identity-panel-heading { gap: .6rem; margin-bottom: .65rem; }
+  .identity-approval-queue .identity-panel-heading p { font-size: .875rem; line-height: 1.5; }
+  .identity-policy-disclosure > summary { padding: .62rem .8rem; }
+  .identity-policy-disclosure[open] > p { padding: 0 .8rem .7rem; }
+}
+@media (forced-colors: active) {
+  .identity-policy-disclosure { background: Canvas; border-color: CanvasText; }
+  .identity-policy-disclosure > summary { color: CanvasText; }
+  .identity-approval-queue .identity-panel-heading > button:not(:disabled) {
+    background: ButtonFace; color: ButtonText; border-color: CanvasText;
+  }
+}
+
+
+/* Task-first approval surfaces: the permission rail follows the protected
+   inbox instead of delaying the primary server-authorized lookup. */
+.identity-workspace > .identity-approval-queue { margin-bottom: 0; }
+.identity-workspace > .identity-approval-context { margin-top: -.15rem; }
+@media (max-width: 720px) {
+  .identity-workspace > .identity-approval-queue { padding: .75rem .85rem; }
+  .identity-approval-queue .identity-panel-heading > button { width: 100%; min-height: 2.8rem; }
 }

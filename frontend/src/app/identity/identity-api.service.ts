@@ -104,6 +104,7 @@ export class IdentityApiService {
   // Server expiry/revocation is enforced independently on every API call.
   private readonly sessionWindow = new BrowserSessionWindow(() => { this.clear(); });
   private challengeTimer: ReturnType<typeof setTimeout> | undefined;
+  private backupCodesTimer: ReturnType<typeof setTimeout> | undefined;
 
   async requestRegistration(mailbox: string): Promise<void> {
     await firstValueFrom(this.http.post<NeutralReceipt>(`${API}/registration-intents`, {
@@ -279,7 +280,7 @@ export class IdentityApiService {
     if (this.challengeTimer) clearTimeout(this.challengeTimer);
     this.challengeTimer = undefined;
     this.csrfValue = result.csrfToken;
-    this.recoveryCodes.set(result.recoveryCodes ?? []);
+    this.showRecoveryCodes(result.recoveryCodes ?? []);
     this.enrollmentSecret.set('');
     this.enrollmentQr.set('');
     this.enrollmentRequired.set(false);
@@ -502,6 +503,24 @@ export class IdentityApiService {
     this.restoring.set(false);
   }
 
+  /** New backup codes must remain available in Resumen until explicitly saved,
+   * but never linger after logout/session expiry or the short disclosure window.
+   */
+  hideRecoveryCodes(): void {
+    if (this.backupCodesTimer) clearTimeout(this.backupCodesTimer);
+    this.backupCodesTimer = undefined;
+    this.recoveryCodes.set([]);
+  }
+  private showRecoveryCodes(codes: readonly string[]): void {
+    this.hideRecoveryCodes();
+    if (codes.length === 0) return;
+    this.recoveryCodes.set(codes);
+    this.backupCodesTimer = setTimeout(() => {
+      this.recoveryCodes.set([]);
+      this.backupCodesTimer = undefined;
+    }, 5 * 60_000);
+  }
+
   clear(): void {
     ++this.sessionRevision;
     ++this.pendingRequestRevision;
@@ -521,7 +540,7 @@ export class IdentityApiService {
     this.sessions.set([]);
     this.privateReference.set('');
     this.assistedReference.set('');
-    this.recoveryCodes.set([]);
+    this.hideRecoveryCodes();
     this.passkeys.set([]);
     this.pairingKey = null; this.pairingNonce = ''; this.pairing.set(null);
     this.securityEvents.set([]);

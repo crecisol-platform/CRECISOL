@@ -18,7 +18,7 @@
     <button type="button" class="cs-modal__dismiss" aria-label="Cerrar ventana"
       [disabled]="busy()" (click)="close()">×</button>
   </header>
-  <div #scrollBody class="cs-modal__content" role="region" aria-label="Contenido de la operación" tabindex="0">
+  <div #scrollBody class="cs-modal__content" role="region" aria-label="Contenido de la operación" tabindex="0" (scroll)="updateScrollCue()">
     @if (kind() === 'destructive') {
       <div class="cs-modal__warning" role="note">
         <strong>Revisa antes de confirmar.</strong>
@@ -39,8 +39,15 @@
         </ol>
       </nav>
     }
-    @if (localError()) { <p class="cs-modal__feedback cs-modal__feedback--error" role="alert">{{ localError() }}</p> }
-    @if (localFeedback()) { <p class="cs-modal__feedback" role="status" aria-live="polite">{{ localFeedback() }}</p> }
+    @if (busy() && actionStartedHere()) {
+      <cs-operation-feedback kind="pending" text="Verificando la solicitud en el servidor…" context="Operación protegida" />
+    }
+    @if (localError()) {
+      <cs-operation-feedback kind="error" [text]="localError()" context="Operación protegida" />
+    }
+    @if (localFeedback()) {
+      <cs-operation-feedback kind="success" [text]="localFeedback()" context="Operación protegida" />
+    }
     <ng-content></ng-content>
   </div>
   <footer class="cs-modal__footer">
@@ -50,6 +57,9 @@
         @case ('destructive') { El servidor verificará permisos, contexto y segundo factor cuando corresponda. }
         @case ('wizard') { Paso {{ activeStep() }} de {{ steps().length || 1 }} · No compartas códigos ni partes de recuperación. }
         @default { Acción protegida · Nunca compartas tus códigos. }
+      }
+      @if (hasMoreContent()) {
+        <strong class="cs-modal__scroll-cue">↓ Desplaza el contenido para continuar.</strong>
       }
     </span>
     <button type="button" class="cs-modal__cancel" [disabled]="busy()" (click)="close()">Cerrar</button>
