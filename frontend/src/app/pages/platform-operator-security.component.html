@@ -90,11 +90,11 @@
     <span>Caducidad por inactividad de sesiones</span><span aria-hidden="true">›</span>
   </button>
   <cs-institutional-modal #idlePolicyModal kind="form" title="Vencimiento de sesiones por inactividad"
-    description="Configuración global para las cuentas empresariales y operadores de C05. La API aplica el valor en cada operación autenticada."
+    description="Plazo global para cuentas y operadores. El servidor lo aplica a cada sesión autorizada."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     @if (platform.sessionPolicy(); as policy) {
       <p role="status">Vigencia actual: <strong>{{ policy.idleMinutes }} minutos sin actividad</strong>.</p>
-      <p>Las sesiones activas renuevan su vencimiento al realizar una actividad válida. Si se supera el plazo, se exige volver a iniciar sesión.</p>
+      <p>La actividad validada renueva el plazo. Si vence, será necesario iniciar sesión nuevamente.</p>
       @if (policy.canManage) {
         <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'session-policy' })">
           <label for="operator-idle-minutes">Minutos de inactividad permitidos (5 a 120)</label>

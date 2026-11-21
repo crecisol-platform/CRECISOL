@@ -918,3 +918,54 @@ test('F06 buyer success-feedback contrast stays WCAG-compliant during entry moti
     expect(violations.violations.filter(v => v.id === 'color-contrast')).toEqual([]);
   }
 });
+
+test('F06 buyer invitation first field prioritization at 320 pixels', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'anonymous');
+  for (const [view, label] of [
+    ['invitacion', 'Correo invitado'],
+    ['acceso-existente', 'Correo de mi identidad existente']
+  ] as const) {
+    await page.goto('/cuenta?vista=' + view);
+    const field = page.getByRole('textbox', { name: label, exact: true });
+    await expect(field).toBeVisible();
+    const top = await field.evaluate(el => el.getBoundingClientRect().top);
+    expect(top, view + ' primary account field must not be delayed by duplicate guidance')
+      .toBeLessThanOrEqual(550);
+    await expect.poll(() => page.evaluate(() =>
+      document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+  }
+});
+
+test('F06 buyer session dashboard prioritizes operations over duplicate information', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await account(page, 'resumen');
+  const action = page.getByRole('button', { name: 'Actualizar dispositivos', exact: true });
+  await expect(action).toBeVisible();
+  const geometry = await action.evaluate(el => {
+    const card = document.querySelector('#identity-session-card-heading');
+    return { buttonBottom: el.getBoundingClientRect().bottom,
+      beforePolicy: !!card && !!(el.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING) };
+  });
+  expect(geometry.buttonBottom, 'device action must appear in the initial 320x720 viewport')
+    .toBeLessThanOrEqual(720);
+  expect(geometry.beforePolicy, 'actions must be placed before supporting policy copy').toBe(true);
+  await expect(page.getByText('30 minutos', { exact: true }).first()).toBeVisible();
+});
+
+test('F06 buyer invitation and existing-account management stay progressively discoverable', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'anonymous');
+  for (const view of ['invitacion', 'acceso-existente']) {
+    await page.goto('/cuenta?vista=' + view);
+    const secondary = page.locator('details.account-more');
+    await expect(secondary).not.toHaveAttribute('open');
+    await secondary.locator('summary').focus();
+    await page.keyboard.press('Enter');
+    await expect(secondary).toHaveAttribute('open', '');
+    await expect(secondary.getByRole('navigation', { name: 'Otras opciones de cuenta' }))
+      .toBeVisible();
+    await expect.poll(() => page.evaluate(() =>
+      document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+  }
+});

@@ -339,6 +339,10 @@ test('F05 secure mobile wizard reveals continuation and clears it at the bottom'
   const cue = dialog.locator('.cs-modal__scroll-cue');
   await expect(cue).toBeVisible();
   await expect(cue).toContainText('Desplaza el contenido');
+  const footer = dialog.locator('.cs-modal__footer');
+  const footerHeight = await footer.evaluate(el => el.getBoundingClientRect().height);
+  expect(footerHeight, 'mobile secure footer cannot crowd out the form').toBeLessThanOrEqual(130);
+  await expect(cue).toHaveAttribute('aria-label', 'Desplaza el contenido para continuar');
   await content.evaluate(el => { el.scrollTop = el.scrollHeight; el.dispatchEvent(new Event('scroll')); });
   await expect(cue).toHaveCount(0);
   await dialog.getByRole('button', { name: 'Cerrar ventana' }).click();

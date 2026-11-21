@@ -53,13 +53,13 @@
   <footer class="cs-modal__footer">
     <span>
       @switch (kind()) {
-        @case ('simple') { Ningún cambio se aplica al abrir esta ventana. }
-        @case ('destructive') { El servidor verificará permisos, contexto y segundo factor cuando corresponda. }
-        @case ('wizard') { Paso {{ activeStep() }} de {{ steps().length || 1 }} · No compartas códigos ni partes de recuperación. }
-        @default { Acción protegida · Nunca compartas tus códigos. }
+        @case ('simple') { Abrir esta ventana no modifica tus datos. }
+        @case ('destructive') { El servidor verifica permisos y MFA cuando corresponda. }
+        @case ('wizard') { Paso {{ activeStep() }} de {{ steps().length || 1 }} · No compartas códigos ni partes. }
+        @default { Acción protegida · No compartas tus códigos. }
       }
       @if (hasMoreContent()) {
-        <strong class="cs-modal__scroll-cue">↓ Desplaza el contenido para continuar.</strong>
+        <strong class="cs-modal__scroll-cue" aria-label="Desplaza el contenido para continuar">↓ Desplaza el contenido</strong>
       }
     </span>
     <button type="button" class="cs-modal__cancel" [disabled]="busy()" (click)="close()">Cerrar</button>

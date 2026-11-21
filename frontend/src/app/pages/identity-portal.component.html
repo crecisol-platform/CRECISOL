@@ -69,7 +69,7 @@
               (passkeyLoginRequested)="passkeyLogin()" (startPairingRequested)="startPairing()"
               (completePairingRequested)="completePairing()" />
           }
-          <details class="account-more" [open]="supplementaryGuestView()">
+          <details class="account-more" [open]="supplementaryGuestView() && guestView() !== 'invitacion' && guestView() !== 'acceso-existente'">
             <summary>Otras gestiones de acceso <span class="account-more__hint">Recuperación, confirmación e invitaciones</span></summary>
             <nav class="account-subnav" aria-label="Otras opciones de cuenta">
               <a routerLink="/cuenta" [queryParams]="{vista:'confirmar'}" [attr.aria-current]="guestView() === 'confirmar' ? 'page' : null">Confirmar correo</a>

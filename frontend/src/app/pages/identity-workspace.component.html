@@ -406,9 +406,13 @@
 </div>
           
 } @else {
+          <div class="identity-session-actions">
+            <button type="button" [disabled]="busy() || identity.restoring()" (click)="requestSessions()">Actualizar dispositivos</button>
+            <button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRequested.emit('rotate')">Renovar sesión</button>
+          </div>
           <cs-ui-card headingId="identity-session-card-heading" heading="Acceso verificado"
             headingLevel="h3" eyebrow="SESIÓN DE CUENTA" tone="accent"
-            description="Acceso verificado; cada recurso conserva sus permisos propios.">
+            description="Cada recurso conserva sus permisos propios.">
             <div class="identity-session-overview">
               <div>
                 <span class="identity-session-overview__eyebrow">POLÍTICA DE INACTIVIDAD</span>
@@ -418,10 +422,6 @@
               <span class="identity-session-overview__status">Sesión verificada</span>
             </div>
           </cs-ui-card>
-          <div class="identity-session-actions">
-            <button type="button" [disabled]="busy() || identity.restoring()" (click)="requestSessions()">Actualizar dispositivos</button>
-            <button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRequested.emit('rotate')">Renovar sesión</button>
-          </div>
           <section class="identity-device-region" aria-label="Sesiones de cuenta">
             <div class="identity-panel-heading">
               <div><h3>Dispositivos con sesión</h3><p>Revisa cuándo se usó cada sesión antes de revocarla.</p></div>
