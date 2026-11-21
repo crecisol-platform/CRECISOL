@@ -266,3 +266,39 @@
 @media (forced-colors: active) {
   .cs-modal__footer { border-color: CanvasText; background: Canvas; color: CanvasText; }
 }
+
+/* F06 buyer audit: compact step markers within narrow protected wizards.
+   The semantic ordered list and all three labels remain visible, in order.
+   Let auto-fit return to fewer columns for text zoom rather than clip copy. */
+@media (max-width: 400px) {
+  .cs-modal[data-kind="wizard"] .cs-modal__steps {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 4.35rem), 1fr));
+    gap: .35rem;
+  }
+  .cs-modal[data-kind="wizard"] .cs-modal__steps > li {
+    display: grid;
+    align-content: start;
+    justify-items: center;
+    gap: .32rem;
+    min-width: 0;
+    padding: .55rem .25rem;
+    text-align: center;
+    font-size: .76rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+  .cs-modal[data-kind="wizard"] .cs-modal__step-number {
+    width: 1.55rem;
+    height: 1.55rem;
+  }
+  .cs-modal[data-kind="wizard"] .cs-modal__stepper {
+    margin-bottom: .85rem;
+  }
+}
+@media (forced-colors: active) and (max-width: 400px) {
+  .cs-modal[data-kind="wizard"] .cs-modal__steps > li {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+}
