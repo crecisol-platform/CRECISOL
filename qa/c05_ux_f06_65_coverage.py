@@ -2,6 +2,7 @@
 """Strict F06 65-surface evidence integrity; NOT a visual score or backend auth test."""
 from __future__ import annotations
 import csv
+import hashlib
 import json
 import os
 import re
@@ -50,6 +51,23 @@ def main(root: Path, catalog: Path) -> None:
     scanned=0
     pngs=set()
     diagnostics=[]
+    # A green inventory must not count two distinct UX states with the same image.
+    distinct_scenes = (
+        ("account-error-synthetic-", "account-success-synthetic-"),
+        ("account-loading-synthetic-", "account-resumen-empty-"),
+        ("operator-restoring-synthetic-", "operator-cases-empty-synthetic-"),
+        ("operator-session-expired-simulated-", "operator-login-"),
+    )
+    semantic_scenes = {
+        "account-loading-synthetic-": "pending",
+        "account-error-synthetic-": "error",
+        "account-success-synthetic-": "success",
+        "account-session-cleared-synthetic-": "info",
+        "operator-restoring-synthetic-": "pending",
+        "operator-error-synthetic-": "error",
+        "operator-session-expired-simulated-": "info",
+    }
+    scene_hashes=defaultdict(dict)
     for file in sorted(root.rglob("*.json")):
         if file.name==".last-run.json":
             continue
@@ -75,6 +93,16 @@ def main(root: Path, catalog: Path) -> None:
               "geometría PNG no coincide: "+str(png))
         check(png.as_posix() not in pngs,"PNG duplicado: "+str(png))
         pngs.add(png.as_posix())
+        scene_id=str(data.get("id", ""))
+        for scene_prefix in set(semantic_scenes) | {prefix for pair in distinct_scenes for prefix in pair}:
+            if scene_id.startswith(scene_prefix):
+                kinds=data.get("feedbackKinds")
+                if scene_prefix in semantic_scenes:
+                    check(isinstance(kinds, list) and kinds == [semantic_scenes[scene_prefix]],
+                          f"{width}px {scene_id}: estado semántico visible ausente o duplicado ({kinds})")
+                check(scene_prefix not in scene_hashes[width],
+                      f"{width}px captura duplicada de {scene_prefix}")
+                scene_hashes[width][scene_prefix]=hashlib.sha256(png.read_bytes()).hexdigest()
         for surface in data["inventoryIds"]:
             check(surface in required, "id desconocido "+str(surface)+" en "+str(file))
             if catalog_types[surface] == "modal":
@@ -99,6 +127,11 @@ def main(root: Path, catalog: Path) -> None:
     for width in sorted(viewports):
         miss=sorted(required-found[width])
         check(scrolled[width]>=1, f"{width}px no tiene prueba del pie de un modal largo")
+        for before, after in distinct_scenes:
+            check(before in scene_hashes[width] and after in scene_hashes[width],
+                  f"{width}px faltan comparaciones semánticas {before}/{after}")
+            check(scene_hashes[width][before] != scene_hashes[width][after],
+                  f"{width}px {before} y {after}: capturas visualmente idénticas")
         diagnostics.append({"width":width,"captured":len(found[width]),
                             "longDialogsScrolled":scrolled[width],"missing":miss})
     summary={
