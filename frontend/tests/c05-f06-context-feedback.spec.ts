@@ -497,7 +497,10 @@ test('F06 premium recovery keeps signed-out options accessible without a four-ro
   await expect(page.locator('cs-identity-portal')).toBeVisible();
   await expect(page.getByRole('heading', { name:'Recuperar contraseña' })).toBeVisible();
   await expect(page.getByRole('button', {name:'Solicitar recuperación'})).toBeVisible();
-  const secondary=page.locator('.account-more');
+  const secondary=page.locator('details.account-more');
+  await expect(secondary).not.toHaveAttribute('open');
+  await secondary.locator('summary').focus();
+  await page.keyboard.press('Enter');
   await expect(secondary).toHaveAttribute('open', '');
   const columns=await page.locator('.account-subnav').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length);
   expect(columns).toBe(2);
@@ -695,8 +698,12 @@ test('F06 buyer mobile recovery prioritizes a safe request over the decorative a
   await expect(main).toBeVisible();
   const bottom = await main.evaluate(el => el.getBoundingClientRect().bottom);
   expect(bottom, 'primary recovery task should lead in the first phone viewport').toBeLessThan(600);
-  await expect(page.locator('.account-more')).toHaveAttribute('open', '');
-  await expect(page.getByRole('link', { name: 'Recuperar acceso' })).toHaveAttribute('aria-current', 'page');
+  const secondary = page.locator('details.account-more');
+  await expect(secondary).not.toHaveAttribute('open');
+  await secondary.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(secondary).toHaveAttribute('open', '');
+  await expect(secondary.getByRole('link', { name: 'Recuperar acceso' })).toHaveAttribute('aria-current', 'page');
 });
 
 test('F06 buyer operator security preserves 30-minute policy and protected actions', async ({ page }) => {

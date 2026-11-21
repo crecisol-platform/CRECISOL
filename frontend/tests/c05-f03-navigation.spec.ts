@@ -107,7 +107,11 @@ for (const size of sizes) {
       await expect(primary.getByRole('link', { name: 'Solicitar cuenta' }))
         .toHaveAttribute('aria-current', 'page');
       await page.goto('/cuenta?vista=recuperar');
-      await expect(page.locator('.account-more')).toHaveAttribute('open', '');
+      const disclosure = page.locator('details.account-more');
+      await expect(disclosure).not.toHaveAttribute('open');
+      await disclosure.locator('summary').focus();
+      await page.keyboard.press('Enter');
+      await expect(disclosure).toHaveAttribute('open', '');
       const secondary = page.getByRole('navigation', { name: 'Otras opciones de cuenta' });
       await expect(secondary.getByRole('link', { name: 'Recuperar acceso' }))
         .toHaveAttribute('aria-current', 'page');

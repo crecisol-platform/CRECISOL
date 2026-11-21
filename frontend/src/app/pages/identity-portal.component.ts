@@ -9,7 +9,7 @@ import { PublicBrandService } from '../branding/public-brand.service';
 import { PlatformIdentityPanelComponent } from './platform-identity-panel.component';
 import { InstitutionalThemeDirective } from '../ui/institutional-system';
 import {
-  guestLabels, guestViewFor, isSecondaryGuestView,
+  guestLabels, guestViewFor,
   workspaceLabels, workspaceViewFor
 } from './c05-navigation.model';
 import { IdentityGuestComponent, IdentityMfaComponent, IdentityRecoveryComponent, IdentityWorkspaceComponent } from './identity-flow-views.component';
@@ -48,7 +48,6 @@ export class IdentityPortalComponent {
   // or calls an API, and deep links remain shareable/back-button friendly.
   readonly guestView = computed(() => guestViewFor(this.view()));
   readonly workspaceView = computed(() => workspaceViewFor(this.view()));
-  readonly supplementaryGuestView = computed(() => isSecondaryGuestView(this.guestView()));
   readonly workspaceTitle = computed(() => {
     const titles: Record<string, string> = {
       resumen: 'Sesiones y dispositivos',
