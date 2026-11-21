@@ -5,6 +5,7 @@ on:
     paths:
       - 'frontend/src/app/ui/feedback/**'
       - 'frontend/src/app/identity/identity-api.service.ts'
+      - 'frontend/src/app/identity/platform-identity-api.service.ts'
       - 'frontend/src/app/pages/identity-*'
       - 'frontend/src/app/pages/platform-*'
       - 'frontend/src/app/ui/institutional-modal/**'
