@@ -356,13 +356,13 @@ cs-identity-workspace .identity-workspace .identity-approval-confirm input[type=
  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest { gap: .65rem; padding-top: 0; }
  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-aside { min-height: 0; gap: .35rem; padding: 1rem 1.25rem; border-radius: 1rem; background: #edf5fd; box-shadow: none; }
  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-aside::before { opacity: .26; }
- cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .aside-top .eyebrow { margin-bottom: .2rem; font-size: .64rem; letter-spacing: .09em; }
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .aside-top .eyebrow { display: none; }
  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-aside h1 { margin: 0 0 .15rem; max-width: none; font-size: clamp(1.34rem, 4vw, 1.75rem); letter-spacing: -.03em; line-height: 1.2; }
- cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-aside .aside-top > p:last-child { max-width: 52ch; margin: 0; font-size: .83rem; line-height: 1.45; }
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-aside .aside-top > p:last-child { max-width: 52ch; margin: 0; font-size: .875rem; line-height: 1.5; }
  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-main { padding-block: 1rem 1.2rem; }
  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-breadcrumb { margin-bottom: .85rem; padding-bottom: .6rem; }
  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-navigation-group { margin-bottom: .95rem; }
- cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-navigation-label { margin-bottom: .35rem; font-size: .66rem; }
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-navigation-label { display: none; }
 }
 @media (max-width: 480px) {
  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-aside { padding: .88rem 1rem; }
@@ -380,11 +380,11 @@ cs-identity-workspace .identity-workspace .identity-approval-confirm input[type=
     padding: .95rem 1.05rem; margin-bottom: .8rem; border-radius: .9rem;
     border-top-width: 2px; gap: .35rem;
   }
-  cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro .eyebrow { margin: 0 0 .25rem; font-size: .66rem; }
+  cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro .eyebrow { display: none; }
   cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro h1 { font-size: clamp(1.34rem, 4.7vw, 1.65rem); line-height: 1.18; }
-  cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro p:last-child { margin-top: .35rem; font-size: .82rem; line-height: 1.45; }
+  cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro p:last-child { margin-top: .35rem; font-size: .875rem; line-height: 1.5; }
   cs-identity-portal .account-workspace-shell.account-workspace-shell.account-workspace-shell { gap: .65rem; }
-  cs-identity-portal .account-nav-mobile-help.account-nav-mobile-help.account-nav-mobile-help { margin-bottom: .32rem; font-size: .73rem; }
+  cs-identity-portal .account-nav-mobile-help.account-nav-mobile-help.account-nav-mobile-help { margin-bottom: .32rem; font-size: .875rem; }
   cs-identity-portal .account-nav--workspace.account-nav--workspace.account-nav--workspace { padding: .24rem; margin-bottom: .55rem; gap: .2rem; }
   cs-identity-portal .account-nav--workspace.account-nav--workspace.account-nav--workspace a { padding: .5rem .84rem; min-height: 2.6rem; }
 }
@@ -413,11 +413,7 @@ cs-identity-workspace .identity-workspace .identity-approval-confirm input[type=
     padding: .82rem 1rem;
     border-radius: .85rem;
   }
-  cs-identity-portal .page-heading--operator.page-heading--operator.page-heading--operator .eyebrow {
-    margin: 0 0 .2rem;
-    font-size: .62rem;
-    line-height: 1.25;
-  }
+  cs-identity-portal .page-heading--operator.page-heading--operator.page-heading--operator .eyebrow { display: none; }
   cs-identity-portal .page-heading--operator.page-heading--operator.page-heading--operator h1 {
     font-size: clamp(1.28rem, 4.5vw, 1.62rem);
     line-height: 1.18;
@@ -425,8 +421,8 @@ cs-identity-workspace .identity-workspace .identity-approval-confirm input[type=
   }
   cs-identity-portal .page-heading--operator.page-heading--operator.page-heading--operator p:last-child {
     margin-top: .3rem;
-    font-size: .8rem;
-    line-height: 1.42;
+    font-size: .875rem;
+    line-height: 1.5;
   }
 }
 
@@ -443,11 +439,11 @@ cs-identity-workspace .identity-workspace .identity-approval-confirm input[type=
     padding-top: .25rem;
   }
   cs-identity-portal .account-layout--recovery.account-layout--recovery.account-layout--recovery .account-subnav a {
-    padding: .5rem .6rem; min-height: 2.5rem;
-    font-size: .77rem; line-height: 1.35; text-align: left;
+    padding: .65rem .6rem; min-height: 2.75rem;
+    font-size: .875rem; line-height: 1.45; text-align: left;
   }
   cs-identity-portal .account-layout--recovery.account-layout--recovery.account-layout--recovery .account-more summary {
-    font-size: .84rem; min-height: 2.6rem;
+    font-size: .875rem; min-height: 2.75rem;
   }
   cs-identity-portal .account-layout--recovery.account-layout--recovery.account-layout--recovery .account-more__hint { display: none; }
   cs-identity-portal .account-layout--recovery.account-layout--recovery.account-layout--recovery .account-main { padding-bottom: .9rem; }
@@ -468,8 +464,10 @@ cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] {
   align-items: center;
   gap: .15rem .7rem;
   min-height: 0;
-  padding: .9rem 1rem;
-  border-radius: .8rem;
+  padding: .65rem .25rem;
+  border: 0;
+  background: transparent;
+  border-radius: .25rem;
 }
 cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] .cs-state__symbol {
   grid-column: 1;
@@ -497,12 +495,20 @@ cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] cs-ui-action {
 }
 @media (max-width: 480px) {
   cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] {
-    padding: .8rem .82rem;
+    padding: .65rem .35rem;
     gap: .1rem .55rem;
   }
 }
 @media (forced-colors: active) {
   cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] .cs-state__symbol {
     border: 1px solid CanvasText;
+  }
+}
+
+/* Flat empty panels retain visible boundaries in forced-color mode. */
+@media (forced-colors: active) {
+  cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] {
+    border: 1px solid CanvasText;
+    background: Canvas;
   }
 }
