@@ -7,6 +7,11 @@
       @if (visibleFeedback(); as feedback) {
         <cs-operation-feedback [kind]="feedback.kind" [text]="feedback.text" context="Identidad de plataforma" />
       }
+      @if (platform.restoring() && !visibleFeedback()) {
+        <cs-operation-feedback kind="pending" text="Verificando tu sesión de operador con el servidor…" context="Identidad de plataforma" />
+      } @else if (platform.state() === 'anonymous' && platform.sessionEndedNotice() && !visibleFeedback()) {
+        <cs-operation-feedback kind="info" text="La sesión de operador terminó o fue revocada. Accede de nuevo con tus credenciales y MFA." context="Identidad de plataforma" />
+      }
       @if (platform.state() === 'anonymous') {
         <form csFieldFeedback (submit)="action($event, 'login')">
           <label for="platform-mailbox">Correo del operador de identidad</label><input id="platform-mailbox" name="mailbox" type="email" autocomplete="username" required maxlength="254">
