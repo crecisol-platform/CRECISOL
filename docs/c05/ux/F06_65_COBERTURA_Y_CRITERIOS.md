@@ -79,3 +79,8 @@ La inspección de la evidencia móvil F01-065 mostró los códigos de respaldo r
 ### Ajuste adicional C05-F01-039 · modal de recuperación de operador
 
 La captura real de 320×720 mostraba el primer campo por debajo del área visible del contenido porque la misma explicación de dos revisores, verificación de identidad y 24 horas aparecía dos veces (cabecera y cuerpo). Se consolidó esa explicación **en la cabecera accesible del diálogo**, manteniendo expresamente el bloqueo entre plataforma y negocio. Los formularios, validaciones, MFA y los tres pasos **no cambiaron**. Una nueva prueba geométrica exige que el primer campo quede completo por encima del pie fijo, conserve foco de teclado y no introduzca desbordamiento horizontal. Este ajuste queda **pendiente de repetir CI en el SHA final** antes de valorarlo comercialmente; no se declara 9.5/10.
+
+
+### Revisión adicional del indicador de pasos (C05-F01-039 y asistentes F05)
+
+Una nueva inspección del PNG 320px del modal de recuperación mostró tres etapas apiladas que consumían gran parte del área antes del primer campo. En F06 se usa una cuadrícula **adaptativa** y numeración compacta por debajo de 400px; se mantiene el orden DOM de la lista ordenada, etiquetas completas, foco y el `scroll` seguro del contenido; con zoom, la cuadrícula puede volver a menos columnas sin cortar información. Nueva prueba Playwright exige las tres etiquetas legibles, alto máximo de 125px a 320px, orden correcto y ausencia de overflow. Validación y capturas en el **SHA final posteriores**; no heredar calificación editorial del SHA de partida ni afirmar éxito antes del run.
