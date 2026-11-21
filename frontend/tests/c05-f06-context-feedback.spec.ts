@@ -585,3 +585,51 @@ test('F06 premium empty state scales to 200 percent without scrollbars or hidden
   await expect(state.getByRole('heading',{name:'Ninguna llave visible'})).toBeVisible();
   await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
 });
+
+ 
+// Premium-readiness checks: mobile text must stay legible, with a compact
+// administrative hierarchy and keyboard-accessible five-area navigation.
+test('F06 premium operator headings and context remain legible at 320px', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await operator(page);
+  const heading = page.locator('.page-heading--operator');
+  await expect(heading.getByRole('heading', { name: 'Identidad de plataforma' })).toBeVisible();
+  const box = await heading.boundingBox();
+  expect(box?.height ?? 999, 'platform heading should not consume a mobile viewport').toBeLessThan(145);
+  const computed = await page.evaluate(() => {
+    const font = (selector: string) => {
+      const element = document.querySelector(selector);
+      return element ? Number.parseFloat(getComputedStyle(element).fontSize) : 0;
+    };
+    return {
+      context: font('.operator-context__section'),
+      help: font('.operator-nav-hint'),
+      intro: font('.operator-workspace > .operator-section-head p'),
+      titleCount: document.querySelectorAll('.operator-workspace > .operator-section-head .operator-kicker:not([hidden])').length
+    };
+  });
+  expect(computed.context).toBeGreaterThanOrEqual(14);
+  expect(computed.help).toBeGreaterThanOrEqual(14);
+  expect(computed.intro).toBeGreaterThanOrEqual(14);
+  const kicker = page.locator('.operator-workspace > .operator-section-head .operator-kicker');
+  if (await kicker.count()) await expect(kicker).toBeHidden();
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+});
+
+test('F06 premium operator navigation has five keyboard-reachable touch targets', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await operator(page);
+  const navigation = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
+  const buttons = navigation.getByRole('button');
+  await expect(buttons).toHaveCount(5);
+  for (const button of await buttons.all()) {
+    const height = await button.evaluate(el => el.getBoundingClientRect().height);
+    expect(height, 'navigation touch targets must measure at least 44px').toBeGreaterThanOrEqual(44);
+  }
+  await buttons.last().focus();
+  await expect(buttons.last()).toBeFocused();
+  await expect(page.locator('.operator-nav-hint')).toContainText('Tab');
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+});
