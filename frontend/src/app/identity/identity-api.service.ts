@@ -43,6 +43,8 @@ export class IdentityApiService {
 
   readonly state = this.stateValue.asReadonly();
   readonly restoring = signal(true);
+  // Presentation-only notice after server rejection or local expiry; never extends authority.
+  readonly sessionEndedNotice = signal(false);
 
   constructor() {
     if (typeof document !== 'undefined') {
@@ -60,7 +62,9 @@ export class IdentityApiService {
     const revision = this.sessionRevision;
     void this.post('sessions/keepalive', {}).catch((error: unknown) => {
       // A late 401 from an older cookie may not close a newer authenticated session.
-      if (revision === this.sessionRevision && error instanceof HttpErrorResponse && error.status === 401) this.clear();
+      if (revision === this.sessionRevision && error instanceof HttpErrorResponse && error.status === 401) {
+        this.clear(); this.sessionEndedNotice.set(true);
+      }
     }).finally(() => { this.activityInFlight = false; });
   }
 
@@ -102,7 +106,9 @@ export class IdentityApiService {
   readonly photo = signal('');
   // A suspended tab must not log out another active tab sharing this HttpOnly cookie.
   // Server expiry/revocation is enforced independently on every API call.
-  private readonly sessionWindow = new BrowserSessionWindow(() => { this.clear(); });
+  private readonly sessionWindow = new BrowserSessionWindow(() => {
+    this.clear(); this.sessionEndedNotice.set(true);
+  });
   private challengeTimer: ReturnType<typeof setTimeout> | undefined;
   private backupCodesTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -482,7 +488,9 @@ export class IdentityApiService {
       // A policy denial of a resource is not evidence that a session expired.
       // Session validation endpoints decide whether local identity is retained.
       if (requestRevision === this.sessionRevision && authenticated && ['sessions', 'sessions/keepalive'].includes(operation) &&
-          error instanceof HttpErrorResponse && error.status === 401) this.clear();
+          error instanceof HttpErrorResponse && error.status === 401) {
+        this.clear(); this.sessionEndedNotice.set(true);
+      }
       throw error;
     }
   }
@@ -522,6 +530,7 @@ export class IdentityApiService {
   }
 
   clear(): void {
+    this.sessionEndedNotice.set(false);
     ++this.sessionRevision;
     ++this.pendingRequestRevision;
     ++this.enrollmentRevision;
