@@ -18,10 +18,9 @@
           [steps]="['Solicitar revisión', 'Aportar dos revisiones', 'Activar nuevo MFA']"
           [step]="platform.operatorRecoverySeed() ? 3 : recoveryStep()"
           title="Recuperación segura de operador"
-          description="Acceso excepcional. Dos revisores independientes, verificación de identidad y un mínimo de 24 horas."
+          description="Acceso excepcional de plataforma. Exige verificación de identidad por dos revisores independientes y 24 horas de espera; una aprobación de negocio no sirve aquí."
           [busy]="busy()" [feedback]="message()" [error]="error()" [wide]="true" (dismissed)="platform.discardRecoverySetup(); recoveryStep.set(1)">
           
-          <p>Se necesitan otros dos operadores de identidad, verificación independiente y al menos 24 horas. Ninguna aprobación de un negocio sirve para este ámbito.</p>
           @if (recoveryStep() === 1 && !platform.operatorRecoverySeed()) {
           <form csFieldFeedback (submit)="action($event, 'operator-recovery-request')">
             <label for="operator-recovery-mail">Correo del operador sin acceso</label><input id="operator-recovery-mail" name="mailbox" type="email" required maxlength="254" autocomplete="email">
