@@ -74,3 +74,8 @@ La inspección de la evidencia móvil F01-065 mostró los códigos de respaldo r
 **Otros puntos de compra observados en las 65 capturas móviles:** C05-F01-003/004 mantienen trayectos largos de confirmación y recuperación; C05-F01-039/041/042/050 exigen inspección de desplazamiento completo y pie de modal, sin recortar advertencias; las vistas de cuenta y operador deben sostener su jerarquía, información útil y accesibilidad en las cinco resoluciones. Ninguna evidencia basada en capturas estáticas sustituye pruebas reales de permisos o validación manual de lector de pantalla.
 
 **Estado de esta ronda:** cambios de código y prueba incorporados, **pendientes de CI sobre el HEAD final**. La matriz conserva las 65 notas comerciales sin certificar; no atribuir 9.5/10 por automatización ni por revisar solo 320 px. F07 NO_GO; PR OPEN/DRAFT, sin fusionar, producción ni SOLQARYN.
+
+
+### Ajuste adicional C05-F01-039 · modal de recuperación de operador
+
+La captura real de 320×720 mostraba el primer campo por debajo del área visible del contenido porque la misma explicación de dos revisores, verificación de identidad y 24 horas aparecía dos veces (cabecera y cuerpo). Se consolidó esa explicación **en la cabecera accesible del diálogo**, manteniendo expresamente el bloqueo entre plataforma y negocio. Los formularios, validaciones, MFA y los tres pasos **no cambiaron**. Una nueva prueba geométrica exige que el primer campo quede completo por encima del pie fijo, conserve foco de teclado y no introduzca desbordamiento horizontal. Este ajuste queda **pendiente de repetir CI en el SHA final** antes de valorarlo comercialmente; no se declara 9.5/10.
