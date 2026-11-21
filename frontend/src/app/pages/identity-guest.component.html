@@ -34,8 +34,9 @@
         </section>
   }
   @case ('invitacion') {
-    <details open><summary>Aceptar una invitación</summary>
-          <p>Usa los datos de tu cuenta verificada. Si aún no tienes autenticador, elige configurarlo; antes de aceptar, revisa las condiciones.</p>
+    <section class="cs-guest-process" aria-labelledby="guest-invitation-heading">
+          <h2 id="guest-invitation-heading">Aceptar una invitación</h2>
+          <p>Usa tu cuenta verificada. Si todavía no tienes autenticador, puedes configurarlo. Revisa las condiciones antes de aceptar.</p>
           <form csFieldFeedback (reset)="inviteNeedsEnrollment.set(false)" (submit)="securityActionRequested.emit({ event: $event, action: 'invitation-accept' })">
             <label for="invite-mailbox">Correo invitado</label><input id="invite-mailbox" name="mailbox" type="email" autocomplete="username" required maxlength="254">
             <label for="invite-password">Contraseña de la cuenta invitada</label><input id="invite-password" name="password" type="password" autocomplete="current-password" required maxlength="128">
@@ -68,11 +69,12 @@
             <label><input name="accepted" type="checkbox" required> He leído y acepto las condiciones vigentes para esta invitación</label>
             <button [disabled]="busy() || !identity.terms()">Aceptar invitación de cuenta</button>
           </form>
-        </details>
+        </section>
   }
   @case ('acceso-existente') {
-    <details open><summary>Ya tengo una identidad; solicitar acceso aquí</summary>
-          <p>Confirma tu correo y demuestra tu contraseña y MFA para solicitar acceso. La solicitud requiere aprobación: el correo por sí solo nunca vincula cuentas.</p>
+    <section class="cs-guest-process" aria-labelledby="guest-existing-heading">
+          <h2 id="guest-existing-heading">Solicitar acceso con mi cuenta</h2>
+          <p>Verifica tu correo, contraseña y MFA. La solicitud requiere aprobación; conocer un correo no concede acceso.</p>
           <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'membership-request' })">
             <label for="join-mailbox">Correo de mi identidad existente</label><input id="join-mailbox" name="mailbox" type="email" required maxlength="254" autocomplete="username">
             <label for="join-password">Contraseña de mi identidad existente</label><input id="join-password" name="password" type="password" required maxlength="128" autocomplete="current-password">
@@ -94,7 +96,7 @@
             <label><input name="accepted" type="checkbox" required> Acepto las condiciones vigentes de este negocio para solicitar la relación</label>
             <button [disabled]="busy() || !identity.terms()">Enviar solicitud de relación pendiente</button>
           </form>
-        </details>
+        </section>
   }
   @default {
     <section class="login-surface" aria-labelledby="login-heading">
