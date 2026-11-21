@@ -633,3 +633,33 @@ test('F06 premium operator navigation has five keyboard-reachable touch targets'
   await expect.poll(() => page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
 });
+
+// Buyer review: nested empty-state cards and tiny mobile navigation.
+for (const view of ['perfil', 'llaves', 'historial', 'administracion'] as const) {
+  test('F06 premium flat nested empty panel '+view+' keeps accessible content', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 720 });
+    await account(page, view);
+    const state = page.locator('cs-identity-workspace cs-ui-state .cs-state[data-kind="empty"]').first();
+    await expect(state).toBeVisible();
+    await expect(state.locator('h3')).toBeVisible();
+    await expect(state.locator('p')).toBeVisible();
+    const result = await state.evaluate(el => {
+      const style = getComputedStyle(el);
+      return { border: style.borderTopWidth, bg: style.backgroundColor };
+    });
+    expect(result.border).toBe('0px');
+    expect(result.bg).toBe('rgba(0, 0, 0, 0)');
+    await expect.poll(() => page.evaluate(() =>
+      document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+  });
+}
+
+test('F06 premium mobile account navigation explains all six areas readably', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await account(page, 'resumen');
+  const hint = page.locator('.account-nav-mobile-help');
+  await expect(hint).toBeVisible();
+  await expect(hint).toContainText('seis áreas');
+  const size = await hint.evaluate(el => Number.parseFloat(getComputedStyle(el).fontSize));
+  expect(size).toBeGreaterThanOrEqual(14);
+});
