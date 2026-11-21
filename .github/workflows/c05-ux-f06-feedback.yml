@@ -13,6 +13,7 @@ on:
       - 'frontend/playwright.c05-f06-feedback.config.ts'
       - 'qa/c05_ux_f05_modal_audits.py'
       - 'qa/c05_operational_flow_e2e.mjs'
+      - 'qa/c05_*_checks.mjs' # Real passkey, pairing, assisted, profile and operator helpers
       - 'qa/c05_ux_f06_feedback_*'
       - 'docs/c05/ux/F06_*'
       - '.github/workflows/c05-ux-f06-feedback.yml'
