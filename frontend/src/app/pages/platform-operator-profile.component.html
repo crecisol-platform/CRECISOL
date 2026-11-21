@@ -67,7 +67,7 @@
       </div>
       <output class="cs-photo-picker__filename" for="operator-photo" aria-live="polite">{{ photoFileName() || 'Ninguna imagen seleccionada' }}</output>
       @if (photoFileError()) { <p class="cs-photo-picker__error" role="alert">{{ photoFileError() }}</p> }
-      <button [disabled]="busy() || !!photoFileError()">Guardar foto de operador</button>
+      <button [disabled]="busy() || !photoFileName() || !!photoFileError()">Guardar foto de operador</button>
     </form>
   </cs-institutional-modal>
 </div>

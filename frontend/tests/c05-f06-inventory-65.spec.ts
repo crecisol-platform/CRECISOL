@@ -301,6 +301,14 @@ for (const size of sizes) {
       await page.goto('/cuenta?vista=' + view);
       await expect(page.locator('#account-content')).toBeVisible();
       await capture(page, testInfo, 'public-' + view + '-' + size.name);
+      if (view === 'invitacion' || view === 'acceso-existente') {
+        const readTerms = page.locator('cs-identity-guest')
+          .getByRole('button', { name: 'Cargar condiciones vigentes' });
+        await expect(readTerms).toBeVisible();
+        await readTerms.click();
+        await expect(page.locator('cs-identity-guest details.cs-guest-terms')).toBeVisible();
+        await capture(page, testInfo, 'public-' + view + '-terms-loaded-' + size.name);
+      }
       if (view === 'invitacion') {
         const enrollment = page.getByRole('checkbox', { name: 'Todavía no tengo configurado el segundo factor' });
         await enrollment.check();

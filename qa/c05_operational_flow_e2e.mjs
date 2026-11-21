@@ -561,6 +561,21 @@ try {
     // Expose only rule IDs and node counts; never log form values, MFA or secrets.
     console.error('C05 accessibility rule diagnostics: ' +
       severeAxe.map(v => v.id + ':nodes=' + v.nodes.length).join(', '));
+    // Safe diagnostic metadata only: static selector, contrast colors and ratio.
+    // Do not log HTML, visible text, form values, tokens or user data.
+    for (const violation of severeAxe) for (const node of violation.nodes) {
+      const selector = (node.target || []).map(value => String(value)
+        .replace(/\\[[^\\]]*\\]/g, '[attribute]')
+        .replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, 'id'))
+        .join(' > ').slice(0, 180);
+      const data = [...node.any, ...node.all, ...node.none]
+        .find(item => item.id === 'color-contrast')?.data;
+      console.error('C05 a11y safe selector=' + selector +
+        ' contrast=' + JSON.stringify({
+          fg: data?.fgColor, bg: data?.bgColor,
+          ratio: data?.contrastRatio, required: data?.expectedContrastRatio
+        }));
+    }
   }
   check(severeAxe.length === 0, 'authenticated Angular accessibility has no serious/critical axe findings');
   check(await page.evaluate(() => localStorage.length === 0 && sessionStorage.length === 0), 'no bearer stored in browser storage');

@@ -18,6 +18,7 @@ export class IdentityGuestComponent {
     !!navigator.credentials;
   readonly busy = input(false);
   readonly inviteNeedsEnrollment = signal(false);
+  readonly termsRequested = output<void>();
   readonly view = input('ingresar');
   readonly loginRequested = output<Event>();
   readonly registerRequested = output<Event>();

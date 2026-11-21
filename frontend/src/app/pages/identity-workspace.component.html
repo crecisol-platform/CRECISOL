@@ -91,7 +91,7 @@
       <output class="cs-photo-picker__filename" for="profile-photo" aria-live="polite">{{ photoFileName() || 'Ninguna imagen seleccionada' }}</output>
       @if (photoFileError()) { <p class="cs-photo-picker__error" role="alert">{{ photoFileError() }}</p> }
       <p>Se guarda una miniatura cuadrada sin los metadatos del original.</p>
-      <button [disabled]="busy() || !!photoFileError()">Guardar mi foto de perfil</button>
+      <button [disabled]="busy() || !photoFileName() || !!photoFileError()">Guardar mi foto de perfil</button>
     </form>
   </cs-institutional-modal>
 </div>

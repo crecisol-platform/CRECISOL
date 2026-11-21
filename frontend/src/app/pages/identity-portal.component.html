@@ -64,6 +64,7 @@
             <cs-identity-guest [busy]="busy()" [view]="guestView()"
               (loginRequested)="login($event)" (registerRequested)="register($event)"
               (confirmRequested)="confirmRegistration($event)"
+              (termsRequested)="loadTerms()"
               (securityActionRequested)="securityAction($event.event, $event.action)"
               (passkeyLoginRequested)="passkeyLogin()" (startPairingRequested)="startPairing()"
               (completePairingRequested)="completePairing()" />

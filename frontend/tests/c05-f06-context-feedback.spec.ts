@@ -788,6 +788,7 @@ test('F06 buyer account photo picker is localized, validates client size and cle
   const dialog = page.getByRole('dialog', { name: 'Actualizar foto de perfil' });
   const input = dialog.getByLabel(/Foto de perfil \(PNG, JPEG o WebP, hasta 2 MB\)/);
   const save = dialog.getByRole('button', { name: 'Guardar mi foto de perfil' });
+  await expect(save).toBeDisabled();
   await expect(input).toHaveAttribute('type', 'file');
   await expect(dialog.getByText('Seleccionar imagen del dispositivo')).toBeVisible();
   await expect(dialog.getByText('Ninguna imagen seleccionada')).toBeVisible();
@@ -817,6 +818,7 @@ test('F06 buyer operator photo picker rejects oversized file with safe Spanish f
   const dialog = page.getByRole('dialog', { name: 'Actualizar foto de operador' });
   const input = dialog.getByLabel(/Foto del operador \(PNG, JPEG o WebP, hasta 2 MB\)/);
   const save = dialog.getByRole('button', { name: 'Guardar foto de operador' });
+  await expect(save).toBeDisabled();
   await expect(dialog.getByText('Seleccionar imagen del dispositivo')).toBeVisible();
   await input.setInputFiles({ name: 'grande.webp', mimeType: 'image/webp',
     buffer: Buffer.alloc(2 * 1024 * 1024 + 1) });
@@ -847,4 +849,31 @@ test('F06 buyer terms read does not impersonate a completed account mutation', a
   await expect(page.getByText('La solicitud finalizó. Comprueba el estado autorizado antes de continuar.'))
     .toHaveCount(0);
   await expect(page.getByText('Operación completada')).toHaveCount(0);
+});
+
+test('F06 buyer public invitation and existing identity load terms in context before enabling submit', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'anonymous');
+  await page.route('**/api/v1/identity/terms', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ version: 'qa-terms-2026', hash: 'b'.repeat(64),
+      text: 'Contrato ficticio de evaluación. El acceso depende de la autorización real.' })
+  }));
+  for (const [view, submitText] of [
+    ['invitacion', 'Aceptar invitación de cuenta'],
+    ['acceso-existente', 'Enviar solicitud de relación pendiente']
+  ] as const) {
+    await page.goto('/cuenta?vista=' + view);
+    const submit = page.getByRole('button', { name: submitText, exact: true });
+    await expect(submit).toBeDisabled();
+    const guest = page.locator('cs-identity-guest');
+    await guest.getByRole('button', { name: 'Cargar condiciones vigentes' }).click();
+    const details = guest.locator('details.cs-guest-terms');
+    await expect(details).toBeVisible();
+    await details.locator('summary').click();
+    await expect(details).toContainText('Contrato ficticio de evaluación.');
+    await expect(submit).toBeEnabled();
+    await expect(page.getByText('La solicitud finalizó. Comprueba el estado autorizado antes de continuar.'))
+      .toHaveCount(0);
+  }
 });

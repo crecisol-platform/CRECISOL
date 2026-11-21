@@ -682,3 +682,53 @@ cs-identity-guest .cs-choice-line input {
     background: Canvas; color: CanvasText; border-color: CanvasText;
   }
 }
+
+/* Direct, contextual terms loading for invitation and existing-member access.
+   Terms always originate from the server; no client-only acceptance decision. */
+cs-identity-guest .cs-guest-terms {
+  display: block;
+  min-width: 0;
+  margin: .75rem 0;
+  padding: .75rem .85rem;
+  border: 1px solid #cddfec;
+  border-radius: .75rem;
+  background: #f5f9fd;
+  color: #284d6c;
+}
+cs-identity-guest .cs-guest-terms > p {
+  margin: 0 0 .6rem;
+  font-size: .86rem;
+  line-height: 1.55;
+}
+cs-identity-guest .cs-guest-terms > button {
+  margin: 0;
+  min-height: 2.75rem;
+  width: 100%;
+  background: #e3effa;
+  color: #124776;
+  border: 1px solid #c1d6e8;
+  border-radius: .6rem;
+  font-weight: 740;
+}
+cs-identity-guest details.cs-guest-terms > summary {
+  cursor: pointer;
+  font-size: .875rem;
+  font-weight: 760;
+  color: #174b77;
+  line-height: 1.45;
+}
+cs-identity-guest details.cs-guest-terms > .terms-content {
+  margin-top: .65rem;
+  margin-bottom: 0;
+  overflow-wrap: anywhere;
+}
+cs-identity-guest .cs-guest-terms :is(summary, button):focus-visible {
+  outline: 3px solid #126aaf;
+  outline-offset: 3px;
+}
+@media (forced-colors: active) {
+  cs-identity-guest .cs-guest-terms,
+  cs-identity-guest .cs-guest-terms > button {
+    background: Canvas; color: CanvasText; border-color: CanvasText;
+  }
+}

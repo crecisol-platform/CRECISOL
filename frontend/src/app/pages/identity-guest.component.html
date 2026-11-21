@@ -53,6 +53,18 @@
                 autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
             }
             <label for="invite-token">Token de invitación</label><input id="invite-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
+
+            @if (identity.terms(); as terms) {
+              <details class="cs-guest-terms">
+                <summary>Condiciones vigentes · versión {{ terms.version }}</summary>
+                <p class="terms-content">{{ terms.text }}</p>
+              </details>
+            } @else {
+              <div class="cs-guest-terms">
+                <p>Para habilitar el envío, carga y revisa las condiciones vigentes.</p>
+                <button type="button" [disabled]="busy()" (click)="termsRequested.emit()">Cargar condiciones vigentes</button>
+              </div>
+            }
             <label><input name="accepted" type="checkbox" required> He leído y acepto las condiciones vigentes para esta invitación</label>
             <button [disabled]="busy() || !identity.terms()">Aceptar invitación de cuenta</button>
           </form>
@@ -67,6 +79,18 @@
             <label for="join-code">Código MFA para solicitar relación</label><input id="join-code" name="code" required maxlength="32" autocomplete="one-time-code">
             <label for="join-proof-id">Identificador de confirmación para solicitar relación</label><input id="join-proof-id" name="proofId" required maxlength="36">
             <label for="join-proof-code">Código de correo para solicitar relación</label><input id="join-proof-code" name="proofCode" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
+
+            @if (identity.terms(); as terms) {
+              <details class="cs-guest-terms">
+                <summary>Condiciones vigentes · versión {{ terms.version }}</summary>
+                <p class="terms-content">{{ terms.text }}</p>
+              </details>
+            } @else {
+              <div class="cs-guest-terms">
+                <p>Para habilitar el envío, carga y revisa las condiciones vigentes.</p>
+                <button type="button" [disabled]="busy()" (click)="termsRequested.emit()">Cargar condiciones vigentes</button>
+              </div>
+            }
             <label><input name="accepted" type="checkbox" required> Acepto las condiciones vigentes de este negocio para solicitar la relación</label>
             <button [disabled]="busy() || !identity.terms()">Enviar solicitud de relación pendiente</button>
           </form>
