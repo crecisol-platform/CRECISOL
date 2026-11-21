@@ -1005,3 +1005,30 @@ test('F06 buyer mandatory invitation and membership flows stay visible, direct a
     await expect(page.getByRole('heading', { name: 'Iniciar sesión', level: 2 })).toBeVisible();
   }
 });
+
+
+test('F06 buyer recovery wizard shows its first operator input above the protected footer at 320px', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'anonymous');
+  await page.goto('/cuenta?vista=operadores');
+  await page.getByRole('button', { name: 'Recuperar acceso de operador de plataforma' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Recuperación segura de operador' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('.cs-modal__description')).toContainText('dos revisores independientes');
+  await expect(dialog.locator('.cs-modal__description')).toContainText('24 horas');
+  await expect(dialog.locator('.cs-modal__description')).toContainText('aprobación de negocio no sirve');
+  const input = dialog.getByLabel('Correo del operador sin acceso', { exact: true });
+  await expect(input).toBeVisible();
+  const geometry = await dialog.evaluate(element => {
+    const field = element.querySelector<HTMLInputElement>('#operator-recovery-mail');
+    const footer = element.querySelector<HTMLElement>('.cs-modal__footer');
+    if (!field || !footer) throw new Error('Recovery wizard input or protected footer is missing');
+    return { fieldBottom: field.getBoundingClientRect().bottom, footerTop: footer.getBoundingClientRect().top };
+  });
+  expect(geometry.fieldBottom, 'first recovery field must not be hidden behind the modal footer')
+    .toBeLessThanOrEqual(geometry.footerTop);
+  await input.focus();
+  await expect(input).toBeFocused();
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+});
