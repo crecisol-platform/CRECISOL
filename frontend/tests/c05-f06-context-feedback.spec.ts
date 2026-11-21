@@ -1146,3 +1146,26 @@ test('F06 authentic restoring status is visible and never mistaken for a complet
   });
   await expect(pending).toHaveCount(0);
 });
+
+
+test('F06 buyer confirm-email screen keeps secondary routes discoverable but initially collapsed', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'anonymous');
+  await page.goto('/cuenta?vista=confirmar');
+  const main = page.getByRole('button', { name: 'Crear cuenta pendiente', exact: true });
+  await expect(main).toBeVisible();
+  const primary = page.locator('cs-identity-guest form[csFieldFeedback]');
+  for (const name of ['proofId', 'proofCode', 'completionMailbox', 'completionPassword']) {
+    await expect(primary.locator('[name="' + name + '"]')).toHaveCount(1);
+  }
+  const secondary = page.locator('details.account-more');
+  await expect(secondary).not.toHaveAttribute('open');
+  await secondary.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(secondary).toHaveAttribute('open', '');
+  const links = secondary.getByRole('navigation', { name: 'Otras opciones de cuenta' });
+  await expect(links).toBeVisible();
+  await expect(links.getByRole('link', { name: 'Confirmar correo' })).toHaveAttribute('aria-current', 'page');
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+});
