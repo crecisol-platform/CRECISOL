@@ -302,3 +302,12 @@
     color: CanvasText;
   }
 }
+
+/* F06 buyer defect C05-F01-042: on 320x720 the recovery-share action
+   stopped 6.56px below the visible content edge behind the fixed footer.
+   Restore 3dvh of useful space on portrait phones, without hiding,
+   clipping or shortening the explicit security warning and with the
+   native dialog/footer remaining completely inside the viewport. */
+@media (max-width: 400px) and (min-height: 561px) {
+  .cs-modal { max-height: min(92dvh, 54rem); }
+}
