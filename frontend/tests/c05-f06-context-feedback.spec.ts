@@ -134,11 +134,88 @@ async function noHorizontalClip(page: Page): Promise<void> {
   });
 }
 
+
+/** F02 parity gate on real Angular DOM, not CSS text: each F06 feedback
+ * scene must render exactly the same semantic colors as the F02 tokens.
+ * Computed colors are normalized by the browser, including custom variables.
+ */
+async function assertF02VisualParity(page: Page, selected: Scene): Promise<void> {
+  if (selected === 'field-error') {
+    const invalid = page.locator('cs-identity-guest input[name="mailbox"][aria-invalid="true"]');
+    await expect(invalid).toHaveCount(1);
+    const colors = await invalid.evaluate(node => {
+      const style = getComputedStyle(node);
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--cs-color-danger)';
+      node.appendChild(probe);
+      const expected = getComputedStyle(probe).color;
+      probe.remove();
+      return { border: style.borderTopColor, expected };
+    });
+    expect(colors.border, 'invalid native field uses F02 danger token').toBe(colors.expected);
+    return;
+  }
+
+  const kind = selected === 'account-success' ? 'success'
+    : selected === 'operator-error' || selected === 'account-error' ? 'error' : 'pending';
+  const intent = kind === 'success' ? 'success' : kind === 'error' ? 'danger' : 'info';
+  const box = page.locator('cs-operation-feedback .cs-operation-feedback[data-feedback-kind="' + kind + '"]');
+  await expect(box).toHaveCount(1);
+  const values = await box.evaluate((node, intent) => {
+    const st = getComputedStyle(node);
+    const color = (token: string) => {
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--cs-color-' + token + ')';
+      node.appendChild(probe);
+      const result = getComputedStyle(probe).color;
+      probe.remove();
+      return result;
+    };
+    return {
+      border: st.borderLeftColor,
+      background: st.backgroundColor,
+      expectedBorder: color(intent),
+      expectedBackground: color(intent + '-bg')
+    };
+  }, intent);
+  expect(values.border, kind + ': feedback accent matches F02 token').toBe(values.expectedBorder);
+  expect(values.background, kind + ': feedback surface matches F02 token').toBe(values.expectedBackground);
+
+  if (selected === 'modal-pending') {
+    const dialog = page.locator('dialog.cs-modal:modal');
+    await expect(dialog).toHaveCount(1);
+    const backgrounds = await dialog.evaluate(node => {
+      const st = getComputedStyle(node);
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--cs-color-surface)';
+      node.appendChild(probe);
+      const expected = getComputedStyle(probe).color;
+      probe.remove();
+      return { background: st.backgroundColor, expected };
+    });
+    expect(backgrounds.background, 'secure modal uses F02 institutional surface').toBe(backgrounds.expected);
+  }
+  if (selected === 'operator-error') {
+    const quiet = page.locator('cs-platform-operator-cases .operator-card--quiet').first();
+    await expect(quiet).toBeVisible();
+    const colors = await quiet.evaluate(node => {
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--cs-color-surface-soft)';
+      node.appendChild(probe);
+      const expected = getComputedStyle(probe).color;
+      probe.remove();
+      return { background: getComputedStyle(node).backgroundColor, expected };
+    });
+    expect(colors.background, 'platform operator card uses shared F02 surface').toBe(colors.expected);
+  }
+}
+
 for (const viewport of viewports) for (const selected of scenes) {
   test('F06 ' + selected + ' at ' + viewport.width + 'px', async ({ page }, info: TestInfo) => {
     await page.setViewportSize(viewport);
     await scene(page, selected);
     await noHorizontalClip(page);
+    await assertF02VisualParity(page, selected);
     if (selected !== 'field-error') {
       const tone = selected === 'account-pending' || selected === 'modal-pending' ? 'pending'
         : selected === 'account-success' ? 'success' : 'error';
