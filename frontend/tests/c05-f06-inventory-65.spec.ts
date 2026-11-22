@@ -301,6 +301,15 @@ async function captureModals(page: Page, testInfo: TestInfo, prefix: string): Pr
     const dialog = page.locator('dialog.cs-modal:modal');
     await expect(dialog).toHaveCount(1);
     const id = prefix + '-modal-' + String(i + 1).padStart(2, '0') + '-' + label;
+    if (label.includes('Revisar identidad del titular')) {
+      await expect(dialog.getByRole('note', { name: 'Advertencia de seguridad' }))
+        .toContainText('Otro operador debe revisar la identidad');
+      for (const name of ['verified', 'confirmed']) {
+        await expect(dialog.locator('input[name="' + name + '"]')).toHaveAttribute('required', '');
+      }
+      await expect(dialog.locator('input[name="evidenceHash"]'))
+        .toHaveAttribute('pattern', '[0-9a-fA-F]{64}');
+    }
     if (page.viewportSize()?.width === 320 && label.includes('Emitir parte de recuperación')) {
       // This destructive operation previously showed a half-clipped primary CTA
       // under the fixed safe footer. Keep the exact 320px viewport gate.
@@ -464,6 +473,10 @@ for (const size of sizes) {
         await review.click();
         const dialog=page.getByRole('dialog',{name:'Revisar membresía con permiso administrativo'});
         await expect(dialog).toBeVisible();
+        await expect(dialog.getByRole('note', { name: 'Advertencia de seguridad' }))
+          .toContainText('La decisión es permanente');
+        await expect(dialog.locator('.cs-modal__content > p')).toHaveCount(0);
+        await expect(dialog.locator('select[name="membershipId"]')).toHaveAttribute('required', '');
         await capture(page,testInfo,'account-administracion-review-protected-'+size.name);
         await dialog.locator('button.cs-modal__cancel').click();
       }
