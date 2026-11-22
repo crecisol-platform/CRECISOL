@@ -69,18 +69,37 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog21.open()">
     <span>Revisar identidad del titular</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #opDialog21 kind="destructive" warning="La decisión queda registrada permanentemente. Otro operador debe revisar la identidad de forma independiente." title="Revisar identidad del titular" description="Requiere evidencia y MFA vigentes."
+  <cs-institutional-modal #opDialog21 kind="destructive" warning="La decisión se registra permanentemente. Otro operador debe revisar la identidad de forma independiente." title="Revisar identidad del titular" description="Requiere evidencia y MFA vigentes."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'review' })">
-          <label for="review-case">Caso a revisar</label><input id="review-case" name="caseId" [value]="platform.case()?.caseId ?? ''" required maxlength="36">
-          <label for="review-decision">Decisión de identidad</label><select id="review-decision" name="decision" required><option value="">Selecciona una decisión</option><option value="approve">Aprobar</option><option value="reject">Rechazar</option></select>
-          <label for="review-evidence">SHA-256 del expediente de verificación</label><input id="review-evidence" name="evidenceHash" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
-          <label for="review-reason">Motivo de la revisión de identidad</label><input id="review-reason" name="reason" required minlength="12" maxlength="240">
-          <label for="review-code">Código MFA fresco para revisar</label><input id="review-code" name="code" required pattern="([0-9]{6}|[0-9a-fA-F]{32})" autocomplete="one-time-code">
-          <label><input name="verified" type="checkbox" required> Verifiqué la identidad de forma independiente; no usé preguntas personales ni solo un correo nuevo</label>
-          <label><input name="confirmed" type="checkbox" required> Confirmo la decisión administrativa y que mi revisión quedará registrada de forma permanente</label>
-          <button [disabled]="busy()">Registrar revisión de identidad</button>
-        </form>
+    <form class="operator-identity-review" csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'review' })">
+      <div class="operator-review-field">
+        <label for="review-case">Caso a revisar</label>
+        <input id="review-case" name="caseId" [value]="platform.case()?.caseId ?? ''" required maxlength="36">
+      </div>
+      <div class="operator-review-field">
+        <label for="review-decision">Decisión de identidad</label>
+        <select id="review-decision" name="decision" required>
+          <option value="">Selecciona una decisión</option><option value="approve">Aprobar</option><option value="reject">Rechazar</option>
+        </select>
+      </div>
+      <div class="operator-review-field">
+        <label for="review-evidence">SHA-256 del expediente de verificación</label>
+        <input id="review-evidence" name="evidenceHash" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
+      </div>
+      <div class="operator-review-field">
+        <label for="review-reason">Motivo de la revisión de identidad</label>
+        <input id="review-reason" name="reason" required minlength="12" maxlength="240">
+      </div>
+      <div class="operator-review-field operator-review-field--proof">
+        <label for="review-code">Código MFA fresco para revisar</label>
+        <input id="review-code" name="code" required pattern="([0-9]{6}|[0-9a-fA-F]{32})" autocomplete="one-time-code">
+      </div>
+      <div class="operator-review-attestations" role="group" aria-label="Confirmaciones de seguridad">
+        <label><input name="verified" type="checkbox" required> Verifiqué la identidad de forma independiente; no usé preguntas personales ni solo un correo nuevo</label>
+        <label><input name="confirmed" type="checkbox" required> Confirmo la decisión administrativa y que mi revisión quedará registrada de forma permanente</label>
+      </div>
+      <button [disabled]="busy()">Registrar revisión de identidad</button>
+    </form>
   </cs-institutional-modal>
 </div>
         <p class="operator-case-caution">Para emitir una recuperación se necesitan dos revisores independientes y una espera mínima de 24 horas.</p>
