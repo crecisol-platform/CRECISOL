@@ -100,8 +100,8 @@ function surfaceIdsFor(id: string, modalTitle: string): readonly string[] {
   if (id.startsWith('account-session-cleared')) add('C05-F01-054');
   if (id.startsWith('account-resumen-empty')) add('C05-F01-055');
   if (id.startsWith('account-llaves-empty')) add('C05-F01-056');
-  if (id.startsWith('account-perfil-empty') ||
-      id.startsWith('account-historial-empty')) add('C05-F01-057');
+  // F01-057 is the EMPTY HISTORY state, never the unrelated profile placeholder.
+  if (id.startsWith('account-historial-empty-')) add('C05-F01-057');
   if (id.startsWith('account-backup-codes')) add('C05-F01-058');
   if (id.startsWith('operator-restoring')) add('C05-F01-059');
   if (id.startsWith('operator-error')) add('C05-F01-060');
