@@ -1555,3 +1555,75 @@ test('F02 mobile buyer operator mailbox exposes both verified steps with separat
     document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
   await expect(dialog.getByRole('button', { name: 'Cerrar', exact: true })).toBeVisible();
 });
+
+
+/** F02 editorial buyer gate — four long journeys 006/033/036/040 retain
+ * required controls while adapting the composition at phone/tablet widths.
+ * These are synthetic DOM/UX checks; server authorization stays in real E2E.
+ */
+async function openEditorialModalByField(page: Page, inputId: string): Promise<void> {
+  await page.evaluate(id => {
+    const field = document.getElementById(id);
+    const host = field?.closest('cs-institutional-modal');
+    const component = host && (window as DebugWindow).ng?.getComponent(host);
+    if (!component || typeof component.open !== 'function')
+      throw Error('F02 editorial fixture: native dialog unavailable for ' + id);
+    component.open();
+  }, inputId);
+}
+const f02LongJourneys = [
+  {id: '006', route: 'acceso-existente', kind: 'guest'},
+  {id: '033', route: 'administracion', kind: 'account', field: 'membership-id',
+   title: 'Revisar membresía con permiso administrativo',
+   css: 'cs-membership-review',
+   required: ['membership-id','membership-decision','membership-reason','membership-code']},
+  {id: '036', route: 'resumen', kind: 'account', field: 'pair-token',
+   title: 'Aprobar otro navegador',
+   css: 'cs-browser-approval',
+   required: ['pair-token','pair-fingerprint','pair-code']},
+  {id: '040', route: 'operadores', kind: 'operator', field: 'find-case-mail',
+   title: 'Localizar una solicitud de identidad pendiente',
+   css: 'operator-case-lookup',
+   required: ['find-case-mail','find-case-realm','find-case-reason','find-case-code']}
+] as const;
+
+for (const journey of f02LongJourneys) {
+  test('F02 buyer mobile/tablet layout and protected controls F01-' + journey.id, async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 720 });
+    if (journey.kind === 'guest') {
+      await syntheticApi(page, 'anonymous');
+      await page.goto('/cuenta?vista=' + journey.route);
+      const section = page.locator('.cs-guest-process--existing');
+      await expect(section).toBeVisible();
+      await expect(section.locator('.cs-guest-stage')).toHaveCount(2);
+      for(const id of ['join-mailbox','join-password','join-code','join-proof-id','join-proof-code'])
+        await expect(section.locator('#' + id)).toHaveAttribute('required', '');
+      await expect(section.locator('input[name="accepted"]')).toHaveAttribute('required', '');
+      await expect(section.getByRole('button', {name: 'Enviar solicitud de relación pendiente'})).toBeDisabled();
+    } else {
+      if (journey.kind === 'operator') {
+        await operator(page);
+        await page.getByRole('navigation',{name:'Áreas de la consola de identidad'})
+          .getByRole('button',{name:'Casos',exact:true}).click();
+      } else {
+        await account(page, journey.route);
+      }
+      await openEditorialModalByField(page, journey.field);
+      const dialog = page.getByRole('dialog',{name:journey.title,exact:true});
+      await expect(dialog).toBeVisible();
+      const form = dialog.locator('form.'+journey.css);
+      await expect(form).toHaveCount(1);
+      for(const id of journey.required)
+        await expect(form.locator('#'+id)).toHaveAttribute('required','');
+      if (journey.id === '033' || journey.id === '036')
+        await expect(form.locator('input[name="confirmed"]')).toHaveAttribute('required','');
+      const columns = () => form.evaluate(el => getComputedStyle(el).gridTemplateColumns.trim().split(/\\s+/).length);
+      expect(await columns(), 'one readable column at 320px').toBe(1);
+      await page.setViewportSize({width:768,height:1024});
+      expect(await columns(), 'two readable columns at 768px').toBe(2);
+      await expect(dialog.getByRole('button',{name:'Cerrar',exact:true})).toBeVisible();
+    }
+    await expect.poll(() => page.evaluate(() =>
+      document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+  });
+}
