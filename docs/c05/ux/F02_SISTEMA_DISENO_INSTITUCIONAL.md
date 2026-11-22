@@ -90,3 +90,13 @@ F02 alcanza **IMPLEMENTADA** con código versionado; **PROBADA** con CI sobre SH
 ## 6. Integración y reversión
 
 El PR F02 se abre como borrador dependiente del candidato de C05 (PR #172), no como fusión a dev. Mantener PR #174 de F01 como antecedente documental y PR #173 de las otras mejoras sin cambios hasta planificar su dependencia. Rollback de F02: descartar su rama/PR, revertir la entrada de tokens en frontend/angular.json y eliminar los archivos nuevos de UI, QA y docs; sin migraciones, datos o side effects en cuentas. No se despliega ni se habilita un endpoint.
+
+---
+
+## Contrato de adopción transversal F02 — 22-11-2026
+
+El estándar comercial posterior exige **≥9.5/10 en cada una de las 65 interfaces**, no la meta histórica 9/10 de las primeras fases. El uso de tokens F02 o de un componente Angular F02 no equivale a una nota comercial ni prueba uniformidad perceptiva.
+
+La [matriz F02 de 65 fuentes](F02_65_PARIDAD_VISUAL_2026_11_22.csv) y el [diagnóstico](F02_65_DIAGNOSTICO_ADOPCION_2026_11_22.md) auditan el código F06 SHA `d539b75d13cde64c8ea3279d33ab35b6349c1adf`. El tema de marca validada se hereda desde el root C05, pero **solo 3 de 9 primitivas se invocan directamente en las 11 plantillas**. Hay áreas visuales de modales, avisos y consola no normalizadas completamente sobre tokens de F02. Esta observación no requiere sustituir controles especializados, sino alinear su semántica y estados con los tokens institucionales tras pruebas de regresión.
+
+Cualquier migración posterior debe preservar la autorización backend, aislamiento tenant y realm, campos de MFA y credenciales, foco/teclado, scroll, zoom, mensajes semánticos y recuperación. Los cambios no se ejecutan silenciosamente en el PR F02 original ni se consideran certificados por el inventario.
