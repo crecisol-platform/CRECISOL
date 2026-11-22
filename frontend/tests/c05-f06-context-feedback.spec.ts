@@ -1371,3 +1371,44 @@ test('F06 buyer contextual public headings avoid misleading guest marketing', as
   await page.goto('/cuenta?vista=ingresar');
   await expect(page.getByRole('heading', { level: 1, name: 'Tu cuenta, a tu manera.' })).toBeVisible();
 });
+
+
+test('F06 buyer staged proofs preserve every mandatory security field', async ({ page }) => {
+  await syntheticApi(page, 'anonymous');
+  const tasks = [
+    { view: 'confirmar', stages: ['1. Verificación del correo', '2. Crear la cuenta'],
+      inputs: ['proofId', 'proofCode', 'completionMailbox', 'completionPassword'],
+      submit: 'Crear cuenta pendiente' },
+    { view: 'invitacion', stages: ['1. Identidad y segundo factor', '2. Invitación y condiciones'],
+      inputs: ['mailbox', 'password', 'code', 'token', 'accepted'],
+      submit: 'Aceptar invitación de cuenta' },
+    { view: 'acceso-existente', stages: ['1. Identidad y segundo factor', '2. Confirmación del correo'],
+      inputs: ['mailbox', 'password', 'code', 'proofId', 'proofCode', 'accepted'],
+      submit: 'Enviar solicitud de relación pendiente' }
+  ] as const;
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: width === 320 ? 720 : 900 });
+    for (const task of tasks) {
+      await page.goto('/cuenta?vista=' + task.view);
+      const guest = page.locator('cs-identity-guest');
+      const groups = guest.getByRole('group');
+      await expect(groups).toHaveCount(2);
+      for (const stage of task.stages) {
+        await expect(guest.getByRole('group', { name: stage })).toBeVisible();
+      }
+      for (const name of task.inputs) {
+        const control = guest.locator('form [name="' + name + '"]');
+        await expect(control).toHaveCount(1);
+        await expect(control).toHaveAttribute('required', '');
+      }
+      await expect(guest.getByRole('button', { name: task.submit })).toBeVisible();
+      if (task.view === 'acceso-existente') {
+        await expect(guest.locator('input[name="code"]')).toHaveAttribute(
+          'pattern', '([0-9]{6}|[0-9a-fA-F]{32})');
+        await expect(guest.locator('input[name="proofCode"]')).toHaveAttribute('maxlength', '64');
+      }
+      await expect.poll(() => page.evaluate(() =>
+        document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+    }
+  }
+});
