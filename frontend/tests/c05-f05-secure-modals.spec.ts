@@ -220,8 +220,11 @@ for (const viewport of viewports) for (const scenario of scenarios) {
           .evaluate((element: Element) => element.scrollTop)).toBe(0);
       }
     }
-    if (expectedKind(scenario) === 'destructive')
-      await expect(dlg.getByRole('note')).toContainText('Revisa antes de confirmar.');
+    if (expectedKind(scenario) === 'destructive') {
+      const risk = dlg.getByRole('note', { name: 'Advertencia de seguridad' });
+      await expect(risk).toBeVisible();
+      await expect(risk.locator('span')).not.toBeEmpty();
+    }
     if (scenario === 'passkey-revocacion')
       await expect(dlg.getByLabel('Llave de acceso a revocar').locator('option:checked'))
         .toHaveText('Terminación 777777');
