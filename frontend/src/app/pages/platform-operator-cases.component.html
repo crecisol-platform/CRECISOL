@@ -78,7 +78,7 @@
           <label for="review-reason">Motivo de la decisión</label><input id="review-reason" name="reason" required minlength="12" maxlength="240">
           <label for="review-code">Código MFA para decidir</label><input id="review-code" name="code" required pattern="([0-9]{6}|[0-9a-fA-F]{32})" autocomplete="one-time-code">
           <label><input name="verified" type="checkbox" required> Verifiqué la identidad sin preguntas personales ni basarme solo en el correo</label>
-          <label><input name="confirmed" type="checkbox" required> Confirmo que esta decisión quedará registrada permanentemente</label>
+          <label><input name="confirmed" type="checkbox" required> Confirmo la decisión administrativa y que mi revisión quedará registrada de forma permanente</label>
           <button [disabled]="busy()">Registrar revisión de identidad</button>
         </form>
   </cs-institutional-modal>
