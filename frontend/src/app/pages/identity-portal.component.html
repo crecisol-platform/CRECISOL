@@ -23,8 +23,24 @@
     <aside class="account-aside" aria-label="Acerca del acceso">
       <div class="aside-top">
         <p class="eyebrow">CRECISOL · IDENTIDAD</p>
-        <h1>Tu cuenta, a tu manera.</h1>
-        <p>Tu negocio se reconoce por su dominio verificado. No necesitas elegir una empresa para entrar.</p>
+        <h1>
+          @switch (guestView()) {
+            @case ('confirmar') { Confirma tu correo. }
+            @case ('recuperar') { Recupera tu acceso. }
+            @case ('invitacion') { Tu invitación. }
+            @case ('acceso-existente') { Tu cuenta, más negocios. }
+            @default { Tu cuenta, a tu manera. }
+          }
+        </h1>
+        <p>
+          @switch (guestView()) {
+            @case ('confirmar') { La verificación vincula el correo al registro. La aprobación del negocio sigue siendo necesaria. }
+            @case ('recuperar') { La recuperación exige una prueba de identidad y no abre sesión por sí sola. }
+            @case ('invitacion') { La invitación exige credenciales, segundo factor y aceptación de las condiciones aplicables. }
+            @case ('acceso-existente') { Solicita otra relación sin transferir permisos ni datos privados de tus negocios actuales. }
+            @default { Tu negocio se reconoce por su dominio verificado. No necesitas elegir una empresa para entrar. }
+          }
+        </p>
       </div>
       <div class="aside-bottom"><span class="aside-rule" aria-hidden="true"></span><p>Protección con segundo factor y control de tus sesiones.</p></div>
     </aside>
