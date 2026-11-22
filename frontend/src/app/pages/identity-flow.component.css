@@ -404,3 +404,40 @@ section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px s
 @media (forced-colors: active) {
   .cs-guest-process > form .cs-guest-terms { border-top: 1px solid CanvasText; }
 }
+
+
+/* F06 editorial purchase gate: distinguish a person's identity proof from
+   the invitation/email proof without turning mandatory security inputs into
+   inaccessible collapsed or hidden fields. Native validation still sees all
+   controls; this layout is only an accessible reading-order improvement. */
+.cs-guest-process > form > .cs-guest-stage,
+section[aria-labelledby="confirm-heading"] > form > .cs-guest-stage {
+  display: grid;
+  gap: .3rem;
+  min-width: 0;
+  padding: .48rem .05rem .12rem;
+  margin: .08rem 0 .12rem;
+  border-top: 1px solid #d7e4f0;
+}
+.cs-guest-stage > h3 {
+  margin: 0 0 .12rem;
+  color: #215476;
+  font-size: .84rem;
+  line-height: 1.35;
+  font-weight: 800;
+  letter-spacing: .015em;
+}
+.cs-guest-stage label { margin-top: .12rem; }
+.cs-guest-stage > input:not([type='checkbox']):not([type='hidden']),
+.cs-guest-stage > select { min-width: 0; }
+@media (max-width: 480px) {
+  .cs-guest-process > form > .cs-guest-stage,
+  section[aria-labelledby="confirm-heading"] > form > .cs-guest-stage {
+    padding-top: .35rem;
+    margin-bottom: .08rem;
+  }
+}
+@media (forced-colors: active) {
+  .cs-guest-stage { border-top-color: CanvasText; }
+  .cs-guest-stage > h3 { color: CanvasText; }
+}
