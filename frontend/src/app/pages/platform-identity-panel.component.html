@@ -87,7 +87,14 @@
            panel and sign-out; do not persist or echo them elsewhere. -->
       @if (platform.recoveryCodes().length) {
         <aside aria-label="Códigos de respaldo del operador"><p>Guarda estos códigos fuera del navegador. Cada uno sirve una sola vez.</p>
-          <ul>@for (code of platform.recoveryCodes(); track code) { <li><code>{{ code }}</code></li> }</ul>
+          <ul class="cs-one-time-codes" aria-label="Códigos de respaldo del operador">
+            @for (code of platform.recoveryCodes(); track code; let index = $index) {
+              <li class="cs-one-time-codes__item">
+                <span class="cs-one-time-codes__label">Código {{ index + 1 }}</span>
+                <code class="cs-one-time-codes__value" tabindex="0">{{ code }}</code>
+              </li>
+            }
+          </ul>
           <button type="button" (click)="platform.recoveryCodes.set([])">Ocultar respaldos de operador</button>
         </aside>
       }
