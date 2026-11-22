@@ -90,7 +90,7 @@ jobs:
           cd frontend
           npx playwright test --config=playwright.c05-f06-inventory65.config.ts --reporter=line
       - name: Fail closed on missing or clipped 65 x 5 visual evidence
-        if: always()
+        if: success()
         shell: bash
         run: |
           set -euo pipefail
