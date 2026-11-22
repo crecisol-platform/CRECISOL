@@ -68,3 +68,32 @@ La calidad, accesibilidad física y aceptación visual del diseño mejorado corr
 **GO: F01 certificada técnicamente en su alcance documental, de inventario trazable y línea base visual sintética**, respaldada por auditorías A/B/C de F01, 24 Playwright PASS, Angular PASS, ZIP inspeccionado y regresiones históricas de la misma fuente.
 
 **NO-GO: F02 permanece bloqueada**. Esta acta no certifica una puntuación 9/10, no reabre C06 ni declara pruebas reales nuevas de privilegios/tenants/sesiones. No fusionar automáticamente PR #174 ni PR #173; conservar el PR F01 como evidencia de revisión independiente. La certificación de alcance F01 no sustituye la aceptación del diseño mejorado por el propietario.
+
+---
+
+## 8. Adenda de conciliación F01 ↔ F06 — 22-11-2026
+
+**Alcance:** complemento documental a la certificación técnica histórica de inventario y línea base sintética F01. No certifica nota comercial, producción, nuevos permisos ni fusión. La matriz original sigue inalterada y representa el estado previo al rediseño.
+
+**Fuentes comprobadas:**
+- F01: PR #174, fuente congelada f61a79d242288c686a88a7c3dd711f2be9a48c18, matriz Git blob a1ff218baf489d69104145048f94e7ff9ee48f73.
+- F06: PR #179, código SHA d539b75d13cde64c8ea3279d33ab35b6349c1adf sin fusionar a dev.
+- [Inventario de 65 × 5 #45032597168](https://github.com/crecisol-platform/CRECISOL/actions/runs/45032597168): SUCCESS; [artefacto individual #14758472442](https://github.com/crecisol-platform/CRECISOL/actions/runs/45032597168/artifacts/14758472442) con imágenes PNG/JSON sintéticas identificables por inventoryIds.
+- [E2E y frontend #45032597178](https://github.com/crecisol-platform/CRECISOL/actions/runs/45032597178): dos trabajos SUCCESS, 344 Playwright y 340 aserciones Angular → .NET 10 → MySQL 8.4, 18 migraciones con reversión; válido para ese SHA, no automáticamente para commits posteriores.
+
+**Comparación:** coinciden los 65 ID, títulos, tipos y componentes Angular (17 vistas, 18 estados, 3 complementos, 27 modales). Existe una discrepancia histórica de ruta:
+- **C05-F01-057:** la ruta antigua /cuenta?vista=perfil [empty] NO demuestra historial vacío. El código F06 exige /cuenta?vista=historial [empty], escena account-historial-empty-* y encabezado «Sin actividad disponible».
+- **C05-F01-014:** exige condiciones realmente cargadas en la escena account-terms-current-loaded-* con encabezado «Condiciones qa-f01»; no acepta la portada genérica de login. La ruta catalogada no cambia, pero sí la prueba semántica.
+
+No se reescriben capturas históricas ni se atribuyen falsamente a estas dos escenas. Las 65 celdas internas de evidencia de F06 todavía citan como antecedente el SHA 6384c545...; la matriz cruzada referencia de modo explícito el run contemporáneo #45032597168 y artefacto #14758472442.
+
+**Fuente cruzada:** [Matriz reconciliada de 65 filas](F01_MATRIZ_RECONCILIADA_F06_2026_11_22.csv). Incluye rutas original/vigente, fuente Angular, contratos, riesgos, identificador de captura, dos CI, puntuación exploratoria antigua y separación estricta de nota final/dictamen.
+
+**Auditor automatizado:** qa/c05_ux_f01_reconciliation_audits.py. Lee desde Git el SHA F06 exacto, valida cuatro blobs inmutables, las 65 correspondencias, el único cambio de ruta 057, las protecciones de escenas 014/057 y que los 65 dictámenes comerciales finales sean PENDIENTE. La CI F01 debe ejecutarlo en el HEAD nuevo antes de afirmar aprobado este complemento.
+
+**Tres auditorías de este cambio:**
+- A, trazabilidad: 65 IDs, 4 clases de superficie, correspondencia de rutas, Angular, API y SHA.
+- B, seguridad y privacidad: límites de permisos y datos originales preservados; no se conceden autorizaciones por una captura ni se ejecutan ataques reales nuevos contra tenants en este paso documental.
+- C, UX y QA: evidencia de inventario sintético individualizada, dos guardas semánticos, distinción entre notas exploratorias y nota final; no equivalencia con lector de pantalla físico ni inspección integral.
+
+**Dictamen:** F01 históricamente certificada en alcance de inventario y baseline; conciliación de ramas incorporada a revisión y su prueba nueva sujeta a CI del HEAD final. Aceptación visual comercial **0/65**: todos los campos finales vacíos y los 65 dictámenes PENDIENTE. Media exploratoria anterior de 9.18/10 no habilita compra. PR #174 y #179 DRAFT; F07/C06 bloqueados, sin cambiar dev/main, frontend de producto, backend, base de datos, Word/PDF, producción ni SOLQARYN.
