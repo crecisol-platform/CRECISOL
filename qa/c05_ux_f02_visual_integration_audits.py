@@ -19,6 +19,8 @@ FRONT = "frontend/src/app/"
 GLOBAL = "frontend/src/styles.css"
 GUEST_HTML = FRONT + "pages/identity-guest.component.html"
 CASES_HTML = FRONT + "pages/platform-operator-cases.component.html"
+WORKSPACE_HTML = FRONT + "pages/identity-workspace.component.html"
+WORKSPACE_CSS = FRONT + "pages/identity-workspace.component.css"
 MODAL = FRONT + "ui/institutional-modal/institutional-modal.component.css"
 FEEDBACK = FRONT + "ui/feedback/operation-feedback.component.css"
 OPERATOR = FRONT + "pages/platform-operator-f04.component.css"
@@ -27,8 +29,8 @@ TEST = "frontend/tests/c05-f06-context-feedback.spec.ts"
 WORKFLOW = ".github/workflows/c05-ux-f02-paridad-visual.yml"
 DOC = "docs/c05/ux/F02_PARIDAD_VISUAL_INTEGRACION_2026_11_22.md"
 SCRIPT = "qa/c05_ux_f02_visual_integration_audits.py"
-ALLOWED = {MODAL, FEEDBACK, OPERATOR, FORMS, GLOBAL, GUEST_HTML, CASES_HTML, TEST, WORKFLOW, DOC, SCRIPT}
-EDITED_CSS = (MODAL, FEEDBACK, OPERATOR, FORMS, GLOBAL)
+ALLOWED = {MODAL, FEEDBACK, OPERATOR, FORMS, GLOBAL, GUEST_HTML, CASES_HTML, WORKSPACE_HTML, WORKSPACE_CSS, TEST, WORKFLOW, DOC, SCRIPT}
+EDITED_CSS = (MODAL, FEEDBACK, OPERATOR, FORMS, GLOBAL, WORKSPACE_CSS)
 EXPECTED = {f"C05-F01-{i:03d}" for i in range(1, 66)}
 
 
@@ -55,7 +57,7 @@ def scope() -> list[str]:
     files = git("diff", "--name-only", BASE + "...HEAD").strip().splitlines()
     require(set(files) <= ALLOWED,
             "out-of-scope changes: " + str(sorted(set(files) - ALLOWED)))
-    require(all(x in files for x in EDITED_CSS + (GUEST_HTML, CASES_HTML, TEST, DOC, SCRIPT, WORKFLOW)),
+    require(all(x in files for x in EDITED_CSS + (GUEST_HTML, CASES_HTML, WORKSPACE_HTML, TEST, DOC, SCRIPT, WORKFLOW)),
             "incomplete implementation/QA/acta")
     # The global stylesheet also contains C01/C02. Limit its diff precisely
     # to the five token substitutions in the C05 csFieldFeedback section.
@@ -110,6 +112,7 @@ def audit_b() -> None:
     form = read(FORMS)
     guest = read(GUEST_HTML)
     cases = read(CASES_HTML)
+    workspace = read(WORKSPACE_HTML)
     for field in ("review-case", "review-decision", "review-evidence", "review-reason", "review-code"):
         require(re.search(r'<(?:(?:input)|(?:select))[^>]*id="' + re.escape(field) + r'"[^>]*\brequired\b', cases),
                 "independent identity review field no longer required: " + field)
@@ -122,6 +125,24 @@ def audit_b() -> None:
                    'name="token" required', 'Cargar condiciones vigentes',
                    'inviteNeedsEnrollment()', 'guest-invitation-heading'):
         require(marker in guest, "invitation consent/MFA unavailable: " + marker)
+    # F02 buyer follow-up: keep all required inputs and backend actions after
+    # visual grouping of the four long protected flows.
+    require('cs-guest-process--existing' in guest and
+            all(x in guest for x in ('join-mailbox', 'join-password', 'join-code',
+                                      'join-proof-id', 'join-proof-code', 'name="accepted"')),
+            "existing-account five proofs or legal consent unavailable")
+    for marker in ('class="cs-membership-review"', 'name="membershipId" required',
+                   'name="decision" required', 'name="reason" required',
+                   'name="confirmed" required', "action: 'membership'",
+                   'name="token" [value]="incomingPairToken()" required',
+                   'name="fingerprint" [value]="incomingPairFingerprint()" required',
+                   'name="code" required', 'name="confirmed" type="checkbox" required',
+                   'class="cs-browser-approval"', "action: 'pairing-approve'"):
+        require(marker in workspace, "membership/browser protected field removed: " + marker)
+    for marker in ('class="operator-case-lookup"', 'name="mailbox" type="email" required',
+                   'name="realm" required', 'name="reason" required',
+                   'name="code" required', "action: 'find-case'"):
+        require(marker in cases, "case locator protected field removed: " + marker)
     require("form[csFieldFeedback] [aria-invalid=" in read(GLOBAL) and
             "border-color: var(--cs-color-danger, #8b272e) !important;" in read(GLOBAL),
             "global C05 error border still overrides semantic token")
@@ -151,7 +172,7 @@ def audit_c() -> None:
     css = {p: read(p) for p in EDITED_CSS}
     refs = {p: len(re.findall(r"var\(--cs-[a-z0-9-]+", text))
             for p, text in css.items()}
-    thresholds = {MODAL: 40, FEEDBACK: 15, OPERATOR: 40, FORMS: 35, GLOBAL: 17}
+    thresholds = {MODAL: 40, FEEDBACK: 15, OPERATOR: 40, FORMS: 35, GLOBAL: 17, WORKSPACE_CSS: 40}
     for path, threshold in thresholds.items():
         require(refs[path] >= threshold,
                 path + " still detached from F02 (token usages: " + str(refs[path]) + ")")
@@ -183,6 +204,10 @@ def audit_c() -> None:
                    "secure modal uses F02 institutional surface",
                    "platform operator card uses shared F02 surface"):
         require(marker in read(TEST), "computed-style browser assertion missing " + marker)
+    require("cs-membership-review" in css[WORKSPACE_CSS] and
+            "cs-browser-approval" in form and "cs-guest-process--existing" in form and
+            "operator-case-lookup" in operator,
+            "second-round 006/033/036/040 layout treatment absent")
     require("operator-identity-review" in operator and
             "operator-review-attestations" in operator and
             "operator-mailbox-step" in operator and
