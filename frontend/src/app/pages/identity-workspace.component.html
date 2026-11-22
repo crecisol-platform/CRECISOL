@@ -300,37 +300,45 @@
 </div>
           
 } @else if (view() === 'administracion') {
-  <cs-institutional-modal #workspaceModal35 kind="destructive" warning="Solo afecta a esta membresía pendiente. La decisión es permanente y no puede repetirse."
+  <cs-institutional-modal #workspaceModal35 kind="destructive" warning="Decisión permanente: solo afecta esta membresía pendiente y no puede repetirse."
     title="Revisar membresía con permiso administrativo"
-    description="Selecciona la solicitud; el servidor verifica negocio y permisos. Confirma con MFA."
+    description="Selecciona una solicitud y confirma con MFA. El servidor verifica negocio y permisos."
     [busy]="busy()" [feedback]="feedback()" [error]="error()"
     [wide]="true" (dismissed)="selectedMembershipId.set('')">
-     <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'membership' })">
-      <label for="membership-id">Solicitud pendiente seleccionada</label>
-      <select id="membership-id" name="membershipId" required [value]="selectedMembershipId()"
-        (change)="selectedMembershipId.set($any($event.target).value)">
-        <option value="" selected disabled>Selecciona una solicitud pendiente</option>
+     <form class="cs-membership-review" csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'membership' })">
+      <div class="cs-membership-field cs-membership-field--request">
+        <label for="membership-id">Solicitud pendiente seleccionada</label>
+        <select id="membership-id" name="membershipId" required [value]="selectedMembershipId()"
+          (change)="selectedMembershipId.set($any($event.target).value)">
+          <option value="" selected disabled>Selecciona una solicitud pendiente</option>
+          @for (request of pendingRows(); track request.id) {
+            <option [value]="request.id">{{ request.mailboxHint }}</option>
+          }
+        </select>
         @for (request of pendingRows(); track request.id) {
-          <option [value]="request.id">{{ request.mailboxHint }}</option>
+          @if (request.id === selectedMembershipId()) {
+            <p class="identity-field-help">Expediente seleccionado · {{ request.referenceLabel }}</p>
+          }
         }
-      </select>
-      @for (request of pendingRows(); track request.id) {
-        @if (request.id === selectedMembershipId()) {
-          <p class="identity-field-help">Expediente seleccionado · {{ request.referenceLabel }}</p>
-        }
-      }
-      <p class="identity-field-help">La referencia se envía al servidor; no necesitas copiarla.</p>
-      <label for="membership-decision">Decisión</label>
-      <select id="membership-decision" name="decision" required>
-        <option value="" selected disabled>Selecciona una decisión</option>
-        <option value="approve">Aprobar como miembro básico</option>
-        <option value="reject">Rechazar solicitud</option>
-      </select>
-      <label for="membership-reason">Motivo de la decisión</label>
-      <input id="membership-reason" name="reason" required minlength="8" maxlength="240" autocomplete="off">
-      <label for="membership-code">Código MFA del aprobador</label>
-      <input id="membership-code" name="code" autocomplete="one-time-code"
-        required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
+        <p class="identity-field-help">La referencia se envía al servidor; no necesitas copiarla.</p>
+      </div>
+      <div class="cs-membership-field">
+        <label for="membership-decision">Decisión</label>
+        <select id="membership-decision" name="decision" required>
+          <option value="" selected disabled>Selecciona una decisión</option>
+          <option value="approve">Aprobar como miembro básico</option>
+          <option value="reject">Rechazar solicitud</option>
+        </select>
+      </div>
+      <div class="cs-membership-field">
+        <label for="membership-reason">Motivo de la decisión</label>
+        <input id="membership-reason" name="reason" required minlength="8" maxlength="240" autocomplete="off">
+      </div>
+      <div class="cs-membership-field">
+        <label for="membership-code">Código MFA del aprobador</label>
+        <input id="membership-code" name="code" autocomplete="one-time-code"
+          required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
+      </div>
       <label class="identity-approval-confirm">
         <input type="checkbox" name="confirmed" required>
         Revisé la solicitud y confirmo que esta es la decisión que deseo registrar.
@@ -485,13 +493,22 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal38.open()">
     <span>Aprobar otro navegador</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal38 kind="destructive" warning="Una aprobación abre otra sesión. Compara la huella en el navegador solicitante; nunca aceptes códigos enviados por terceros." title="Aprobar otro navegador"
+  <cs-institutional-modal #workspaceModal38 kind="destructive" warning="Abrirás otra sesión: compara la huella en el navegador solicitante. Nunca aceptes códigos de terceros." title="Aprobar otro navegador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-             <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'pairing-approve' })">
-              <label for="pair-token">Solicitud del navegador nuevo</label><input id="pair-token" name="token" [value]="incomingPairToken()" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
-              <label for="pair-fingerprint">Huella del navegador nuevo</label><input id="pair-fingerprint" name="fingerprint" [value]="incomingPairFingerprint()" required pattern="[0-9A-F]{12}" autocomplete="off">
-              <label for="pair-code">Código MFA para aprobar navegador</label><input id="pair-code" name="code" required maxlength="32" autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
-              <label><input name="confirmed" type="checkbox" required> Comparé la huella y autorizo este navegador</label>
+             <form class="cs-browser-approval" csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'pairing-approve' })">
+              <div class="cs-browser-field cs-browser-field--token">
+                <label for="pair-token">Solicitud del navegador nuevo</label>
+                <input id="pair-token" name="token" [value]="incomingPairToken()" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
+              </div>
+              <div class="cs-browser-field">
+                <label for="pair-fingerprint">Huella del navegador nuevo</label>
+                <input id="pair-fingerprint" name="fingerprint" [value]="incomingPairFingerprint()" required pattern="[0-9A-F]{12}" autocomplete="off">
+              </div>
+              <div class="cs-browser-field">
+                <label for="pair-code">Código MFA para aprobar navegador</label>
+                <input id="pair-code" name="code" required maxlength="32" autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
+              </div>
+              <label class="cs-browser-confirm"><input name="confirmed" type="checkbox" required> Comparé la huella y autorizo este navegador</label>
               <button [disabled]="busy()">Aprobar vinculación</button>
             </form>
   </cs-institutional-modal>
