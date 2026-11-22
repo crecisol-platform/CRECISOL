@@ -456,3 +456,35 @@ section[aria-labelledby="confirm-heading"] > form > .cs-guest-stage {
     box-shadow: none;
   }
 }
+
+/* F02 invitation: keep both compulsory proof stages present in DOM and in the
+   native tab order. Improve reading rhythm; never collapse terms/consent. */
+.cs-guest-process--invitation > form > .cs-guest-stage {
+  border-top-color: var(--cs-color-border, #d3e1ee);
+  gap: .28rem;
+}
+.cs-guest-process--invitation .cs-guest-stage > h3 {
+  color: var(--cs-color-accent-text, #174b77);
+  letter-spacing: 0;
+}
+.cs-guest-process--invitation .cs-choice-line {
+  color: var(--cs-color-text, #172d46);
+  font-size: .875rem;
+  line-height: 1.48;
+}
+.cs-guest-process--invitation .cs-guest-terms {
+  border-color: var(--cs-color-border, #d3e1ee);
+  color: var(--cs-color-muted, #455f79);
+}
+@media (max-width: 480px) {
+  .cs-guest-process--invitation > p { margin-bottom: .55rem; }
+  .cs-guest-process--invitation > form { gap: .25rem; }
+  .cs-guest-process--invitation > form > .cs-guest-stage { padding-top: .4rem; }
+  .cs-guest-process--invitation .cs-choice-line { margin-block: .15rem; }
+}
+@media (forced-colors: active) {
+  .cs-guest-process--invitation > form > .cs-guest-stage,
+  .cs-guest-process--invitation .cs-guest-terms { border-color: CanvasText; }
+  .cs-guest-process--invitation .cs-guest-stage > h3,
+  .cs-guest-process--invitation .cs-choice-line { color: CanvasText; }
+}
