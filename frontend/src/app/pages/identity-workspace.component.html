@@ -485,13 +485,12 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal38.open()">
     <span>Aprobar otro navegador</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal38 kind="destructive" warning="Autorizar este navegador le permitirá iniciar una sesión. Comprueba la huella antes de continuar." title="Aprobar otro navegador"
+  <cs-institutional-modal #workspaceModal38 kind="destructive" warning="Una aprobación abre otra sesión. Compara la huella en el navegador solicitante; nunca aceptes códigos enviados por terceros." title="Aprobar otro navegador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <p>Autoriza solo un navegador que tú controles. Compara la huella con la pantalla que inició la solicitud; no apruebes códigos que te envíe otra persona.</p>
-            <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'pairing-approve' })">
+             <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'pairing-approve' })">
               <label for="pair-token">Solicitud del navegador nuevo</label><input id="pair-token" name="token" [value]="incomingPairToken()" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
               <label for="pair-fingerprint">Huella del navegador nuevo</label><input id="pair-fingerprint" name="fingerprint" [value]="incomingPairFingerprint()" required pattern="[0-9A-F]{12}" autocomplete="off">
-              <label for="pair-code">Código MFA para aprobar navegador</label><input id="pair-code" name="code" required maxlength="32" autocomplete="one-time-code">
+              <label for="pair-code">MFA para aprobar este navegador</label><input id="pair-code" name="code" required maxlength="32" autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
               <label><input name="confirmed" type="checkbox" required> Comparé la huella y autorizo este navegador</label>
               <button [disabled]="busy()">Aprobar vinculación</button>
             </form>
