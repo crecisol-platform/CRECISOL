@@ -114,7 +114,7 @@ def audit_a() -> None:
          "secondaryRoutesToggled(event: Event)" in portal,
          "secondary account menu may persist open after a route change")
     inventory = text("frontend/tests/c05-f06-inventory-65.spec.ts")
-    for marker in ("section.operator-workspace:visible h2",
+    for marker in ("section.operator-workspace:visible > header.operator-section-head h2",
                    "wrong operator tab before screenshot",
                    "operator tab changed during screenshot capture"):
         need(marker in inventory, "65-surface inventory permits mislabeled operator captures: " + marker)

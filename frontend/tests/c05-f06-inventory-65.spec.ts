@@ -167,7 +167,7 @@ async function capture(page: Page, testInfo: TestInfo, id: string): Promise<void
   }
   await page.screenshot({ path, fullPage: measurements.dialogsOpen === 0, animations: 'disabled' });
   if (operatorTab) {
-    const afterHeadings = await page.locator('section.operator-workspace:visible h2')
+    const afterHeadings = await page.locator('section.operator-workspace:visible > header.operator-section-head h2')
       .allTextContents();
     expect(afterHeadings.map(s => s.trim()),
       'operator tab changed during screenshot capture: ' + id)
@@ -488,7 +488,7 @@ for (const size of sizes) {
     for (const tab of ['Casos', 'Sesiones', 'Perfil', 'Seguridad', 'Monitor']) {
       await page.getByRole('navigation', { name: 'Áreas de la consola de identidad' })
         .getByRole('button', { name: tab, exact: true }).click();
-      await expect(page.locator('section.operator-workspace:visible h2'),
+      await expect(page.locator('section.operator-workspace:visible > header.operator-section-head h2'),
         'the selected operator tab must render before recording ' + tab)
         .toHaveText(tabHeadings[tab]);
       await capture(page, testInfo, 'operator-' + tab + '-' + size.name);
