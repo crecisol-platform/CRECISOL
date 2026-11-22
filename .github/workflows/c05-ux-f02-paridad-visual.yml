@@ -4,6 +4,8 @@ on:
     branches: [feature/c05-ux-f02-paridad-visual-integracion-20261122]
     paths:
       - 'frontend/src/styles.css'
+      - 'frontend/src/app/pages/identity-guest.component.html'
+      - 'frontend/src/app/pages/platform-operator-cases.component.html'
       - 'frontend/src/app/pages/identity-flow.component.css'
       - 'frontend/src/app/pages/platform-operator-f04.component.css'
       - 'frontend/src/app/ui/institutional-modal/institutional-modal.component.css'
