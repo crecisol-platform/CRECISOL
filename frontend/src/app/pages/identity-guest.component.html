@@ -16,6 +16,8 @@
           <h2 id="confirm-heading">Confirmar correo</h2>
           <p>Verifica los datos recibidos y define tu contraseña. La cuenta seguirá pendiente de aprobación.</p>
           <form csFieldFeedback (submit)="confirmRequested.emit($event)">
+            <div class="cs-guest-stage" role="group" aria-labelledby="confirm-stage-proof">
+              <h3 id="confirm-stage-proof">1. Verificación del correo</h3>
             <label for="proof-id">Identificador recibido</label>
             <input id="proof-id" name="proofId" type="text" autocomplete="off"
               required maxlength="36" pattern="[0-9a-fA-F-]{36}">
@@ -23,12 +25,16 @@
             <input id="proof-code" name="proofCode" type="text" inputmode="text"
               autocomplete="one-time-code" required minlength="64" maxlength="64"
               pattern="[0-9a-fA-F]{64}">
+            </div>
+            <div class="cs-guest-stage" role="group" aria-labelledby="confirm-stage-account">
+              <h3 id="confirm-stage-account">2. Crear la cuenta</h3>
             <label for="completion-mailbox">Correo de la solicitud</label>
             <input id="completion-mailbox" name="completionMailbox" type="email" autocomplete="email"
               required maxlength="254">
             <label for="completion-password">Nueva contraseña (mínimo 15 caracteres)</label>
             <input id="completion-password" name="completionPassword" type="password"
               autocomplete="new-password" required minlength="15" maxlength="128">
+            </div>
             <button type="submit" [disabled]="busy() || identity.restoring()">{{ busy() ? 'Verificando…' : 'Crear cuenta pendiente' }}</button>
           </form>
         </section>
@@ -38,6 +44,8 @@
           <h2 id="guest-invitation-heading">Aceptar una invitación</h2>
           <p>Comprueba tu identidad y el token recibido. Si aún no tienes autenticador, podrás configurarlo tras aceptar la invitación.</p>
           <form csFieldFeedback (reset)="inviteNeedsEnrollment.set(false)" (submit)="securityActionRequested.emit({ event: $event, action: 'invitation-accept' })">
+            <div class="cs-guest-stage" role="group" aria-labelledby="invite-stage-identity">
+              <h3 id="invite-stage-identity">1. Identidad y segundo factor</h3>
             <label for="invite-mailbox">Correo invitado</label><input id="invite-mailbox" name="mailbox" type="email" autocomplete="username" required maxlength="254">
             <label for="invite-password">Contraseña de la cuenta invitada</label><input id="invite-password" name="password" type="password" autocomplete="current-password" required maxlength="128">
             <label class="cs-choice-line">
@@ -53,6 +61,9 @@
               <input id="invite-code" name="code" required maxlength="32"
                 autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
             }
+            </div>
+            <div class="cs-guest-stage" role="group" aria-labelledby="invite-stage-consent">
+              <h3 id="invite-stage-consent">2. Invitación y condiciones</h3>
             <label for="invite-token">Token de invitación</label><input id="invite-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
 
             @if (identity.terms(); as terms) {
@@ -67,6 +78,7 @@
               </div>
             }
             <label><input name="accepted" type="checkbox" required> He leído y acepto las condiciones vigentes para esta invitación</label>
+            </div>
             <button [disabled]="busy() || !identity.terms()">Aceptar invitación de cuenta</button>
           </form>
         </section>
@@ -76,9 +88,14 @@
           <h2 id="guest-existing-heading">Solicitar acceso con mi cuenta</h2>
           <p>Solicita otra relación sin transferir permisos. Necesitarás tu segundo factor y la confirmación del correo.</p>
           <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'membership-request' })">
+            <div class="cs-guest-stage" role="group" aria-labelledby="join-stage-identity">
+              <h3 id="join-stage-identity">1. Identidad y segundo factor</h3>
             <label for="join-mailbox">Correo de tu cuenta</label><input id="join-mailbox" name="mailbox" type="email" required maxlength="254" autocomplete="username">
             <label for="join-password">Contraseña actual</label><input id="join-password" name="password" type="password" required maxlength="128" autocomplete="current-password">
             <label for="join-code">Código MFA o de respaldo</label><input id="join-code" name="code" required maxlength="32" autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
+            </div>
+            <div class="cs-guest-stage" role="group" aria-labelledby="join-stage-proof">
+              <h3 id="join-stage-proof">2. Confirmación del correo</h3>
             <label for="join-proof-id">Identificador de confirmación</label><input id="join-proof-id" name="proofId" required maxlength="36">
             <label for="join-proof-code">Código del correo (64 caracteres)</label><input id="join-proof-code" name="proofCode" required minlength="64" maxlength="64" pattern="[0-9a-fA-F]{64}" autocomplete="off">
 
@@ -94,6 +111,7 @@
               </div>
             }
             <label><input name="accepted" type="checkbox" required> Acepto las condiciones vigentes de este negocio para solicitar la relación</label>
+            </div>
             <button [disabled]="busy() || !identity.terms()">Enviar solicitud de relación pendiente</button>
           </form>
         </section>
