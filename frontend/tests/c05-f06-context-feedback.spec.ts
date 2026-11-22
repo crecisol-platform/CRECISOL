@@ -1495,7 +1495,8 @@ test('F06 buyer staged proofs preserve every mandatory security field', async ({
  * improve the mobile composition, and every step stays in normal tab order. */
 test('F02 mobile buyer invitation keeps proof, terms and explicit consent at 320px', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
-  await account(page, 'invitacion', 'anonymous');
+  await syntheticApi(page, 'anonymous');
+  await page.goto('/cuenta?vista=invitacion');
   const journey = page.locator('cs-identity-guest .cs-guest-process--invitation');
   await expect(journey).toBeVisible();
   await expect(journey.locator('.cs-guest-stage')).toHaveCount(2);
