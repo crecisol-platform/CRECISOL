@@ -20,6 +20,7 @@ on:
       - 'qa/c05_ux_f06_feedback_*'
       - 'docs/c05/ux/F06_*'
       - '.github/workflows/c05-ux-f06-feedback.yml'
+      - '.github/workflows/c05-ux-f06-65-inventory.yml'
 permissions:
   contents: read
 concurrency:
