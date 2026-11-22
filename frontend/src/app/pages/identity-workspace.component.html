@@ -300,13 +300,12 @@
 </div>
           
 } @else if (view() === 'administracion') {
-  <cs-institutional-modal #workspaceModal35 kind="destructive" warning="La decisión afecta únicamente a la membresía pendiente de esta empresa. No podrá registrarse otra decisión sobre el mismo expediente."
+  <cs-institutional-modal #workspaceModal35 kind="destructive" warning="Solo afecta a esta membresía pendiente. La decisión es permanente y no puede repetirse."
     title="Revisar membresía con permiso administrativo"
-    description="Selecciona un expediente obtenido del servidor y verifica la decisión con tu segundo factor."
+    description="Selecciona la solicitud; el servidor verifica negocio y permisos. Confirma con MFA."
     [busy]="busy()" [feedback]="feedback()" [error]="error()"
     [wide]="true" (dismissed)="selectedMembershipId.set('')">
-    <p>La solicitud debe pertenecer a la empresa autenticada y mantener el estado pendiente. La comprobación definitiva se realiza en el servidor.</p>
-    <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'membership' })">
+     <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'membership' })">
       <label for="membership-id">Solicitud pendiente seleccionada</label>
       <select id="membership-id" name="membershipId" required [value]="selectedMembershipId()"
         (change)="selectedMembershipId.set($any($event.target).value)">
@@ -320,7 +319,7 @@
           <p class="identity-field-help">Expediente seleccionado · {{ request.referenceLabel }}</p>
         }
       }
-      <p class="identity-field-help">La referencia completa se envía solo al backend para esta decisión; no necesitas escribirla.</p>
+      <p class="identity-field-help">La referencia se envía al servidor; no necesitas copiarla.</p>
       <label for="membership-decision">Decisión</label>
       <select id="membership-decision" name="decision" required>
         <option value="" selected disabled>Selecciona una decisión</option>
