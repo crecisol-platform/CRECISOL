@@ -147,7 +147,7 @@ async function assertF02VisualParity(page: Page, selected: Scene): Promise<void>
       const style = getComputedStyle(node);
       const probe = document.createElement('span');
       probe.style.color = 'var(--cs-color-danger)';
-      node.appendChild(probe);
+      node.parentElement?.appendChild(probe);
       const expected = getComputedStyle(probe).color;
       probe.remove();
       return { border: style.borderTopColor, expected };
