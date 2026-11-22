@@ -14,7 +14,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: c05-f02-parity-${{ github.ref }}
+  group: c05-f02-parity-${{ github.sha }}
   cancel-in-progress: true
 jobs:
   browser-parity:
