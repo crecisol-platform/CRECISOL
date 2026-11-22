@@ -10,6 +10,7 @@ on:
       - 'frontend/playwright.institutional.config.ts'
       - 'frontend/tsconfig.institutional.json'
       - 'qa/c05_ux_f02_design_system_audits.py'
+      - 'qa/c05_ux_f02_65_parity_audits.py'
       - 'docs/c05/ux/F02_*'
       - '.github/workflows/c05-ux-f02-design-system.yml'
 permissions:
@@ -38,10 +39,19 @@ jobs:
               frontend/src/app/ui/institutional-system/*|frontend/angular.json|\
               frontend/tests/institutional-harness/*|frontend/tests/c05-f02-design-system.spec.ts|\
               frontend/playwright.institutional.config.ts|frontend/tsconfig.institutional.json|\
-              qa/c05_ux_f02_design_system_audits.py|docs/c05/ux/F02_*|\
+              qa/c05_ux_f02_design_system_audits.py|qa/c05_ux_f02_65_parity_audits.py|docs/c05/ux/F02_*|\
               .github/workflows/c05-ux-f02-design-system.yml) ;;
               *) echo "C05 F02 out-of-scope: $path"; exit 1 ;;
             esac
+          done
+      - name: F02 x 65 | F01 and F06 exact-SHA style adoption and scoped risk audits
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin refs/heads/feature/c05-ux-f01-inventario-20261119
+          git fetch --no-tags origin refs/heads/feature/c05-ux-f06-mensajeria-estados-20261120
+          for gate in A B C; do
+            python3 qa/c05_ux_f02_65_parity_audits.py "$gate"
           done
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v4.4.0
         with:
