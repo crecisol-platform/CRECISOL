@@ -69,3 +69,24 @@ La siguiente CI debe ejecutar nuevamente los cinco escenarios y las 65 superfici
 **Declaración de alcance:** lo anterior son cambios presentacionales y de microcopy. Las dos acciones de correo y la revisión de identidad siguen siendo operaciones separadas que requieren autorización real en backend; el cliente no decide permisos. No se ha retirado ningún consentimiento, MFA, espera de recuperación, evidencia SHA-256 ni campo de auditoría.
 
 **Dictamen de esta ronda:** nuevas pruebas y artefacto deben terminar en el **SHA posterior a estos cambios** para evaluar los resultados. No extrapolar el SUCCESS del SHA anterior al nuevo. La aprobación editorial individual 65/65 ≥9.5 continúa pendiente y no se reemplaza por estilo calculado, pruebas sintéticas o esta nota. No fusionar el PR mientras falten gates y aceptación final.
+
+---
+
+## 7. Tercera ronda: dictamen de comprador actualizado y cuatro remediaciones prioritarias
+
+**Base editorial y huellas:** sobre el SHA técnico final de la segunda ronda `7a355be2a8c25c760c3716c8ab6d4097a12b856c` se inspeccionaron los **65** primeros pliegues móviles de 320 px, los **65** equivalentes de escritorio 1440 px y, para los flujos sensibles, capturas desplazadas y tableta. El ZIP original `14763843993` contiene 65/65 IDs para cada uno de cinco anchos, 444 PNG/JSON, sin desbordamientos reportados. No se finge inspección humana completa con lector de pantalla ni datos reales.
+
+**Resultado editorial IA inicial de esa versión (NO acta institucional):** 12/65 valoraciones *visuales preliminares* ≥9.5, 53/65 por debajo, rango 8.9–9.5 y mediana 9.3. Las 65 notas y riesgos específicos quedaron registrados en el [comentario del PR #180](https://github.com/crecisol-platform/CRECISOL/pull/180#issuecomment-7084811307). Este resultado no autoriza 65 aprobaciones ni reinterpreta las notas históricas 8.7–9.4 del SHA 98caa....
+
+### Correcciones sobre la versión posterior a la evaluación de compra
+
+| F01 | Hallazgo | Corrección sin debilitamiento de contratos |
+| --- | --- | --- |
+| **006** Nueva relación con cuenta existente | Cinco verificaciones + condiciones hacen larga la página móvil | Mensaje inicial directo, ritmo de etapas e identificación segura; se preservan cuenta/contraseña/MFA/ID de confirmación/código de correo/consentimiento |
+| **033** Revisión de membresía | Contexto, decisión sensible y MFA sobre una única columna incluso en tableta | Campos organizados, advertencia abreviada semánticamente, una columna en 320 y dos a partir de 700; se mantienen selección no predefinida, motivo, MFA y consentimiento explícito |
+| **036** Aprobar otro navegador | Huella, solicitud, MFA y advertencia desplazaban la acción en móvil | Advertencia más concisa y comparables agrupados; token largo ocupa ancho completo en tableta; huella, MFA y confirmación independiente obligatorios |
+| **040** Localizar referencia protegida | Explicación y cuatro campos sensibles demasiado dispersos | Párrafo de privacidad breve, grupos legibles y distribución 1→2 columnas; servidor conserva autorización, ámbito, motivo y MFA |
+
+**QA adicional:** cuatro nuevas pruebas Playwright con fixtures sintéticos de solo lectura para preservar controles `required` y flujo a 320/768. El auditor de fuente A/B/C falla cerrado si se tocan rutas o ficheros no enumerados; incluye `identity-workspace.component.html/css` además de los 11 archivos ya auditados, sin cambio en backend, database o contraseñas. El workflow de la rama ejecuta regresiones de F02–F06 y Angular→.NET 10→MySQL 8.4 en base desechable. **Los resultados del SHA anterior no se extrapolan a los commits posteriores.**
+
+**Gate de certificación integral:** seguir **NO-GO** hasta verificar la CI del SHA nuevo, regenerar evidencias individuales, revisar nuevamente las 65 interfaces y demostrar un mínimo de ≥9.5/10 por interfaz, con aprobación editorial real. No fusionar PR #175/#179/#180 ni activar F03/F07/C06 por esta adenda.
