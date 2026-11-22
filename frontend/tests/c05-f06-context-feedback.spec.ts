@@ -931,7 +931,7 @@ test('F06 buyer invitation first field prioritization at 320 pixels', async ({ p
   await syntheticApi(page, 'anonymous');
   for (const [view, label] of [
     ['invitacion', 'Correo invitado'],
-    ['acceso-existente', 'Correo de mi identidad existente']
+    ['acceso-existente', 'Correo de tu cuenta']
   ] as const) {
     await page.goto('/cuenta?vista=' + view);
     const field = page.getByRole('textbox', { name: label, exact: true });
@@ -984,7 +984,7 @@ test('F06 buyer mandatory invitation and membership flows stay visible, direct a
   const cases = [
     { view: 'invitacion', heading: 'Aceptar una invitación', first: 'Correo invitado',
       fields: ['mailbox', 'password', 'code', 'token', 'accepted'] },
-    { view: 'acceso-existente', heading: 'Solicitar acceso con mi cuenta', first: 'Correo de mi identidad existente',
+    { view: 'acceso-existente', heading: 'Solicitar acceso con mi cuenta', first: 'Correo de tu cuenta',
       fields: ['mailbox', 'password', 'code', 'proofId', 'proofCode', 'accepted'] }
   ] as const;
   for (const scenario of cases) {
@@ -1023,7 +1023,7 @@ test('F06 buyer recovery wizard shows its first operator input above the protect
   await expect(dialog).toBeVisible();
   await expect(dialog.locator('.cs-modal__description')).toContainText('dos revisores independientes');
   await expect(dialog.locator('.cs-modal__description')).toContainText('24 horas');
-  await expect(dialog.locator('.cs-modal__description')).toContainText('aprobación de negocio no sirve');
+  await expect(dialog.locator('.cs-modal__description')).toContainText('Una aprobación de negocio no sustituye esta revisión.');
   const input = dialog.getByLabel('Correo del operador sin acceso', { exact: true });
   await expect(input).toBeVisible();
   const geometry = await dialog.evaluate(element => {
