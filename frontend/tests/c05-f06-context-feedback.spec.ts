@@ -1334,3 +1334,33 @@ test('F06 premium editorial: confirmation and recovery prioritize their own form
   await expect(page).toHaveURL(/vista=ingresar/);
   await expect(page.getByRole('navigation', { name: 'Opciones de identidad' })).toBeVisible();
 });
+
+
+test('F06 buyer contextual public headings avoid misleading guest marketing', async ({ page }) => {
+  await syntheticApi(page, 'anonymous');
+  const journeys = [
+    { view: 'confirmar', title: 'Confirma tu correo.',
+      message: 'La aprobación del negocio sigue siendo necesaria.', task: 'Confirmar correo' },
+    { view: 'recuperar', title: 'Recupera tu acceso.',
+      message: 'no abre sesión por sí sola.', task: 'Recuperar contraseña' },
+    { view: 'invitacion', title: 'Tu invitación.',
+      message: 'segundo factor y aceptación', task: 'Aceptar una invitación' },
+    { view: 'acceso-existente', title: 'Tu cuenta, más negocios.',
+      message: 'sin transferir permisos ni datos privados', task: 'Solicitar acceso con mi cuenta' }
+  ] as const;
+  for (const width of [320, 1440]) {
+    await page.setViewportSize({ width, height: width === 320 ? 720 : 900 });
+    for (const journey of journeys) {
+      await page.goto('/cuenta?vista=' + journey.view);
+      const aside = page.locator('.account-layout--guest .account-aside');
+      await expect(aside.getByRole('heading', { level: 1, name: journey.title })).toBeVisible();
+      await expect(aside).toContainText(journey.message);
+      await expect(page.getByRole('heading', { name: journey.task })).toBeVisible();
+      await expect(page.getByRole('navigation', { name: 'Opciones de identidad' })).toHaveCount(0);
+      await expect.poll(() => page.evaluate(() =>
+        document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+    }
+  }
+  await page.goto('/cuenta?vista=ingresar');
+  await expect(page.getByRole('heading', { level: 1, name: 'Tu cuenta, a tu manera.' })).toBeVisible();
+});
