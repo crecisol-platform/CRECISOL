@@ -72,3 +72,13 @@ No medir visualmente solo con el número de formularios, el color azul ni el éx
 - **Capturas de material sensible:** nunca registrar contraseñas, semillas, QR MFA reales, tokens, códigos de respaldo o PII en artefactos públicos; solo fixtures ficticios no reutilizables.
 
 **Veredicto de inventario:** trazabilidad y primeras capturas verificadas; la **certificación F01 permanece sujeta al gate ampliado de PNG/JSON, auditorías A/B/C y acta con SHA final**. No avanzar a F02.
+
+---
+
+## Seguimiento transversal — 22-11-2026
+
+Para reconciliar el inventario histórico con el producto visual evolucionado en la rama F06, consultar la [matriz cruzada de 65 filas](F01_MATRIZ_RECONCILIADA_F06_2026_11_22.csv) y la [adenda del acta F01](F01_ACTA_Y_AUDITORIAS.md). La matriz original permanece congelada. El SHA F06 confrontado es d539b75d13cde64c8ea3279d33ab35b6349c1adf, inventario #45032597168 (artefacto #14758472442) e integración #45032597178.
+
+**Correcciones:** la interfaz 014 requiere condiciones realmente cargadas, y la 057 exige historial vacío real en /cuenta?vista=historial. La ruta 057 anterior es un antecedente incorrecto para esa evidencia, no prueba vigente. El nuevo verificador de 65 filas en qa/c05_ux_f01_reconciliation_audits.py exige estas distinciones.
+
+El criterio actual es **>=9.5/10 en cada superficie**, jamás promedio; las notas iniciales y exploratorias no sustituyen el dictamen institucional. La certificación técnica histórica F01 se limita a inventario/línea base, sin equivaler a certificación comercial ni a fusión del PR #174.
