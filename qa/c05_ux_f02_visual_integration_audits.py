@@ -17,6 +17,8 @@ ROOT = Path(__file__).resolve().parents[1]
 BASE = "d539b75d13cde64c8ea3279d33ab35b6349c1adf"
 FRONT = "frontend/src/app/"
 GLOBAL = "frontend/src/styles.css"
+GUEST_HTML = FRONT + "pages/identity-guest.component.html"
+CASES_HTML = FRONT + "pages/platform-operator-cases.component.html"
 MODAL = FRONT + "ui/institutional-modal/institutional-modal.component.css"
 FEEDBACK = FRONT + "ui/feedback/operation-feedback.component.css"
 OPERATOR = FRONT + "pages/platform-operator-f04.component.css"
@@ -25,7 +27,7 @@ TEST = "frontend/tests/c05-f06-context-feedback.spec.ts"
 WORKFLOW = ".github/workflows/c05-ux-f02-paridad-visual.yml"
 DOC = "docs/c05/ux/F02_PARIDAD_VISUAL_INTEGRACION_2026_11_22.md"
 SCRIPT = "qa/c05_ux_f02_visual_integration_audits.py"
-ALLOWED = {MODAL, FEEDBACK, OPERATOR, FORMS, GLOBAL, TEST, WORKFLOW, DOC, SCRIPT}
+ALLOWED = {MODAL, FEEDBACK, OPERATOR, FORMS, GLOBAL, GUEST_HTML, CASES_HTML, TEST, WORKFLOW, DOC, SCRIPT}
 EDITED_CSS = (MODAL, FEEDBACK, OPERATOR, FORMS, GLOBAL)
 EXPECTED = {f"C05-F01-{i:03d}" for i in range(1, 66)}
 
@@ -53,7 +55,7 @@ def scope() -> list[str]:
     files = git("diff", "--name-only", BASE + "...HEAD").strip().splitlines()
     require(set(files) <= ALLOWED,
             "out-of-scope changes: " + str(sorted(set(files) - ALLOWED)))
-    require(all(x in files for x in EDITED_CSS + (TEST, DOC, SCRIPT, WORKFLOW)),
+    require(all(x in files for x in EDITED_CSS + (GUEST_HTML, CASES_HTML, TEST, DOC, SCRIPT, WORKFLOW)),
             "incomplete implementation/QA/acta")
     # The global stylesheet also contains C01/C02. Limit its diff precisely
     # to the five token substitutions in the C05 csFieldFeedback section.
@@ -106,6 +108,20 @@ def audit_b() -> None:
     feedback = read(FEEDBACK)
     modal = read(MODAL)
     form = read(FORMS)
+    guest = read(GUEST_HTML)
+    cases = read(CASES_HTML)
+    for field in ("review-case", "review-decision", "review-evidence", "review-reason", "review-code"):
+        require(re.search(r'<(?:(?:input)|(?:select))[^>]*id="' + re.escape(field) + r'"[^>]*\brequired\b', cases),
+                "independent identity review field no longer required: " + field)
+    for marker in ('name="verified" type="checkbox" required',
+                   'name="confirmed" type="checkbox" required',
+                   'action: \'review\'', 'operator-identity-review',
+                   'revisar la identidad de forma independiente'):
+        require(marker in cases, "protected identity review degraded: " + marker)
+    for marker in ('name="accepted" type="checkbox" required',
+                   'name="token" required', 'Cargar condiciones vigentes',
+                   'inviteNeedsEnrollment()', 'guest-invitation-heading'):
+        require(marker in guest, "invitation consent/MFA unavailable: " + marker)
     require("form[csFieldFeedback] [aria-invalid=" in read(GLOBAL) and
             "border-color: var(--cs-color-danger, #8b272e) !important;" in read(GLOBAL),
             "global C05 error border still overrides semantic token")
@@ -159,11 +175,19 @@ def audit_c() -> None:
             "var(--cs-hit-target" in operator,
             "platform UI not sharing color/target contract")
     for marker in ("async function assertF02VisualParity(",
+                   "F02 mobile buyer identity review",
+                   "F02 mobile buyer invitation",
+                   "F02 mobile buyer operator mailbox",
                    "await assertF02VisualParity(page, selected);",
                    "getComputedStyle(", "feedback accent matches F02 token",
                    "secure modal uses F02 institutional surface",
                    "platform operator card uses shared F02 surface"):
         require(marker in read(TEST), "computed-style browser assertion missing " + marker)
+    require("operator-identity-review" in operator and
+            "operator-review-attestations" in operator and
+            "operator-mailbox-step" in operator and
+            "cs-guest-process--invitation" in form,
+            "expected mobile editorial treatment missing")
     # The source scanner cannot substitute for real computed styles or visual
     # appraisal. These must run in Chromium and be evaluated individually.
     print(json.dumps({"C": "PASS_source_parity_only",
