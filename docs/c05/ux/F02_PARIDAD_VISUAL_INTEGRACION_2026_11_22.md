@@ -39,3 +39,15 @@ El auditor `qa/c05_ux_f02_visual_integration_audits.py` ejecuta A/B/C de **fuent
 **Prohibiciones:** no fusionar PRs de la cadena #172→#174→#175→#176→#177→#178→#179 por este cambio, ni ejecutar despliegues, configurar VPS/DNS, activar cobros, modificar SOLQARYN, `main`, `dev`, el Maestro, backend ni database.
 
 **Rollback:** cerrar el PR de integración o revertir solo los archivos CSS, test, auditor y workflow de esta rama; no hay migraciones ni datos persistentes que revertir.
+
+---
+
+## 5. Defecto real descubierto por Chromium y corrección adicional
+
+En la primera ejecución del workflow de la rama (GitHub Actions **#45041325116**, SHA `60b9758...`) los cinco escenarios **field-error** fallaron, mientras la auditoría de fuente y compilación Angular habían pasado. Chromium midió el borde inválido como `rgb(179,84,66)` (color heredado de C05 F06 `#b35442`) y esperaba el token F02 de peligro `rgb(139,39,46)` (`#8b272e`). El fallo fue reproducible a **320, 390, 768, 1024 y 1440 píxeles** y se conserva como evidencia histórica; **no se marcó PASS**.
+
+**Causa:** `frontend/src/styles.css` tenía una regla global estrictamente C05, `form[csFieldFeedback] [aria-invalid="true"]`, que establecía `border-color: #b35442 !important`, prevaleciendo sobre la regla aislada del componente. No era un problema del inspector: era una inconsistencia visual real.
+
+**Solución de causa raíz:** únicamente en el bloque C05 `form[csFieldFeedback]` del CSS compartido, se sustituyen **cinco valores** de color/borde/radio por `--cs-color-danger`, `--cs-color-danger-bg`, `--cs-color-danger-border` y `--cs-radius-sm`. El `!important` existente se conserva para no alterar las prioridades funcionales del formulario; ahora su color es el institucional. **No se cambian reglas de C01/C02 ni HTML, validaciones, permisos o datos.** El auditor A impone exactamente cinco líneas nuevas con tokens dentro del archivo global y no permite otras alteraciones silenciosas.
+
+La siguiente CI debe ejecutar nuevamente los cinco escenarios y las 65 superficies; esta adenda no presume su resultado ni otorga calificaciones humanas de 9.5/10.
