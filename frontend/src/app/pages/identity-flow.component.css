@@ -488,3 +488,52 @@ section[aria-labelledby="confirm-heading"] > form > .cs-guest-stage {
   .cs-guest-process--invitation .cs-guest-stage > h3,
   .cs-guest-process--invitation .cs-choice-line { color: CanvasText; }
 }
+
+
+/* F02 buyer gate — existing-account invitation and browser-approval parity.
+   All controls remain required, visible and keyboard reachable. */
+.cs-guest-process--existing .cs-guest-stage {
+  border-top-color: var(--cs-color-border, #d3e1ee);
+  gap: .3rem;
+}
+.cs-guest-process--existing .cs-guest-stage > h3 {
+  color: var(--cs-color-accent-text, #174b77);
+}
+.cs-browser-approval {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .65rem 1rem;
+  min-width: 0;
+}
+.cs-browser-field {
+  display: grid;
+  min-width: 0;
+  gap: .25rem;
+}
+.cs-browser-field > label { margin: 0; line-height: 1.4; }
+.cs-browser-field > input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 3rem; margin: 0; }
+.cs-browser-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  grid-column: 1 / -1;
+  min-height: var(--cs-hit-target, 2.75rem);
+  margin: .2rem 0 0;
+  line-height: 1.5;
+}
+.cs-browser-confirm input { flex: 0 0 auto; margin-top: .2rem; }
+.cs-browser-approval > button { grid-column: 1 / -1; min-height: 3rem; margin-top: .1rem; }
+@media (min-width: 700px) {
+  .cs-browser-approval { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .cs-browser-field--token { grid-column: 1 / -1; }
+}
+@media (max-width: 400px) {
+  .cs-guest-process--existing > p { margin-bottom: .55rem; }
+  .cs-guest-process--existing > form { gap: .3rem; }
+  .cs-guest-process--existing .cs-guest-stage { padding-top: .38rem; }
+  .cs-browser-approval { gap: .52rem; }
+}
+@media (forced-colors: active) {
+  .cs-guest-process--existing .cs-guest-stage { border-color: CanvasText; }
+  .cs-browser-field > label, .cs-browser-confirm { color: CanvasText; }
+}
