@@ -493,7 +493,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal38.open()">
     <span>Aprobar otro navegador</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal38 kind="destructive" warning="Abrirás otra sesión: compara la huella en el navegador solicitante. Nunca aceptes códigos de terceros." title="Aprobar otro navegador"
+  <cs-institutional-modal #workspaceModal38 kind="destructive" warning="Abrirás otra sesión: compara la huella en el navegador solicitante; nunca aceptes códigos enviados por terceros." title="Aprobar otro navegador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
              <form class="cs-browser-approval" csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'pairing-approve' })">
               <div class="cs-browser-field cs-browser-field--token">
