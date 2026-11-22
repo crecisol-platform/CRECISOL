@@ -300,6 +300,23 @@ async function captureModals(page: Page, testInfo: TestInfo, prefix: string): Pr
     const dialog = page.locator('dialog.cs-modal:modal');
     await expect(dialog).toHaveCount(1);
     const id = prefix + '-modal-' + String(i + 1).padStart(2, '0') + '-' + label;
+    if (page.viewportSize()?.width === 320 && label.includes('Emitir parte de recuperación')) {
+      // This destructive operation previously showed a half-clipped primary CTA
+      // under the fixed safe footer. Keep the exact 320px viewport gate.
+      const action = dialog.getByRole('button', { name: 'Emitir mi parte de recuperación' });
+      await expect(action).toBeVisible();
+      const geometry = await action.evaluate(element => {
+        const scrollRegion = element.closest('.cs-modal__content');
+        if (!scrollRegion) throw Error('Missing modal scroll region');
+        const button = element.getBoundingClientRect();
+        const available = scrollRegion.getBoundingClientRect();
+        return { top: button.top, bottom: button.bottom,
+          contentTop: available.top, contentBottom: available.bottom };
+      });
+      expect(geometry.top, 'recovery share CTA must be below modal header').toBeGreaterThanOrEqual(geometry.contentTop - 1);
+      expect(geometry.bottom, 'recovery share CTA must not be clipped by secure footer')
+        .toBeLessThanOrEqual(geometry.contentBottom + 1);
+    }
     await capture(page, testInfo, id);
     const fileInput = dialog.locator('input[type=file]');
     if (await fileInput.count() === 1) {
