@@ -342,3 +342,37 @@
   .operator-review-field > label, .operator-review-attestations > label,
   .operator-mailbox-step__title { color: CanvasText; }
 }
+
+
+/* F02 buyer gate — isolated identity case lookup, without changing authority
+   or weakening the required scope, reason and fresh MFA. */
+.operator-case-lookup {
+  display: grid;
+  grid-template-columns: minmax(0,1fr);
+  gap: .62rem 1rem;
+  min-width: 0;
+}
+.operator-case-lookup__field {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: .25rem;
+}
+.operator-case-lookup__field > label { margin: 0; line-height: 1.42; }
+.operator-case-lookup__field > :is(input, select) {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 3rem;
+  margin: 0;
+}
+.operator-case-lookup > button { min-height: 3rem; grid-column: 1 / -1; margin-top: .2rem; }
+@media (min-width: 700px) {
+  .operator-case-lookup { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 400px) {
+  .operator-case-lookup { gap: .46rem; }
+}
+@media (forced-colors: active) {
+  .operator-case-lookup__field > label { color: CanvasText; }
+}
