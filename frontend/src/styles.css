@@ -732,3 +732,64 @@ cs-identity-guest .cs-guest-terms :is(summary, button):focus-visible {
     background: Canvas; color: CanvasText; border-color: CanvasText;
   }
 }
+
+
+/* C05 UX F06: one-use recovery values remain intact, individually named and
+   keyboard scrollable at 320 px. Never split a secret into apparent tokens. */
+cs-identity-workspace .cs-one-time-codes,
+cs-platform-identity-panel .cs-one-time-codes {
+  display: grid;
+  gap: .65rem;
+  list-style: none;
+  margin: .8rem 0 1rem;
+  padding: 0;
+  min-width: 0;
+}
+cs-identity-workspace .cs-one-time-codes__item,
+cs-platform-identity-panel .cs-one-time-codes__item {
+  display: grid;
+  min-width: 0;
+  gap: .3rem;
+  padding: .6rem;
+  border: 1px solid #ccdeea;
+  border-radius: .6rem;
+  background: #fff;
+}
+cs-identity-workspace .cs-one-time-codes__label,
+cs-platform-identity-panel .cs-one-time-codes__label {
+  color: #365a75;
+  font-size: .8rem;
+  font-weight: 750;
+}
+cs-identity-workspace .cs-one-time-codes__value,
+cs-platform-identity-panel .cs-one-time-codes__value {
+  box-sizing: border-box;
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  padding: .45rem .55rem;
+  overflow-x: auto;
+  white-space: nowrap;
+  overscroll-behavior-inline: contain;
+  border: 1px solid #d4e2ec;
+  border-radius: .45rem;
+  background: #f5f8fc;
+  color: #163a58;
+  font: 650 .83rem/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: .015em;
+}
+cs-identity-workspace .cs-one-time-codes__value:focus-visible,
+cs-platform-identity-panel .cs-one-time-codes__value:focus-visible {
+  outline: 3px solid #126aaf;
+  outline-offset: 2px;
+}
+@media (forced-colors: active) {
+  cs-identity-workspace .cs-one-time-codes__item,
+  cs-platform-identity-panel .cs-one-time-codes__item,
+  cs-identity-workspace .cs-one-time-codes__value,
+  cs-platform-identity-panel .cs-one-time-codes__value {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+}
