@@ -7,6 +7,7 @@ on:
       - 'frontend/tests/c05-f01-visual-baseline.spec.ts'
       - 'qa/c05_ux_f01_inventory_audits.py'
       - 'qa/c05_ux_f01_evidence_audits.py'
+      - 'qa/c05_ux_f01_reconciliation_audits.py'
       - '.github/workflows/c05-ux-f01-baseline.yml'
 permissions:
   contents: read
@@ -32,10 +33,16 @@ jobs:
           done
           git diff --name-only f61a79d242288c686a88a7c3dd711f2be9a48c18...HEAD | while IFS= read -r file; do
             case "$file" in
-              docs/c05/ux/*|qa/c05_ux_f01_inventory_audits.py|qa/c05_ux_f01_evidence_audits.py|frontend/tests/c05-f01-visual-baseline.spec.ts|.github/workflows/c05-ux-f01-baseline.yml) ;;
+              docs/c05/ux/*|qa/c05_ux_f01_inventory_audits.py|qa/c05_ux_f01_evidence_audits.py|qa/c05_ux_f01_reconciliation_audits.py|frontend/tests/c05-f01-visual-baseline.spec.ts|.github/workflows/c05-ux-f01-baseline.yml) ;;
               *) echo "F01 NO-GO out-of-scope change: $file"; exit 1 ;;
             esac
           done
+      - name: F01 | reconcile all 65 records against pinned F06 SHA, fail closed on false acceptances
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin refs/heads/feature/c05-ux-f06-mensajeria-estados-20261120
+          python3 qa/c05_ux_f01_reconciliation_audits.py
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v4.4.0
         with:
           node-version: '24.15.0'
