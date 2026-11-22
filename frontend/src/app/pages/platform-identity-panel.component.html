@@ -25,7 +25,7 @@
           [steps]="['Solicitar revisión', 'Aportar dos revisiones', 'Activar nuevo MFA']"
           [step]="platform.operatorRecoverySeed() ? 3 : recoveryStep()"
           title="Recuperación segura de operador"
-          description="Acceso excepcional de plataforma. Exige verificación de identidad por dos revisores independientes y 24 horas de espera; una aprobación de negocio no sirve aquí."
+          description="Acceso excepcional: dos revisores independientes y 24 horas de espera. Una aprobación de negocio no sustituye esta revisión."
           [busy]="busy()" [feedback]="message()" [error]="error()" [wide]="true" (dismissed)="platform.discardRecoverySetup(); recoveryStep.set(1)">
           
           @if (recoveryStep() === 1 && !platform.operatorRecoverySeed()) {
