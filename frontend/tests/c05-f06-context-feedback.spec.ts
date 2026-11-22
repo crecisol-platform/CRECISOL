@@ -1617,7 +1617,7 @@ for (const journey of f02LongJourneys) {
         await expect(form.locator('#'+id)).toHaveAttribute('required','');
       if (journey.id === '033' || journey.id === '036')
         await expect(form.locator('input[name="confirmed"]')).toHaveAttribute('required','');
-      const columns = () => form.evaluate(el => getComputedStyle(el).gridTemplateColumns.trim().split(/\\s+/).length);
+      const columns = () => form.evaluate(el => getComputedStyle(el).gridTemplateColumns.trim().split(/\s+/).length);
       expect(await columns(), 'one readable column at 320px').toBe(1);
       await page.setViewportSize({width:768,height:1024});
       expect(await columns(), 'two readable columns at 768px').toBe(2);
