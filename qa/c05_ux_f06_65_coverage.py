@@ -135,8 +135,10 @@ def main(root: Path, catalog: Path) -> None:
                 check(data.get("dialogsOpen")==1 and bool(data.get("modalTitle")),
                       "modal inventariado sin dialogo visible: "+str(file))
             if surface == "C05-F01-057":
-                check("-empty-" in data.get("id", ""),
-                      "F01-057 registra una captura poblada en lugar de estado vacio")
+                check(scene_id.startswith("account-historial-empty-")
+                      and data.get("route") == "/cuenta?vista=historial"
+                      and "Sin actividad disponible" in (data.get("visibleHeadings") or []),
+                      "F01-057 debe mostrar historial vacío real; no perfil sin consultar")
             found[width].add(surface)
         if data.get("dialogsOpen")==1:
             modal=data.get("dialog") or {}
