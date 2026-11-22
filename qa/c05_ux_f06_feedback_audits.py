@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """C05 UX F06 — A/B/C static gates. Never equate static checks with runtime success."""
 from pathlib import Path
+import csv
 import subprocess
 import sys
 
@@ -63,7 +64,9 @@ ALLOWED = {
     "qa/c05_ux_f06_65_coverage.py",
     ".github/workflows/c05-ux-f06-65-inventory.yml",
     "docs/c05/ux/F06_65_COBERTURA_Y_CRITERIOS.md",
-    "docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv"
+    "docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv",
+    # Deliberately provisional 65-ID buyer record; NEVER final grades or signoff.
+    "docs/c05/ux/F06_65_REVISION_COMPRADOR_PRELIMINAR_2026_11_22.csv"
 }
 
 def text(path: str) -> str:
@@ -90,6 +93,18 @@ def scope() -> list[str]:
 
 def audit_a() -> None:
     changes = scope()
+    provisional = "docs/c05/ux/F06_65_REVISION_COMPRADOR_PRELIMINAR_2026_11_22.csv"
+    if provisional in changes:
+        with (ROOT / provisional).open(newline="", encoding="utf-8-sig") as stream:
+            buyer_rows = list(csv.DictReader(stream))
+        expected = {f"C05-F01-{index:03}" for index in range(1, 66)}
+        need(len(buyer_rows) == 65 and {r["id"] for r in buyer_rows} == expected,
+             "comprador preliminar: 65 IDs únicos obligatorios")
+        for row in buyer_rows:
+            need(row["calificacion_final_institucional"] == "PENDIENTE"
+                 and row["dictamen_compraria_ahora"] == "NO_COMPRA_PROVISIONAL"
+                 and 0 <= float(row["nota_exploratoria_0_10"]) < 9.5,
+                 "comprador preliminar: no atribuir aprobación comercial ni nota final " + row["id"])
     model = text("frontend/src/app/ui/feedback/operation-feedback.model.ts")
     portal = text("frontend/src/app/pages/identity-portal.component.ts")
     operator = text("frontend/src/app/pages/platform-identity-panel.component.ts")
