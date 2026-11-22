@@ -537,3 +537,48 @@ section[aria-labelledby="confirm-heading"] > form > .cs-guest-stage {
   .cs-guest-process--existing .cs-guest-stage { border-color: CanvasText; }
   .cs-browser-field > label, .cs-browser-confirm { color: CanvasText; }
 }
+
+
+/* F02 buyer consistency: visually distinguish compulsory two-step identity
+   proofs without collapsing the required fields, terms, MFA or native tabs. */
+.cs-guest-process > form > .cs-guest-stage,
+section[aria-labelledby="confirm-heading"] > form > .cs-guest-stage {
+  border: 1px solid var(--cs-color-border, #d3e1ee);
+  border-left: 3px solid var(--cs-color-action, #103f75);
+  border-radius: var(--cs-radius-sm, .65rem);
+  background: var(--cs-color-surface-soft, #f5f9fd);
+  padding: .58rem .7rem .68rem;
+  margin: .16rem 0;
+  gap: .28rem;
+}
+.cs-guest-stage > h3 {
+  color: var(--cs-color-accent-text, #174b77);
+  font-size: .89rem;
+  line-height: 1.4;
+}
+.cs-guest-stage > :is(input, select) { background: var(--cs-color-surface, #fff); }
+.login-surface .login-passkey-action {
+  background: transparent;
+  border-color: var(--cs-color-border-strong, #9bb5cb);
+  color: var(--cs-color-accent-text, #174b77);
+  font-weight: 680;
+}
+.login-surface .login-passkey-action:hover:not(:disabled) {
+  background: var(--cs-color-accent-soft, #eaf3fb);
+}
+@media (max-width: 400px) {
+  .cs-guest-process > form > .cs-guest-stage,
+  section[aria-labelledby="confirm-heading"] > form > .cs-guest-stage {
+    padding: .48rem .55rem .57rem;
+  }
+}
+@media (forced-colors: active) {
+  .cs-guest-process > form > .cs-guest-stage,
+  section[aria-labelledby="confirm-heading"] > form > .cs-guest-stage {
+    border-color: CanvasText;
+    background: Canvas;
+  }
+  .cs-guest-stage > h3, .login-surface .login-passkey-action {
+    color: CanvasText;
+  }
+}

@@ -493,3 +493,35 @@
 @media (forced-colors: active) {
   .cs-membership-field > label, .cs-membership-review .identity-approval-confirm { color: CanvasText; }
 }
+
+
+/* F02 buyer consistency: task-first account actions stay full-width,
+   keyboard reachable and >=44px while using less repeated empty space. */
+.identity-workspace .institutional-task__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.35rem;
+  padding: .78rem 1rem;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.identity-workspace .institutional-task__trigger:hover:not(:disabled) {
+  border-color: var(--cs-color-border-strong, #9bb5cb);
+  background: var(--cs-color-surface-soft, #f5f9fd) !important;
+}
+.identity-workspace__lead {
+  max-width: 65ch;
+  line-height: 1.55;
+}
+@media (max-width: 480px) {
+  .identity-workspace { row-gap: .75rem; }
+  .identity-workspace .institutional-task__trigger { min-height: 3.15rem; padding: .73rem .85rem; }
+  .identity-workspace__lead { margin-bottom: .25rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .identity-workspace .institutional-task__trigger { transition: none; }
+}
+@media (forced-colors: active) {
+  .identity-workspace .institutional-task__trigger { border-color: ButtonText; }
+}

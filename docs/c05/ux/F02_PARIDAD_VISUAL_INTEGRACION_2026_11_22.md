@@ -90,3 +90,16 @@ La siguiente CI debe ejecutar nuevamente los cinco escenarios y las 65 superfici
 **QA adicional:** cuatro nuevas pruebas Playwright con fixtures sintéticos de solo lectura para preservar controles `required` y flujo a 320/768. El auditor de fuente A/B/C falla cerrado si se tocan rutas o ficheros no enumerados; incluye `identity-workspace.component.html/css` además de los 11 archivos ya auditados, sin cambio en backend, database o contraseñas. El workflow de la rama ejecuta regresiones de F02–F06 y Angular→.NET 10→MySQL 8.4 en base desechable. **Los resultados del SHA anterior no se extrapolan a los commits posteriores.**
 
 **Gate de certificación integral:** seguir **NO-GO** hasta verificar la CI del SHA nuevo, regenerar evidencias individuales, revisar nuevamente las 65 interfaces y demostrar un mínimo de ≥9.5/10 por interfaz, con aprobación editorial real. No fusionar PR #175/#179/#180 ni activar F03/F07/C06 por esta adenda.
+
+
+---
+
+## 8. Ronda de homologación integral de patrones — aplicación sin modificar controles de identidad
+
+**Base**: dictamen editorial orientativo de 65 vistas sobre SHA \`423aada6e420c3698dabd247ba76fe59d9428fd4\` (12 candidatas ≥9.5, 53 con mejoras pendientes). La nota subjetiva no sustituye un ensayo de usabilidad.
+
+**Correcciones transversales de causa común**: (1) modal seguro con área útil mejor aprovechada a 320–480px, manteniendo encabezado, advertencia completa, foco, cuerpo desplazable y pie fijo; (2) invitación, relación y confirmación con etapas delimitadas mediante el mismo azul y fondo institucional, sin eliminar términos, contraseña ni MFA; (3) alternativa passkey claramente secundaria respecto de login convencional; (4) lanzadores de tareas de cuenta y de operador de tamaño táctil seguro, alineados y sin filas vacías excesivas. Se conservaron el contraste forzado y la reducción de movimiento.
+
+**Pruebas adicionales**: cinco Playwright (320/390/768/1024/1440) de geometría de diálogo con la CTA protegida, botón Cerrar, ausencia de clip horizontal y cabecera separada del pie. Se mantienen inventario 65×5, 3 auditorías A/B/C, todas las regresiones y Angular→.NET10→MySQL8.4 real en entorno desechable.
+
+**Certificación**: un resultado técnico verde en el nuevo SHA permite certificar solo la remediación en su alcance. La valoración final por cada una de las 65 experiencias y el umbral comercial ≥9.5 no se deben conceder automáticamente por CSS, CI o por solicitud de cierre. Se exige nueva evidencia en el SHA resultante, revisión visual, y acta explícita sin P0/P1.

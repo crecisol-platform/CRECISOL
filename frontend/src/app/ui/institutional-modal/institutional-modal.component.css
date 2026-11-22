@@ -313,3 +313,20 @@
 @media (max-width: 400px) and (min-height: 561px) {
   .cs-modal { max-height: min(92dvh, 54rem); }
 }
+
+
+/* F02 acceptance hardening: retain the full security warning and sticky footer,
+   reclaim non-functional chrome only on tall portrait phones. No form hiding. */
+@media (max-width: 480px) and (min-height: 561px) {
+  .cs-modal { width: calc(100% - .75rem); max-height: min(94dvh, 54rem); }
+  .cs-modal__header { padding: .8rem .9rem; }
+  .cs-modal h2 { font-size: clamp(1.2rem, 5.4vw, 1.45rem); line-height: 1.2; }
+  .cs-modal__description { margin-top: .3rem; font-size: .89rem; line-height: 1.45; }
+  .cs-modal__content { padding: .83rem .92rem; scroll-padding-bottom: 1.5rem; }
+  .cs-modal__warning { margin-bottom: .75rem; padding: .7rem .8rem; line-height: 1.46; }
+  .cs-modal__stepper { margin-bottom: .7rem; }
+  .cs-modal__footer { padding: .58rem .85rem; }
+}
+@media (forced-colors: active) {
+  .cs-modal__content { scrollbar-color: CanvasText Canvas; }
+}

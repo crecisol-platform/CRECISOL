@@ -1635,3 +1635,41 @@ for (const journey of f02LongJourneys) {
       document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
   });
 }
+
+
+/** F02 buyer gate: responsive dialog chrome and reachable action must remain
+ * intact at all five catalog widths. No DOM/authorization shortcuts. */
+for (const width of [320, 390, 768, 1024, 1440]) {
+  test('F02 premium protected-dialog geometry and readable chrome at ' + width + 'px', async ({ page }) => {
+    await page.setViewportSize({ width, height: 720 });
+    await operator(page);
+    const navigation = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
+    await navigation.getByRole('button', { name: 'Casos', exact: true }).click();
+    await page.getByRole('button', { name: 'Revisar identidad del titular', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Revisar identidad del titular' });
+    await expect(dialog).toBeVisible();
+    const metric = await dialog.evaluate(node => {
+      const dialogBox = node.getBoundingClientRect();
+      const head = node.querySelector('.cs-modal__header')?.getBoundingClientRect();
+      const foot = node.querySelector('.cs-modal__footer')?.getBoundingClientRect();
+      const content = node.querySelector('.cs-modal__content') as HTMLElement | null;
+      const title = node.querySelector('h2');
+      const titleFont = title ? parseFloat(getComputedStyle(title).fontSize) : 0;
+      return { left: dialogBox.left, right: dialogBox.right, top: dialogBox.top,
+        bottom: dialogBox.bottom, headBottom: head?.bottom || 0,
+        footTop: foot?.top || 0, titleFont,
+        contentScrollable: !!content && content.scrollHeight >= content.clientHeight };
+    });
+    expect(metric.left).toBeGreaterThanOrEqual(-1);
+    expect(metric.right).toBeLessThanOrEqual(width + 1);
+    expect(metric.top).toBeGreaterThanOrEqual(-1);
+    expect(metric.bottom).toBeLessThanOrEqual(721);
+    expect(metric.titleFont).toBeGreaterThanOrEqual(19);
+    expect(metric.headBottom).toBeLessThanOrEqual(metric.footTop);
+    expect(metric.contentScrollable).toBe(true);
+    await expect(dialog.getByRole('button', { name: 'Registrar revisión de identidad' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Cerrar', exact: true })).toBeVisible();
+    await expect.poll(() => page.evaluate(() =>
+      document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+  });
+}
