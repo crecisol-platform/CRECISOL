@@ -1568,6 +1568,14 @@ async function openEditorialModalByField(page: Page, inputId: string): Promise<v
     const component = host && (window as DebugWindow).ng?.getComponent(host);
     if (!component || typeof component.open !== 'function')
       throw Error('F02 editorial fixture: native dialog unavailable for ' + id);
+    // A browser-approval task is inside an initially closed <details>.
+    // Expand its ancestors just as a user would, then open the native dialog.
+    // This changes only the synthetic test navigation, never authorization.
+    let ancestor: Element | null = host;
+    while (ancestor) {
+      if (ancestor instanceof HTMLDetailsElement) ancestor.open = true;
+      ancestor = ancestor.parentElement;
+    }
     component.open();
   }, inputId);
 }
