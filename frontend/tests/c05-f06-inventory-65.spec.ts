@@ -648,6 +648,9 @@ for (const size of sizes) {
     const operatorCode = page.locator('cs-platform-identity-panel .cs-one-time-codes__value');
     await expect(operatorCode).toHaveCount(1);
     await expect(operatorCode).toHaveText('B'.repeat(32));
+    // One accessible label maps to a single panel, not an identically named list.
+    // The real Angular -> API -> MySQL E2E uses this same accessible selector.
+    await expect(page.getByLabel('Códigos de respaldo del operador')).toHaveCount(1);
     await expect(operatorCode).toHaveAttribute('tabindex', '0');
     await expect(operatorCode).toHaveCSS('white-space', 'nowrap');
     await expect.poll(() => page.evaluate(() =>
