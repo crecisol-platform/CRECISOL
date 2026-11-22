@@ -20,8 +20,7 @@
   </header>
   <div #scrollBody class="cs-modal__content" role="region" aria-label="Contenido de la operación" tabindex="0" (scroll)="updateScrollCue()">
     @if (kind() === 'destructive') {
-      <div class="cs-modal__warning" role="note">
-        <strong>Revisa antes de confirmar.</strong>
+      <div class="cs-modal__warning" role="note" aria-label="Advertencia de seguridad">
         <span>{{ warning() || 'Esta acción puede retirar acceso o invalidar credenciales. Verifica el elemento y la cuenta antes de continuar.' }}</span>
       </div>
     }
