@@ -490,7 +490,7 @@
              <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'pairing-approve' })">
               <label for="pair-token">Solicitud del navegador nuevo</label><input id="pair-token" name="token" [value]="incomingPairToken()" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
               <label for="pair-fingerprint">Huella del navegador nuevo</label><input id="pair-fingerprint" name="fingerprint" [value]="incomingPairFingerprint()" required pattern="[0-9A-F]{12}" autocomplete="off">
-              <label for="pair-code">MFA para aprobar este navegador</label><input id="pair-code" name="code" required maxlength="32" autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
+              <label for="pair-code">Código MFA para aprobar navegador</label><input id="pair-code" name="code" required maxlength="32" autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
               <label><input name="confirmed" type="checkbox" required> Comparé la huella y autorizo este navegador</label>
               <button [disabled]="busy()">Aprobar vinculación</button>
             </form>
