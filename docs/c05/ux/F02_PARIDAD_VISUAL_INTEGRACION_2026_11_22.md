@@ -51,3 +51,21 @@ En la primera ejecución del workflow de la rama (GitHub Actions **#45041325116*
 **Solución de causa raíz:** únicamente en el bloque C05 `form[csFieldFeedback]` del CSS compartido, se sustituyen **cinco valores** de color/borde/radio por `--cs-color-danger`, `--cs-color-danger-bg`, `--cs-color-danger-border` y `--cs-radius-sm`. El `!important` existente se conserva para no alterar las prioridades funcionales del formulario; ahora su color es el institucional. **No se cambian reglas de C01/C02 ni HTML, validaciones, permisos o datos.** El auditor A impone exactamente cinco líneas nuevas con tokens dentro del archivo global y no permite otras alteraciones silenciosas.
 
 La siguiente CI debe ejecutar nuevamente los cinco escenarios y las 65 superficies; esta adenda no presume su resultado ni otorga calificaciones humanas de 9.5/10.
+
+---
+
+## 6. Segunda ronda editorial — remediación de F01-005, F01-041 y F01-048
+
+**Hallazgo fuente:** tras [CI técnica previa #45041715189](https://github.com/crecisol-platform/CRECISOL/actions/runs/45041715189), 2/2 SUCCESS en SHA `af083c4d7fdc782f0db6fb6f5e0cdd5060a7c980` (374 Playwright, 340 E2E, 65×5 y 447 capturas), la inspección directa del PNG a 320 píxeles detectó dificultad editorial en:
+
+| ID | Evidencia anterior | Cambios actuales, sin modificar seguridad |
+| --- | --- | --- |
+| F01-005 invitación | La introducción y dos pasos obligatorios daban un formulario alto; no era aceptable ocultar consentimiento o MFA | Mensaje más concreto sobre token/autenticador, ritmo de etapas ajustado, nombre de ruta preservado, checkbox de aceptación y carga de condiciones intactos |
+| F01-041 revisión independiente | El cuerpo del modal a 320px tenía ~518px de desplazamiento; advertencia extensa y cinco campos separados por demasiada separación. 2 checks y MFA son obligatorios | Advertencia concisa mantiene registro permanente y segundo operador; campos agrupados como pares etiqueta/control, cinco requeridos; diseño a 1 columna en 320 y 2 en 768; dos declaraciones obligatorias visibles, sin bypass de revisión |
+| F01-048 correo operador | Ambas operaciones obligatorias aparecían en una hoja alta, difíciles de distinguir | Rail visual de dos etapas en el mismo modal, espaciados equilibrados, ambos formularios y códigos MFA conservados, sin colapsar el segundo o perder el campo token |
+
+**Pruebas adicionales:** tres Playwright explícitas del comprador en `frontend/tests/c05-f06-context-feedback.spec.ts` verifican las 3 superficies, 320/768px, dos confirmaciones obligatorias, los 5 campos requeridos, patrón de invitación y los cuatro campos del cambio de correo. El auditor A/B/C agrega a whitelist únicamente las dos plantillas HTML (`identity-guest` y `platform-operator-cases`) y bloquea borrado de campos críticos.
+
+**Declaración de alcance:** lo anterior son cambios presentacionales y de microcopy. Las dos acciones de correo y la revisión de identidad siguen siendo operaciones separadas que requieren autorización real en backend; el cliente no decide permisos. No se ha retirado ningún consentimiento, MFA, espera de recuperación, evidencia SHA-256 ni campo de auditoría.
+
+**Dictamen de esta ronda:** nuevas pruebas y artefacto deben terminar en el **SHA posterior a estos cambios** para evaluar los resultados. No extrapolar el SUCCESS del SHA anterior al nuevo. La aprobación editorial individual 65/65 ≥9.5 continúa pendiente y no se reemplaza por estilo calculado, pruebas sintéticas o esta nota. No fusionar el PR mientras falten gates y aceptación final.
