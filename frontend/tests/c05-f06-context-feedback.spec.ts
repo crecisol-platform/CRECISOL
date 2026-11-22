@@ -1353,8 +1353,15 @@ test('F06 buyer contextual public headings avoid misleading guest marketing', as
     for (const journey of journeys) {
       await page.goto('/cuenta?vista=' + journey.view);
       const aside = page.locator('.account-layout--guest .account-aside');
-      await expect(aside.getByRole('heading', { level: 1, name: journey.title })).toBeVisible();
-      await expect(aside).toContainText(journey.message);
+      if (journey.view === 'recuperar' && width === 320) {
+        // F06 intentionally removes this decorative hero on narrow recovery
+        // screens so the actual secured recovery form is the first task.
+        await expect(aside).toBeHidden();
+        await expect(aside).toContainText(journey.message);
+      } else {
+        await expect(aside.getByRole('heading', { level: 1, name: journey.title })).toBeVisible();
+        await expect(aside).toContainText(journey.message);
+      }
       await expect(page.getByRole('heading', { name: journey.task })).toBeVisible();
       await expect(page.getByRole('navigation', { name: 'Opciones de identidad' })).toHaveCount(0);
       await expect.poll(() => page.evaluate(() =>
