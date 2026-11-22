@@ -1489,3 +1489,68 @@ test('F06 buyer staged proofs preserve every mandatory security field', async ({
     }
   }
 });
+
+
+/** F02 mobile buyer invitation: no mandatory proof/consent may disappear to
+ * improve the mobile composition, and every step stays in normal tab order. */
+test('F02 mobile buyer invitation keeps proof, terms and explicit consent at 320px', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await account(page, 'invitacion', 'anonymous');
+  const journey = page.locator('cs-identity-guest .cs-guest-process--invitation');
+  await expect(journey).toBeVisible();
+  await expect(journey.locator('.cs-guest-stage')).toHaveCount(2);
+  for (const id of ['invite-mailbox', 'invite-password', 'invite-code', 'invite-token']) {
+    await expect(journey.locator('#' + id)).toHaveAttribute('required', '');
+  }
+  await expect(journey.locator('input[name="accepted"]')).toHaveAttribute('required', '');
+  await expect(journey.getByRole('button', { name: 'Cargar condiciones vigentes' })).toBeVisible();
+  await expect(journey.getByRole('button', { name: 'Aceptar invitación de cuenta' })).toBeDisabled();
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+});
+
+/** F02 buyer review: prove required independent confirmations remain visible,
+ * a single column fits mobile, and 768px uses the intended readable grid. */
+test('F02 mobile buyer identity review preserves secure attestations and responsive fields', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await operator(page);
+  const navigation = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
+  await navigation.getByRole('button', { name: 'Casos', exact: true }).click();
+  await page.getByRole('button', { name: 'Revisar identidad del titular', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Revisar identidad del titular' });
+  await expect(dialog).toBeVisible();
+  const form = dialog.locator('form.operator-identity-review');
+  await expect(form.locator('.operator-review-field')).toHaveCount(5);
+  for (const id of ['review-case', 'review-decision', 'review-evidence', 'review-reason', 'review-code'])
+    await expect(form.locator('#' + id)).toHaveAttribute('required', '');
+  await expect(form.locator('.operator-review-attestations input[type="checkbox"][required]')).toHaveCount(2);
+  await expect(dialog.locator('.cs-modal__warning')).toContainText('Otro operador debe revisar la identidad');
+  const columns = () => form.evaluate(el => getComputedStyle(el).gridTemplateColumns.trim().split(/\s+/).length);
+  expect(await columns(), 'a 320px la revisión conserva una columna legible').toBe(1);
+  await page.setViewportSize({ width: 768, height: 1024 });
+  expect(await columns(), 'a 768px la revisión distribuye campos en dos columnas').toBe(2);
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+  await expect(dialog.getByRole('button', { name: 'Registrar revisión de identidad' })).toBeVisible();
+});
+
+/** F02 operator mailbox: visual progression does not make step 2 disappear
+ * or remove MFA when the request flow has not yet completed. */
+test('F02 mobile buyer operator mailbox exposes both verified steps with separate MFA', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await operator(page);
+  const navigation = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
+  await navigation.getByRole('button', { name: 'Seguridad', exact: true }).click();
+  await page.getByRole('button', { name: 'Cambiar correo de operador', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Cambiar correo de operador' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('group', { name: '1. Solicitar el nuevo correo' })).toBeVisible();
+  await expect(dialog.getByRole('group', { name: '2. Confirmar el correo recibido' })).toBeVisible();
+  await expect(dialog.locator('.operator-mailbox-step > form')).toHaveCount(2);
+  for (const id of ['operator-new-mailbox','operator-mailbox-code',
+                    'operator-mailbox-token','operator-mailbox-confirm-code'])
+    await expect(dialog.locator('#' + id)).toHaveAttribute('required', '');
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+  await expect(dialog.getByRole('button', { name: 'Cerrar', exact: true })).toBeVisible();
+});
