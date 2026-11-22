@@ -51,14 +51,14 @@ form[csFieldFeedback] .cs-field-feedback {
   font-size: .81rem;
   font-weight: 650;
   line-height: 1.5;
-  color: #853b2f;
-  background: #fff4f0;
-  border: 1px solid #efd0c6;
-  border-radius: .5rem;
+  color: var(--cs-color-danger, #8b272e);
+  background: var(--cs-color-danger-bg, #fff2f2);
+  border: 1px solid var(--cs-color-danger-border, #eac3c4);
+  border-radius: var(--cs-radius-sm, .65rem);
   overflow-wrap: anywhere;
 }
 form[csFieldFeedback] [aria-invalid="true"] {
-  border-color: #b35442 !important;
+  border-color: var(--cs-color-danger, #8b272e) !important;
   outline-offset: 3px;
 }
 @media (forced-colors: active) {
