@@ -68,6 +68,18 @@ def main(root: Path, catalog: Path) -> None:
         "operator-session-expired-simulated-": "info",
     }
     scene_hashes=defaultdict(dict)
+    operator_tabs_expected = {
+        "Casos": "Casos de recuperación y revisión",
+        "Sesiones": "Sesiones de plataforma",
+        "Perfil": "Mi perfil de operador",
+        "Seguridad": "Seguridad de plataforma",
+        "Monitor": "Monitor de identidad",
+    }
+    operator_tab_screens = {
+        "mobile-320": 320, "mobile-390": 390, "tablet-768": 768,
+        "laptop-1024": 1024, "desktop-1440": 1440
+    }
+    operator_tabs_seen = defaultdict(set)
     for file in sorted(root.rglob("*.json")):
         if file.name==".last-run.json":
             continue
@@ -94,6 +106,20 @@ def main(root: Path, catalog: Path) -> None:
         check(png.as_posix() not in pngs,"PNG duplicado: "+str(png))
         pngs.add(png.as_posix())
         scene_id=str(data.get("id", ""))
+        operator_view = re.fullmatch(
+            r"operator-(Casos|Sesiones|Perfil|Seguridad|Monitor)-"
+            r"(mobile-320|mobile-390|tablet-768|laptop-1024|desktop-1440)",
+            scene_id,
+        )
+        if operator_view:
+            tab, size_name = operator_view.groups()
+            check(width == operator_tab_screens[size_name],
+                  "pantalla de operador con ancho mal etiquetado: " + scene_id)
+            check(operator_tabs_expected[tab] in (data.get("visibleHeadings") or []),
+                  "captura de pestaña " + tab + " refleja otra vista: " + scene_id)
+            check(tab not in operator_tabs_seen[width],
+                  "pestaña de operador duplicada: " + scene_id)
+            operator_tabs_seen[width].add(tab)
         for scene_prefix in set(semantic_scenes) | {prefix for pair in distinct_scenes for prefix in pair}:
             if scene_id.startswith(scene_prefix):
                 kinds=data.get("feedbackKinds")
@@ -127,6 +153,9 @@ def main(root: Path, catalog: Path) -> None:
     for width in sorted(viewports):
         miss=sorted(required-found[width])
         check(scrolled[width]>=1, f"{width}px no tiene prueba del pie de un modal largo")
+        check(operator_tabs_seen[width] == set(operator_tabs_expected),
+              f"{width}px pestañas de operador faltantes o mal etiquetadas: "
+              + str(set(operator_tabs_expected) - operator_tabs_seen[width]))
         for before, after in distinct_scenes:
             check(before in scene_hashes[width] and after in scene_hashes[width],
                   f"{width}px faltan comparaciones semánticas {before}/{after}")
