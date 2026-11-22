@@ -88,7 +88,8 @@ function surfaceIdsFor(id: string, modalTitle: string): readonly string[] {
   }
   if (id.startsWith('account-mfa-challenge')) add('C05-F01-007');
   if (id.startsWith('account-mfa-enrollment')) add('C05-F01-008');
-  if (id.startsWith('account-terms-current')) add('C05-F01-014');
+  // F01-014 requires the actual loaded policy text, not only its closed shell.
+  if (id.startsWith('account-terms-current-loaded-')) add('C05-F01-014');
   if (id.startsWith('public-pairing-')) add('C05-F01-015');
   if (id.startsWith('public-passkey-entry')) add('C05-F01-016');
   if (id.startsWith('operator-login-')) add('C05-F01-017');
