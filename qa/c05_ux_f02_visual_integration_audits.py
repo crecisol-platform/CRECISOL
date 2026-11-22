@@ -90,8 +90,7 @@ def audit_b() -> None:
                     "url(http:", "url(https:", "data:text/html"):
             require(bad not in css.lower(),
                     "external source or executable content: " + path + "/" + bad)
-        require(not re.search(r"(?im)(?:^|[;{}\
-])\\s*behavior\\s*:", css),
+        require(not re.search(r"(?im)(?:^|[;{])\s*behavior\s*:", css),
                 "legacy executable CSS behavior property: " + path)
         require("forced-colors: active" in css, "forced colors missing " + path)
         require("prefers-reduced-motion: reduce" in css or path == OPERATOR,
