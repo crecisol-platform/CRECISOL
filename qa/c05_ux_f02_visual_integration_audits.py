@@ -16,6 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 BASE = "d539b75d13cde64c8ea3279d33ab35b6349c1adf"
 FRONT = "frontend/src/app/"
+GLOBAL = "frontend/src/styles.css"
 MODAL = FRONT + "ui/institutional-modal/institutional-modal.component.css"
 FEEDBACK = FRONT + "ui/feedback/operation-feedback.component.css"
 OPERATOR = FRONT + "pages/platform-operator-f04.component.css"
@@ -24,8 +25,8 @@ TEST = "frontend/tests/c05-f06-context-feedback.spec.ts"
 WORKFLOW = ".github/workflows/c05-ux-f02-paridad-visual.yml"
 DOC = "docs/c05/ux/F02_PARIDAD_VISUAL_INTEGRACION_2026_11_22.md"
 SCRIPT = "qa/c05_ux_f02_visual_integration_audits.py"
-ALLOWED = {MODAL, FEEDBACK, OPERATOR, FORMS, TEST, WORKFLOW, DOC, SCRIPT}
-EDITED_CSS = (MODAL, FEEDBACK, OPERATOR, FORMS)
+ALLOWED = {MODAL, FEEDBACK, OPERATOR, FORMS, GLOBAL, TEST, WORKFLOW, DOC, SCRIPT}
+EDITED_CSS = (MODAL, FEEDBACK, OPERATOR, FORMS, GLOBAL)
 EXPECTED = {f"C05-F01-{i:03d}" for i in range(1, 66)}
 
 
@@ -54,6 +55,13 @@ def scope() -> list[str]:
             "out-of-scope changes: " + str(sorted(set(files) - ALLOWED)))
     require(all(x in files for x in EDITED_CSS + (TEST, DOC, SCRIPT, WORKFLOW)),
             "incomplete implementation/QA/acta")
+    # The global stylesheet also contains C01/C02. Limit its diff precisely
+    # to the five token substitutions in the C05 csFieldFeedback section.
+    patch = git("diff", "--unified=0", BASE + "...HEAD", "--", GLOBAL)
+    added = [line[1:].strip() for line in patch.splitlines()
+             if line.startswith("+") and not line.startswith("+++")]
+    require(len(added) == 5 and all("var(--cs-" in line for line in added),
+            "global stylesheet changes outside five C05 validation token lines")
     return files
 
 
@@ -98,6 +106,9 @@ def audit_b() -> None:
     feedback = read(FEEDBACK)
     modal = read(MODAL)
     form = read(FORMS)
+    require("form[csFieldFeedback] [aria-invalid=" in read(GLOBAL) and
+            "border-color: var(--cs-color-danger, #8b272e) !important;" in read(GLOBAL),
+            "global C05 error border still overrides semantic token")
     for key in ("--cs-color-info", "--cs-color-info-bg", "--cs-color-success",
                 "--cs-color-success-bg", "--cs-color-danger",
                 "--cs-color-danger-bg", "--cs-color-warning"):
@@ -124,7 +135,7 @@ def audit_c() -> None:
     css = {p: read(p) for p in EDITED_CSS}
     refs = {p: len(re.findall(r"var\(--cs-[a-z0-9-]+", text))
             for p, text in css.items()}
-    thresholds = {MODAL: 40, FEEDBACK: 15, OPERATOR: 40, FORMS: 35}
+    thresholds = {MODAL: 40, FEEDBACK: 15, OPERATOR: 40, FORMS: 35, GLOBAL: 17}
     for path, threshold in thresholds.items():
         require(refs[path] >= threshold,
                 path + " still detached from F02 (token usages: " + str(refs[path]) + ")")
