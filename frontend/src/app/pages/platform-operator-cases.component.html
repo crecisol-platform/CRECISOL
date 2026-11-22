@@ -69,7 +69,7 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog21.open()">
     <span>Revisar identidad del titular</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #opDialog21 kind="destructive" warning="La decisión se registra permanentemente. Otro operador debe revisar la identidad de forma independiente." title="Revisar identidad del titular" description="Requiere evidencia y MFA vigentes."
+  <cs-institutional-modal #opDialog21 kind="destructive" warning="Registro permanente. Otro operador debe revisar la identidad de forma independiente." title="Revisar identidad del titular" description="Requiere evidencia y MFA vigentes."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <form class="operator-identity-review" csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'review' })">
       <div class="operator-review-field">
