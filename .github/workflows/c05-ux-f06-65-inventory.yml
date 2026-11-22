@@ -4,6 +4,9 @@ on:
     branches: [feature/c05-ux-f06-mensajeria-estados-20261120]
     paths:
       - 'frontend/tests/c05-f06-inventory-65.spec.ts'
+      - 'frontend/tests/c05-f06-context-feedback.spec.ts'
+      - 'qa/c05_ux_f06_feedback_audits.py'
+      - '.github/workflows/c05-ux-f06-feedback.yml'
       - 'frontend/src/app/ui/institutional-modal/**'
       - 'frontend/src/styles.css'
       - 'frontend/src/app/identity/identity-api.service.ts'
