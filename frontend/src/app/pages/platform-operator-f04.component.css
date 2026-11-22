@@ -203,3 +203,28 @@
   .operator-card--policy .operator-tag { display: none; }
   .operator-workspace .operator-scope-details summary { min-height: 2.75rem; }
 }
+
+
+/* F06 buyer: both operator mailbox operations remain available. Distinguish
+   their sequence and keep native forms/MFA proof fields in the tab order. */
+.operator-mailbox-step {
+  display: grid;
+  gap: .15rem;
+  min-width: 0;
+  margin: .12rem 0 .2rem;
+  padding-top: .55rem;
+  border-top: 1px solid #d7e4f0;
+}
+.operator-mailbox-step + .operator-mailbox-step { margin-top: .6rem; }
+.operator-mailbox-step__title {
+  margin: 0 0 .15rem;
+  color: #215476;
+  font-size: .85rem;
+  line-height: 1.38;
+  font-weight: 800;
+}
+.operator-mailbox-step > form { margin: .1rem 0 .2rem; }
+@media (forced-colors: active) {
+  .operator-mailbox-step { border-color: CanvasText; }
+  .operator-mailbox-step__title { color: CanvasText; }
+}
