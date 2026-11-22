@@ -301,6 +301,36 @@ async function captureModals(page: Page, testInfo: TestInfo, prefix: string): Pr
     const dialog = page.locator('dialog.cs-modal:modal');
     await expect(dialog).toHaveCount(1);
     const id = prefix + '-modal-' + String(i + 1).padStart(2, '0') + '-' + label;
+    if (label.includes('Aprobar otro navegador')) {
+      await expect(dialog.getByRole('note', { name: 'Advertencia de seguridad' }))
+        .toContainText('nunca aceptes códigos enviados por terceros');
+      await expect(dialog.locator('.cs-modal__content > p')).toHaveCount(0);
+      await expect(dialog.locator('input[name="token"]'))
+        .toHaveAttribute('pattern', '[0-9a-fA-F]{64}');
+      await expect(dialog.locator('input[name="fingerprint"]'))
+        .toHaveAttribute('pattern', '[0-9A-F]{12}');
+      await expect(dialog.locator('input[name="code"]'))
+        .toHaveAttribute('pattern', '([0-9]{6}|[0-9a-fA-F]{32})');
+      await expect(dialog.locator('input[name="confirmed"]')).toHaveAttribute('required', '');
+    }
+    if (label.includes('Localizar una solicitud de identidad pendiente')) {
+      await expect(dialog.locator('input[name="reason"]')).toHaveAttribute('minlength', '12');
+      await expect(dialog.locator('input[name="code"]'))
+        .toHaveAttribute('pattern', '([0-9]{6}|[0-9a-fA-F]{32})');
+      await expect(dialog.locator('select[name="realm"]')).toHaveAttribute('required', '');
+    }
+    if (label.includes('Cambiar correo de operador')) {
+      await expect(dialog.getByRole('group', { name: '1. Solicitar el nuevo correo' })).toBeVisible();
+      await expect(dialog.getByRole('group', { name: '2. Confirmar el correo recibido' })).toBeVisible();
+      await expect(dialog.locator('form')).toHaveCount(2);
+      for (const code of ['operator-mailbox-code', 'operator-mailbox-confirm-code']) {
+        await expect(dialog.locator('#' + code))
+          .toHaveAttribute('pattern', '([0-9]{6}|[0-9a-fA-F]{32})');
+        await expect(dialog.locator('#' + code)).toHaveAttribute('required', '');
+      }
+      await expect(dialog.locator('input[name="token"]'))
+        .toHaveAttribute('pattern', '[0-9a-fA-F]{64}');
+    }
     if (label.includes('Revisar identidad del titular')) {
       await expect(dialog.getByRole('note', { name: 'Advertencia de seguridad' }))
         .toContainText('Otro operador debe revisar la identidad');
