@@ -40,9 +40,9 @@
         </section>
   }
   @case ('invitacion') {
-    <section class="cs-guest-process" aria-labelledby="guest-invitation-heading">
+    <section class="cs-guest-process cs-guest-process--invitation" aria-labelledby="guest-invitation-heading">
           <h2 id="guest-invitation-heading">Aceptar una invitación</h2>
-          <p>Comprueba tu identidad y el token recibido. Si aún no tienes autenticador, podrás configurarlo tras aceptar la invitación.</p>
+          <p>Usa tus credenciales y el token recibido. Si no tienes autenticador, podrás configurarlo tras aceptar, antes de iniciar sesión.</p>
           <form csFieldFeedback (reset)="inviteNeedsEnrollment.set(false)" (submit)="securityActionRequested.emit({ event: $event, action: 'invitation-accept' })">
             <div class="cs-guest-stage" role="group" aria-labelledby="invite-stage-identity">
               <h3 id="invite-stage-identity">1. Identidad y segundo factor</h3>
