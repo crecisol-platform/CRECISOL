@@ -21,12 +21,12 @@
   </button>
   <cs-institutional-modal #opDialog11 kind="form" title="Localizar una solicitud de identidad pendiente"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <p>Permite localizar un caso cuando el titular perdió su referencia o recibió una referencia neutra por una solicitud previa. Requiere un motivo de soporte y MFA fresco; no devuelve empresas, perfiles ni correos privados.</p>
+    <p>Si el titular perdió la referencia, localiza el caso con motivo de soporte y MFA vigente. No revela empresas, perfiles ni correos privados.</p>
           <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'find-case' })">
-            <label for="find-case-mail">Correo indicado por el titular del caso</label><input id="find-case-mail" name="mailbox" type="email" required maxlength="254" autocomplete="off">
-            <label for="find-case-realm">Ámbito del caso de identidad</label><select id="find-case-realm" name="realm" required><option value="">Selecciona el ámbito</option><option value="TENANT_IDENTITY">Identidad de negocio</option><option value="PLATFORM_OPERATOR">Operador de plataforma</option></select>
-            <label for="find-case-reason">Motivo de localización del caso</label><input id="find-case-reason" name="reason" required minlength="12" maxlength="240">
-            <label for="find-case-code">Código MFA para localizar caso</label><input id="find-case-code" name="code" required maxlength="32" autocomplete="one-time-code">
+            <label for="find-case-mail">Correo indicado por el titular</label><input id="find-case-mail" name="mailbox" type="email" required maxlength="254" autocomplete="off">
+            <label for="find-case-realm">Ámbito de identidad</label><select id="find-case-realm" name="realm" required><option value="">Selecciona el ámbito</option><option value="TENANT_IDENTITY">Identidad de negocio</option><option value="PLATFORM_OPERATOR">Operador de plataforma</option></select>
+            <label for="find-case-reason">Motivo de soporte</label><input id="find-case-reason" name="reason" required minlength="12" maxlength="240">
+            <label for="find-case-code">MFA para localizar el caso</label><input id="find-case-code" name="code" required maxlength="32" autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
             <button [disabled]="busy()">Localizar referencia de identidad</button>
           </form>
           @if (platform.locatedCase()) { <output aria-label="Referencia localizada de identidad">{{ platform.locatedCase() }}</output> }
