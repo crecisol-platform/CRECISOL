@@ -410,11 +410,19 @@ for (const size of sizes) {
           const owner = (window as DebugWindow).ng!.getComponent(el);
           owner.identity.recoveryCodes.set(['AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA']);
         });
+        const accountCode = page.locator('cs-identity-workspace .cs-one-time-codes__value');
+        await expect(accountCode).toHaveCount(1);
+        await expect(accountCode).toHaveText('A'.repeat(32));
+        await expect(accountCode).toHaveAttribute('tabindex', '0');
+        await expect(accountCode).toHaveCSS('white-space', 'nowrap');
+        await expect.poll(() => page.evaluate(() =>
+          document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
         await capture(page, testInfo, 'account-backup-codes-FAKE-ONLY-' + size.name);
         await page.evaluate(() => {
           const el = document.querySelector('cs-identity-portal')!;
           (window as DebugWindow).ng!.getComponent(el).identity.recoveryCodes.set([]);
         });
+        await expect(page.locator('cs-identity-workspace .cs-one-time-codes__value')).toHaveCount(0);
       }
       if (view === 'resumen') {
         const extras = page.locator('details.identity-summary-extras');
@@ -637,11 +645,19 @@ for (const size of sizes) {
       const el = document.querySelector('cs-platform-identity-panel')!;
       (window as DebugWindow).ng!.getComponent(el).platform.recoveryCodes.set(['BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB']);
     });
+    const operatorCode = page.locator('cs-platform-identity-panel .cs-one-time-codes__value');
+    await expect(operatorCode).toHaveCount(1);
+    await expect(operatorCode).toHaveText('B'.repeat(32));
+    await expect(operatorCode).toHaveAttribute('tabindex', '0');
+    await expect(operatorCode).toHaveCSS('white-space', 'nowrap');
+    await expect.poll(() => page.evaluate(() =>
+      document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
     await capture(page, testInfo, 'operator-backup-codes-FAKE-ONLY-' + size.name);
     await page.evaluate(() => {
       const el = document.querySelector('cs-platform-identity-panel')!;
       (window as DebugWindow).ng!.getComponent(el).platform.recoveryCodes.set([]);
     });
+    await expect(page.locator('cs-platform-identity-panel .cs-one-time-codes__value')).toHaveCount(0);
     await page.getByRole('button', { name: 'Reemplazar MFA de operador', exact: true }).click();
     const operatorDialog = page.getByRole('dialog', { name: 'Reemplazar MFA de operador' });
     await expect(operatorDialog).toBeVisible();
