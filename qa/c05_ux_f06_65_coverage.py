@@ -134,6 +134,11 @@ def main(root: Path, catalog: Path) -> None:
             if catalog_types[surface] == "modal":
                 check(data.get("dialogsOpen")==1 and bool(data.get("modalTitle")),
                       "modal inventariado sin dialogo visible: "+str(file))
+            if surface == "C05-F01-014":
+                check(scene_id.startswith("account-terms-current-loaded-")
+                      and data.get("route") == "/cuenta?vista=ingresar"
+                      and "Condiciones qa-f01" in (data.get("visibleHeadings") or []),
+                      "F01-014 requiere condiciones cargadas, no solo el menú de acceso")
             if surface == "C05-F01-057":
                 check(scene_id.startswith("account-historial-empty-")
                       and data.get("route") == "/cuenta?vista=historial"
