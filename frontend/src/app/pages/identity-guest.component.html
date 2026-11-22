@@ -18,10 +18,10 @@
           <form csFieldFeedback (submit)="confirmRequested.emit($event)">
             <div class="cs-guest-stage" role="group" aria-labelledby="confirm-stage-proof">
               <h3 id="confirm-stage-proof">1. Verificación del correo</h3>
-            <label for="proof-id">Identificador recibido</label>
+            <label for="proof-id">Identificador de confirmación</label>
             <input id="proof-id" name="proofId" type="text" autocomplete="off"
               required maxlength="36" pattern="[0-9a-fA-F-]{36}">
-            <label for="proof-code">Código recibido (64 caracteres)</label>
+            <label for="proof-code">Código de confirmación</label>
             <input id="proof-code" name="proofCode" type="text" inputmode="text"
               autocomplete="one-time-code" required minlength="64" maxlength="64"
               pattern="[0-9a-fA-F]{64}">
@@ -31,7 +31,7 @@
             <label for="completion-mailbox">Correo de la solicitud</label>
             <input id="completion-mailbox" name="completionMailbox" type="email" autocomplete="email"
               required maxlength="254">
-            <label for="completion-password">Nueva contraseña (mínimo 15 caracteres)</label>
+            <label for="completion-password">Crear contraseña</label>
             <input id="completion-password" name="completionPassword" type="password"
               autocomplete="new-password" required minlength="15" maxlength="128">
             </div>
