@@ -1,29 +1,30 @@
-:host { display: block; color: #17314e; }
+/* F02 visual parity: native forms retain their labels, controls and submit. */
+:host { display: block; color: var(--cs-color-text, #172d46); }
 section { margin: 0; padding: 0; }
-h2 { font-size: clamp(1.55rem, 3vw, 2rem); line-height: 1.2; letter-spacing: -.035em; margin: 0 0 1rem; color: #132e4a; }
+h2 { font-size: clamp(1.55rem, 3vw, 2rem); line-height: 1.2; letter-spacing: -.035em; margin: 0 0 1rem; color: var(--cs-color-text-strong, #102e4c); }
 h3 { font-size: 1.12rem; margin: 1.6rem 0 .9rem; }
-p { color: #526a81; font-size: .96rem; line-height: 1.6; margin: 0 0 1.1rem; }
+p { color: var(--cs-color-muted, #455f79); font-size: .96rem; line-height: 1.6; margin: 0 0 1.1rem; }
 form { display: grid; gap: .55rem; width: 100%; margin: 1.25rem 0; }
-label { display: block; font-size: .88rem; font-weight: 680; line-height: 1.5; color: #273e55; margin-top: .35rem; }
+label { display: block; font-size: .88rem; font-weight: 680; line-height: 1.5; color: var(--cs-color-text-strong, #102e4c); margin-top: .35rem; }
 label:has(input[type='checkbox']) { display: flex; gap: .6rem; align-items: start; }
-input:not([type='checkbox']):not([type='file']), select { display: block; width: 100%; max-width: 100%; min-height: 3rem; box-sizing: border-box; border: 1px solid #b9c9da; border-radius: .6rem; padding: .65rem .8rem; font: inherit; color: #172d46; background: #fff; }
+input:not([type='checkbox']):not([type='file']), select { display: block; width: 100%; max-width: 100%; min-height: 3rem; box-sizing: border-box; border: 1px solid var(--cs-color-border-strong, #9bb5cb); border-radius: var(--cs-radius-sm, .65rem); padding: .65rem .8rem; font: inherit; color: var(--cs-color-text, #172d46); background: var(--cs-color-surface, #fff); }
 input[type='file'] { display: block; width: 100%; max-width: 100%; box-sizing: border-box; font: inherit; padding: .5rem 0; }
-input[type='checkbox'] { flex: 0 0 auto; width: 1.1rem; height: 1.1rem; accent-color: #14568e; margin: .2rem 0 0; }
-input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid #126aaf; outline-offset: 3px; }
-button { min-height: 3rem; padding: .7rem 1.1rem; border: 1px solid #10436e; border-radius: .65rem; background: #103f75; color: #fff; font: inherit; font-weight: 750; cursor: pointer; max-width: 100%; overflow-wrap: anywhere; }
-button:hover:not(:disabled) { background: #0a315d; }
+input[type='checkbox'] { flex: 0 0 auto; width: 1.1rem; height: 1.1rem; accent-color: var(--cs-color-action, #103f75); margin: .2rem 0 0; }
+input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid var(--cs-color-focus, #126aaf); outline-offset: 3px; }
+button { min-height: 3rem; padding: .7rem 1.1rem; border: 1px solid var(--cs-color-action, #103f75); border-radius: var(--cs-radius-sm, .65rem); background: var(--cs-color-action, #103f75); color: var(--cs-color-action-text, #fff); font: inherit; font-weight: 750; cursor: pointer; max-width: 100%; overflow-wrap: anywhere; }
+button:hover:not(:disabled) { background: var(--cs-color-action-hover, #0b315c); }
 button:disabled { cursor: not-allowed; opacity: .58; }
-button[type='button'] { background: #eef5fc; border-color: #d1dfed; color: #174a79; }
-button[type='button']:hover:not(:disabled) { background: #dceaf8; }
-details { border-top: 1px solid #e1eaf2; padding: 1rem 0; margin-top: .7rem; }
-summary { cursor: pointer; font-weight: 720; color: #174672; padding: .3rem 0; line-height: 1.5; }
+button[type='button'] { background: var(--cs-color-accent-soft, #eaf3fb); border-color: var(--cs-color-border, #d3e1ee); color: var(--cs-color-accent-text, #174b77); }
+button[type='button']:hover:not(:disabled) { background: var(--cs-color-surface-soft, #f5f9fd); }
+details { border-top: 1px solid var(--cs-color-border, #d3e1ee); padding: 1rem 0; margin-top: .7rem; }
+summary { cursor: pointer; font-weight: 720; color: var(--cs-color-accent-text, #174b77); padding: .3rem 0; line-height: 1.5; }
 details[open] > summary { margin-bottom: 1.3rem; }
-aside { border: 1px solid #d4e4f2; padding: 1.2rem; border-radius: .9rem; background: #f3f8fc; margin: 1.1rem 0; }
+aside { border: 1px solid var(--cs-color-border, #d3e1ee); padding: 1.2rem; border-radius: var(--cs-radius-md, .85rem); background: var(--cs-color-surface-soft, #f5f9fd); margin: 1.1rem 0; }
 img { max-width: 100%; height: auto; border-radius: .75rem; }
 output, code, li { overflow-wrap: anywhere; }
 ul { padding-left: 1.25rem; line-height: 1.7; }
 section > button { margin: .4rem .5rem .4rem 0; }
-section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e3ebf2; }
+section > form + form { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--cs-color-border, #d3e1ee); }
 .operator-panel { border: 0; padding: 0; }
 .operator-panel h2 { display: none; }
 :host :focus-visible { outline: 3px solid #126aaf; outline-offset: 3px; }
@@ -440,4 +441,18 @@ section[aria-labelledby="confirm-heading"] > form > .cs-guest-stage {
 @media (forced-colors: active) {
   .cs-guest-stage { border-top-color: CanvasText; }
   .cs-guest-stage > h3 { color: CanvasText; }
+}
+
+/* F02 parity: a field rejected by secure host validation is visibly different
+   from the neutral field, regardless of help-text length. This is appearance
+   only: Angular and the backend remain the validation authorities. */
+:host :is(input:not([type='checkbox']), select, textarea)[aria-invalid='true'] {
+  border-color: var(--cs-color-danger, #8b272e);
+  box-shadow: 0 0 0 1px var(--cs-color-danger, #8b272e);
+}
+@media (forced-colors: active) {
+  :host :is(input:not([type='checkbox']), select, textarea)[aria-invalid='true'] {
+    border: 2px solid Mark;
+    box-shadow: none;
+  }
 }
