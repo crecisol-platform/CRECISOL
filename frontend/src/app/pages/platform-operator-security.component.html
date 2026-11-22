@@ -43,15 +43,15 @@
       <h3 id="operator-mail-request-stage" class="operator-mailbox-step__title">1. Solicitar el nuevo correo</h3>
     <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'mailbox-request' })">
             <label for="operator-new-mailbox">Nuevo correo del operador</label><input id="operator-new-mailbox" name="mailbox" type="email" required maxlength="254" autocomplete="email">
-            <label for="operator-mailbox-code">MFA para solicitar el cambio</label><input id="operator-mailbox-code" name="code" required maxlength="32" autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
+            <label for="operator-mailbox-code">Código MFA para solicitar correo de operador</label><input id="operator-mailbox-code" name="code" required maxlength="32" autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
             <button [disabled]="busy()">Solicitar nuevo correo de operador</button>
           </form>
     </div>
     <div class="operator-mailbox-step" role="group" aria-labelledby="operator-mail-confirm-stage">
       <h3 id="operator-mail-confirm-stage" class="operator-mailbox-step__title">2. Confirmar el correo recibido</h3>
           <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'mailbox-complete' })">
-            <label for="operator-mailbox-token">Token de confirmación del correo</label><input id="operator-mailbox-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
-            <label for="operator-mailbox-confirm-code">MFA para confirmar el cambio</label><input id="operator-mailbox-confirm-code" name="code" required maxlength="32" autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
+            <label for="operator-mailbox-token">Token del nuevo correo de operador</label><input id="operator-mailbox-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
+            <label for="operator-mailbox-confirm-code">Código MFA para confirmar correo de operador</label><input id="operator-mailbox-confirm-code" name="code" required maxlength="32" autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
             <button [disabled]="busy()">Confirmar correo de operador</button>
           </form>
     </div>
