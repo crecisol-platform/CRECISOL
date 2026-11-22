@@ -14,19 +14,19 @@
   @case ('confirmar') {
     <section aria-labelledby="confirm-heading">
           <h2 id="confirm-heading">Confirmar correo</h2>
-          <p>Confirma el correo y crea una cuenta pendiente de aprobación. La solicitud no concede acceso.</p>
+          <p>Verifica los datos recibidos y define tu contraseña. La cuenta seguirá pendiente de aprobación.</p>
           <form csFieldFeedback (submit)="confirmRequested.emit($event)">
-            <label for="proof-id">Identificador de confirmación</label>
+            <label for="proof-id">Identificador recibido</label>
             <input id="proof-id" name="proofId" type="text" autocomplete="off"
               required maxlength="36" pattern="[0-9a-fA-F-]{36}">
-            <label for="proof-code">Código de confirmación</label>
+            <label for="proof-code">Código recibido (64 caracteres)</label>
             <input id="proof-code" name="proofCode" type="text" inputmode="text"
               autocomplete="one-time-code" required minlength="64" maxlength="64"
               pattern="[0-9a-fA-F]{64}">
             <label for="completion-mailbox">Correo de la solicitud</label>
             <input id="completion-mailbox" name="completionMailbox" type="email" autocomplete="email"
               required maxlength="254">
-            <label for="completion-password">Crear contraseña</label>
+            <label for="completion-password">Nueva contraseña (mínimo 15 caracteres)</label>
             <input id="completion-password" name="completionPassword" type="password"
               autocomplete="new-password" required minlength="15" maxlength="128">
             <button type="submit" [disabled]="busy() || identity.restoring()">{{ busy() ? 'Verificando…' : 'Crear cuenta pendiente' }}</button>
@@ -36,7 +36,7 @@
   @case ('invitacion') {
     <section class="cs-guest-process" aria-labelledby="guest-invitation-heading">
           <h2 id="guest-invitation-heading">Aceptar una invitación</h2>
-          <p>Usa tu cuenta verificada. Si todavía no tienes autenticador, puedes configurarlo. Revisa las condiciones antes de aceptar.</p>
+          <p>Comprueba tu identidad y el token recibido. Si aún no tienes autenticador, podrás configurarlo tras aceptar la invitación.</p>
           <form csFieldFeedback (reset)="inviteNeedsEnrollment.set(false)" (submit)="securityActionRequested.emit({ event: $event, action: 'invitation-accept' })">
             <label for="invite-mailbox">Correo invitado</label><input id="invite-mailbox" name="mailbox" type="email" autocomplete="username" required maxlength="254">
             <label for="invite-password">Contraseña de la cuenta invitada</label><input id="invite-password" name="password" type="password" autocomplete="current-password" required maxlength="128">
@@ -74,13 +74,13 @@
   @case ('acceso-existente') {
     <section class="cs-guest-process" aria-labelledby="guest-existing-heading">
           <h2 id="guest-existing-heading">Solicitar acceso con mi cuenta</h2>
-          <p>Verifica tu correo, contraseña y MFA. La solicitud requiere aprobación; conocer un correo no concede acceso.</p>
+          <p>Solicita otra relación sin transferir permisos. Necesitarás tu segundo factor y la confirmación del correo.</p>
           <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'membership-request' })">
-            <label for="join-mailbox">Correo de mi identidad existente</label><input id="join-mailbox" name="mailbox" type="email" required maxlength="254" autocomplete="username">
-            <label for="join-password">Contraseña de mi identidad existente</label><input id="join-password" name="password" type="password" required maxlength="128" autocomplete="current-password">
-            <label for="join-code">Código MFA para solicitar relación</label><input id="join-code" name="code" required maxlength="32" autocomplete="one-time-code">
-            <label for="join-proof-id">Identificador de confirmación para solicitar relación</label><input id="join-proof-id" name="proofId" required maxlength="36">
-            <label for="join-proof-code">Código de correo para solicitar relación</label><input id="join-proof-code" name="proofCode" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
+            <label for="join-mailbox">Correo de tu cuenta</label><input id="join-mailbox" name="mailbox" type="email" required maxlength="254" autocomplete="username">
+            <label for="join-password">Contraseña actual</label><input id="join-password" name="password" type="password" required maxlength="128" autocomplete="current-password">
+            <label for="join-code">Código MFA o de respaldo</label><input id="join-code" name="code" required maxlength="32" autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
+            <label for="join-proof-id">Identificador de confirmación</label><input id="join-proof-id" name="proofId" required maxlength="36">
+            <label for="join-proof-code">Código del correo (64 caracteres)</label><input id="join-proof-code" name="proofCode" required minlength="64" maxlength="64" pattern="[0-9a-fA-F]{64}" autocomplete="off">
 
             @if (identity.terms(); as terms) {
               <details class="cs-guest-terms">
