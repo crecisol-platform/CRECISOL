@@ -20,7 +20,7 @@ Se conserva la cabecera, navegación y avisos institucionales. Las etiquetas y a
 
 ## 2. Alcance, dependencias y riesgos
 
-Exactamente **10 rutas**: cinco plantillas HTML de operadores, CSS F04, especificación Playwright F04, auditoría premium A/B/C, este documento y nuevo workflow CI. Ni frontend genérico, ni backend, base de datos, API, contratos de autorización, roles, cookies, MFA, Documento Maestro, rama `dev`, `main`, SOLQARYN, VPS ni producción se cambian.
+Exactamente **12 rutas**: cinco plantillas HTML de operadores, CSS F04 y CSS premium segregado, modelo TS con cinco styleUrls, especificación Playwright F04, auditoría premium A/B/C, este documento y nuevo workflow CI. Ni frontend genérico, ni backend, base de datos, API, contratos de autorización, roles, cookies, MFA, Documento Maestro, rama `dev`, `main`, SOLQARYN, VPS ni producción se cambian.
 
 Base SHA fija: `31ff32d348606e77d311b6250a0e341eb052485a`. Cualquier divergencia del diff es NO-GO. **0 P0/P1** demostrados en el alcance de las pruebas es requisito de aprobación; no se presupone ausencia de riesgos no probados.
 
@@ -39,3 +39,7 @@ CI requerida: TypeScript, Angular 22 Node24, Chromium, F04 25 capturas+25 prueba
 Notas finales exigidas: cinco calificaciones IA justificadas individualmente y >=9.5/10, sin promedio sustitutivo. Se revisarán los PNG originales a 320,390,768,1024,1440 con especial atención a casos protegidos, MFA, sesiones, monitor y privacidad. Las notas históricas 9.0–9.2 no representan el código nuevo.
 
 **F04 se puede fusionar únicamente a su rama base candidata F06 después de CI verde y acta; no habilita C06 ni entrega productiva.** La CI F06 preexistente que compara un allowlist contra una base antigua requiere reconciliación separada, registrada en #179. No relajar esa barrera en este trabajo de F04.
+
+### Reparación del presupuesto CSS
+
+La primera CI F04 #45183537220 aprobó A/B/C pero falló al compilar Angular: el CSS combinado del componente superó el máximo de 22 KB (23.59 KB compilados). Se conserva el límite; se separa exclusivamente la nueva capa premium en `platform-operator-f04-premium.component.css` cargada por las cinco vistas de plataforma desde `platform-operator-views.component.ts`. CSS original restaurado con solo una nota de localización. Ninguna regla global o seguridad fue modificada. Nueva CI obligatoria antes de calificar.

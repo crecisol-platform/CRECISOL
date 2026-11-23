@@ -12,11 +12,13 @@ VIEWS = ("cases", "sessions", "profile", "security", "monitor")
 LABELS = ("casos", "sesiones", "perfil", "seguridad", "monitor")
 FILES = tuple(P + "platform-operator-" + view + ".component.html" for view in VIEWS)
 CSS = P + "platform-operator-f04.component.css"
+CSS_PREMIUM = P + "platform-operator-f04-premium.component.css"
+MODEL = P + "platform-operator-views.component.ts"
 TEST = "frontend/tests/c05-f04-operators.spec.ts"
 AUDIT = "qa/c05_ux_f04_premium_audits.py"
 DOC = "docs/c05/ux/F04_PREMIUM_95_AUDITORIAS_2026_11_23.md"
 WORKFLOW = ".github/workflows/c05-ux-f04-premium-9p5.yml"
-ALLOWED = set(FILES) | {CSS, TEST, AUDIT, DOC, WORKFLOW}
+ALLOWED = set(FILES) | {CSS, CSS_PREMIUM, MODEL, TEST, AUDIT, DOC, WORKFLOW}
 
 
 def need(ok: bool, message: str) -> None:
@@ -89,7 +91,9 @@ def B() -> None:
 
 def C() -> None:
     scope()
-    css, tests = read(CSS), read(TEST)
+    css, tests = read(CSS_PREMIUM), read(TEST)
+    need("platform-operator-f04-premium.component.css" in read(MODEL),
+         "five views do not load split CSS")
     for marker in ("operator-card--lookup", "operator-action--danger",
                    "operator-card--profile", "operator-security-actions",
                    "operator-stat--total", "max(44px", "forced-colors: active",
