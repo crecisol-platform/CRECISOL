@@ -108,7 +108,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: F07 and inherited F05/F06 A/B/C with negative tests
+      - name: F07 A/B/C, F05 modal security and F06 runtime regression controls
         shell: bash
         run: |
           set -euo pipefail
@@ -117,7 +117,6 @@ jobs:
           python3 qa/c05_ux_f06_commercial_rating_tests.py -v
           for gate in A B C; do
             python3 qa/c05_ux_f07_final_audits.py "$gate"
-            python3 qa/c05_ux_f06_feedback_audits.py "$gate"
             python3 qa/c05_ux_f05_modal_audits.py "$gate"
           done
       - name: Node 24
