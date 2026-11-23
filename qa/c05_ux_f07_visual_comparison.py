@@ -25,6 +25,15 @@ VIEWPORTS = (320, 390, 768, 1024, 1440)
 ratio_threshold = 0.05
 mean_threshold = 10.0
 
+# Twenty approved auxiliary scenes (four per viewport) have no F01 catalog ID
+# by design; they STILL must be compared and may never be silently dropped.
+AUXILIARY_SCENE_PREFIXES = (
+    "operator-sessions-empty-synthetic-",
+    "account-terms-current-",
+    "public-invitation-mfa-setup-choice-",
+    "account-historial-populated-",
+)
+
 
 def need(ok: bool, reason: str) -> None:
     if not ok:
@@ -106,13 +115,21 @@ def main() -> None:
     deltas = []
     by_id = defaultdict(list)
     coverage = defaultdict(set)
+    auxiliary_by_width = defaultdict(set)
     failures = []
     for key in sorted(new, key=lambda k: (k[1], k[0])):
         original, recent = old[key], new[key]
         ratio, mean, digest = compare_scene(original, recent)
         ids = recent["data"]["inventoryIds"]
-        need(isinstance(ids, list) and len(ids) > 0,
-             "visual screenshot without a linked catalog ID")
+        need(isinstance(ids, list), "missing explicit inventoryIds collection")
+        if not ids:
+            matched = [prefix for prefix in AUXILIARY_SCENE_PREFIXES
+                       if key[0].startswith(prefix)]
+            need(len(matched) == 1,
+                 "unexpected unlinked scene, refuse to skip: " + key[0])
+            need(matched[0] not in auxiliary_by_width[key[1]],
+                 "duplicated auxiliary visual state at width: " + str(key))
+            auxiliary_by_width[key[1]].add(matched[0])
         row = {
             "scene": key[0], "width": key[1], "ids": ids,
             "changeFraction": ratio, "meanPixelDelta": mean,
@@ -127,6 +144,12 @@ def main() -> None:
             need(item_id in required, "unknown ID in screenshot " + item_id)
             coverage[item_id].add(key[1])
             by_id[item_id].append(row)
+    need(sum(len(items) for items in auxiliary_by_width.values()) == 20,
+         "twenty approved non-catalog auxiliary scenes not all compared")
+    for width in VIEWPORTS:
+        need(auxiliary_by_width[width] == set(AUXILIARY_SCENE_PREFIXES),
+             f"{width}px missing approved auxiliary states: "
+             + str(set(AUXILIARY_SCENE_PREFIXES) - auxiliary_by_width[width]))
     records = []
     for item in items:
         item_id = item["id"]
@@ -159,6 +182,7 @@ def main() -> None:
         "status": "NO_GO" if failures else "PASS",
         "baseSha": BASE, "runnerSha": sha,
         "originalPNGsCompared": len(deltas),
+        "auxiliaryScenesComparedWithoutCatalogID": 20,
         "uniqueCatalogIDs": len(records),
         "idViewportPairs": sum(len(x) for x in coverage.values()),
         "minimumIARating": min(float(x["nota_ia_f06_heredada"]) for x in records),
