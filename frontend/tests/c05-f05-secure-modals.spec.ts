@@ -208,7 +208,19 @@ for (const viewport of viewports) for (const scenario of scenarios) {
     await expect(dlg).toHaveAttribute('data-kind', expectedKind(scenario));
     await expect(page.locator('dialog.cs-modal:modal')).toHaveCount(1);
     const box = await geometry(page);
+    // Premium mobile and desktop touch/keyboard targets: do not solve clipping
+    // by hiding the native close controls or shrinking their hit areas.
+    for (const selector of ['.cs-modal__dismiss', '.cs-modal__cancel']) {
+      const target = dlg.locator(selector);
+      await expect(target).toBeVisible();
+      const rect = await target.boundingBox();
+      expect(rect?.width ?? 0, selector + ' width').toBeGreaterThanOrEqual(43.75);
+      expect(rect?.height ?? 0, selector + ' height').toBeGreaterThanOrEqual(43.75);
+    }
     if (expectedKind(scenario) === 'wizard') {
+      const announcement = dlg.locator('.cs-modal__step-announcement');
+      await expect(announcement).toHaveAttribute('aria-live', 'polite');
+      await expect(announcement).toContainText('Paso ');
       const current = dlg.locator('.cs-modal__step--current');
       await expect(current).toHaveCount(1);
       await expect(current).toHaveAttribute('aria-current', 'step');
@@ -329,6 +341,33 @@ test('F05 zoom 200 percent, landscape, reduced motion and forced colors keep sec
   await expect(dlg.getByLabel('Contraseña para reemplazar MFA de operador')).toBeVisible();
   await dlg.getByRole('button', { name: 'Cerrar ventana' }).click();
   await expect(dlg).toHaveCount(0);
+});
+
+test('F05 does not stack over a native session or security dialog', async ({ page }) => {
+  await syntheticApi(page, 'business');
+  await openScenario(page, 'cambio-contrasena');
+  const dlg = page.getByRole('dialog', { name: 'Cambiar contraseña', exact: true });
+  await page.keyboard.press('Escape');
+  await expect(dlg).toHaveCount(0);
+  await page.evaluate(() => {
+    const other = document.createElement('dialog');
+    other.id = 'f05-existing-native-dialog';
+    other.setAttribute('aria-label', 'Sesión vencida');
+    document.body.appendChild(other);
+    other.showModal();
+    const host = [...document.querySelectorAll('cs-institutional-modal')]
+      .find(node => node.querySelector('h2')?.textContent?.trim() === 'Cambiar contraseña');
+    const modal = host && (window as AngularDebug).ng?.getComponent(host);
+    if (!modal) throw Error('F05 component fixture unavailable');
+    modal.open();
+  });
+  await expect(page.locator('dialog:modal')).toHaveCount(1);
+  await expect(dlg).toHaveCount(0);
+  await page.evaluate(() => {
+    const other = document.querySelector<HTMLDialogElement>('#f05-existing-native-dialog');
+    other?.close();
+    other?.remove();
+  });
 });
 
 test('F05 secure mobile wizard reveals continuation and clears it at the bottom', async ({ page }) => {

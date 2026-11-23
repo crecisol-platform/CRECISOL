@@ -37,6 +37,9 @@
           }
         </ol>
       </nav>
+      <p class="cs-modal__step-announcement" aria-live="polite" aria-atomic="true">
+        Paso {{ activeStep() }} de {{ steps().length }}: {{ steps()[activeStep() - 1] }}
+      </p>
     }
     @if (busy() && actionStartedHere()) {
       <cs-operation-feedback kind="pending" text="Verificando la solicitud en el servidor…" context="Operación protegida" />
