@@ -19,6 +19,8 @@ ALLOWED = frozenset({
     "qa/c05_ux_f07_final_audits.py",
     "qa/c05_ux_f07_final_audit_tests.py",
     "qa/c05_ux_f07_visual_comparison.py",
+    # QA-only pacing of a real 80/min security limit; exact test assertions unchanged.
+    "qa/c05_operational_flow_e2e.mjs",
     # QA fixture only: prevent stale headings racing screenshots, no product code.
     "frontend/tests/c05-f06-inventory-65.spec.ts",
     "docs/c05/ux/F07_REGRESIONES_EVALUACION_INTEGRAL_2026_11_23.md",
@@ -95,9 +97,40 @@ def audit_a() -> None:
           f"F01-F06 immutable implementation, 65/65 buyer IA >= {buyer['minimum']}")
 
 
+
+ROTATION_QUOTA_RESERVATION = """  // The rotation cohort requires a full live peer-quota budget. Prior real
+  // negative-security calls can consume the 80-request/minute allowance and
+  // would otherwise deny the *winner verification* at attempt 81. Wait for a
+  // fresh real quota window without modifying quota rows, server clocks,
+  // concurrency, expected 401/200 outcomes or any product security policy.
+  await reserveTestWindow(30);
+"""
+
+
+def validate_quota_window_change(source: str, original: str) -> None:
+    """Allow only preflight pacing, never altered assertions/quota/product code."""
+    needle = "  const rotations = await Promise.all(Array.from({ length: 8 }, () => api('sessions/rotate', {}, token)));"
+    need(original.count(needle) == 1,
+         "historic 8-concurrent-rotation security test unavailable")
+    need(source == original.replace(needle, ROTATION_QUOTA_RESERVATION + needle),
+         "real E2E QA differs from F06 accepted source beyond one actual quota reservation")
+    for required in (
+        "if (peak + capacity > 80)",
+        "await delay(60500 - Date.now() % 60000);",
+        "rotations.filter(r => r.status === 200).length === 1",
+        "rotated token cannot be replayed",
+        "rotation winner remains usable",
+        "concurrent login quota admits at most eight password challenges per account-minute",
+    ):
+        need(required in source, "an original negative or real quota guard was removed: " + required)
+
 def audit_b() -> None:
     scope()
     source = (ROOT / "qa/c05_operational_flow_e2e.mjs").read_text("utf-8")
+    original = subprocess.check_output(["git", "show",
+                                         BASE + ":qa/c05_operational_flow_e2e.mjs"],
+                                        cwd=ROOT, text=True)
+    validate_quota_window_change(source, original)
     for gate in ("verifyPasskeys", "verifyInvitations", "verifyPairing",
                  "verifyAssisted", "verifyProfile", "verifyTenantAuditBoundary",
                  "verifyOperatorRecovery", "verifySha1EnrollmentQr"):
