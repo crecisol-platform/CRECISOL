@@ -404,3 +404,5 @@
 @media (forced-colors: active) {
   .operator-workspace .institutional-task__trigger { border-color: ButtonText; }
 }
+
+/* F04 premium rules are scoped in platform-operator-f04-premium.component.css. */

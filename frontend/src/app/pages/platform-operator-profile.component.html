@@ -1,4 +1,4 @@
-<section class="operator-workspace" aria-label="Perfil de operador">
+<section class="operator-workspace operator-workspace--perfil" aria-label="Perfil de operador">
   <header class="operator-section-head">
     <div><span class="operator-kicker">PERFIL / IDENTIDAD INSTITUCIONAL</span>
       <h2>Mi perfil de operador</h2>
@@ -10,7 +10,7 @@
     <p>Cambiar esta presentación no concede ni modifica funciones administrativas ni acceso a negocios.</p>
   </details>
   @if (platform.profileLoaded()) {
-    <section class="operator-card" aria-label="Datos del perfil institucional">
+    <section class="operator-card operator-card--profile" aria-label="Datos del perfil institucional">
       <div class="operator-profile-head">
         @if (platform.photo()) {
           <img [src]="platform.photo()" width="72" height="72" alt="Foto de mi perfil de operador">
@@ -31,7 +31,7 @@
       <p>Consulta tu perfil para mostrar sus datos verificados.</p></div>
   }
 </section>
-<div class="institutional-task">
+<div class="institutional-task operator-task--profile">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog51.open()" aria-label="Editar perfil de operador" aria-describedby="operator-profile-edit-hint">
     <span>Editar perfil de operador<span id="operator-profile-edit-hint" class="operator-task-note">Actualiza nombre, idioma y zona horaria.</span></span><span aria-hidden="true">›</span>
   </button>
@@ -50,7 +50,7 @@
     </form>
   </cs-institutional-modal>
 </div>
-<div class="institutional-task">
+<div class="institutional-task operator-task--profile-photo">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog52.open()" aria-label="Actualizar foto de operador" aria-describedby="operator-profile-photo-hint">
     <span>Actualizar foto de operador<span id="operator-profile-photo-hint" class="operator-task-note">La foto se procesa sin conservar metadatos.</span></span><span aria-hidden="true">›</span>
   </button>

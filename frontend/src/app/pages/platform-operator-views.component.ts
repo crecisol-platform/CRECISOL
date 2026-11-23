@@ -10,7 +10,7 @@ type OperatorAction = { event: Event; action: string };
 @Component({
   selector: 'cs-platform-operator-sessions', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [InstitutionalModalComponent, SecureFieldFeedbackDirective],
-  templateUrl: './platform-operator-sessions.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css']
+  templateUrl: './platform-operator-sessions.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css', './platform-operator-f04-premium.component.css']
 })
 export class PlatformOperatorSessionsComponent {
   readonly platform = inject(PlatformIdentityApiService);
@@ -41,7 +41,7 @@ export class PlatformOperatorSessionsComponent {
 @Component({
   selector: 'cs-platform-operator-profile', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [InstitutionalModalComponent, SecureFieldFeedbackDirective],
-  templateUrl: './platform-operator-profile.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css']
+  templateUrl: './platform-operator-profile.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css', './platform-operator-f04-premium.component.css']
 })
 export class PlatformOperatorProfileComponent {
   readonly platform = inject(PlatformIdentityApiService);
@@ -69,7 +69,7 @@ export class PlatformOperatorProfileComponent {
 }
 @Component({
   selector: 'cs-platform-operator-monitor', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  templateUrl: './platform-operator-monitor.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css']
+  templateUrl: './platform-operator-monitor.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css', './platform-operator-f04-premium.component.css']
 })
 export class PlatformOperatorMonitorComponent {
   readonly platform = inject(PlatformIdentityApiService);
@@ -85,7 +85,7 @@ export class PlatformOperatorMonitorComponent {
 @Component({
   selector: 'cs-platform-operator-security', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [InstitutionalModalComponent, SecureFieldFeedbackDirective],
-  templateUrl: './platform-operator-security.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css']
+  templateUrl: './platform-operator-security.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css', './platform-operator-f04-premium.component.css']
 })
 export class PlatformOperatorSecurityComponent {
   readonly platform = inject(PlatformIdentityApiService);
@@ -96,7 +96,7 @@ export class PlatformOperatorSecurityComponent {
 @Component({
   selector: 'cs-platform-operator-cases', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [InstitutionalModalComponent, SecureFieldFeedbackDirective],
-  templateUrl: './platform-operator-cases.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css']
+  templateUrl: './platform-operator-cases.component.html', styleUrls: ['./identity-flow.component.css', './platform-operator-f04.component.css', './platform-operator-f04-premium.component.css']
 })
 export class PlatformOperatorCasesComponent {
   readonly platform = inject(PlatformIdentityApiService);

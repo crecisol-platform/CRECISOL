@@ -1,4 +1,4 @@
-<section class="operator-workspace" aria-label="Monitor de seguridad de plataforma">
+<section class="operator-workspace operator-workspace--monitor" aria-label="Monitor de seguridad de plataforma">
   <header class="operator-section-head">
     <div><span class="operator-kicker">OBSERVABILIDAD / PROTECCIÓN</span>
       <h2>Monitor de identidad</h2>
@@ -11,11 +11,11 @@
   </details>
   @if (platform.abuseLoaded()) {
     <div class="operator-grid operator-monitor-stats" aria-label="Indicadores agregados">
-      <div class="operator-card operator-stat"><strong>{{ totalSignals() }}</strong><span>Señales agregadas</span></div>
+      <div class="operator-card operator-stat operator-stat--total"><strong>{{ totalSignals() }}</strong><span>Señales agregadas</span></div>
       <div class="operator-card operator-stat"><strong>{{ signals().length }}</strong><span>Categorías devueltas</span></div>
       <div class="operator-card operator-stat"><strong>24 h</strong><span>Ventana de observación</span></div>
     </div>
-    <section class="operator-card" aria-label="Categorías de señales de seguridad">
+    <section class="operator-card operator-card--monitor-list" aria-label="Categorías de señales de seguridad">
       <div class="operator-section-head">
         <div><h3>Señales por nivel de atención</h3><p>Los niveles se calculan solo para ordenar los contadores: alta ≥10; revisión 3–9; informativa 0–2.</p></div>
         <div class="operator-filters">
@@ -31,7 +31,7 @@
       @if (filteredSignals().length) {
         <ol class="operator-list">
           @for (item of filteredSignals(); track item.id) {
-            <li class="operator-card operator-card--quiet">
+            <li class="operator-card operator-card--quiet operator-monitor-item">
               <div class="operator-card__header">
                 <div><strong>{{ item.label }}</strong></div>
                 <span class="operator-tag" [class.operator-tag--high]="item.priority === 'alta'">

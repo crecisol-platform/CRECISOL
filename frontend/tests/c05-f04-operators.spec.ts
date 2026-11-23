@@ -275,3 +275,61 @@ test('F04 platform policy denial erases stale privileged settings', async ({ pag
   await expect(policy).toContainText('Consulta Seguridad para recuperar el valor vigente de la API');
   await expect(nav.getByRole('button', { name: 'Seguridad', exact: true })).toHaveAttribute('aria-current', 'page');
 });
+
+/* F04 premium geometry and safeguards across five administrator areas and widths. */
+for (const size of sizes) {
+  for (const section of sections) {
+    test('F04 PREMIUM ' + section + ' touch hierarchy at ' + size.width + 'px',
+      async ({ page }) => {
+        await page.setViewportSize(size);
+        await fixture(page); await visit(page, section);
+        const parent = page.locator('cs-platform-identity-panel');
+        const workspace = parent.locator('.operator-workspace--' + section);
+        await expect(workspace).toBeVisible();
+        await expect(workspace.locator('.operator-section-head h2').first()).toBeVisible();
+        await noOverflow(page);
+        const nav = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
+        const tabs = nav.getByRole('button');
+        await expect(tabs).toHaveCount(5);
+        if (size.width <= 390) {
+          const heights = await tabs.evaluateAll(nodes =>
+            nodes.map(node => node.getBoundingClientRect().height));
+          expect(Math.min(...heights), 'operator tabs need a 44px tactile target')
+            .toBeGreaterThanOrEqual(43.5);
+        }
+        await expect(parent).not.toContainText(sampleSession.id);
+        await expect(parent).not.toContainText('UNKNOWN_INTERNAL_PRIVATE_CODE');
+        if (section === 'casos') {
+          const lookup = workspace.getByRole('region', { name: 'Consulta puntual de caso' });
+          await expect(lookup).toHaveClass(/operator-card--lookup/);
+          await expect(lookup.locator('input[name="caseId"]')).toHaveAttribute('required', '');
+          await expect(lookup.getByRole('button', { name: 'Consultar caso de identidad' })).toBeVisible();
+          await expect(workspace.locator('.operator-case-summary')).toBeVisible();
+          await expect(workspace.locator('.operator-task--review')).toBeVisible();
+          await expect(workspace.locator('.operator-task--sensitive')).toBeVisible();
+        }
+        if (section === 'sesiones') {
+          await expect(workspace.locator('.operator-session-item')).toHaveCount(1);
+          await expect(workspace.locator('.operator-action--danger')).toContainText('Terminación 555555');
+          await expect(parent.locator('.operator-task--sensitive')).toBeVisible();
+        }
+        if (section === 'perfil') {
+          await expect(workspace.locator('.operator-card--profile')).toBeVisible();
+          await expect(workspace).toContainText('Operador ficticio institucional');
+          await expect(parent.locator('.operator-task--profile')).toBeVisible();
+          await expect(parent.locator('.operator-task--profile-photo')).toBeVisible();
+        }
+        if (section === 'seguridad') {
+          await expect(workspace.locator('.operator-task--credential')).toHaveCount(3);
+          await expect(workspace.locator('.operator-card--admin-policy')).toBeVisible();
+          await expect(workspace.getByRole('region', { name: 'Política vigente de inactividad' }))
+            .toContainText('30 minutos sin actividad');
+        }
+        if (section === 'monitor') {
+          await expect(workspace.locator('.operator-stat--total')).toContainText('17');
+          await expect(workspace.locator('.operator-monitor-item')).toHaveCount(2);
+          await expect(workspace).not.toContainText('OTHER_INTERNAL_CODE');
+        }
+      });
+  }
+}
