@@ -330,3 +330,18 @@
 @media (forced-colors: active) {
   .cs-modal__content { scrollbar-color: CanvasText Canvas; }
 }
+
+/* F05 premium: accessible security-step announcement and 44px close targets. */
+.cs-modal__dismiss { width: 2.75rem; height: 2.75rem; }
+.cs-modal__cancel { min-height: 2.75rem; }
+.cs-modal__step-announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
