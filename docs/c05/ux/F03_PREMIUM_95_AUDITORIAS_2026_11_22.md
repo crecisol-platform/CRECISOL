@@ -20,7 +20,7 @@ Hallazgos por área, antes de los cambios actuales:
 | Historial | Etiquetas de estado se estrechan junto al tiempo en móvil | Estado fluye bajo la descripción a ≤480 px; sin mostrar códigos crudos ni IDs internos |
 | Aprobaciones | Bandeja y permisos pueden sentirse densos, botón de consulta domina sin contexto | Tarjeta con jerarquía y aviso contextual legible; permiso, listado enmascarado, selección, motivo, MFA y confirmación no se modifican |
 
-**Defecto transversal visible en móvil:** texto de descubrimiento de pestañas largo y navegación horizontal con poca señal de desplazamiento; se reemplaza por `Seis áreas · Desliza o usa las flechas para ver más.` con pestañas de altura mínima 44px y subrayado de estado activo. Los seis enlaces siguen existiendo como navegación real con `aria-current`, foco y selectores robustos.
+**Defecto transversal visible en móvil:** texto de descubrimiento de pestañas largo y navegación horizontal con poca señal de desplazamiento; se reemplaza por `Explora las seis áreas · Desliza o usa las flechas para ver más.` con pestañas de altura mínima 44px y subrayado de estado activo. Los seis enlaces siguen existiendo como navegación real con `aria-current`, foco y selectores robustos.
 
 ## 2. Alcance exacto y salvaguardas
 
@@ -63,3 +63,7 @@ La primera CI del SHA `90e5daf17038ce04d890bc7e4a302d19e4909a86` detectó **6/65
 ### Causa raíz y reparación posterior (nuevo SHA obligatorio)
 
 El segundo run [#45110997378](https://github.com/crecisol-platform/CRECISOL/actions/runs/45110997378) registró **71 PASS y 12 FAIL de 83** (los seis destinos a 320 y 390 px). La primera regla local de 44 px era insuficiente: el selector global antiguo `cs-identity-portal .account-nav--workspace.account-nav--workspace.account-nav--workspace a` en `frontend/src/styles.css` tiene especificidad más alta y aplica `min-height: 2.6rem`, medido en **41.59375 px**. Se mantiene intacto `styles.css` para no alterar F02/C01/C02. La solución en CSS de F03 usa `:host .account-workspace-rail` más triple clase de pestaña, que supera al global con mayor especificidad y exige altura física mínima de 44px. El test sigue exigiendo ≥43.5px de tolerancia. No calificar la F03 ni cerrar este gate hasta el nuevo SHA validado.
+
+### Regresión F06 de microtexto (corregida en nuevo SHA)
+
+El run [#45111320164](https://github.com/crecisol-platform/CRECISOL/actions/runs/45111320164) alcanzó 83/83 F03 PASS, 30/30 PNG/JSON F03, navegación F03 18 PASS, laboratorio F02 11 PASS, operadores F04 34 PASS y modales F05 61 PASS; **F06 173 PASS/1 FAIL**: el test histórico requiere literalmente `seis áreas` en minúsculas en el aviso móvil, y el nuevo texto lo capitalizaba al inicio. Se corrige el mensaje a `Explora las seis áreas · Desliza o usa las flechas para ver más.` y la prueba nueva F03 a la misma semántica sin distorsionar/relajar la prueba histórica F06. La CI debe repetirse en SHA posterior, sin extrapolar aprobación de las fases no ejecutadas.

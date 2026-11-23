@@ -518,7 +518,7 @@ for (const width of [320, 390, 768, 1024, 1440] as const) {
         await noHorizontalOverflow(page);
         if (width === 320) {
           await expect(page.locator('#account-nav-mobile-help')).toBeVisible();
-          await expect(page.locator('#account-nav-mobile-help')).toContainText('Seis áreas');
+          await expect(page.locator('#account-nav-mobile-help')).toContainText('seis áreas');
           await expect(nav).toHaveCSS('overflow-x', 'auto');
         }
         await expect(page.getByRole('button', { name: 'Cerrar sesión', exact: true }))

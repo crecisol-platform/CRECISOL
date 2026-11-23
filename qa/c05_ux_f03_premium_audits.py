@@ -134,7 +134,7 @@ def audit_c() -> None:
     portal = read(PORTAL_CSS)
     workspace = read(WORKSPACE_CSS)
     tests = read(TEST)
-    require("Seis áreas · Desliza o usa las flechas para ver más." in read(PORTAL),
+    require("Explora las seis áreas · Desliza o usa las flechas para ver más." in read(PORTAL),
             "mobile navigation discovery copy missing")
     for view in VIEWS:
         require("data-view='" + view + "'" in workspace,
