@@ -6,6 +6,11 @@ on:
       - 'frontend/tests/c05-f05-secure-modals.spec.ts'
       - 'qa/c05_ux_f05_modal_audits.py'
       - 'qa/c05_ux_f06_feedback_audits.py'
+      - 'qa/c05_ux_f06_commercial_rating_tests.py'
+      - 'qa/c05_ux_f06_65_coverage.py'
+      - 'qa/c05_ux_f06_commercial_rating_tests.py'
+      - 'docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv'
+      - 'docs/c05/ux/F06_65_COBERTURA_Y_CRITERIOS.md'
       - 'qa/c05_ux_f06_feedback_scope_tests.py'
       - 'docs/c05/ux/F06_GATE_ALCANCE_POSTMERGE_2026_11_23.md'
       - '.github/workflows/c05-ux-f06-feedback.yml'
@@ -50,6 +55,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 qa/c05_ux_f06_feedback_scope_tests.py -v
+          python3 qa/c05_ux_f06_commercial_rating_tests.py -v
           for gate in A B C; do
             python3 qa/c05_ux_f06_feedback_audits.py "$gate"
           done
