@@ -525,3 +525,119 @@
 @media (forced-colors: active) {
   .identity-workspace .institutional-task__trigger { border-color: ButtonText; }
 }
+
+/* C05 F03 premium: six contextual views, one visual rhythm. Only styles:
+   no control, consent, membership, session or MFA behavior is modified. */
+.identity-workspace[data-view] {
+  row-gap: clamp(.7rem, 1.5vw, 1rem);
+}
+.identity-workspace[data-view] > h2 {
+  font-size: clamp(1.32rem, 2vw, 1.65rem);
+  font-weight: 790;
+  line-height: 1.22;
+}
+.identity-workspace[data-view] .identity-panel-heading {
+  gap: .7rem 1rem;
+  margin-bottom: .9rem;
+}
+.identity-workspace[data-view] .identity-panel-heading > div { min-width: 0; }
+.identity-workspace[data-view] .identity-panel-heading > button {
+  min-height: var(--cs-hit-target, 2.75rem);
+  border-radius: var(--cs-radius-sm, .65rem);
+}
+.identity-workspace[data-view='resumen'] .identity-device-region {
+  background: var(--cs-color-surface-soft, #f5f9fd);
+}
+.identity-workspace[data-view='resumen'] .identity-device-card {
+  padding: clamp(.85rem, 1.6vw, 1.05rem);
+  border-color: var(--cs-color-border, #d3e1ee);
+}
+.identity-workspace[data-view='resumen'] .identity-session-overview__status {
+  color: var(--cs-color-success, #1d6048);
+  background: var(--cs-color-success-bg, #eaf6ef);
+  border-color: var(--cs-color-success-border, #b6ddc9);
+}
+.identity-workspace[data-view='perfil'] .identity-profile-name {
+  font-size: clamp(1.04rem, 1.8vw, 1.2rem);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.identity-workspace[data-view='perfil'] .identity-profile-avatar {
+  border-color: var(--cs-color-border-strong, #9bb5cb);
+  background: var(--cs-color-accent-soft, #eaf3fb);
+}
+.identity-workspace[data-view='llaves'] .identity-key-item {
+  gap: .8rem;
+  border-color: var(--cs-color-border, #d3e1ee);
+  border-left: 3px solid var(--cs-color-action, #103f75);
+}
+.identity-workspace[data-view='llaves'] .identity-key-revoke {
+  border-color: var(--cs-color-danger-border, #eac3c4);
+  color: var(--cs-color-danger, #8b272e);
+  background: var(--cs-color-surface, #fff);
+}
+.identity-workspace[data-view='llaves'] .identity-key-revoke:hover:not(:disabled) {
+  background: var(--cs-color-danger-bg, #fff2f2);
+}
+.identity-workspace[data-view='seguridad'] > .institutional-task .institutional-task__trigger {
+  border-left: 3px solid var(--cs-color-action, #103f75);
+  text-align: left;
+}
+.identity-workspace[data-view='seguridad'] .identity-task-caption {
+  color: var(--cs-color-muted, #455f79);
+}
+.identity-workspace[data-view='historial'] .identity-activity-list {
+  border-top: 1px solid var(--cs-color-border, #d3e1ee);
+}
+.identity-workspace[data-view='historial'] .identity-activity-item {
+  grid-template-columns: .65rem minmax(0, 1fr) auto;
+  gap: .55rem .75rem;
+  padding: .83rem .15rem;
+  border-bottom-color: var(--cs-color-border, #d3e1ee);
+}
+.identity-workspace[data-view='historial'] .identity-activity-status {
+  overflow-wrap: anywhere;
+}
+.identity-workspace[data-view='administracion'] .identity-pending-card {
+  border-color: var(--cs-color-border, #d3e1ee);
+  box-shadow: var(--cs-shadow-card, 0 5px 18px rgb(16 46 76 / .07));
+}
+.identity-workspace[data-view='administracion'] .identity-pending-state {
+  color: var(--cs-color-warning, #724513);
+}
+@media (max-width: 480px) {
+  .identity-workspace[data-view] .identity-panel-heading { margin-bottom: .7rem; }
+  .identity-workspace[data-view] .identity-panel-heading > button {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+  .identity-workspace[data-view='resumen'] .identity-device-region { padding: .85rem; }
+  .identity-workspace[data-view='resumen'] .identity-device-card { padding: .8rem; }
+  .identity-workspace[data-view='resumen'] .identity-session-overview > div { flex-basis: 100%; }
+  .identity-workspace[data-view='historial'] .identity-activity-item {
+    grid-template-columns: .65rem minmax(0, 1fr);
+  }
+  .identity-workspace[data-view='historial'] .identity-activity-status {
+    grid-column: 2;
+    justify-self: start;
+    text-align: left;
+  }
+}
+@media (forced-colors: active) {
+  .identity-workspace[data-view='llaves'] .identity-key-item,
+  .identity-workspace[data-view='seguridad'] > .institutional-task .institutional-task__trigger,
+  .identity-workspace[data-view='historial'] .identity-activity-list,
+  .identity-workspace[data-view='administracion'] .identity-pending-card {
+    border-color: CanvasText;
+  }
+  .identity-workspace[data-view='llaves'] .identity-key-revoke {
+    border-color: ButtonText;
+    color: ButtonText;
+    background: ButtonFace;
+  }
+  .identity-workspace[data-view='resumen'] .identity-session-overview__status {
+    color: CanvasText;
+    background: Canvas;
+    border-color: CanvasText;
+  }
+}
