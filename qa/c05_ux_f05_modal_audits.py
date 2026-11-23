@@ -108,7 +108,7 @@ def audit_c() -> None:
          "minimum close targets were reduced")
     need("target.boundingBox()" in test and "toBeGreaterThanOrEqual(43.75)" in test,
          "F05 responsive touch target regression absent")
-    for marker in ("F05 DEEP ", "deepViewports", "scroller.scrollHeight", "data-feedback-kind=\"pending\"",
+    for marker in ("F05 DEEP ", "deepViewports", "el.scrollHeight", "data-feedback-kind=\"pending\"",
                    "data-feedback-kind=\"error\"", "data-feedback-kind=\"success\"",
                    "closedByDesign", "lastElementChild", "scenario + ' final content"):
         need(marker in test, "full modal state/scroll regression removed: " + marker)
