@@ -66,7 +66,10 @@ ALLOWED = {
     "docs/c05/ux/F06_65_COBERTURA_Y_CRITERIOS.md",
     "docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv",
     # Deliberately provisional 65-ID buyer record; NEVER final grades or signoff.
-    "docs/c05/ux/F06_65_REVISION_COMPRADOR_PRELIMINAR_2026_11_22.csv"
+    "docs/c05/ux/F06_65_REVISION_COMPRADOR_PRELIMINAR_2026_11_22.csv",
+    # Post-integration F06 security-gate correction and isolated negative tests.
+    "qa/c05_ux_f06_feedback_scope_tests.py",
+    "docs/c05/ux/F06_GATE_ALCANCE_POSTMERGE_2026_11_23.md"
 }
 
 def text(path: str) -> str:
@@ -77,18 +80,77 @@ def text(path: str) -> str:
 def need(condition: bool, reason: str) -> None:
     if not condition: raise AssertionError("F06 NO_GO: " + reason)
 
+# Fixed signed-off candidate imported by squash PR #182 (F04) and #183 (F05).
+# It is an immutable provenance boundary, NOT an allowlist for future commits.
+# F06's original BASE is intentionally retained: its historical diff and checks
+# cannot simply be erased to silence the legacy workflow.
+INTEGRATED_F04 = "1d8a8e552b6eb7749d81aafaaa1e5201163b6c4e"
+INTEGRATED_F05 = "196512a6b5747ce8c86a5d71c4e766af6ee4b047"
+
+
+def git_paths(*args: str) -> set[str]:
+    lines = subprocess.check_output(["git", *args], cwd=ROOT, text=True).splitlines()
+    return {line.strip() for line in lines if line.strip()}
+
+
+def authorize_delta(
+    historical_all: set[str],
+    approved_snapshot: set[str],
+    current_diff: set[str],
+    touched_commits: set[str]
+) -> list[str]:
+    """Fail closed for every new or transient file outside original F06 scope.
+
+    Earlier imported F01-F05 files are accepted *only* if contained in the
+    immutable, known-good integrated SHA and unchanged since that SHA.
+    """
+    need(bool(historical_all), "F06 original diff absent")
+    need(bool(current_diff), "no F06 correction after the approved integration")
+    need(current_diff <= ALLOWED,
+         "new F06 out of scope: " + str(sorted(current_diff - ALLOWED)))
+    # A commit which changes a forbidden file and later reverts it is blocked,
+    # even if the final git diff no longer includes the forbidden change.
+    need(touched_commits <= ALLOWED,
+         "F06 commit history touched foreign scope: " +
+         str(sorted(touched_commits - ALLOWED)))
+    need((historical_all - ALLOWED) <= approved_snapshot,
+         "unexpected inherited change outside approved integration: " +
+         str(sorted((historical_all - ALLOWED) - approved_snapshot)))
+    return sorted(historical_all & ALLOWED)
+
+
 def scope() -> list[str]:
-    changed = subprocess.check_output(["git", "diff", "--name-only", BASE + "...HEAD"],
-                                      cwd=ROOT, text=True).strip().splitlines()
-    need(bool(changed), "F06 diff absent")
-    need(set(changed) <= ALLOWED, "out of scope: " + str(set(changed) - ALLOWED))
+    # Accept F04/F05 only at their exact, audited ancestry, never by globbing
+    # unknown merged files or silently resetting BASE to current HEAD.
+    for parent, child in ((BASE, INTEGRATED_F04),
+                          (INTEGRATED_F04, INTEGRATED_F05),
+                          (INTEGRATED_F05, "HEAD")):
+        subprocess.run(["git", "merge-base", "--is-ancestor", parent, child],
+                       cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
+    historical_all = git_paths("diff", "--name-only", "--no-renames", BASE + "...HEAD")
+    snapshot = git_paths("diff", "--name-only", "--no-renames",
+                         BASE + "..." + INTEGRATED_F05)
+    current = git_paths("diff", "--name-only", "--no-renames",
+                        INTEGRATED_F05 + "...HEAD")
+    touched = git_paths("log", "--format=", "--name-only", "--no-renames",
+                        INTEGRATED_F05 + "..HEAD")
+    changed = authorize_delta(historical_all, snapshot, current, touched)
+    # Inspect full F06 file bodies, including previously merged changes on
+    # these F06-owned surfaces. Do not scan unrelated, signed-off F01-F05 docs
+    # as if they were newly edited by F06.
     for path in changed:
-        # The validator itself contains malformed-token test literals by design.
-        if path == "qa/c05_ux_f06_feedback_audits.py": continue
-        if not path.endswith((".html",".css",".ts",".py",".md",".yml")): continue
+        if path == "qa/c05_ux_f06_feedback_audits.py":
+            continue  # This validator intentionally embeds malformed-token fixtures.
+        if not path.endswith((".html", ".css", ".ts", ".py", ".md", ".yml")):
+            continue
         source = text(path)
-        for malformed in ("\ufffd", "Ã¡", "Ã©", "Ã³", "Ã±", "Ãº", "Â¿", "Â¡", "â€¦", "â€”", "â€œ", "â€"):
-            need(malformed not in source, "malformed Spanish/UTF-8 text in " + path)
+        for malformed in ("\ufffd", "Ã¡", "Ã©", "Ã³", "Ã±", "Ãº", "Â¿", "Â¡",
+                          "â€¦", "â€”", "â€œ", "â€"):
+            need(malformed not in source,
+                 "malformed Spanish/UTF-8 text in " + path)
+    print(f"F06 scoped: {len(changed)} owned files; "
+          f"{len(historical_all - ALLOWED)} unchanged inherited paths; "
+          f"{len(current)} post-merge edits checked")
     return changed
 
 def audit_a() -> None:
