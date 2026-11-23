@@ -19,7 +19,7 @@ permissions:
   actions: read
 concurrency:
   group: c05-ux-f07-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   visual-65:
     name: F07 439 original PNG visual diffs and 65 individual 5-width scores
