@@ -4,6 +4,7 @@
 import { test, expect, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { writeFile } from 'node:fs/promises';
+import { activityLabel } from '../src/app/ui/feedback/operation-feedback.model';
 
 type DebugWindow = Window & { ng?: { getComponent: (node: Element) => any } };
 type Realm = 'anonymous' | 'business' | 'operator';
@@ -18,6 +19,12 @@ const viewports = [
   { width: 768, height: 1024 }, { width: 1024, height: 768 },
   { width: 1440, height: 900 }
 ] as const;
+
+test('F06 nonmutating profile read must not tell the buyer it is updating data', () => {
+  const copy = activityLabel('profile-read');
+  expect(copy).toContain('Consultando');
+  expect(copy).not.toContain('Actualizando');
+});
 
 async function syntheticApi(page: Page, realm: Realm): Promise<void> {
   await page.route('**/api/v1/**', route => route.fulfill({
@@ -487,7 +494,7 @@ test('F06 PREMIUM errors offer safe next steps without exposing backend details'
   await account(page, 'seguridad');
   await setAccountStatus(page, 'error', 'seguridad');
   const notice = page.locator('cs-operation-feedback [data-feedback-kind="error"]');
-  await expect(notice).toContainText('Revisa los datos y vuelve a intentarlo');
+  await expect(notice).toContainText('Si la dificultad continúa');
   await expect(notice).not.toContainText('SQL');
   await expect(notice).not.toContainText('stack');
 });
