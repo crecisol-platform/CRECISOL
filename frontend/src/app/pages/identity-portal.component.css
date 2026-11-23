@@ -470,3 +470,13 @@
 @media (min-width: 1040px) {
   .account-nav--workspace a { min-height: max(44px, var(--cs-hit-target, 2.75rem)); }
 }
+
+/* F03 measured accessibility fix: the F06 mobile global CSS deliberately uses
+   a triple-class selector setting 2.6rem (41.6px at 320/390px). Use a strictly
+   more-specific view-scoped selector here to restore >=44px targets without
+   global token edits or !important. */
+@media (max-width: 720px) {
+  :host .account-workspace-rail .account-nav--workspace.account-nav--workspace.account-nav--workspace a {
+    min-height: max(44px, var(--cs-hit-target, 2.75rem));
+  }
+}

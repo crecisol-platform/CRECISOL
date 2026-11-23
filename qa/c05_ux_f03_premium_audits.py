@@ -140,7 +140,8 @@ def audit_c() -> None:
         require("data-view='" + view + "'" in workspace,
                 "CSS treatment missing for " + view)
     for marker in ("scroll-padding-inline", "account-nav--workspace",
-                   "var(--cs-hit-target", "forced-colors: active"):
+                   "var(--cs-hit-target", "forced-colors: active",
+                   ":host .account-workspace-rail .account-nav--workspace.account-nav--workspace.account-nav--workspace a"):
         require(marker in portal, "responsive navigation contract missing " + marker)
     for marker in ("identity-key-revoke", "identity-activity-item",
                    "identity-pending-card", "identity-device-card",
