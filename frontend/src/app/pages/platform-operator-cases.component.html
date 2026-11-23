@@ -1,11 +1,11 @@
-<section class="operator-workspace" aria-label="Gestión de casos de plataforma">
+<section class="operator-workspace operator-workspace--casos" aria-label="Gestión de casos de plataforma">
   <header class="operator-section-head">
     <div><span class="operator-kicker">GESTIÓN DE IDENTIDAD / CASOS</span>
       <h2>Casos de recuperación y revisión</h2>
       <p>Consulta un caso por su referencia.</p>
     </div>
   </header>
-  <section class="operator-card operator-card--quiet" aria-label="Consulta puntual de caso">
+  <section class="operator-card operator-card--quiet operator-card--lookup" aria-label="Consulta puntual de caso">
     <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'case' })">
           <label for="platform-case">Referencia del caso</label><input id="platform-case" name="caseId" required maxlength="36">
           <button [disabled]="busy()">Consultar caso de identidad</button>
@@ -44,7 +44,7 @@
           @if (platform.locatedCase()) { <output aria-label="Referencia localizada de identidad">{{ platform.locatedCase() }}</output> }
   </cs-institutional-modal>
 </div>
-  <section class="operator-card operator-card--result" aria-label="Estado del expediente consultado">
+  <section class="operator-card operator-card--result operator-card--case-result" aria-label="Estado del expediente consultado" aria-live="polite">
     @if (currentCase(); as summary) {
       <div class="operator-section-head">
         <div><h3>Estado y prioridad del caso</h3><p>Resultado del expediente consultado únicamente.</p></div>
@@ -60,7 +60,7 @@
         </select>
       </div>
       @if (visibleCase(); as visible) {
-        <div class="operator-card operator-card--quiet">
+        <div class="operator-card operator-card--quiet operator-case-summary">
           <div class="operator-card__header"><strong>{{ visible.reference }}</strong>
             <span class="operator-tag" [class.operator-tag--high]="platform.case()?.blocked">{{ visible.status }}</span></div>
           <dl class="operator-facts">
@@ -77,7 +77,7 @@
         <p>Consulta una referencia autorizada para ver su estado y próximos pasos.</p></div>
     }
   </section>
-        <div class="institutional-task">
+        <div class="institutional-task operator-task--review">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog21.open()">
     <span>Revisar identidad del titular</span><span aria-hidden="true">›</span>
   </button>
@@ -115,7 +115,7 @@
   </cs-institutional-modal>
 </div>
         <p class="operator-case-caution">Para emitir una recuperación se necesitan dos revisores independientes y una espera mínima de 24 horas.</p>
-        <div class="institutional-task">
+        <div class="institutional-task operator-task--sensitive">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog22.open()">
     <span>Emitir parte de recuperación</span><span aria-hidden="true">›</span>
   </button>

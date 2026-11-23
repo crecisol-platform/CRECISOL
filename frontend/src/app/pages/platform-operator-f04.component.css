@@ -404,3 +404,241 @@
 @media (forced-colors: active) {
   .operator-workspace .institutional-task__trigger { border-color: ButtonText; }
 }
+
+/* C05 F04 premium, 23 Nov 2026. Strictly platform-scoped presentation:
+   permissions, MFA, real API responses, client actions and recovery are untouched. */
+.operator-workspace[class*='operator-workspace--'] {
+  gap: clamp(.8rem, 1.6vw, 1.08rem);
+  color: var(--cs-color-text, #172d46);
+}
+.operator-workspace[class*='operator-workspace--'] > .operator-section-head {
+  align-items: center;
+  padding: .18rem .1rem .2rem;
+}
+.operator-workspace[class*='operator-workspace--'] > .operator-section-head h2 {
+  margin: 0 0 .3rem;
+  font-weight: 810;
+  font-size: clamp(1.36rem, 2.1vw, 1.75rem);
+  letter-spacing: -.028em;
+  line-height: 1.23;
+}
+.operator-workspace[class*='operator-workspace--'] .operator-card {
+  border-radius: var(--cs-radius-lg, 1rem);
+}
+.operator-workspace[class*='operator-workspace--'] .operator-card h3 {
+  font-size: clamp(1rem, 1.55vw, 1.15rem);
+  letter-spacing: -.016em;
+  line-height: 1.3;
+}
+.operator-workspace[class*='operator-workspace--'] .operator-section-head > button {
+  min-height: max(44px, var(--cs-hit-target, 2.75rem));
+  flex-shrink: 0;
+  font-weight: 725;
+}
+.operator-workspace[class*='operator-workspace--'] .operator-filters select,
+.operator-workspace[class*='operator-workspace--'] .operator-filters label,
+.operator-workspace[class*='operator-workspace--'] .operator-actions button {
+  min-height: max(44px, var(--cs-hit-target, 2.75rem));
+}
+.operator-workspace[class*='operator-workspace--'] .operator-facts {
+  margin: .65rem 0;
+  padding: .1rem 0;
+  gap: .7rem 1.15rem;
+}
+.operator-workspace[class*='operator-workspace--'] .operator-tag {
+  flex-shrink: 0;
+  text-align: center;
+}
+/* Casos: authorized lookup first, status second, protected decisions tertiary. */
+.operator-workspace--casos .operator-card--lookup {
+  border-color: var(--cs-color-border-strong, #9bb5cb);
+  border-left: 4px solid var(--cs-color-action, #103f75);
+  background: var(--cs-color-surface, #fff);
+  box-shadow: var(--cs-shadow-card, 0 5px 18px rgb(16 46 76 / .07));
+}
+.operator-workspace--casos .operator-card--lookup form {
+  gap: .42rem;
+}
+.operator-workspace--casos .operator-card--lookup button {
+  min-height: max(44px, 2.8rem);
+  font-weight: 770;
+}
+.operator-workspace--casos .operator-card--case-result {
+  border-top: 1px solid var(--cs-color-border, #d3e1ee);
+  padding-top: .8rem;
+}
+.operator-workspace--casos .operator-case-summary {
+  border-left: 3px solid var(--cs-color-accent-text, #174b77);
+  background: var(--cs-color-surface-soft, #f5f9fc);
+}
+.operator-workspace--casos .operator-card--case-result .operator-section-head {
+  margin-bottom: .7rem;
+}
+.operator-workspace--casos > .operator-task--review .institutional-task__trigger {
+  border-left: 3px solid var(--cs-color-action, #103f75);
+}
+.operator-workspace--casos > .operator-task--sensitive .institutional-task__trigger,
+.operator-task--sensitive > .institutional-task__trigger {
+  border-left: 3px solid var(--cs-color-warning, #9a522c);
+}
+.operator-workspace--casos .operator-case-caution {
+  border-left: 3px solid var(--cs-color-warning-border, #e7c2a9);
+  padding: .5rem .72rem;
+  background: var(--cs-color-warning-bg, #fff9f5);
+  border-radius: .25rem .6rem .6rem .25rem;
+}
+/* Sesiones: individual device identity and destructive action are separated. */
+.operator-workspace--sesiones .operator-session-item {
+  border: 1px solid var(--cs-color-border, #d3e1ee);
+  border-left: 3px solid var(--cs-color-action, #103f75);
+  background: var(--cs-color-surface, #fff);
+  box-shadow: var(--cs-shadow-card, 0 4px 12px rgb(16 46 76 / .05));
+}
+.operator-workspace--sesiones .operator-session-item .operator-card__header p {
+  font-size: .83rem;
+  margin: .3rem 0 0;
+  color: var(--cs-color-muted, #526980);
+}
+.operator-workspace--sesiones .operator-action--danger {
+  border: 1px solid var(--cs-color-danger-border, #e6b9be);
+  background: var(--cs-color-surface, #fff);
+  color: var(--cs-color-danger, #8b2733);
+  font-weight: 750;
+}
+.operator-workspace--sesiones .operator-action--danger:hover:not(:disabled) {
+  background: var(--cs-color-danger-bg, #fff2f2);
+}
+.operator-task--routine > .institutional-task__trigger {
+  border-left: 3px solid var(--cs-color-accent-text, #174b77);
+}
+/* Perfil: trustworthy identity summary, not a permission management panel. */
+.operator-workspace--perfil .operator-card--profile {
+  border-color: var(--cs-color-border, #d3e1ee);
+  box-shadow: var(--cs-shadow-card, 0 5px 18px rgb(16 46 76 / .07));
+}
+.operator-workspace--perfil .operator-profile-head {
+  padding-bottom: .75rem;
+  border-bottom: 1px solid var(--cs-color-border, #d3e1ee);
+}
+.operator-workspace--perfil .operator-profile-head h3 {
+  overflow-wrap: anywhere;
+  font-weight: 820;
+}
+.operator-workspace--perfil .operator-avatar {
+  border: 1px solid var(--cs-color-border-strong, #9bb5cb);
+}
+.operator-task--profile > .institutional-task__trigger {
+  border-left: 3px solid var(--cs-color-action, #103f75);
+}
+.operator-task--profile-photo > .institutional-task__trigger {
+  border-left: 3px solid var(--cs-color-border-strong, #9bb5cb);
+}
+/* Seguridad: credential cards contrasted with privileged session policy. */
+.operator-workspace--seguridad .operator-security-actions {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15.5rem), 1fr));
+  align-items: stretch;
+}
+.operator-workspace--seguridad .operator-task--credential .institutional-task__trigger {
+  min-height: 5.8rem;
+  height: 100%;
+  border-left: 3px solid var(--cs-color-action, #103f75);
+  text-align: left;
+}
+.operator-workspace--seguridad .operator-card--policy {
+  border-color: var(--cs-color-border, #d3e1ee);
+}
+.operator-workspace--seguridad .operator-card--admin-policy {
+  border: 1px solid var(--cs-color-warning-border, #e8c9ac);
+  background: var(--cs-color-warning-bg, #fffaf6);
+}
+.operator-workspace--seguridad .operator-task--admin .institutional-task__trigger {
+  border-left: 3px solid var(--cs-color-warning, #9a522c);
+}
+.operator-workspace--seguridad .operator-card--admin-policy h3 {
+  margin-bottom: .3rem;
+}
+/* Monitor: aggregated signals, not raw codes or private profiles. */
+.operator-workspace--monitor .operator-stat--total {
+  border-top: 3px solid var(--cs-color-action, #103f75);
+  background: var(--cs-color-surface-soft, #f5f9fd);
+}
+.operator-workspace--monitor .operator-stat--total strong {
+  font-size: clamp(1.8rem, 3.3vw, 2.25rem);
+  line-height: 1.15;
+}
+.operator-workspace--monitor .operator-card--monitor-list {
+  border-color: var(--cs-color-border, #d3e1ee);
+}
+.operator-workspace--monitor .operator-monitor-item {
+  border-left: 3px solid var(--cs-color-accent-text, #174b77);
+  box-shadow: none;
+}
+.operator-workspace--monitor .operator-monitor-item:has(.operator-tag--high) {
+  border-left-color: var(--cs-color-warning, #9a522c);
+}
+.operator-workspace--monitor .operator-monitor-item .operator-monitor-count {
+  font-size: clamp(1.4rem, 2.8vw, 1.8rem);
+}
+/* Maintain hierarchy when text is doubled and no content can be hidden. */
+@media (max-width: 620px) {
+  .operator-workspace[class*='operator-workspace--'] {
+    gap: .78rem;
+  }
+  .operator-workspace[class*='operator-workspace--'] .operator-section-head {
+    gap: .6rem;
+  }
+  .operator-workspace[class*='operator-workspace--'] .operator-section-head > button {
+    width: 100%;
+    min-height: 44px;
+  }
+  .operator-workspace--casos .operator-card--lookup {
+    padding: .86rem 1rem;
+  }
+  .operator-workspace--sesiones .operator-session-item,
+  .operator-workspace--perfil .operator-card--profile,
+  .operator-workspace--monitor .operator-card--monitor-list {
+    padding: .88rem 1rem;
+  }
+  .operator-workspace--monitor .operator-monitor-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .operator-workspace--monitor .operator-monitor-stats .operator-stat--total {
+    grid-column: 1 / -1;
+  }
+  .operator-workspace--seguridad .operator-security-actions {
+    grid-template-columns: minmax(0,1fr);
+  }
+  .operator-workspace--seguridad .operator-task--credential .institutional-task__trigger {
+    min-height: 4.5rem;
+  }
+}
+@media (max-width: 400px) {
+  .operator-workspace--monitor .operator-monitor-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .operator-workspace--monitor .operator-monitor-stats .operator-stat--total {
+    grid-column: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .operator-workspace[class*='operator-workspace--'] :is(button, a, .operator-card) {
+    transition: none;
+  }
+}
+@media (forced-colors: active) {
+  .operator-workspace--casos .operator-card--lookup,
+  .operator-workspace--casos .operator-case-summary,
+  .operator-workspace--sesiones .operator-session-item,
+  .operator-workspace--perfil .operator-card--profile,
+  .operator-workspace--seguridad .operator-card--admin-policy,
+  .operator-workspace--monitor .operator-monitor-item {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+  .operator-workspace--sesiones .operator-action--danger {
+    background: ButtonFace;
+    border-color: ButtonText;
+    color: ButtonText;
+  }
+}

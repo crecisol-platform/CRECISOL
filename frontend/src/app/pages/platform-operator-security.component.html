@@ -1,4 +1,4 @@
-<section class="operator-workspace" aria-label="Seguridad del operador">
+<section class="operator-workspace operator-workspace--seguridad" aria-label="Seguridad del operador">
   <header class="operator-section-head">
     <div><span class="operator-kicker">PROTECCIÓN / CREDENCIALES</span>
       <h2>Seguridad de plataforma</h2>
@@ -18,8 +18,8 @@
       <p>Consulta Seguridad para recuperar el valor vigente de la API. No se supone una configuración local como verdadera.</p>
     }
   </section>
-  <div class="operator-grid" aria-label="Acciones de protección">
-    <div class="institutional-task">
+  <div class="operator-grid operator-security-actions" aria-label="Acciones de protección">
+    <div class="institutional-task operator-task--credential">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog31.open()" aria-label="Cambiar contraseña de operador" aria-describedby="operator-password-hint">
     <span>Cambiar contraseña de operador<span id="operator-password-hint" class="operator-task-note">Requiere contraseña actual y MFA; revoca las sesiones previas.</span></span><span aria-hidden="true">›</span>
   </button>
@@ -33,7 +33,7 @@
           </form>
   </cs-institutional-modal>
 </div>
-        <div class="institutional-task">
+        <div class="institutional-task operator-task--credential">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog32.open()" aria-label="Cambiar correo de operador" aria-describedby="operator-mailbox-hint">
     <span>Cambiar correo de operador<span id="operator-mailbox-hint" class="operator-task-note">Confirma el nuevo correo y tu segundo factor.</span></span><span aria-hidden="true">›</span>
   </button>
@@ -57,7 +57,7 @@
     </div>
   </cs-institutional-modal>
 </div>
-        <div class="institutional-task">
+        <div class="institutional-task operator-task--credential">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog33.open()" aria-label="Reemplazar MFA de operador" aria-describedby="operator-mfa-hint">
     <span>Reemplazar MFA de operador<span id="operator-mfa-hint" class="operator-task-note">No se activa el nuevo TOTP hasta verificar una prueba válida.</span></span><span aria-hidden="true">›</span>
   </button>
@@ -88,10 +88,10 @@
   </cs-institutional-modal>
 </div>
   </div>
-  <section class="operator-card" aria-label="Administración de caducidad">
+  <section class="operator-card operator-card--admin-policy" aria-label="Administración de caducidad">
     <h3>Caducidad y administración</h3>
     <p>Los cambios globales requieren autorización, control de versión y MFA.</p>
-    <div class="institutional-task">
+    <div class="institutional-task operator-task--admin">
   <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="idlePolicyModal.open()">
     <span>Caducidad por inactividad de sesiones</span><span aria-hidden="true">›</span>
   </button>
