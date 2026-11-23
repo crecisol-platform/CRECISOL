@@ -57,6 +57,15 @@ def audit_b() -> None:
          "wizard navigation may falsely consume server receipts")
     need("InstitutionalModalComponent.openInstances.size !== 0" in comp,
          "privileged modal could stack")
+    # Fail closed when a security guard appears only inside a TypeScript comment.
+    # A previous red Chromium run exposed exactly this false-positive pattern.
+    open_body = comp.split("  open(): void {", 1)[1].split("  close(): void {", 1)[0]
+    executable = "\n".join(line.split("//", 1)[0] for line in open_body.splitlines())
+    need("InstitutionalModalComponent.openInstances.size !== 0 ||" in executable and
+         "document.querySelector('dialog:modal')" in executable,
+         "other native modal guard missing or commented out")
+    need("does not stack over a native session or security dialog" in test,
+         "cross-component native modal regression absent")
     need("this.busy()) return" in comp and "if (this.busy()) event.preventDefault()" in comp,
          "busy state can lose focus/safety")
     need("this.previouslyFocused.focus()" in comp and
@@ -92,6 +101,13 @@ def audit_c() -> None:
          "axe/geometry/200%-zoom regression absent")
     need("127.0.0.1:4207" in config and "reuseExistingServer: false" in config,
          "QA harness not pinned to isolated loopback")
+    need('aria-live="polite"' in html and 'cs-modal__step-announcement' in html,
+         "wizard step changes are not announced to assistive technology")
+    need(".cs-modal__dismiss { width: 2.75rem; height: 2.75rem; }" in css and
+         ".cs-modal__cancel { min-height: 2.75rem; }" in css,
+         "minimum close targets were reduced")
+    need("target.boundingBox()" in test and "toBeGreaterThanOrEqual(43.75)" in test,
+         "F05 responsive touch target regression absent")
     print("F05/C PASS: readable dialog variants, 5 widths, WCAG, 200pct zoom, compact height")
 
 if __name__ == "__main__":
