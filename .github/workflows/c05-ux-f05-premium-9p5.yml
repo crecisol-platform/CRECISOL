@@ -5,6 +5,7 @@ on:
     paths:
       - 'frontend/src/app/ui/institutional-modal/**'
       - 'frontend/tests/c05-f05-secure-modals.spec.ts'
+      - 'qa/c05_ux_f05_modal_audits.py'
       - 'docs/c05/ux/F05_PREMIUM_95_AUDITORIAS_2026_11_23.md'
       - '.github/workflows/c05-ux-f05-premium-9p5.yml'
 permissions:
@@ -31,7 +32,7 @@ jobs:
           git merge-base --is-ancestor "$BASE" HEAD
           while IFS= read -r path; do
             case "$path" in
-              frontend/src/app/ui/institutional-modal/institutional-modal.component.ts|frontend/src/app/ui/institutional-modal/institutional-modal.component.html|frontend/src/app/ui/institutional-modal/institutional-modal.component.css|frontend/tests/c05-f05-secure-modals.spec.ts|docs/c05/ux/F05_PREMIUM_95_AUDITORIAS_2026_11_23.md|.github/workflows/c05-ux-f05-premium-9p5.yml) ;;
+              frontend/src/app/ui/institutional-modal/institutional-modal.component.ts|frontend/src/app/ui/institutional-modal/institutional-modal.component.html|frontend/src/app/ui/institutional-modal/institutional-modal.component.css|frontend/tests/c05-f05-secure-modals.spec.ts|qa/c05_ux_f05_modal_audits.py|docs/c05/ux/F05_PREMIUM_95_AUDITORIAS_2026_11_23.md|.github/workflows/c05-ux-f05-premium-9p5.yml) ;;
               *) echo "F05 PREMIUM OUT OF SCOPE: $path"; exit 1 ;;
             esac
           done < <(git diff --name-only "$BASE"...HEAD)
