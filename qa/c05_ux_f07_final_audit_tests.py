@@ -19,6 +19,11 @@ class F07FinalGateTests(unittest.TestCase):
         validate_scope({F07_SOURCE, F07_GATE}, {F07_SOURCE, F07_GATE}, True)
         self.assertIn(F07_SOURCE, ALLOWED)
 
+    def test_exact_qa_capture_fixture_is_allowed_but_product_components_are_not(self):
+        self.assertIn("frontend/tests/c05-f06-inventory-65.spec.ts", ALLOWED)
+        self.assertNotIn(F06_UI, ALLOWED)
+        self.assertNotIn("frontend/src/app/ui/feedback/operation-feedback.component.html", ALLOWED)
+
     def test_no_baseline_ancestor_denied(self):
         with self.assertRaisesRegex(AssertionError, "ancestor"):
             validate_scope({F07_SOURCE}, {F07_SOURCE}, False)

@@ -115,6 +115,18 @@ function surfaceIdsFor(id: string, modalTitle: string): readonly string[] {
 }
 
 async function capture(page: Page, testInfo: TestInfo, id: string): Promise<void> {
+  // Prevent stale JSON after a fast tab change. The approved F06 screenshot
+  // showed "Sesiones", but a metadata sample recorded the prior "Casos" h2.
+  // Wait before measuring, then recheck after the actual pixel capture.
+  const auxiliaryExpectedHeading =
+    id.startsWith('operator-cases-empty-synthetic-') ? 'Casos de recuperación y revisión' :
+    id.startsWith('operator-sessions-empty-synthetic-') ? 'Sesiones de plataforma' :
+    id.startsWith('operator-monitor-empty-synthetic-') ? 'Monitor de identidad' : null;
+  const stableHeading = page.locator('section.operator-workspace:visible > header.operator-section-head h2');
+  if (auxiliaryExpectedHeading) {
+    await expect(stableHeading, 'auxiliary state must be fully rendered before measuring: '+id)
+      .toHaveText(auxiliaryExpectedHeading);
+  }
   const name = slug(id);
   const path = testInfo.outputPath(name + '.png');
   const measurements = await page.evaluate(() => ({
@@ -167,6 +179,13 @@ async function capture(page: Page, testInfo: TestInfo, id: string): Promise<void
       .toContain(operatorHeadingByTab[operatorTab]);
   }
   await page.screenshot({ path, fullPage: measurements.dialogsOpen === 0, animations: 'disabled' });
+  if (auxiliaryExpectedHeading) {
+    expect(measurements.visibleHeadings,
+      'auxiliary JSON heading was stale during screenshot: '+id)
+      .toContain(auxiliaryExpectedHeading);
+    await expect(stableHeading,
+      'auxiliary UI changed during screenshot: '+id).toHaveText(auxiliaryExpectedHeading);
+  }
   if (operatorTab) {
     const afterHeadings = await page.locator('section.operator-workspace:visible > header.operator-section-head h2')
       .allTextContents();
