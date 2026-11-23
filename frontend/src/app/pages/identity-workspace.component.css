@@ -444,3 +444,84 @@
   .identity-workspace > .identity-approval-queue { padding: .75rem .85rem; }
   .identity-approval-queue .identity-panel-heading > button { width: 100%; min-height: 2.8rem; }
 }
+
+
+/* F02 buyer gate — protected membership review. The server remains the
+   authority and all confirmations, MFA and tenant checks remain intact. */
+.cs-membership-review {
+  display: grid;
+  grid-template-columns: minmax(0,1fr);
+  gap: .68rem 1rem;
+  min-width: 0;
+  margin: .35rem 0;
+}
+.cs-membership-field {
+  display: grid;
+  align-content: start;
+  gap: .26rem;
+  min-width: 0;
+}
+.cs-membership-field > label { margin: 0; line-height: 1.43; }
+.cs-membership-field > :is(select, input) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  margin: 0;
+}
+.cs-membership-field .identity-field-help {
+  margin: 0;
+  color: var(--cs-color-muted, #455f79);
+  font-size: .83rem;
+  line-height: 1.4;
+}
+.cs-membership-review .identity-approval-confirm {
+  grid-column: 1 / -1;
+  min-height: var(--cs-hit-target, 2.75rem);
+  margin: .1rem 0 0;
+  line-height: 1.48;
+}
+.cs-membership-review > button { grid-column: 1 / -1; min-height: 3rem; margin-top: .12rem; }
+@media (min-width: 700px) {
+  .cs-membership-review { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .cs-membership-field--request { grid-column: 1 / -1; }
+}
+@media (max-width: 400px) {
+  .cs-membership-review { gap: .5rem; }
+  .cs-membership-field { gap: .2rem; }
+}
+@media (forced-colors: active) {
+  .cs-membership-field > label, .cs-membership-review .identity-approval-confirm { color: CanvasText; }
+}
+
+
+/* F02 buyer consistency: task-first account actions stay full-width,
+   keyboard reachable and >=44px while using less repeated empty space. */
+.identity-workspace .institutional-task__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.35rem;
+  padding: .78rem 1rem;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.identity-workspace .institutional-task__trigger:hover:not(:disabled) {
+  border-color: var(--cs-color-border-strong, #9bb5cb);
+  background: var(--cs-color-surface-soft, #f5f9fd) !important;
+}
+.identity-workspace__lead {
+  max-width: 65ch;
+  line-height: 1.55;
+}
+@media (max-width: 480px) {
+  .identity-workspace { row-gap: .75rem; }
+  .identity-workspace .institutional-task__trigger { min-height: 3.15rem; padding: .73rem .85rem; }
+  .identity-workspace__lead { margin-bottom: .25rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .identity-workspace .institutional-task__trigger { transition: none; }
+}
+@media (forced-colors: active) {
+  .identity-workspace .institutional-task__trigger { border-color: ButtonText; }
+}

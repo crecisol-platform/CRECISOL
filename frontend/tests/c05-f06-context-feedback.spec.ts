@@ -134,11 +134,88 @@ async function noHorizontalClip(page: Page): Promise<void> {
   });
 }
 
+
+/** F02 parity gate on real Angular DOM, not CSS text: each F06 feedback
+ * scene must render exactly the same semantic colors as the F02 tokens.
+ * Computed colors are normalized by the browser, including custom variables.
+ */
+async function assertF02VisualParity(page: Page, selected: Scene): Promise<void> {
+  if (selected === 'field-error') {
+    const invalid = page.locator('cs-identity-guest input[name="mailbox"][aria-invalid="true"]');
+    await expect(invalid).toHaveCount(1);
+    const colors = await invalid.evaluate(node => {
+      const style = getComputedStyle(node);
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--cs-color-danger)';
+      node.parentElement?.appendChild(probe);
+      const expected = getComputedStyle(probe).color;
+      probe.remove();
+      return { border: style.borderTopColor, expected };
+    });
+    expect(colors.border, 'invalid native field uses F02 danger token').toBe(colors.expected);
+    return;
+  }
+
+  const kind = selected === 'account-success' ? 'success'
+    : selected === 'operator-error' || selected === 'account-error' ? 'error' : 'pending';
+  const intent = kind === 'success' ? 'success' : kind === 'error' ? 'danger' : 'info';
+  const box = page.locator('cs-operation-feedback .cs-operation-feedback[data-feedback-kind="' + kind + '"]');
+  await expect(box).toHaveCount(1);
+  const values = await box.evaluate((node, intent) => {
+    const st = getComputedStyle(node);
+    const color = (token: string) => {
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--cs-color-' + token + ')';
+      node.appendChild(probe);
+      const result = getComputedStyle(probe).color;
+      probe.remove();
+      return result;
+    };
+    return {
+      border: st.borderLeftColor,
+      background: st.backgroundColor,
+      expectedBorder: color(intent),
+      expectedBackground: color(intent + '-bg')
+    };
+  }, intent);
+  expect(values.border, kind + ': feedback accent matches F02 token').toBe(values.expectedBorder);
+  expect(values.background, kind + ': feedback surface matches F02 token').toBe(values.expectedBackground);
+
+  if (selected === 'modal-pending') {
+    const dialog = page.locator('dialog.cs-modal:modal');
+    await expect(dialog).toHaveCount(1);
+    const backgrounds = await dialog.evaluate(node => {
+      const st = getComputedStyle(node);
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--cs-color-surface)';
+      node.appendChild(probe);
+      const expected = getComputedStyle(probe).color;
+      probe.remove();
+      return { background: st.backgroundColor, expected };
+    });
+    expect(backgrounds.background, 'secure modal uses F02 institutional surface').toBe(backgrounds.expected);
+  }
+  if (selected === 'operator-error') {
+    const quiet = page.locator('cs-platform-operator-cases .operator-card--quiet').first();
+    await expect(quiet).toBeVisible();
+    const colors = await quiet.evaluate(node => {
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--cs-color-surface-soft)';
+      node.appendChild(probe);
+      const expected = getComputedStyle(probe).color;
+      probe.remove();
+      return { background: getComputedStyle(node).backgroundColor, expected };
+    });
+    expect(colors.background, 'platform operator card uses shared F02 surface').toBe(colors.expected);
+  }
+}
+
 for (const viewport of viewports) for (const selected of scenes) {
   test('F06 ' + selected + ' at ' + viewport.width + 'px', async ({ page }, info: TestInfo) => {
     await page.setViewportSize(viewport);
     await scene(page, selected);
     await noHorizontalClip(page);
+    await assertF02VisualParity(page, selected);
     if (selected !== 'field-error') {
       const tone = selected === 'account-pending' || selected === 'modal-pending' ? 'pending'
         : selected === 'account-success' ? 'success' : 'error';
@@ -1412,3 +1489,187 @@ test('F06 buyer staged proofs preserve every mandatory security field', async ({
     }
   }
 });
+
+
+/** F02 mobile buyer invitation: no mandatory proof/consent may disappear to
+ * improve the mobile composition, and every step stays in normal tab order. */
+test('F02 mobile buyer invitation keeps proof, terms and explicit consent at 320px', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await syntheticApi(page, 'anonymous');
+  await page.goto('/cuenta?vista=invitacion');
+  const journey = page.locator('cs-identity-guest .cs-guest-process--invitation');
+  await expect(journey).toBeVisible();
+  await expect(journey.locator('.cs-guest-stage')).toHaveCount(2);
+  for (const id of ['invite-mailbox', 'invite-password', 'invite-code', 'invite-token']) {
+    await expect(journey.locator('#' + id)).toHaveAttribute('required', '');
+  }
+  await expect(journey.locator('input[name="accepted"]')).toHaveAttribute('required', '');
+  await expect(journey.getByRole('button', { name: 'Cargar condiciones vigentes' })).toBeVisible();
+  await expect(journey.getByRole('button', { name: 'Aceptar invitación de cuenta' })).toBeDisabled();
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+});
+
+/** F02 buyer review: prove required independent confirmations remain visible,
+ * a single column fits mobile, and 768px uses the intended readable grid. */
+test('F02 mobile buyer identity review preserves secure attestations and responsive fields', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await operator(page);
+  const navigation = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
+  await navigation.getByRole('button', { name: 'Casos', exact: true }).click();
+  await page.getByRole('button', { name: 'Revisar identidad del titular', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Revisar identidad del titular' });
+  await expect(dialog).toBeVisible();
+  const form = dialog.locator('form.operator-identity-review');
+  await expect(form.locator('.operator-review-field')).toHaveCount(5);
+  for (const id of ['review-case', 'review-decision', 'review-evidence', 'review-reason', 'review-code'])
+    await expect(form.locator('#' + id)).toHaveAttribute('required', '');
+  await expect(form.locator('.operator-review-attestations input[type="checkbox"][required]')).toHaveCount(2);
+  await expect(dialog.locator('.cs-modal__warning')).toContainText('Otro operador debe revisar la identidad');
+  const columns = () => form.evaluate(el => getComputedStyle(el).gridTemplateColumns.trim().split(/\s+/).length);
+  expect(await columns(), 'a 320px la revisión conserva una columna legible').toBe(1);
+  await page.setViewportSize({ width: 768, height: 1024 });
+  expect(await columns(), 'a 768px la revisión distribuye campos en dos columnas').toBe(2);
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+  await expect(dialog.getByRole('button', { name: 'Registrar revisión de identidad' })).toBeVisible();
+});
+
+/** F02 operator mailbox: visual progression does not make step 2 disappear
+ * or remove MFA when the request flow has not yet completed. */
+test('F02 mobile buyer operator mailbox exposes both verified steps with separate MFA', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await operator(page);
+  const navigation = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
+  await navigation.getByRole('button', { name: 'Seguridad', exact: true }).click();
+  await page.getByRole('button', { name: 'Cambiar correo de operador', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Cambiar correo de operador' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('group', { name: '1. Solicitar el nuevo correo' })).toBeVisible();
+  await expect(dialog.getByRole('group', { name: '2. Confirmar el correo recibido' })).toBeVisible();
+  await expect(dialog.locator('.operator-mailbox-step > form')).toHaveCount(2);
+  for (const id of ['operator-new-mailbox','operator-mailbox-code',
+                    'operator-mailbox-token','operator-mailbox-confirm-code'])
+    await expect(dialog.locator('#' + id)).toHaveAttribute('required', '');
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+  await expect(dialog.getByRole('button', { name: 'Cerrar', exact: true })).toBeVisible();
+});
+
+
+/** F02 editorial buyer gate — four long journeys 006/033/036/040 retain
+ * required controls while adapting the composition at phone/tablet widths.
+ * These are synthetic DOM/UX checks; server authorization stays in real E2E.
+ */
+async function openEditorialModalByField(page: Page, inputId: string): Promise<void> {
+  await page.evaluate(id => {
+    const field = document.getElementById(id);
+    const host = field?.closest('cs-institutional-modal');
+    const component = host && (window as DebugWindow).ng?.getComponent(host);
+    if (!component || typeof component.open !== 'function')
+      throw Error('F02 editorial fixture: native dialog unavailable for ' + id);
+    // A browser-approval task is inside an initially closed <details>.
+    // Expand its ancestors just as a user would, then open the native dialog.
+    // This changes only the synthetic test navigation, never authorization.
+    let ancestor: Element | null = host;
+    while (ancestor) {
+      if (ancestor instanceof HTMLDetailsElement) ancestor.open = true;
+      ancestor = ancestor.parentElement;
+    }
+    component.open();
+  }, inputId);
+}
+const f02LongJourneys = [
+  {id: '006', route: 'acceso-existente', kind: 'guest'},
+  {id: '033', route: 'administracion', kind: 'account', field: 'membership-id',
+   title: 'Revisar membresía con permiso administrativo',
+   css: 'cs-membership-review',
+   required: ['membership-id','membership-decision','membership-reason','membership-code']},
+  {id: '036', route: 'resumen', kind: 'account', field: 'pair-token',
+   title: 'Aprobar otro navegador',
+   css: 'cs-browser-approval',
+   required: ['pair-token','pair-fingerprint','pair-code']},
+  {id: '040', route: 'operadores', kind: 'operator', field: 'find-case-mail',
+   title: 'Localizar una solicitud de identidad pendiente',
+   css: 'operator-case-lookup',
+   required: ['find-case-mail','find-case-realm','find-case-reason','find-case-code']}
+] as const;
+
+for (const journey of f02LongJourneys) {
+  test('F02 buyer mobile/tablet layout and protected controls F01-' + journey.id, async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 720 });
+    if (journey.kind === 'guest') {
+      await syntheticApi(page, 'anonymous');
+      await page.goto('/cuenta?vista=' + journey.route);
+      const section = page.locator('.cs-guest-process--existing');
+      await expect(section).toBeVisible();
+      await expect(section.locator('.cs-guest-stage')).toHaveCount(2);
+      for(const id of ['join-mailbox','join-password','join-code','join-proof-id','join-proof-code'])
+        await expect(section.locator('#' + id)).toHaveAttribute('required', '');
+      await expect(section.locator('input[name="accepted"]')).toHaveAttribute('required', '');
+      await expect(section.getByRole('button', {name: 'Enviar solicitud de relación pendiente'})).toBeDisabled();
+    } else {
+      if (journey.kind === 'operator') {
+        await operator(page);
+        await page.getByRole('navigation',{name:'Áreas de la consola de identidad'})
+          .getByRole('button',{name:'Casos',exact:true}).click();
+      } else {
+        await account(page, journey.route);
+      }
+      await openEditorialModalByField(page, journey.field);
+      const dialog = page.getByRole('dialog',{name:journey.title,exact:true});
+      await expect(dialog).toBeVisible();
+      const form = dialog.locator('form.'+journey.css);
+      await expect(form).toHaveCount(1);
+      for(const id of journey.required)
+        await expect(form.locator('#'+id)).toHaveAttribute('required','');
+      if (journey.id === '033' || journey.id === '036')
+        await expect(form.locator('input[name="confirmed"]')).toHaveAttribute('required','');
+      const columns = () => form.evaluate(el => getComputedStyle(el).gridTemplateColumns.trim().split(/\s+/).length);
+      expect(await columns(), 'one readable column at 320px').toBe(1);
+      await page.setViewportSize({width:768,height:1024});
+      expect(await columns(), 'two readable columns at 768px').toBe(2);
+      await expect(dialog.getByRole('button',{name:'Cerrar',exact:true})).toBeVisible();
+    }
+    await expect.poll(() => page.evaluate(() =>
+      document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+  });
+}
+
+
+/** F02 buyer gate: responsive dialog chrome and reachable action must remain
+ * intact at all five catalog widths. No DOM/authorization shortcuts. */
+for (const width of [320, 390, 768, 1024, 1440]) {
+  test('F02 premium protected-dialog geometry and readable chrome at ' + width + 'px', async ({ page }) => {
+    await page.setViewportSize({ width, height: 720 });
+    await operator(page);
+    const navigation = page.getByRole('navigation', { name: 'Áreas de la consola de identidad' });
+    await navigation.getByRole('button', { name: 'Casos', exact: true }).click();
+    await page.getByRole('button', { name: 'Revisar identidad del titular', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Revisar identidad del titular' });
+    await expect(dialog).toBeVisible();
+    const metric = await dialog.evaluate(node => {
+      const dialogBox = node.getBoundingClientRect();
+      const head = node.querySelector('.cs-modal__header')?.getBoundingClientRect();
+      const foot = node.querySelector('.cs-modal__footer')?.getBoundingClientRect();
+      const content = node.querySelector('.cs-modal__content') as HTMLElement | null;
+      const title = node.querySelector('h2');
+      const titleFont = title ? parseFloat(getComputedStyle(title).fontSize) : 0;
+      return { left: dialogBox.left, right: dialogBox.right, top: dialogBox.top,
+        bottom: dialogBox.bottom, headBottom: head?.bottom || 0,
+        footTop: foot?.top || 0, titleFont,
+        contentScrollable: !!content && content.scrollHeight >= content.clientHeight };
+    });
+    expect(metric.left).toBeGreaterThanOrEqual(-1);
+    expect(metric.right).toBeLessThanOrEqual(width + 1);
+    expect(metric.top).toBeGreaterThanOrEqual(-1);
+    expect(metric.bottom).toBeLessThanOrEqual(721);
+    expect(metric.titleFont).toBeGreaterThanOrEqual(19);
+    expect(metric.headBottom).toBeLessThanOrEqual(metric.footTop);
+    expect(metric.contentScrollable).toBe(true);
+    await expect(dialog.getByRole('button', { name: 'Registrar revisión de identidad' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Cerrar', exact: true })).toBeVisible();
+    await expect.poll(() => page.evaluate(() =>
+      document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
+  });
+}
