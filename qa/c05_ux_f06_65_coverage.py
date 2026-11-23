@@ -15,6 +15,47 @@ def check(ok: bool, why: str) -> None:
     if not ok:
         raise AssertionError("F06-65 NO-GO: "+why)
 
+def validate_commercial_ia_ratings(items: list[dict[str, str]]) -> dict[str, float | int | bool]:
+    """No blank or below-threshold buyer grades, and no fake human sign-off."""
+    check(len(items) == 65, "exactly 65 buyer records required")
+    required = {f"C05-F01-{i:03}" for i in range(1, 66)}
+    actual = [r.get("id", "") for r in items]
+    check(set(actual) == required and len(set(actual)) == 65,
+          "unknown or duplicated buyer records")
+    scores = []
+    for item in items:
+        ident = item["id"]
+        score = item.get("nota_comercial_0_10", "").strip()
+        decision = item.get("dictamen_compraria", "").strip()
+        check(bool(score), "missing buyer score for " + ident)
+        try:
+            value = float(score)
+        except (ValueError, TypeError):
+            check(False, "non-numeric buyer score for " + ident)
+        check(9.5 <= value <= 10.0, "buyer score under premium threshold for " + ident)
+        check(decision == "COMPRARIA", "buyer decision not individually accepted for " + ident)
+        check(len(item.get("defecto_observado", "").strip()) >= 18,
+              "historic defect/inspection context missing for " + ident)
+        check(len(item.get("correccion_verificada", "").strip()) >= 95,
+              "specific editorial rationale missing for " + ident)
+        evidence = item.get("evidencia_png_por_viewport", "")
+        check(ident in evidence and "320,390,768,1024,1440" in evidence
+              and "45252951577" in evidence and "14857435406" in evidence,
+              "exact source artifact and five sizes absent for " + ident)
+        check(bool(item.get("seguridad_y_privacidad", "").strip()),
+              "security scope missing for " + ident)
+        note = item.get("observaciones", "")
+        check("DICTAMEN_DE_COMPRA_EDITORIAL_IA_2026-11-23" in note
+              and "no demuestra autorización backend por imagen" in note
+              and "Validar de nuevo sobre el SHA final documental" in note,
+              "IA-vs-human-vs-backend caveat missing for " + ident)
+        scores.append(value)
+    return {"accepted": len(scores), "minimum": min(scores),
+            "mean": round(sum(scores)/len(scores), 3),
+            "editorialIA": True, "humanAccepted": False,
+            "runtimeAuthByImage": False}
+
+
 def main(root: Path, catalog: Path) -> None:
     sha=os.environ.get("GITHUB_SHA", "")
     check(bool(re.fullmatch(r"[a-f0-9]{40}", sha)), "SHA exacto de Actions ausente")
@@ -25,25 +66,9 @@ def main(root: Path, catalog: Path) -> None:
     actual=[r["id"] for r in items]
     check(set(actual)==required and len(set(actual))==65,
           "IDs C05-F01-001..065 ausentes o duplicados")
-    # Ratings are optional, but every issued score requires evidence and
-    # an explicit buyer decision. Never auto-grade based on browser PASS.
-    for item in items:
-        score=item.get("nota_comercial_0_10", "").strip()
-        decision=item.get("dictamen_compraria", "").strip()
-        if not score:
-            check(decision == "PENDIENTE",
-                  "no emitir dictamen sin calificación: " + item["id"])
-            continue
-        check(item.get("defecto_observado", "").strip()
-              and item.get("evidencia_png_por_viewport", "").strip()
-              and item.get("seguridad_y_privacidad", "").strip(),
-              "calificación sin argumento/evidencia/seguridad: "+item["id"])
-        value=float(score)
-        check(0 <= value <= 10, "calificación fuera de escala: "+item["id"])
-        check(decision in {"COMPRARIA", "NO_COMPRARIA"},
-              "dictamen no emitido: "+item["id"])
-        check((value >= 9.5) == (decision == "COMPRARIA"),
-              "umbral comercial inconsistente: "+item["id"])
+    # Premium buyer acceptance is a SEPARATE editorial IA gate. A green
+    # Chromium screenshot is necessary evidence, never an automatic grade.
+    buyer = validate_commercial_ia_ratings(items)
     viewports={320,390,768,1024,1440}
     found=defaultdict(set)
     scrolled=defaultdict(int)
@@ -174,13 +199,15 @@ def main(root: Path, catalog: Path) -> None:
       "status":"PASS" if all(not r["missing"] for r in diagnostics) else "NO_GO",
       "sha":sha,"catalog":len(items),"screenshots":scanned,
       "viewports":diagnostics,"backendAuthorizationProved":False,
-      "commercialRatingCertified":False
+      "commercialRatingCertified":False,"commercialIABuyerAcceptance":buyer, "humanAcceptanceRecorded":False
     }
     (root/"F06_65_COVERAGE_SUMMARY.json").write_text(
       json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf-8")
     print(json.dumps(summary,ensure_ascii=False,indent=2))
     for report in diagnostics:
         check(not report["missing"], f"{report['width']}px faltan: {report['missing']}")
+    print(f"F06 commercial IA buyer review PASS: {buyer['accepted']}/65 >=9.5; "
+          f"minimum={buyer['minimum']:.1f}; NO human/device acceptance")
     print("F06-65 evidence and catalog PASS (NOT rating or security certification)")
 
 if __name__=="__main__":
