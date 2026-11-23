@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """F07 A/B/C negative controls. The gate must never downgrade scope or scores."""
 import csv
+import subprocess
 import unittest
 from pathlib import Path
 
-from c05_ux_f07_final_audits import ALLOWED, BASE, validate_scope, buyer_gate
+from c05_ux_f07_final_audits import ALLOWED, BASE, validate_scope, buyer_gate, validate_quota_window_change, ROTATION_QUOTA_RESERVATION
 
 ROOT = Path(__file__).resolve().parents[1]
 F07_SOURCE = "qa/c05_ux_f07_visual_comparison.py"
@@ -23,6 +24,34 @@ class F07FinalGateTests(unittest.TestCase):
         self.assertIn("frontend/tests/c05-f06-inventory-65.spec.ts", ALLOWED)
         self.assertNotIn(F06_UI, ALLOWED)
         self.assertNotIn("frontend/src/app/ui/feedback/operation-feedback.component.html", ALLOWED)
+
+    def test_only_original_e2e_plus_live_quota_window_is_allowed(self):
+        baseline = subprocess.check_output(
+            ["git", "show", BASE + ":qa/c05_operational_flow_e2e.mjs"],
+            cwd=ROOT, text=True)
+        revised = (ROOT / "qa/c05_operational_flow_e2e.mjs").read_text("utf-8")
+        validate_quota_window_change(revised, baseline)
+        self.assertIn("qa/c05_operational_flow_e2e.mjs", ALLOWED)
+        self.assertEqual(revised.count(ROTATION_QUOTA_RESERVATION), 1)
+
+    def test_original_eight_concurrent_session_rotations_cannot_be_reduced(self):
+        baseline = subprocess.check_output(
+            ["git", "show", BASE + ":qa/c05_operational_flow_e2e.mjs"],
+            cwd=ROOT, text=True)
+        revised = (ROOT / "qa/c05_operational_flow_e2e.mjs").read_text("utf-8")
+        with self.assertRaisesRegex(AssertionError, "beyond one actual quota reservation"):
+            validate_quota_window_change(
+                revised.replace("length: 8 }, () => api('sessions/rotate'",
+                                "length: 1 }, () => api('sessions/rotate'"), baseline)
+
+    def test_real_security_quota_is_not_relaxed(self):
+        baseline = subprocess.check_output(
+            ["git", "show", BASE + ":qa/c05_operational_flow_e2e.mjs"],
+            cwd=ROOT, text=True)
+        revised = (ROOT / "qa/c05_operational_flow_e2e.mjs").read_text("utf-8")
+        with self.assertRaisesRegex(AssertionError, "beyond one actual quota reservation"):
+            validate_quota_window_change(revised.replace(
+                "if (peak + capacity > 80)", "if (peak + capacity > 800)"), baseline)
 
     def test_no_baseline_ancestor_denied(self):
         with self.assertRaisesRegex(AssertionError, "ancestor"):
