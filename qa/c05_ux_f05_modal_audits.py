@@ -108,12 +108,91 @@ def audit_c() -> None:
          "minimum close targets were reduced")
     need("target.boundingBox()" in test and "toBeGreaterThanOrEqual(43.75)" in test,
          "F05 responsive touch target regression absent")
-    print("F05/C PASS: readable dialog variants, 5 widths, WCAG, 200pct zoom, compact height")
+    for marker in ("F05 DEEP ", "deepViewports", "el.scrollHeight", "data-feedback-kind=\"pending\"",
+                   "data-feedback-kind=\"error\"", "data-feedback-kind=\"success\"",
+                   "closedByDesign", "lastElementChild", "scenario + ' final content"):
+        need(marker in test, "full modal state/scroll regression removed: " + marker)
+    print("F05/C PASS: 11 full modal states at mobile and desktop, scroll, keyboard and 5 original widths")
+
+
+def deep_evidence(root: Path) -> None:
+    """Fail closed: 11 scenarios x 3 widths x 5 states, exact runner SHA and PNG."""
+    import json
+    import os
+    import struct
+    import hashlib
+    scenes = (
+        "recuperacion-operador-solicitud", "recuperacion-operador-doble-control",
+        "mfa-operador-verificacion", "mfa-operador-vinculacion",
+        "passkey-registro", "passkey-revocacion", "cambio-contrasena",
+        "aprobacion-membresia", "invitacion", "revocacion-sesion",
+        "renovacion-sesion"
+    )
+    heights = {320: 720, 390: 844, 1440: 900}
+    states = ("top", "bottom", "pending", "error", "result")
+    expected = {(scene, width, state)
+                for scene in scenes for width in heights for state in states}
+    sha = os.environ.get("GITHUB_SHA", "")
+    need(len(sha) == 40, "F05 deep evidence requires exact runner SHA")
+    need(root.is_dir(), "F05 deep Playwright output missing")
+    files = sorted(root.rglob("f05deep-*.json"))
+    need(len(files) == len(expected),
+         f"F05 deep 165 expected state files, found {len(files)}")
+    covered = set()
+    manifest = []
+    for file in files:
+        metadata = json.loads(file.read_text("utf-8"))
+        scene, state = metadata["scenario"], metadata["state"]
+        viewport = metadata["viewport"]
+        width, height = viewport["width"], viewport["height"]
+        item = (scene, width, state)
+        need(item in expected and item not in covered,
+             "F05 deep duplicate or unknown scenario/state: " + str(item))
+        covered.add(item)
+        key = f"f05deep-{scene}-{width}-{state}"
+        need(metadata["key"] == key and metadata["png"] == key + ".png",
+             "F05 deep manifest name mismatch")
+        need(height == heights[width], "F05 deep wrong mobile/desktop viewport")
+        need(metadata["synthetic"] is True and
+             metadata["demonstratesBackendAuthorization"] is False and
+             metadata["runnerSha"] == sha,
+             "F05 deep synthetic/exact SHA/authorization provenance mismatch")
+        need(metadata["metrics"]["overflow"] <= 2,
+             "F05 deep hidden horizontal overflow")
+        if state != "result":
+            need(metadata["closedByDesign"] is False,
+                 "F05 deep modal closed before its result")
+        png = file.with_name(metadata["png"])
+        need(png.exists() and png.stat().st_size > 1024,
+             "F05 deep state PNG missing/empty")
+        raw = png.read_bytes()
+        need(raw[:8] == b"\x89PNG\r\n\x1a\n" and raw[12:16] == b"IHDR",
+             "F05 deep invalid PNG bytes")
+        x, y = struct.unpack(">II", raw[16:24])
+        need((x,y) == (width,height), "F05 deep PNG viewport mismatch")
+        manifest.append({"scenario":scene, "width":width, "state":state,
+                         "png":str(png.relative_to(root)),
+                         "sha256":hashlib.sha256(raw).hexdigest(),
+                         "closedByDesign":metadata["closedByDesign"]})
+    need(covered == expected, "F05 deep state matrix not complete")
+    report = {"status":"PASS", "runnerSha":sha, "synthetic":True,
+              "backendAuthorizationDemonstrated":False,
+              "count":len(manifest), "scenarios":len(scenes),
+              "widths":list(heights), "states":list(states), "files":manifest}
+    (root / "F05_DEEP_STATES_MANIFEST.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2), "utf-8")
+    print(f"F05 DEEP evidence PASS: 11 scenarios x 3 mobile/desktop widths "
+          f"x 5 full states = {len(manifest)} original PNG with SHA-256, {sha[:12]}")
+
 
 if __name__ == "__main__":
     try:
-        need(len(sys.argv) == 2 and sys.argv[1] in ("A","B","C"), "expected A/B/C")
-        {"A":audit_a,"B":audit_b,"C":audit_c}[sys.argv[1]]()
-    except (AssertionError,OSError) as e:
+        if len(sys.argv) == 2 and sys.argv[1] in ("A", "B", "C"):
+            {"A":audit_a,"B":audit_b,"C":audit_c}[sys.argv[1]]()
+        elif len(sys.argv) == 3 and sys.argv[1] == "deep-evidence":
+            deep_evidence(Path(sys.argv[2]))
+        else:
+            raise AssertionError("F05 expected A/B/C or deep-evidence <folder>")
+    except (AssertionError, OSError, ValueError, TypeError, KeyError) as e:
         print(e, file=sys.stderr)
         raise SystemExit(1) from e

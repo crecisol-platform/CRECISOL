@@ -391,3 +391,171 @@ test('F05 secure mobile wizard reveals continuation and clears it at the bottom'
   await expect(dialog).toHaveCount(0);
   await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden');
 });
+
+
+/**
+ * F05 DEEP complete modal state acceptance — synthetic visual/interaction QA,
+ * never an authorization receipt. The independent .NET/MySQL E2E remains
+ * mandatory. Inspect BOTH ends of each content region and each async state,
+ * not only the first screen of a static modal.
+ */
+const deepViewports = [
+  { width: 320, height: 720 }, { width: 390, height: 844 },
+  { width: 1440, height: 900 }
+] as const;
+const deepStates = ['top', 'bottom', 'pending', 'error', 'result'] as const;
+
+for (const viewport of deepViewports) for (const scenario of scenarios) {
+  test('F05 DEEP ' + scenario + ' complete states at ' + viewport.width + 'px', async ({ page }, info: TestInfo) => {
+    await page.setViewportSize(viewport);
+    const realm: Realm = scenario.startsWith('recuperacion-') ? 'anonymous' :
+      scenario.startsWith('mfa-operador') || scenario.endsWith('sesion') ? 'operator' : 'business';
+    await syntheticApi(page, realm);
+    await openScenario(page, scenario);
+    const dlg = page.getByRole('dialog', { name: expectedTitle(scenario), exact: true });
+    const scroller = dlg.locator('.cs-modal__content');
+    const footer = dlg.locator('.cs-modal__footer');
+    await expect(dlg).toBeVisible();
+    await expect(footer).toBeVisible();
+    const initialMetrics = await geometry(page);
+
+    async function capture(state: typeof deepStates[number], closedByDesign = false): Promise<void> {
+      if (closedByDesign) await expect(dlg).toHaveCount(0);
+      else {
+        await expect(dlg).toBeVisible();
+        await geometry(page);
+        await expect(footer).toBeVisible();
+      }
+      const key = 'f05deep-' + scenario + '-' + viewport.width + '-' + state;
+      await page.screenshot({ path: info.outputPath(key + '.png'), animations: 'disabled' });
+      await writeFile(info.outputPath(key + '.json'), JSON.stringify({
+        key, scenario, state, realm, viewport, runnerSha: process.env.GITHUB_SHA ?? 'local',
+        synthetic: true, demonstratesBackendAuthorization: false,
+        closedByDesign, metrics: initialMetrics, png: key + '.png'
+      }, null, 2));
+    }
+
+    // Entry: no spontaneous result, complete semantic context and real confirmation.
+    await expect(dlg.locator('cs-operation-feedback')).toHaveCount(0);
+    if (expectedKind(scenario) === 'destructive') {
+      await expect(dlg.getByRole('note', { name: 'Advertencia de seguridad' })).toBeVisible();
+      const requiredConfirmation = dlg.locator('input[name="confirmed"][required]');
+      if (await requiredConfirmation.count()) {
+        await expect(requiredConfirmation).not.toBeChecked();
+        await expect(requiredConfirmation).toBeEnabled();
+      } else {
+        const action = dlg.locator('button[data-modal-action], form button[type="submit"], form button:not([type])').last();
+        await expect(action).toBeVisible();
+      }
+    }
+    await capture('top');
+
+    // Bottom: scroll the real inner region, prove the last child can be read
+    // without disappearing beneath the persistent footer.
+    await scroller.evaluate(el => {
+      el.scrollTop = el.scrollHeight;
+      el.dispatchEvent(new Event('scroll'));
+    });
+    await expect.poll(async () => scroller.evaluate(el =>
+      Math.abs(el.scrollHeight - el.clientHeight - el.scrollTop))).toBeLessThan(3);
+    const bottom = await scroller.evaluate(el => {
+      const last = el.lastElementChild;
+      if (!last) throw Error('F05 DEEP: empty modal content');
+      const a = el.getBoundingClientRect(), b = last.getBoundingClientRect();
+      return {
+        visible: Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1,
+        scrollable: el.scrollHeight > el.clientHeight + 12
+      };
+    });
+    expect(bottom.visible, scenario + ' final content must remain readable').toBe(true);
+    if (bottom.scrollable) await expect(dlg.locator('.cs-modal__scroll-cue')).toHaveCount(0);
+    await capture('bottom');
+
+    // Pending: real owner input -> modal pending feedback, locked dismissal;
+    // no simulated backend approval is sent.
+    await page.evaluate(() => {
+      const host = document.querySelector('dialog.cs-modal:modal')?.closest('cs-institutional-modal');
+      const root = host?.closest('cs-platform-identity-panel, cs-identity-portal');
+      const component = host && (window as AngularDebug).ng?.getComponent(host);
+      const owner = root && (window as AngularDebug).ng?.getComponent(root);
+      if (!component || !owner) throw Error('F05 DEEP: missing Angular modal/owner');
+      component.onDialogSubmit();
+      owner.error.set('');
+      owner.message.set('');
+      owner.busy.set(true);
+    });
+    const pending = dlg.locator('cs-operation-feedback [data-feedback-kind="pending"]');
+    await expect(pending).toBeVisible();
+    await expect(pending).toHaveAttribute('aria-busy', 'true');
+    await expect(dlg.getByRole('button', { name: 'Cerrar ventana' })).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await expect(dlg).toBeVisible();
+    await scroller.evaluate(el => { el.scrollTop = 0; el.dispatchEvent(new Event('scroll')); });
+    await capture('pending');
+
+    // Error: a safe UI-only failure; no raw server data or success receipt.
+    await page.evaluate(() => {
+      const host = document.querySelector('dialog.cs-modal:modal')?.closest('cs-institutional-modal');
+      const ownerRoot = host?.closest('cs-platform-identity-panel, cs-identity-portal');
+      const owner = ownerRoot && (window as AngularDebug).ng?.getComponent(ownerRoot);
+      if (!owner) throw Error('F05 DEEP: missing owner on error');
+      owner.error.set('No se completó la solicitud de prueba. Revisa los campos.');
+      owner.busy.set(false);
+    });
+    const error = dlg.locator('cs-operation-feedback [data-feedback-kind="error"]');
+    await expect(error).toBeVisible();
+    await expect(error).toHaveAttribute('role', 'alert');
+    await expect(dlg.locator('cs-operation-feedback [data-feedback-kind="success"]')).toHaveCount(0);
+    await capture('error');
+
+    // Result: simulate a second request and the acknowledged UI signal.
+    // A close-on-success dialog must actually close; other dialogs display
+    // their local result, never a receipt from another modal.
+    await page.evaluate(() => {
+      const host = document.querySelector('dialog.cs-modal:modal')?.closest('cs-institutional-modal');
+      const ownerRoot = host?.closest('cs-platform-identity-panel, cs-identity-portal');
+      const component = host && (window as AngularDebug).ng?.getComponent(host);
+      const owner = ownerRoot && (window as AngularDebug).ng?.getComponent(ownerRoot);
+      if (!component || !owner) throw Error('F05 DEEP: missing owner on retry');
+      owner.error.set('');
+      owner.message.set('');
+      component.onDialogSubmit();
+      owner.busy.set(true);
+    });
+    await expect(pending).toBeVisible();
+    const closesOnSuccess = await page.evaluate(() => {
+      const host = document.querySelector('dialog.cs-modal:modal')?.closest('cs-institutional-modal');
+      const component = host && (window as AngularDebug).ng?.getComponent(host);
+      if (!component) throw Error('F05 DEEP: missing modal on outcome');
+      return component.closeOnSuccess();
+    });
+    await page.evaluate(() => {
+      const host = document.querySelector('dialog.cs-modal:modal')?.closest('cs-institutional-modal');
+      const ownerRoot = host?.closest('cs-platform-identity-panel, cs-identity-portal');
+      const owner = ownerRoot && (window as AngularDebug).ng?.getComponent(ownerRoot);
+      if (!owner) throw Error('F05 DEEP: missing owner on outcome');
+      if (owner.feedbackScope) {
+        const scope = typeof owner.panel === 'function' ? owner.panel() :
+          typeof owner.view === 'function' ? owner.view() : '';
+        owner.feedbackScope.set(scope);
+      }
+      owner.message.set('Resultado sintético confirmado para revisión visual.');
+      owner.busy.set(false);
+    });
+    if (closesOnSuccess) {
+      await expect(dlg).toHaveCount(0);
+      await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden');
+      await expect(page.locator('cs-operation-feedback [data-feedback-kind="success"]').first()).toBeVisible();
+    } else {
+      await expect(dlg.locator('cs-operation-feedback [data-feedback-kind="success"]')).toBeVisible();
+      await expect(dlg.locator('cs-operation-feedback [data-feedback-kind="pending"]')).toHaveCount(0);
+      await expect(dlg.locator('cs-operation-feedback [data-feedback-kind="error"]')).toHaveCount(0);
+    }
+    await capture('result', closesOnSuccess);
+    if (!closesOnSuccess) {
+      await dlg.getByRole('button', { name: 'Cerrar ventana' }).click();
+      await expect(dlg).toHaveCount(0);
+    }
+    await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden');
+  });
+}
