@@ -614,6 +614,12 @@ try {
   sql(`UPDATE c05_identity_account SET account_state=2 WHERE account_id=UNHEX('${actor}')`);
   check((await api('sessions', {}, token)).status === 401, 'suspended account invalidates existing session');
   sql(`UPDATE c05_identity_account SET account_state=1 WHERE account_id=UNHEX('${actor}')`);
+  // The rotation cohort requires a full live peer-quota budget. Prior real
+  // negative-security calls can consume the 80-request/minute allowance and
+  // would otherwise deny the *winner verification* at attempt 81. Wait for a
+  // fresh real quota window without modifying quota rows, server clocks,
+  // concurrency, expected 401/200 outcomes or any product security policy.
+  await reserveTestWindow(30);
   const rotations = await Promise.all(Array.from({ length: 8 }, () => api('sessions/rotate', {}, token)));
   check(rotations.filter(r => r.status === 200).length === 1, '8 concurrent rotations have one winner');
   const oldToken = token; token = rotations.find(r => r.status === 200).data.sessionToken; confidential.push(token);
