@@ -529,6 +529,7 @@ for (const width of [320, 390, 768, 1024, 1440] as const) {
           await expect(queue).not.toContainText('55555555-6666-4777-8888-999999999999');
         }
         if (view === 'llaves') {
+          await expect(page.getByRole('heading', { name: 'Llaves disponibles', exact: true })).toBeVisible();
           await expect(page.getByRole('button', { name: 'Revocar esta llave', exact: true }))
             .toBeVisible();
         }

@@ -165,7 +165,7 @@
 <section class="operator-readonly-panel identity-key-panel" aria-label="Llaves de acceso">
   <div class="identity-panel-heading">
     <div>
-      <h3>Llaves registradas</h3>
+      <h3>Llaves disponibles</h3>
       <p>Consulta métodos activos y revócalos con verificación.</p>
     </div>
     <button type="button" [disabled]="busy() || identity.restoring()" (click)="passkeyListRequested.emit()">Actualizar llaves</button>
