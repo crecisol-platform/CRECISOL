@@ -69,7 +69,9 @@ ALLOWED = {
     "docs/c05/ux/F06_65_REVISION_COMPRADOR_PRELIMINAR_2026_11_22.csv",
     # Post-integration F06 security-gate correction and isolated negative tests.
     "qa/c05_ux_f06_feedback_scope_tests.py",
-    "docs/c05/ux/F06_GATE_ALCANCE_POSTMERGE_2026_11_23.md"
+    "docs/c05/ux/F06_GATE_ALCANCE_POSTMERGE_2026_11_23.md",
+    # Exact test-only buyer grade gate: no wildcard or permission expansion.
+    "qa/c05_ux_f06_commercial_rating_tests.py"
 }
 
 def text(path: str) -> str:
@@ -287,6 +289,17 @@ def audit_c() -> None:
         need(need_test in test, "missing F06 regression: " + need_test)
     need("reuseExistingServer: false" in text("frontend/playwright.c05-f06-feedback.config.ts"),
          "test harness not isolated")
+    # Editorial IA grade declarations must not be confused with a green
+    # screenshot run. Every buyer row has an individual rationale and 5-width
+    # evidence, and explicitly excludes human and backend-by-image claims.
+    import csv as csv_module
+    from c05_ux_f06_65_coverage import validate_commercial_ia_ratings
+    with (ROOT / "docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv").open(
+        newline="", encoding="utf-8") as buyer_stream:
+        final_reviews = list(csv_module.DictReader(buyer_stream))
+    buyer = validate_commercial_ia_ratings(final_reviews)
+    need(buyer["accepted"] == 65 and buyer["minimum"] >= 9.5,
+         "final 65 buyer grades not individually accepted")
     print("F06/C PASS: accessible validation, editorial consistency and reduced motion")
 
 if __name__ == "__main__":
