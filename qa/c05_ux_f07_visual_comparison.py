@@ -65,8 +65,8 @@ def index(root: Path, expected_sha: str) -> dict[tuple[str, int], dict]:
     return scenes
 
 
-def compare_scene(a: dict, b: dict) -> tuple[float, float, str]:
-    """Return changed high-contrast pixel fraction, mean diff, current SHA256."""
+def compare_scene(a: dict, b: dict) -> tuple[float, float, str, int]:
+    """Return changed pixels, mean, SHA256, and proven blank full-page tail."""
     for field in ("id", "inventoryIds", "route", "modalTitle",
                   "dialogsOpen", "visibleHeadings", "feedbackKinds"):
         need(a["data"].get(field) == b["data"].get(field),
@@ -77,20 +77,38 @@ def compare_scene(a: dict, b: dict) -> tuple[float, float, str]:
          b["data"].get("bodyScrollX", 10**9) <= 2,
          "horizontal overflow in old/new capture")
     with Image.open(a["png"]) as old, Image.open(b["png"]) as new:
-        need(old.size == new.size, "PNG dimensions changed: " + str(a["data"].get("id"))
-             + f" {old.size} -> {new.size}")
         need(old.format == "PNG" and new.format == "PNG", "invalid screenshot format")
-        w, h = old.size
+        need(old.width == new.width, "responsive PNG width changed: "
+             + str(a["data"].get("id")))
+        tail_px = abs(old.height - new.height)
+        min_h = min(old.height, new.height)
+        need(min_h >= a["data"]["viewport"]["height"],
+             "full-page image shorter than browser viewport")
+        if tail_px:
+            need(tail_px <= min_h / 4,
+                 "full-page height drift exceeds strict 25% blank-tail budget")
+            longer = old if old.height > new.height else new
+            surplus = longer.convert("RGB").crop(
+                (0, min_h, longer.width, longer.height))
+            background = longer.convert("RGB").getpixel((0, min_h))
+            blank = Image.new("RGB", surplus.size, background)
+            # Real content cannot be discarded to make a mismatched screenshot
+            # look equal. Only an EXACT solid trailing background is normalized.
+            need(ImageChops.difference(surplus, blank).getbbox() is None,
+                 "unequal image heights contain non-background pixels")
+        w, h = old.width, min_h
         # Downsampling only avoids antialias noise, not inspecting a collage.
         size = (max(1, w // 4), max(1, h // 4))
-        src = old.convert("RGB").resize(size, Image.Resampling.LANCZOS)
-        dst = new.convert("RGB").resize(size, Image.Resampling.LANCZOS)
+        src = old.convert("RGB").crop((0, 0, w, h)).resize(
+            size, Image.Resampling.LANCZOS)
+        dst = new.convert("RGB").crop((0, 0, w, h)).resize(
+            size, Image.Resampling.LANCZOS)
         diff = ImageChops.difference(src, dst).convert("L")
         mean = ImageStat.Stat(diff).mean[0]
         mask = diff.point(lambda px: 255 if px > 32 else 0)
         fraction = mask.histogram()[255] / (size[0] * size[1])
         digest = hashlib.sha256(b["png"].read_bytes()).hexdigest()
-        return round(fraction, 6), round(mean, 5), digest
+        return round(fraction, 6), round(mean, 5), digest, tail_px
 
 
 def main() -> None:
@@ -119,7 +137,7 @@ def main() -> None:
     failures = []
     for key in sorted(new, key=lambda k: (k[1], k[0])):
         original, recent = old[key], new[key]
-        ratio, mean, digest = compare_scene(original, recent)
+        ratio, mean, digest, blank_tail = compare_scene(original, recent)
         ids = recent["data"]["inventoryIds"]
         need(isinstance(ids, list), "missing explicit inventoryIds collection")
         if not ids:
@@ -133,6 +151,7 @@ def main() -> None:
         row = {
             "scene": key[0], "width": key[1], "ids": ids,
             "changeFraction": ratio, "meanPixelDelta": mean,
+            "normalizedTrailingSolidBackgroundPx": blank_tail,
             "sourceSha256": hashlib.sha256(original["png"].read_bytes()).hexdigest(),
             "currentSha256": digest,
             "passed": ratio <= ratio_threshold and mean <= mean_threshold,
@@ -182,6 +201,11 @@ def main() -> None:
         "status": "NO_GO" if failures else "PASS",
         "baseSha": BASE, "runnerSha": sha,
         "originalPNGsCompared": len(deltas),
+        "documentedBlankBackgroundHeightDifferences": [
+            {"scene": row["scene"], "width": row["width"],
+             "surplusPx": row["normalizedTrailingSolidBackgroundPx"]}
+            for row in deltas if row["normalizedTrailingSolidBackgroundPx"] > 0
+        ],
         "auxiliaryScenesComparedWithoutCatalogID": 20,
         "uniqueCatalogIDs": len(records),
         "idViewportPairs": sum(len(x) for x in coverage.values()),
