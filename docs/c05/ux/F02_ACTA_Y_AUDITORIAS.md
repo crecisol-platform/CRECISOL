@@ -50,3 +50,20 @@
 **F02 certificada técnicamente como biblioteca fundacional y laboratorio visual probado, NO como rediseño completo de las 65 interfaces C05.** La calificación estética final >=9/10 por pantalla y el cierre de todo el plan solo se realizarán en la última fase. La conversión de las páginas y modales existentes a estos componentes corresponde a fases posteriores, con pruebas sobre contextos reales y aceptación humana independiente.
 
 **NO AUTOMERGE:** el PR #175 permanece DRAFT y sin fusionarse; PR #173 se conserva sin cambios. F03 NO iniciada. Para revertir, descartar rama F02/PR y sus archivos agregados, revirtiendo únicamente `frontend/angular.json`; no hay datos ni migraciones que restaurar.
+
+---
+
+## Adenda F02, 22-11-2026 — Paridad real de las 65 superficies
+
+La certificación técnica histórica de nueve primitivas y su laboratorio sigue válida **exclusivamente para ese alcance**. Para comprobar la adopción en el código posterior F06 se añadió [diagnóstico de 65 superficies](F02_65_DIAGNOSTICO_ADOPCION_2026_11_22.md), [matriz individual](F02_65_PARIDAD_VISUAL_2026_11_22.csv) y `qa/c05_ux_f02_65_parity_audits.py`.
+
+**SHA de producto auditado:** F06 PR #179 `d539b75d13cde64c8ea3279d33ab35b6349c1adf`; F01 fuente validada `01efbce91586597006254f721e5736adf991e2a4`, sin traer datos de SOLQARYN. La nueva auditoría A/B/C estática de adopción exige pruebas sobre SHA y blob exactos y decisiones fail-closed. [CI de inventario F06 #45032597168](https://github.com/crecisol-platform/CRECISOL/actions/runs/45032597168) y [CI técnica #45032597178](https://github.com/crecisol-platform/CRECISOL/actions/runs/45032597178) registraron SUCCESS para el SHA de origen; el código F02 no afirma haberlos vuelto a ejecutar.
+
+**Hallazgo:** de las nueve primitivas de F02, en las 11 plantillas F06 del inventario se encuentran directamente navegación, tarjeta y estado. Los 65 recorridos heredan el tema institucional y tokens globales, pero en 34/65 referencias el archivo fuente no invoca directamente una de esas nueve primitivas. En seis hojas de producción hay 377 apariciones de colores HEX frente a 93 referencias a tokens. Es **deuda de unificación candidata a revisar**, no 377 fallos demostrados. Los modales y el feedback usan componentes especializados de F05/F06, cuya calidad no se deduce de los tests del laboratorio F02.
+
+**Auditorías delimitadas:**
+- A: trazabilidad exacta 65 F01–F06, fuente HTML, tipos, rutas y SHA.
+- B: no cambiar permisos por el cliente, preservación de los controles semánticos de evidencia 014/057 y rechazo de notas artificiales; **sin nueva prueba backend/MySQL**.
+- C: uso de tokens/componentes, deuda CSS cuantificada y limitaciones explícitas; **no inspección editorial completa ni aprobación 9.5**.
+
+**Decisión actual:** biblioteca F02 certificada históricamente en su propio alcance; **paridad visual integral 65/65 NO CERTIFICADA y aceptación comercial 0/65**. Es obligatorio verificar la CI del último HEAD de PR #175 antes de cerrar el nuevo auditor. Ninguna edición de `dev`, `main`, F03–F06, backend, database, C06/F07, producción o SOLQARYN. El PR continúa DRAFT y sin fusión.
