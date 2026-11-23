@@ -25,13 +25,11 @@ VIEWPORTS = (320, 390, 768, 1024, 1440)
 ratio_threshold = 0.05
 mean_threshold = 10.0
 
-# This one ORIGINAL F06 JSON was captured before Angular completed the
-# transition from Casos to Sesiones, although its PNG already shows Sesiones.
-# Both original and revalidated PNG content must remain pixel-identical.
-# Never generalize this exception to other scenes or source SHAs.
-# Exact SHA-bound historical stale-heading records. The original screenshot
-# already shows the correct target screen in all ten cases, but its JSON was
-# sampled one Angular render before the camera frame. No other scenes qualify.
+# Exactly ten original F06 JSON headers were sampled one Angular render
+# before their matching PNG: five Sesiones and five Monitor empty states.
+# The screenshots already show the correct target UI. Never generalize this
+# exact SHA-bound historical metadata exception to any other scene or source.
+# Both original and revalidated PNG visible contents must be pixel-identical.
 STALE_AUXILIARY_SCREEN_SIZES = (
     ("mobile-320", 320), ("mobile-390", 390), ("tablet-768", 768),
     ("laptop-1024", 1024), ("desktop-1440", 1440),
