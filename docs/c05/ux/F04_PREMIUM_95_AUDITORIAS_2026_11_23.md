@@ -43,3 +43,7 @@ Notas finales exigidas: cinco calificaciones IA justificadas individualmente y >
 ### Reparación del presupuesto CSS
 
 La primera CI F04 #45183537220 aprobó A/B/C pero falló al compilar Angular: el CSS combinado del componente superó el máximo de 22 KB (23.59 KB compilados). Se conserva el límite; se separa exclusivamente la nueva capa premium en `platform-operator-f04-premium.component.css` cargada por las cinco vistas de plataforma desde `platform-operator-views.component.ts`. CSS original restaurado con solo una nota de localización. Ninguna regla global o seguridad fue modificada. Nueva CI obligatoria antes de calificar.
+
+### Corrección de regresión de token visual F02/F06
+
+La CI #45183981603 tuvo 59/59 F04 PASS, 25 PNG/JSON verificados, F03/F02 y F05 PASS. La regresión F06 presentó **171 PASS y 3 FAIL** en la escena sintética `operator-error` a 768, 1024 y 1440 px: la tarjeta de consulta exacta F04 usaba `--cs-color-surface` blanco en lugar de `--cs-color-surface-soft`, obligatorio en F02 y en F06. Se cambia **el CSS del producto** para conservar el token institucional y el borde de jerarquía; no se modifica la prueba F06, no se oculta ningún contenido y backend/MySQL no se tocan. La CI completa debe aprobarse sobre el nuevo SHA.

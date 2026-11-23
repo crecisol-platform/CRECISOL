@@ -46,7 +46,7 @@
 .operator-workspace--casos .operator-card--lookup {
   border-color: var(--cs-color-border-strong, #9bb5cb);
   border-left: 4px solid var(--cs-color-action, #103f75);
-  background: var(--cs-color-surface, #fff);
+  background: var(--cs-color-surface-soft, #f5f9fd);
   box-shadow: var(--cs-shadow-card, 0 5px 18px rgb(16 46 76 / .07));
 }
 .operator-workspace--casos .operator-card--lookup form {
