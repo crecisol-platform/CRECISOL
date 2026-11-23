@@ -34,7 +34,7 @@ const activities: Readonly<Record<string, string>> = {
   'pair-start': 'Preparando una vinculación entre navegadores…',
   'pair-complete': 'Verificando la aprobación de vinculación…',
   'security-events': 'Consultando tu actividad de seguridad…',
-  'profile-read': 'Actualizando la información del perfil…',
+  'profile-read': 'Consultando la información verificada del perfil…',
   'profile-photo': 'Guardando la foto verificada…',
   'profile-photo-remove': 'Eliminando la foto seleccionada…',
   'sessions-list': 'Consultando las sesiones autorizadas…',
