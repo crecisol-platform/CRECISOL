@@ -120,7 +120,10 @@ export class InstitutionalModalComponent implements OnDestroy {
     const dialog = this.surface?.nativeElement;
     if (!dialog || dialog.open || this.busy()) return;
     // Never layer a second privileged modal over another dialog.
-    // Also respect native modal dialogs owned by other system flows (for example\n    // a session-expiry notice). Never put a privileged action over their top layer.\n    if (InstitutionalModalComponent.openInstances.size !== 0 ||\n        document.querySelector('dialog:modal')) return;
+    // Also respect native modal dialogs owned by other system flows (for example
+    // a session-expiry notice). Never put a privileged action over their top layer.
+    if (InstitutionalModalComponent.openInstances.size !== 0 ||
+        document.querySelector('dialog:modal')) return;
     this.host.nativeElement.removeAttribute('title');
     this.previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.localFeedback.set('');
