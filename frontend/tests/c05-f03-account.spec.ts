@@ -497,3 +497,67 @@ test('F03 mobile deep links keep the active account tab visible without page ove
       await noHorizontalOverflow(page);
     }
   });
+
+/* F03 premium gate: the 9.5 buyer review must not be purchased by hiding
+ * navigation, reducing touch targets or dropping protected account actions. */
+for (const width of [320, 390, 768, 1024, 1440] as const) {
+  for (const view of views) {
+    test('F03 PREMIUM six-view geometry ' + view + ' at ' + width + 'px',
+      async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await syntheticAccount(page); await visit(page, view);
+        const workspace = page.locator('cs-identity-workspace .identity-workspace');
+        await expect(workspace).toHaveAttribute('data-view', view);
+        await expect(workspace.locator('h2').first()).toBeVisible();
+        const nav = page.getByRole('navigation', { name: 'Mi cuenta' });
+        await expect(nav.getByRole('link')).toHaveCount(6);
+        const targetSizes = await nav.getByRole('link').evaluateAll(elements =>
+          elements.map(element => element.getBoundingClientRect().height));
+        expect(Math.min(...targetSizes), 'six account links require 44px minimum targets')
+          .toBeGreaterThanOrEqual(43.5);
+        await noHorizontalOverflow(page);
+        if (width === 320) {
+          await expect(page.locator('#account-nav-mobile-help')).toBeVisible();
+          await expect(page.locator('#account-nav-mobile-help')).toContainText('seis áreas');
+          await expect(nav).toHaveCSS('overflow-x', 'auto');
+        }
+        await expect(page.getByRole('button', { name: 'Cerrar sesión', exact: true }))
+          .toBeVisible();
+        if (view === 'administracion') {
+          const queue = page.getByRole('region', { name: 'Solicitudes de membresía pendientes' });
+          await expect(queue).toContainText('so•••@example.test');
+          await expect(queue).not.toContainText('55555555-6666-4777-8888-999999999999');
+        }
+        if (view === 'llaves') {
+          await expect(page.getByRole('heading', { name: 'Llaves disponibles', exact: true })).toBeVisible();
+          await expect(page.getByRole('button', { name: 'Revocar esta llave', exact: true }))
+            .toBeVisible();
+        }
+        if (view === 'seguridad') {
+          await expect(page.getByRole('button', { name: 'Cambiar contraseña', exact: true }))
+            .toBeVisible();
+          await expect(page.getByRole('button', { name: 'Reemplazar segundo factor' }))
+            .toBeVisible();
+        }
+      });
+  }
+}
+
+test('F03 PREMIUM membership review preserves MFA, blank decision and mandatory confirmation',
+  async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 720 });
+    await syntheticAccount(page); await visit(page, 'administracion');
+    await page.getByRole('button', { name: 'Revisar solicitud', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Revisar membresía con permiso administrativo' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('select[name="decision"]')).toHaveValue('');
+    for (const field of ['membershipId', 'decision', 'reason', 'code']) {
+      await expect(dialog.locator('[name="' + field + '"]')).toHaveAttribute('required', '');
+    }
+    await expect(dialog.locator('input[name="confirmed"]')).toHaveAttribute('required', '');
+    await expect(dialog.locator('input[name="confirmed"]')).not.toBeChecked();
+    await expect(dialog.getByRole('note', { name: 'Advertencia de seguridad' }))
+      .toContainText('La decisión es permanente');
+    await page.keyboard.press('Escape');
+    await expect(dialog).not.toBeVisible();
+});

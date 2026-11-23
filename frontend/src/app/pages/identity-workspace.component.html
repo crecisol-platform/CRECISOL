@@ -1,4 +1,4 @@
-<section class="identity-workspace">
+<section class="identity-workspace" [attr.data-view]="view()">
           <h2 id="session-heading">
             @switch (view()) {
               @case ('perfil') { Datos verificados }
@@ -25,20 +25,20 @@
           }
           <p class="identity-workspace__lead">
             @switch (view()) {
-              @case ('perfil') { Consulta y actualiza los datos de tu perfil empresarial. }
-              @case ('llaves') { Consulta y administra tus llaves registradas. }
-              @case ('seguridad') { Actualiza tus métodos de seguridad con verificación adicional. }
-              @case ('historial') { Revisa los eventos recientes de tu cuenta. }
-              @case ('administracion') { Consulta solicitudes pendientes o invita con autorización. }
-              @default { Comprueba tus sesiones y dispositivos autorizados. }
+              @case ('perfil') { Tu perfil y preferencias pertenecen al contexto de esta empresa. }
+              @case ('llaves') { Revisa tus llaves antes de registrar o revocar un acceso. }
+              @case ('seguridad') { Elige una operación: cada cambio exige una verificación propia. }
+              @case ('historial') { Actividad reciente con resultados legibles y datos protegidos. }
+              @case ('administracion') { Consulta solicitudes solo dentro de tus permisos administrativos. }
+              @default { Revisa tus sesiones, caducidad y dispositivos autorizados. }
             }
           </p>
           @if (view() === 'perfil') {
 <section class="operator-readonly-panel identity-profile" aria-label="Perfil de mi empresa">
   <div class="identity-panel-heading">
     <div>
-      <h3>Información visible</h3>
-      <p>Datos verificados del perfil de esta empresa.</p>
+      <h3>Perfil de esta empresa</h3>
+      <p>Nombre y preferencias que puedes actualizar aquí.</p>
     </div>
     <button type="button" [disabled]="busy()" (click)="loadProfileRequested.emit()">Actualizar datos</button>
   </div>
@@ -121,8 +121,8 @@
   <section class="operator-readonly-panel identity-activity" aria-label="Historial de seguridad">
   <div class="identity-panel-heading">
     <div>
-      <h3>Movimientos recientes</h3>
-      <p>Eventos recientes de tu cuenta.</p>
+      <h3>Eventos recientes</h3>
+      <p>Resultados de las operaciones registradas en tu cuenta.</p>
     </div>
     <button type="button" [disabled]="busy()" (click)="requestHistory()">Actualizar historial</button>
   </div>
@@ -166,7 +166,7 @@
   <div class="identity-panel-heading">
     <div>
       <h3>Llaves disponibles</h3>
-      <p>Métodos registrados y revocación protegida.</p>
+      <p>Consulta métodos activos y revócalos con verificación.</p>
     </div>
     <button type="button" [disabled]="busy() || identity.restoring()" (click)="passkeyListRequested.emit()">Actualizar llaves</button>
   </div>
