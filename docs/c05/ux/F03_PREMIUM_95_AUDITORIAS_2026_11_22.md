@@ -3,7 +3,7 @@
 **Microtarea:** elevar las seis vistas autenticadas a una valoración editorial individual objetivo de **9.5/10 o superior**.  
 **Rama aislada:** `feature/c05-ux-f03-premium-9p5-20261122`.  
 **Base inmutable:** `42409d0bce6c70f4fb6f25679340063a43b61a44`, que conserva F01/F02 integradas en candidata F06.  
-**Estado de esta acta antes de CI nueva:** implementación realizada; certificación final por emitirse exclusivamente tras pruebas y nueva inspección de capturas. No extrapolar notas 9.1–9.3 del PR #176 o 9.5 de F02 a estas seis pantallas.
+**Estado actualizado 23-11-2026:** ejecución técnica y revisión editorial IA independiente completadas sobre el producto SHA `ae9c6e28b53f2bae7ea1703da956558a8ba1642d`. Dictamen individual ≥9.5/10 en seis vistas documentado en §6; no extrapolado desde PR #176 ni F02. El cierre se limita a C05 UX F03 en la rama candidata; no sustituye la aceptación humana del propietario ni habilita producción/C06.
 
 ## 1. Observación real de la base
 
@@ -54,7 +54,7 @@ Mantener esta microtarea en una rama hija de la candidata F06. PR #176 conserva 
 
 ## 5. Resultados CI y dictamen final
 
-**PENDIENTES DE EVIDENCIA NUEVA.** La CI propia debe completarse y sus artefactos deben identificarse por SHA. La evaluación editorial IA se documentará por separado, sin asignar 9.5 anticipado.
+**EVIDENCIA TÉCNICA Y EDITORIAL REGISTRADA:** véase §6 (actualización 23-11-2026). Los fallos intermedios narrados a continuación son antecedentes reales corregidos, no el estado vigente. CI push y PR del producto SHA `ae9c6e28b53f2bae7ea1703da956558a8ba1642d`: ambos con 2/2 jobs SUCCESS; 411 Playwright + 340 aserciones E2E. La revisión subjetiva IA se separa expresamente de la certificación automatizada y de una aceptación humana.
 
 ### Corrección de causa raíz tras CI de Chromium
 
@@ -71,3 +71,40 @@ El run [#45111320164](https://github.com/crecisol-platform/CRECISOL/actions/runs
 ### Contrato E2E real de llaves (registro de fallo y reparación)
 
 La CI [#45112049475](https://github.com/crecisol-platform/CRECISOL/actions/runs/45112049475) aprobó el trabajo de frontend (411 Playwright, 65×5, F03 PNG 30/30, A/B/C), pero **falló E2E en la aserción 199** después de 198 comprobaciones reales PASS. El escenario de passkeys `qa/c05_passkey_browser_checks.mjs` exige `getByRole('heading', {name:'Llaves disponibles', exact:true})`, mientras la mejora había renombrado ese encabezado a `Llaves registradas`. No hubo fallo de permiso o firma; el test no localizó el encabezado por cambio de texto. Se restaura **el texto de producto original `Llaves disponibles`**, sin modificar la prueba E2E ni el backend, y se agrega una expectativa accesible explícita al test F03 en cinco tamaños para prevenir la regresión. Se repite toda la CI sobre nuevo SHA; no se convalida el E2E fallido ni se le asigna PASS retrospectivo.
+
+## 6. Dictamen final de F03: revisión editorial independiente y gates — 23-11-2026
+
+**Identidad de código y alcance.** Producto examinado: `ae9c6e28b53f2bae7ea1703da956558a8ba1642d`, rama `feature/c05-ux-f03-premium-9p5-20261122`, PR [#181](https://github.com/crecisol-platform/CRECISOL/pull/181), base `feature/c05-ux-f06-mensajeria-estados-20261120` en `42409d0bce6c70f4fb6f25679340063a43b61a44`. El repositorio oficial transferido conserva ID `1450414592`, hoy `crecisol-platform/CRECISOL`. No se altera SOLQARYN. Esta actualización es exclusivamente documental sobre código previamente probado; su propio SHA requiere seguimiento de CI después de guardar.
+
+### 6.1 Registro de pruebas reales, no inferidas
+
+| Puerta | Evidencia verificada sobre el producto SHA `ae9c6e28` | Dictamen |
+| --- | --- | --- |
+| CI de la rama | [Push #45113659805](https://github.com/crecisol-platform/CRECISOL/actions/runs/45113659805), dos trabajos completados con `success` | PASS 2/2 |
+| CI de revisión | [PR #45113664688](https://github.com/crecisol-platform/CRECISOL/actions/runs/45113664688), ambos trabajos completados con `success` | PASS 2/2 |
+| Auditorías de código A/B/C | Comparativa de tags y ocho archivos exactos, marcadores de MFA/permisos, CSS/contraste, catálogo 65 ID | PASS |
+| Angular 22 + Node 24 + Chromium | `npm ci` bloqueado, TypeScript, build prod e institutional-harness | PASS |
+| F03 seis vistas y navegación | Playwright 83 casos F03, 18 navegación, 30 PNG/JSON y 31 pruebas premium dentro de F03 | PASS |
+| Regresiones visuales funcionales | 11 F02, 34 F04, 61 F05, 174 F06, 30 inventario; suma Playwright global **411** | PASS |
+| Angular → .NET 10 → MySQL 8.4 real | **340 aserciones E2E**; migraciones 18 adelante/18 atrás; sesiones y expiración por inactividad; TOTP SHA1, códigos de respaldo, WebAuthn, revocación, bitácoras, cookies, CSRF, negativos cross-tenant y autorizaciones de membresía | PASS |
+| Alcance de escritura | Solo ocho archivos F03 (HTML/CSS, test, auditor, workflow y acta); sin backend, DB, estilos globales, `dev`, `main`, Maestro Word/PDF, servicios externos ni SOLQARYN | PASS |
+
+**Evidencia visual autónoma:** artefacto de [ejecución push #45113659805](https://github.com/crecisol-platform/CRECISOL/actions/runs/45113659805) (artefacto ID `14791500394`, nombre termina en SHA `ae9c6e28b53f2bae7ea1703da956558a8ba1642d`). Se verificaron **30 de 30 hashes SHA-256** de las capturas PNG contra `F03_ACCOUNT_MANIFEST.json`; sus 30 JSON indican `runnerSha=ae9c6e28...`, seis vistas × 320/390/768/1024/1440 px, `documentOverflow=0` en todos los casos y pestaña activa correcta. Datos sintéticos. La revisión visual recorrió cinco panoramas de resolución y las seis capturas móviles individuales a tamaño legible, contrastadas con escritorio. Los PNG originales se entregan por separado en RAR4 validado, no como única imagen compuesta.
+
+### 6.2 Calificación por interfaz — rol comprador/editorial IA
+
+Criterio editorial **subjetivo, no puntuación automática de Chromium**: jerarquía visual, lectura, consistencia institucional con F01/F02, densidad y ritmo, claridad de acciones, estados y privacidad, uso táctil, robustez 320–1440 px. Para aprobar es obligatorio **≥9.5/10 individual**, no una media. La valoración no pretende ser prueba humana de lectores de pantalla o de dispositivos físicos.
+
+| Vista de cuenta autenticada | Nota IA /10 | Razón concreta de aceptación |
+| --- | ---: | --- |
+| **Resumen** | **9.5** | Sesión verificada, política vigente de 30 minutos y caducidad legible; dispositivos y revocación propia visibles, sin UUID crudos ni recortes; jerarquía de acciones clara |
+| **Perfil** | **9.5** | Identidad de la empresa presentada como información legible con idioma y zona horaria; refresco, edición y foto preservados; diseño limpio en móvil y escritorio |
+| **Llaves** | **9.6** | Lista de llaves comprensible, referencia enmascarada, registro independiente y revocación diferenciada en rojo, con protección MFA; encabezado `Llaves disponibles` compatible con E2E |
+| **Seguridad** | **9.6** | Cuatro acciones sensibles separadas en tarjetas contextualizadas; requisitos de contraseña, factor, recuperación y correo conservados en sus modales, sin respuestas de seguridad anticipadas |
+| **Historial** | **9.5** | Eventos de seguridad traducidos a lenguaje de usuario, fechas, filtro y estados semánticos visibles en móvil; no se exponen códigos técnicos ni identificadores ajenos |
+| **Aprobaciones** | **9.6** | Bandeja con destinatario enmascarado, acción de revisión clara, invitación separada y permisos de membresía explicados; MFA, motivo y confirmación protegida siguen obligatorios |
+| **Mínimo** | **9.5** | **6/6 vistas alcanzan el umbral editorial en el alcance revisado** |
+
+**Dictamen QA/editorial:** **APROBADO para C05 UX F03 en entorno aislado y rama candidata**, con seis notas individuales ≥9.5 y 0 incidentes P0/P1 reproducidos en los tests ejecutados. No confundir con certificación de producción, accesibilidad humana con lector de pantalla, cumplimiento legal externo, aprobación manual del propietario o habilitación de C06. El PR puede incorporarse solo a su **rama base candidata F06**, una vez que la CI de esta adenda documental confirme éxito; jamás se fusiona aquí a `dev` o `main` sin la cadena institucional y sus bloqueos independientes.
+
+**Historial y reversibilidad:** se conservan los fallos de CI intermedios sin reinterpretarlos como PASS. Los cambios de producto quedan delimitados al diff de #181; reversible mediante `git revert` dentro de la rama candidata, sin migraciones ni cambios persistentes de datos.
