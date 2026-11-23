@@ -263,9 +263,7 @@ def main() -> None:
         ],
         "auxiliaryScenesComparedWithoutCatalogID": 20,
         "knownF06StaleMetadataWithIdenticalPNGContent": 10,
-        "knownF06StaleMetadataSceneIDs": sorted(
-            {"scene": key[0], "width": key[1]} for key in []
-        ) if False else [
+        "knownF06StaleMetadataSceneIDs": [
             {"scene": key[0], "width": key[1]} for key in sorted(witnessed)
         ],
         "uniqueCatalogIDs": len(records),
