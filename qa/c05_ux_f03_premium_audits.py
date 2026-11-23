@@ -153,7 +153,7 @@ def audit_c() -> None:
             "technical and editorial gates not documented")
     print(json.dumps({"C": "PASS_source_only",
                       "responsive_sizes_to_test": [320, 390, 768, 1024, 1440],
-                      "premium_browser_scenarios": 13,
+                      "premium_browser_scenarios": 31,
                       "institutional_9_5_score_issued": False}))
 
 

@@ -446,7 +446,7 @@
     border-radius: var(--cs-radius-md, .85rem);
   }
   .account-nav--workspace a {
-    min-height: var(--cs-hit-target, 2.75rem);
+    min-height: max(44px, var(--cs-hit-target, 2.75rem));
     padding: .6rem .85rem;
     font-size: .85rem;
   }
@@ -457,7 +457,7 @@
 }
 @media (min-width: 721px) and (max-width: 1039px) {
   .account-nav--workspace { gap: .25rem; padding: .28rem; margin-bottom: .85rem; }
-  .account-nav--workspace a { min-height: var(--cs-hit-target, 2.75rem); }
+  .account-nav--workspace a { min-height: max(44px, var(--cs-hit-target, 2.75rem)); }
 }
 @media (forced-colors: active) and (max-width: 720px) {
   .account-nav-mobile-help { border-left-color: CanvasText; color: CanvasText; }
@@ -466,4 +466,7 @@
     outline-offset: -2px;
     box-shadow: none;
   }
+}
+@media (min-width: 1040px) {
+  .account-nav--workspace a { min-height: max(44px, var(--cs-hit-target, 2.75rem)); }
 }

@@ -500,7 +500,7 @@ test('F03 mobile deep links keep the active account tab visible without page ove
 
 /* F03 premium gate: the 9.5 buyer review must not be purchased by hiding
  * navigation, reducing touch targets or dropping protected account actions. */
-for (const width of [320, 768] as const) {
+for (const width of [320, 390, 768, 1024, 1440] as const) {
   for (const view of views) {
     test('F03 PREMIUM six-view geometry ' + view + ' at ' + width + 'px',
       async ({ page }) => {

@@ -34,7 +34,7 @@ Permitido únicamente:
 
 **Backend, MySQL, migraciones, contratos de identidad, parámetros de sesión, autorizaciones, cookies, códigos MFA, recuperación, privacidad, C01/C02, `dev`, `main`, Maestro Único y SOLQARYN fuera de alcance de escritura.** `data-view` es solo un selector visual, nunca un selector de privilegios.
 
-Las nuevas pruebas de navegador verifican 12 combinaciones (6 vistas × 320 y 768), altura táctil mínima 44px, navegación de seis pestañas, ausencia de overflow y continuidad de acciones; una decimotercera prueba protege decisión vacía, confirmación requerida, MFA, motivo y advertencia de membresía. Se mantienen íntegramente todos los tests históricos del archivo.
+Las nuevas pruebas de navegador verifican 30 combinaciones (6 vistas × cinco anchos), altura táctil mínima 44px, navegación de seis pestañas, ausencia de overflow y continuidad de acciones; una trigésima primera prueba protege decisión vacía, confirmación requerida, MFA, motivo y advertencia de membresía. Se mantienen íntegramente todos los tests históricos del archivo.
 
 ## 3. Barreras de aceptación
 
@@ -55,3 +55,7 @@ Mantener esta microtarea en una rama hija de la candidata F06. PR #176 conserva 
 ## 5. Resultados CI y dictamen final
 
 **PENDIENTES DE EVIDENCIA NUEVA.** La CI propia debe completarse y sus artefactos deben identificarse por SHA. La evaluación editorial IA se documentará por separado, sin asignar 9.5 anticipado.
+
+### Corrección de causa raíz tras CI de Chromium
+
+La primera CI del SHA `90e5daf17038ce04d890bc7e4a302d19e4909a86` detectó **6/65 fallos en un mismo contrato táctil**, solo a 320 px: el alto calculado de la pestaña resultó **41.59375 px** frente a 44 px exigidos. Las otras 59 pruebas pasaron; se conserva el fallo histórico. La variable `--cs-hit-target` y la escala efectiva no garantizaban 44px físicos. Se corrigió **el CSS productivo**, no el test: `min-height: max(44px, var(--cs-hit-target, 2.75rem))` en 320–720, 721–1039 y ≥1040 px. Se amplió la verificación de los seis enlaces a las **5 resoluciones, 30 casos**, más el control administrativo protegido (31 verificaciones premium). La CI posterior debe dar evidencia en su nuevo SHA antes de emitir puntuaciones editoriales.
