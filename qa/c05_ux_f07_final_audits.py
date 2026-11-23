@@ -19,6 +19,8 @@ ALLOWED = frozenset({
     "qa/c05_ux_f07_final_audits.py",
     "qa/c05_ux_f07_final_audit_tests.py",
     "qa/c05_ux_f07_visual_comparison.py",
+    # QA fixture only: prevent stale headings racing screenshots, no product code.
+    "frontend/tests/c05-f06-inventory-65.spec.ts",
     "docs/c05/ux/F07_REGRESIONES_EVALUACION_INTEGRAL_2026_11_23.md",
 })
 CATALOG = ROOT / "docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv"
@@ -113,8 +115,16 @@ def audit_b() -> None:
 def audit_c() -> None:
     scope()
     buyer = buyer_gate()
+    fixture = (ROOT / "frontend/tests/c05-f06-inventory-65.spec.ts").read_text("utf-8")
+    for marker in ("auxiliaryExpectedHeading",
+                   "auxiliary JSON heading was stale during screenshot",
+                   "auxiliary UI changed during screenshot",
+                   "section.operator-workspace:visible > header.operator-section-head h2"):
+        need(marker in fixture, "F07 capture metadata race guard missing: " + marker)
     checker = (ROOT / "qa/c05_ux_f07_visual_comparison.py").read_text("utf-8")
     for gate in ("ImageChops", "ratio_threshold", "mean_threshold",
+                 "KNOWN_STALE_BASELINE_HEADINGS", "known_baseline_metadata_race",
+                 "fraction == 0 and mean == 0",
                  "BASE", "GITHUB_SHA", "inventoryIds", "visual_diff_report.json",
                  "F07_MATRIZ_FINAL_65.csv"):
         need(gate in checker, "F07 real pixel/metadata comparator incomplete: " + gate)
