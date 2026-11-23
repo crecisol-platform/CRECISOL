@@ -487,7 +487,7 @@ test('F06 PREMIUM errors offer safe next steps without exposing backend details'
   await account(page, 'seguridad');
   await setAccountStatus(page, 'error', 'seguridad');
   const notice = page.locator('cs-operation-feedback [data-feedback-kind="error"]');
-  await expect(notice).toContainText('Revisa los datos y vuelve a intentarlo');
+  await expect(notice).toContainText('Si la dificultad continúa');
   await expect(notice).not.toContainText('SQL');
   await expect(notice).not.toContainText('stack');
 });
