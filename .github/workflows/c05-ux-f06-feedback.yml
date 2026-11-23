@@ -3,6 +3,8 @@ on:
   pull_request:
     branches: [feature/c05-ux-f06-mensajeria-estados-20261120]
     paths:
+      - 'frontend/tests/c05-f05-secure-modals.spec.ts'
+      - 'qa/c05_ux_f05_modal_audits.py'
       - 'qa/c05_ux_f06_feedback_audits.py'
       - 'qa/c05_ux_f06_feedback_scope_tests.py'
       - 'docs/c05/ux/F06_GATE_ALCANCE_POSTMERGE_2026_11_23.md'
@@ -98,6 +100,12 @@ jobs:
           set -euo pipefail
           cd frontend
           npx playwright test --config=playwright.c05-f05-modals.config.ts --reporter=line
+      - name: F05 preserve original 55 PNG and verify all 165 deep-state screenshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_ux_f05_modal_evidence.py frontend/test-results-f05-modals
+          python3 qa/c05_ux_f05_modal_audits.py deep-evidence frontend/test-results-f05-modals
       - name: F04 operator console regression
         shell: bash
         run: |
