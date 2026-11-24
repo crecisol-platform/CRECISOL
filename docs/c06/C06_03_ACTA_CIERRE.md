@@ -1,6 +1,6 @@
 # CRECISOL — C06-03: acta institucional de identidad, pertenencias y contexto autorizado
 
-**Fecha:** 24-11-2026. **Estado:** CANDIDATA DE CIERRE INSTITUCIONAL; NO CERTIFICADA MIENTRAS E2E C05 POSTMERGE Y GATES DE ESTA ACTA NO FINALICEN. **Alcance:** servidor C04/C05 local e integración; ninguna política RBAC/ABAC nueva.
+**Fecha:** 24-11-2026. **Estado:** CERTIFICACIÓN TÉCNICA ACOTADA VALIDADA EN CÓDIGO, E2E Y SEGURIDAD; EFICACIA INSTITUCIONAL SUJETA A A/B/C PRE Y POSTMERGE DE ESTA ACTA. **Alcance:** servidor C04/C05 local e integración; ninguna política RBAC/ABAC nueva.
 
 ## 1. Fuentes y dependencia
 
@@ -38,7 +38,7 @@ Nueve archivos de alcance, sin migraciones ni cambios a frontend:
 | [Regresión integral C04-12 #45506430438](https://github.com/crecisol-platform/CRECISOL/actions/runs/45506430438) | SUCCESS |
 | [POSTMERGE C06-03 A/B/C #45508442081](https://github.com/crecisol-platform/CRECISOL/actions/runs/45508442081) | 3/3 SUCCESS en dev SHA ea7e341... |
 | [POSTMERGE C06-01 #45508442085](https://github.com/crecisol-platform/CRECISOL/actions/runs/45508442085) | A/B/C 3/3 SUCCESS en dev SHA ea7e341... |
-| [POSTMERGE C05 operacional #45508442240](https://github.com/crecisol-platform/CRECISOL/actions/runs/45508442240) | EN EJECUCIÓN al redactar; NO atribuir PASS anticipado |
+| [POSTMERGE C05 operacional #45508442240](https://github.com/crecisol-platform/CRECISOL/actions/runs/45508442240) | **2/2 SUCCESS** en SHA ea7e341010734665c1f3975047aef12d0aaebfb2; **340** aserciones reales Angular→API→MySQL y **73** Chromium PASS (**1** omitida condicionalmente) |
 
 ## 4. Tres auditorías y seguridad/privacidad
 
@@ -50,8 +50,8 @@ Nueve archivos de alcance, sin migraciones ni cambios a frontend:
 
 ## 5. Calificación, no-go y reversión
 
-**Nota técnica objetivo >= 9.5/10, DICTAMEN AÚN CONDICIONADO.** Para comprar/certificar el entregable deben pasar: E2E operativo C05 POSTMERGE, ausencia de defectos P0/P1, auditorías A/B/C de este PR documental PRE/POST por SHA y acta trazable. El hecho de pasar pruebas PREMERGE no certifica su instalación productiva; C06 en conjunto sigue NO CERTIFICADO.
+**Calificación técnica del alcance: 9.5/10; criterio de compra técnica favorable.** E2E operativo C05 PRE Y POSTMERGE ya terminó SUCCESS, sin defectos P0/P1 identificados en el diff de nueve archivos sometido a los controles. **La formalización institucional continúa condicionada a que las auditorías A/B/C de este PR documental concluyan PRE y POSTMERGE con SUCCESS por SHA real.** El hecho de pasar pruebas PREMERGE no certifica su instalación productiva; C06 en conjunto sigue NO CERTIFICADO.
 
-Tras completar los gates: C06-01/02/03 = **3/11 microfases certificadas solo en sus alcances**, 5/37 capítulos completos; C06-04 habilitada **exclusivamente para preparación de su propia puerta**; C07 bloqueado. Antes de esos resultados oficiales: **2/11** y C06-03 NO CERTIFICADA.
+Tras completar los gates: C06-01/02/03 = **3/11 microfases certificadas solo en sus alcances**, 5/37 capítulos completos; C06-04 habilitada **exclusivamente para preparación de su propia puerta**; C07 bloqueado. La actualización oficial a **3/11** es efectiva tras registrar las A/B/C PRE/POST del acta; hasta esa puerta el estado histórico permanece **2/11**.
 
 **Rollback:** revertir PR #199 y esta acta previa revisión de dependencias; C06-03 no creó migraciones, datos ni grants. Ninguna escritura en main, producción, servidores ni SOLQARYN.
