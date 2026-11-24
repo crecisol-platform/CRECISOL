@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """C06-02 independent A/B/C; prepared roles cannot authorize endpoints."""
 import hashlib
+import os
 import json
 import re
 import subprocess
@@ -51,8 +52,20 @@ def validate_schema(text):
     return required
 
 def scope():
+    # Never freeze a future chapter to C06-02's original baseline: compare
+    # the ACTUAL PR delta or one push commit, then keep the exact path allowlist.
+    event = os.environ.get("GITHUB_EVENT_NAME", "")
+    if event == "pull_request":
+        need(os.environ.get("GITHUB_BASE_REF") == "dev", "PR base must be dev")
+        spec = ["origin/dev...HEAD"]
+    elif event == "push":
+        need(os.environ.get("GITHUB_REF") == "refs/heads/dev", "push must target dev")
+        spec = ["HEAD^", "HEAD"]
+    else:
+        # Reproducible local/offline audit on the original C06-02 feature only.
+        spec = [BASE, "HEAD"]
     changed = subprocess.check_output(
-        ["git", "diff", "--name-only", BASE, "HEAD"], cwd=ROOT, text=True).splitlines()
+        ["git", "diff", "--name-only", *spec], cwd=ROOT, text=True).splitlines()
     allowed = (
         "docs/c06/C06_02_ESPECIFICACION.md",
         "backend/src/Crecisol.Domain/Authorization/",
@@ -67,8 +80,8 @@ def scope():
     )
     need(changed and all(any(p.startswith(a) for a in allowed) for p in changed),
          "unexpected path in C06-02 diff: " + repr(changed))
-    need(not any(p.startswith(("frontend/", "backend/src/Crecisol.Api/",
-        )) for p in changed), "runtime/UI path touched")
+    need(not any(p.startswith(("frontend/", "backend/src/Crecisol.Api/"))
+                 for p in changed), "runtime/UI path touched")
     return changed
 
 def run(stage):
