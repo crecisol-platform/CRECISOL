@@ -67,7 +67,6 @@ def scope():
     changed = subprocess.check_output(
         ["git", "diff", "--name-only", *spec], cwd=ROOT, text=True).splitlines()
     allowed = (
-        "docs/c06/C06_02_ESPECIFICACION.md",
         "backend/src/Crecisol.Domain/Authorization/",
         "backend/src/Crecisol.Application/Authorization/",
         "backend/src/Crecisol.Infrastructure/Authorization/",
@@ -78,7 +77,14 @@ def scope():
         "qa/c06_02_",
         ".github/workflows/c06-02-",
     )
-    need(changed and all(any(p.startswith(a) for a in allowed) for p in changed),
+    exact_docs = {
+        "docs/c06/C06_02_ESPECIFICACION.md",
+        "docs/c06/C06_02_ACTA_CIERRE.md",
+        "docs/ESTADO_VIGENTE_CAPITULOS.md",
+        "docs/planificacion-futura/C06_MICROFASES_PROPUESTAS.md",
+    }
+    need(changed and all(p in exact_docs or any(p.startswith(a) for a in allowed)
+                             for p in changed),
          "unexpected path in C06-02 diff: " + repr(changed))
     need(not any(p.startswith(("frontend/", "backend/src/Crecisol.Api/"))
                  for p in changed), "runtime/UI path touched")
@@ -102,6 +108,15 @@ def run(stage):
          all(x["c06_policy_bound"] is False for x in CATALOG["api_actions"]),
          "C06-01 inventory status silently changed")
     if stage == "A":
+        acta = ROOT / "docs/c06/C06_02_ACTA_CIERRE.md"
+        if acta.is_file():
+            contents = acta.read_text(encoding="utf-8")
+            state = (ROOT / "docs/ESTADO_VIGENTE_CAPITULOS.md").read_text(encoding="utf-8")
+            need("5022328e499f1e3f039a3d308e2b1d754231215c" in contents and
+                 "45469970937" in contents and "45469970986" in contents and
+                 "C06-02" in state and "C06-03" in state and
+                 "NO CERTIFICADO" in state,
+                 "institutional act missing SHA/evidence/next gate")
         need(WORD.is_file() and hashlib.sha256(WORD.read_bytes()).hexdigest() == WORD_SHA,
              "approved C06 Word SHA mismatch")
         print("PASS C06-02 A: approved Word, C06-01 canonical inventory, exact diff:", changed)
