@@ -22,6 +22,8 @@ def need(ok, reason):
         raise AssertionError("C06-02 NO-GO " + reason)
 
 def validate_schema(text):
+    # Only executable SQL counts: security warnings in comments are NOT GRANT statements.
+    effective = re.sub(r"(?m)^\s*--[^\n]*$", "", text)
     required = (
         "fk_c06_proposal_membership", "FOREIGN KEY (tenant_id, membership_id)",
         "fk_c06_proposal_role_assigned", "FOREIGN KEY (tenant_id, role_id)",
@@ -41,10 +43,10 @@ def validate_schema(text):
         "valid_until_utc > valid_from_utc",
     )
     for marker in required:
-        need(marker in text, "missing SQL safety invariant: " + marker)
-    need(not re.search(r"\bGRANT\s+(?:ALL|SELECT|INSERT|UPDATE|DELETE)\b", text, re.I),
+        need(marker in effective, "missing SQL safety invariant: " + marker)
+    need(not re.search(r"\bGRANT\s+(?:ALL|SELECT|INSERT|UPDATE|DELETE)\b", effective, re.I),
          "migration is attempting runtime privilege GRANT")
-    need(not re.search(r"\b(?:UPDATE|ALTER|DELETE\s+FROM)\s+c05_", text, re.I),
+    need(not re.search(r"\b(?:UPDATE|ALTER|DELETE\s+FROM)\s+c05_", effective, re.I),
          "C05 operational schema changed by C06")
     return required
 
