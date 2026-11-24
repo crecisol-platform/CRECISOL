@@ -1,0 +1,68 @@
+name: CRECISOL C06-01 inventory and canonical permission boundaries
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/contracts/authorization/c06_01_actions.json'
+      - 'docs/c06/**'
+      - 'qa/c06_01_permissions_catalog_audit.py'
+      - '.github/workflows/c06-01-inventario-permisos.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/contracts/authorization/c06_01_actions.json'
+      - 'docs/c06/**'
+      - 'qa/c06_01_permissions_catalog_audit.py'
+      - '.github/workflows/c06-01-inventario-permisos.yml'
+permissions:
+  contents: read
+concurrency:
+  group: c06-01-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  a-trazabilidad:
+    name: A | Canonical Word C06 and exhaustive API inventory
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Original master unchanged
+        run: python3 qa/master_source_guard.py
+      - name: Chapter 06 extracted from authentic approved Word and source-code parity
+        run: python3 qa/c06_01_permissions_catalog_audit.py A
+  b-seguridad:
+    name: B | Host, platform/tenant, grant isolation and 9 mutation negatives
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Nine hostile catalogue mutations must be rejected
+        run: python3 qa/c06_01_permissions_catalog_audit.py B
+  c-arquitectura:
+    name: C | No UI grants, .NET 10 and Angular 22 source regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Source-only contracts never enable permissions
+        run: python3 qa/c06_01_permissions_catalog_audit.py C
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Backend compile with warnings as errors
+        run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release -warnaserror
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Angular static and production build
+        run: |
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
