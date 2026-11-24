@@ -134,7 +134,7 @@ def audit_sources():
          "proof accidentally exposed by public Infrastructure API")
     need("GetRequiredService" not in adapter and "MapGet(" not in adapter and
          "MapPost(" not in adapter, "unexpected new C06 identity endpoint")
-    need(not re.search(r"\\bGRANT\\s+(?:ALL|SELECT|INSERT|UPDATE|DELETE)\\b", adapter, re.I),
+    need(not re.search(r"\bGRANT\s+(?:ALL|SELECT|INSERT|UPDATE|DELETE)\b", adapter, re.I),
          "C06 identity adapter must not allocate database privileges")
     return {"domain":len(domain_marks), "adapter":len(adapter_marks),
             "host":len(flow_marks), "auth":len(auth_marks)}
