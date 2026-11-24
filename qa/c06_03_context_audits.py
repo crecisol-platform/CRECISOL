@@ -41,6 +41,8 @@ def diff():
         "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs",
         "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs",
         "qa/c06_03_context_audits.py",
+        "docs/ESTADO_VIGENTE_CAPITULOS.md",
+        "docs/planificacion-futura/C06_MICROFASES_PROPUESTAS.md",
         ".github/workflows/c06-03-trusted-tenant-context.yml",
     }
     need(changed and all(p in exact or
@@ -231,6 +233,15 @@ def main(stage):
     prior()
     markers = audit_sources()
     if stage == "A":
+        acta = ROOT / "docs/c06/C06_03_ACTA_CIERRE.md"
+        if acta.is_file():
+            content = acta.read_text(encoding="utf-8")
+            status = (ROOT / "docs/ESTADO_VIGENTE_CAPITULOS.md").read_text(encoding="utf-8")
+            need("ea7e341010734665c1f3975047aef12d0aaebfb2" in content and
+                 "45506430723" in content and "45508442081" in content and
+                 "45506430398" in content and "C06-03" in status and
+                 "C06-04" in status and "NO CERTIFICADO" in status,
+                 "institutional C06-03 acta lacks verified SHA or limited scope")
         print("PASS C06-03 A: Word SHA, prior C06-01/02, exact scoped diff:",
               changed, markers)
     elif stage == "B":

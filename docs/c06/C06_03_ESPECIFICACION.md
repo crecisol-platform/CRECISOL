@@ -1,6 +1,6 @@
 # CRECISOL C06-03 — Identidad, pertenencias y contexto autorizado
 
-**Estado:** PREPARACIÓN DE CAMBIO — NO IMPLEMENTADA / NO PROBADA / NO CERTIFICADA. Los resultados de CI modificarán expresamente este estado, nunca por anticipación. Fecha 24-11-2026.
+**Estado actual (24-11-2026): código C06-03 integrado en dev SHA ea7e341010734665c1f3975047aef12d0aaebfb2, A/B/C PRE Y POST 3/3 SUCCESS, E2E C05 PREMERGE SUCCESS. C05 E2E POSTMERGE y acta propia todavía pendientes; C06-03 NO CERTIFICADA hasta superar estas puertas.** Los apartados de preparación de abajo se conservan como historia. Véase docs/c06/C06_03_ACTA_CIERRE.md.
 
 ## Fuente y puerta
 Repositorio `crecisol-platform/CRECISOL` (ID `1450414592`), rama base `dev` SHA `e5fe2830ab8284238389d7a8d5cc6d4add1a0b99`; Documento Maestro Único C06 (SHA-256 aprobado `ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c`, a comprobar nuevamente por CI), `docs/MASTER_REFERENCE.md`, `docs/ESTADO_VIGENTE_CAPITULOS.md` y gobernanza propia. Dependencia C06-01/02 certificadas solo en sus alcances: 80 HTTP inventariadas, 28 acciones futuras no concedibles y roles/propuestas sin grants.
