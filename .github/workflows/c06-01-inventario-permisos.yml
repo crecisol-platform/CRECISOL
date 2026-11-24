@@ -3,14 +3,12 @@ on:
   pull_request:
     branches: [dev]
     paths:
-      - 'backend/contracts/authorization/c06_01_actions.json'
       - 'docs/c06/**'
       - 'qa/c06_01_permissions_catalog_audit.py'
       - '.github/workflows/c06-01-inventario-permisos.yml'
   push:
     branches: [dev]
     paths:
-      - 'backend/contracts/authorization/c06_01_actions.json'
       - 'docs/c06/**'
       - 'qa/c06_01_permissions_catalog_audit.py'
       - '.github/workflows/c06-01-inventario-permisos.yml'

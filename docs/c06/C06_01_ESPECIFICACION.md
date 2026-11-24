@@ -4,7 +4,7 @@
 
 ## Única matriz versionada y delimitación
 
-**Fuente de verdad en este alcance:** [`backend/contracts/authorization/c06_01_actions.json`](../../backend/contracts/authorization/c06_01_actions.json). No se duplica ni deriva de textos de botones. Cada acción observada declara `action_id`, módulo, método HTTP, ruta, código operativo, realm, límite mínimo de acceso, campos contractuales, modalidad de exposición y ubicación de fuente.
+**Fuente de verdad en este alcance:** [`docs/c06/C06_01_CATALOGO_ACCIONES.json`](../../docs/c06/C06_01_CATALOGO_ACCIONES.json). No se duplica ni deriva de textos de botones. Cada acción observada declara `action_id`, módulo, método HTTP, ruta, código operativo, realm, límite mínimo de acceso, campos contractuales, modalidad de exposición y ubicación de fuente.
 
 | Superficie auditada | Filas | Significado |
 | --- | ---: | --- |

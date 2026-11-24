@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs"
 PROGRAM = "backend/src/Crecisol.Api/Program.cs"
-CATALOG = ROOT / "backend/contracts/authorization/c06_01_actions.json"
+CATALOG = ROOT / "docs/c06/C06_01_CATALOGO_ACCIONES.json"
 WORD = ROOT / "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx"
 WORD_SHA256 = "ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c"
 PRE_TENANT = set("login mfa/enroll mfa/verify recovery/request recovery/complete memberships/request passkeys/options passkeys/login terms invitations/accept pairings/start pairings/complete incidents/report assisted/request assisted/complete assisted/handoff-complete".split())

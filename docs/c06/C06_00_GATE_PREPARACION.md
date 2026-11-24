@@ -24,3 +24,5 @@
 ## Contraste del maestro completado en la rama candidata
 
 La extracción auditada del capítulo C06 identificó expresamente: permisos por acción y RBAC+ABAC, separación financiera, privacidad campo por campo, soporte break-glass, delegación sin escalada, revocación, logs, condición comercial, protección de realtime/medios y ocho acciones universales G.7. Los 28 códigos normativos candidatos se separan de la superficie HTTP existente y **no se activan**. Se exige mantener siete controles TEN señalados en el maestro. Aceptación definitiva sujeta a CI en el HEAD y cierre en `dev`.
+
+**Aislamiento del alcance C05:** el JSON normativo y operativo de C06-01 se guarda exclusivamente en `docs/c06/` para que una matriz documental no modifique ni active contratos del backend. El validador sigue leyendo rutas reales del servidor y bloquea cambios sin inventariar. La auditoría SHA1 de C05 permanece intacta; la capa Application solo adoptará capacidades cuando C06-02 o fases posteriores lo implementen con su propio gate.
