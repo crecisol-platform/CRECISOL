@@ -80,6 +80,8 @@ def scope():
     exact_docs = {
         "docs/c06/C06_02_ESPECIFICACION.md",
         "docs/c06/C06_02_ACTA_CIERRE.md",
+        "docs/c06/C06_02_MATRIZ_ROLES_CAPACIDADES.json",
+        "docs/c06/C06_02_MATRIZ_ROLES_CAPACIDADES.md",
         "docs/ESTADO_VIGENTE_CAPITULOS.md",
         "docs/planificacion-futura/C06_MICROFASES_PROPUESTAS.md",
     }

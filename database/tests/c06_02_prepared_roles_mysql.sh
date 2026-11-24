@@ -64,6 +64,8 @@ sql "INSERT INTO c06_capability_registry(action_id,realm) VALUES ('cases.read',1
 sql "INSERT INTO c06_tenant_role(tenant_id,role_id,role_code) VALUES
 (UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA21'),'tenant-viewer'),
 (UNHEX('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB'),UNHEX('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB22'),'tenant-viewer');"
+sql "INSERT INTO c06_tenant_role(tenant_id,role_id,role_code) VALUES (UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA23'),'tenant-branch-manager');"
+assert "SELECT COUNT(*) FROM c06_tenant_role WHERE tenant_id=UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA') AND role_code='tenant-branch-manager'" "1" "branch-manager role isolated in tenant A"
 sql "INSERT INTO c06_role_capability_proposal(tenant_id,role_id,action_id) VALUES
 (UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA21'),'cases.read');"
 sql "START TRANSACTION;
@@ -100,7 +102,9 @@ reject "INSERT INTO c06_role_capability_proposal(tenant_id,role_id,action_id,rea
 reject "UPDATE c06_capability_registry SET grantable=TRUE WHERE action_id='cases.read'" "cannot activate grants"
 reject "INSERT INTO c06_capability_registry(action_id,realm) VALUES ('*',1)" "wildcard code rejected"
 reject "UPDATE c06_role_capability_proposal SET proposal_only=FALSE WHERE action_id='cases.read'" "proposal cannot become permission"
-reject "INSERT INTO c06_tenant_role(tenant_id,role_id,role_code) VALUES (UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA23'),'TENANT-ADMIN')" "uppercase/privileged code forbidden"
+reject "INSERT INTO c06_tenant_role(tenant_id,role_id,role_code) VALUES (UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA26'),'TENANT-ADMIN')" "uppercase/privileged code forbidden"
+reject "INSERT INTO c06_tenant_role(tenant_id,role_id,role_code) VALUES (UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA27'),'platform-operator')" "PLATFORM role cannot become a tenant role"
+reject "INSERT INTO c06_tenant_role(tenant_id,role_id,role_code) VALUES (UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA28'),'superadmin')" "SuperAdmin role cannot be persisted in tenant realm"
 reject "INSERT INTO c06_tenant_role(tenant_id,role_id,role_code) VALUES (UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA24'),'tenant-viewer')" "duplicate tenant role code forbidden"
 reject "UPDATE c06_membership_role_proposal SET tenant_id=UNHEX('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB'),revision=2 WHERE proposal_id=UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA41')" "valid-target tenant reparent rejected"
 reject "UPDATE c06_membership_role_proposal SET branch_id=UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA12'),revision=2 WHERE proposal_id=UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA41')" "same-tenant branch reparent rejected"
