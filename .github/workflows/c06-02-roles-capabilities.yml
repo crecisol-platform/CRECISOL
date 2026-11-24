@@ -5,6 +5,8 @@ on:
     paths:
       - 'backend/src/Crecisol.Domain/Authorization/**'
       - 'backend/src/Crecisol.Application/Authorization/**'
+      - 'backend/src/Crecisol.Infrastructure/Authorization/**'
+      - 'backend/tests/Crecisol.PreparedRoles.MySqlTests/**'
       - 'backend/tests/Crecisol.PreparedRoles.ContractsTests/**'
       - 'database/migrations/019_c06_*'
       - 'database/tests/c06_02_*'

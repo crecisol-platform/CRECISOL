@@ -6,7 +6,7 @@ PASSWORD="$(openssl rand -hex 24)"
 IMAGE='mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902'
 cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
-docker run --rm -d --name "$NAME" -e "MYSQL_ROOT_PASSWORD=$PASSWORD" \
+docker run --rm -d --name "$NAME" -p 127.0.0.1::3306 -e "MYSQL_ROOT_PASSWORD=$PASSWORD" \
   -e MYSQL_DATABASE=crecisol_c06_prepared "$IMAGE" >/dev/null
 ready=0
 for _ in $(seq 1 120); do
@@ -82,6 +82,14 @@ assert "SELECT COUNT(*) FROM c06_membership_role_proposal WHERE tenant_id=UNHEX(
 assert "SELECT COUNT(*) FROM c06_membership_role_proposal WHERE tenant_id=UNHEX('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB')" "0" "B has no inherited role"
 assert "SELECT COUNT(*) FROM c06_role_capability_proposal p JOIN c06_capability_registry c ON c.action_id=p.action_id AND c.realm=p.realm WHERE c.grantable=1 OR p.proposal_only=0" "0" "zero grantable capabilities"
 assert "SELECT COUNT(*) FROM c06_role_proposal_audit" "1" "audit event committed atomically"
+
+# Local read-only SQL account for the adapter integration test; ephemeral only.
+READER_PASSWORD="$(openssl rand -hex 24)"
+sql "CREATE USER 'c06_reader'@'%' IDENTIFIED BY '$READER_PASSWORD'; GRANT SELECT ON crecisol_c06_prepared.* TO 'c06_reader'@'%';"
+PORT="$(docker port "$NAME" 3306/tcp | sed 's/.*://')"
+CRECISOL_C06_TEST_DSN="Server=127.0.0.1;Port=$PORT;Database=crecisol_c06_prepared;User ID=c06_reader;Password=$READER_PASSWORD;SslMode=Disabled;" \
+  dotnet run -c Release --project "$ROOT/backend/tests/Crecisol.PreparedRoles.MySqlTests/Crecisol.PreparedRoles.MySqlTests.csproj" -- before
+
 reject "INSERT INTO c06_membership_role_proposal(tenant_id,proposal_id,membership_id,role_id,branch_id,valid_from_utc,valid_until_utc) VALUES (UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA42'),UNHEX('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB32'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA21'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA11'),UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)+INTERVAL 1 DAY)" "B membership cannot use A role"
 reject "INSERT INTO c06_membership_role_proposal(tenant_id,proposal_id,membership_id,role_id,branch_id,valid_from_utc,valid_until_utc) VALUES (UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA42'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA31'),UNHEX('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB22'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA11'),UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)+INTERVAL 1 DAY)" "B role cannot use A membership"
 reject "INSERT INTO c06_membership_role_proposal(tenant_id,proposal_id,membership_id,role_id,branch_id,valid_from_utc,valid_until_utc) VALUES (UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA42'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA31'),UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA21'),UNHEX('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB13'),UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)+INTERVAL 1 DAY)" "B branch cannot use A role"
@@ -107,6 +115,10 @@ reject "UPDATE c06_tenant_role SET tenant_id=UNHEX('BBBBBBBBBBBBBBBBBBBBBBBBBBBB
 sql "UPDATE c06_tenant_role SET role_state=3,role_revision=role_revision+1 WHERE tenant_id=UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA') AND role_id=UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA21')"
 reject "UPDATE c06_tenant_role SET role_state=1,role_revision=role_revision+1 WHERE role_id=UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA21')" "retired role cannot reactivate"
 assert "SELECT COUNT(*) FROM c06_membership_role_proposal WHERE tenant_id=UNHEX('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA') AND proposal_state=1" "0" "no prepared candidate after revocation"
+
+CRECISOL_C06_TEST_DSN="Server=127.0.0.1;Port=$PORT;Database=crecisol_c06_prepared;User ID=c06_reader;Password=$READER_PASSWORD;SslMode=Disabled;" \
+  dotnet run --no-build -c Release --project "$ROOT/backend/tests/Crecisol.PreparedRoles.MySqlTests/Crecisol.PreparedRoles.MySqlTests.csproj" -- after
+
 apply "$ROOT/database/migrations/019_c06_prepared_roles.down.sql"
 assert "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name LIKE 'c06_%'" "0" "rollback removes only C06 tables"
 assert "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='c05_identity_membership'" "1" "rollback preserves C05 membership"

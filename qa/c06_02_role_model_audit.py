@@ -57,6 +57,8 @@ def scope():
         "docs/c06/C06_02_ESPECIFICACION.md",
         "backend/src/Crecisol.Domain/Authorization/",
         "backend/src/Crecisol.Application/Authorization/",
+        "backend/src/Crecisol.Infrastructure/Authorization/",
+        "backend/tests/Crecisol.PreparedRoles.MySqlTests/",
         "backend/tests/Crecisol.PreparedRoles.ContractsTests/",
         "database/migrations/019_c06_",
         "database/tests/c06_02_",
@@ -66,7 +68,7 @@ def scope():
     need(changed and all(any(p.startswith(a) for a in allowed) for p in changed),
          "unexpected path in C06-02 diff: " + repr(changed))
     need(not any(p.startswith(("frontend/", "backend/src/Crecisol.Api/",
-        "backend/src/Crecisol.Infrastructure/")) for p in changed), "runtime/UI path touched")
+        )) for p in changed), "runtime/UI path touched")
     return changed
 
 def run(stage):
@@ -115,7 +117,14 @@ def run(stage):
              "namespace Crecisol.Application.Authorization;" in APP and
              not any(s in DOMAIN for s in ("MySqlConnector", "Microsoft.AspNetCore", "EntityFramework")),
              "Domain/application architecture violated")
-        print("PASS C06-02 C: isolated Domain/Application + rollback, no HTTP/UI activation")
+        adapter = (ROOT / "backend/src/Crecisol.Infrastructure/Authorization/MySqlPreparedRoleReader.cs").read_text(encoding="utf-8")
+        need("MySqlRfc4122Guid.Encode" in adapter and
+             "JOIN c05_identity_membership" in adapter and
+             "JOIN c05_identity_branch" in adapter and
+             "ReadExactCandidatesAsync" in adapter and
+             "new MySqlConnectionStringBuilder" in adapter,
+             "MySQL read adapter lacks tenant-bound parameterized joins")
+        print("PASS C06-02 C: Domain/Application/Infrastructure scoped, no HTTP/UI activation")
     else:
         raise AssertionError("expected A|B|C")
 
