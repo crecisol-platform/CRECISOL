@@ -1,5 +1,39 @@
 # CRECISOL C06-02 — Acta institucional de certificación técnica acotada
 
+## Adenda C06-02 — Cierre de funciones por perfil y matriz canónica (24-11-2026)
+
+**Estado institucional de esta ADENDA:** el código está integrado y A/B/C técnicas aprobadas; el reconocimiento documental de la ampliación se activa **solo después de A/B/C PREMERGE, fusión en dev y A/B/C POSTMERGE del PR de la adenda en SHA exacto**. Conserva íntegro el acta anterior y su alcance probado.
+
+**Precisión del entregable:** definir qué funciones **candidatas** corresponden a operadores de plataforma, administradores de empresas, encargados de sucursales y usuarios con permisos específicos. La asignación verificable es la **propuesta interna** ligada a tenant+membresía+rol+sucursal, no un grant operativo del producto. Las políticas C06-03 (identidad/membresía) y C06-04 (ABAC/propiedad) siguen pendientes y ningún rol permite acceso privado por el solo hecho de estar definido.
+
+### Inventario funcional y perfiles revisados
+
+Fuente estructurada única: `docs/c06/C06_02_MATRIZ_ROLES_CAPACIDADES.json`; explicación: `docs/c06/C06_02_MATRIZ_ROLES_CAPACIDADES.md`. La matriz cubre **108/108 acciones** de C06-01 (80 HTTP + 28 futuras); **30 acciones con perfiles candidatos no ejecutables**, **78 acciones sin grants de rol** (cuenta, preauth, titular, excepción, público, arnés); **12/12 contratos no HTTP no expuestos**. Diez perfiles canónicos:
+- **PLATFORM:** `platform-operator`, `platform-security-operator`, `platform-incident-responder` (último sin capacidades automáticas, C06-06).
+- **TENANT:** `tenant-owner`, `tenant-admin`, `tenant-branch-manager`, `tenant-staff`, `tenant-viewer`, `tenant-finance-specialist`, `tenant-custom` (custom sin grants por defecto).
+
+La clasificación separa *operación propia de cuenta*, *operación pública/preautenticada*, *acción empresarial/sucursal*, *permiso financiero sensible* y *derecho del titular/excepción break-glass*. La aprobación de un titular no pasa al propietario de la empresa; ninguna autorización financiera deriva automáticamente de la propiedad o administración. Los operadores PLATFORM no heredan pertenencia TENANT. Los roles de sucursal requieren `branch_id` explícito. Todas las propuestas preservan `grantable=false`, `policy_activated=false`, `default_grants=[]`, `inherited_across_tenants=false`.
+
+### Código, seguridad, pruebas y evidencias
+
+**PR técnico [#197](https://github.com/crecisol-platform/CRECISOL/pull/197)** integrado solo a `dev` SHA `68f9e3d638dff77ef95870b9a15cb1b18825c671`. Diff: siete archivos iniciales más la ampliación exacta del auditor de rutas C06-02, sin cambios `frontend/src`, `backend/src/Crecisol.Api`, credenciales, MFA, sesiones C05, `main`, Word/PDF, VPS, pagos, producción, datos reales ni SOLQARYN.
+
+- **PREMERGE** en `53f36704eb3195da607c961d712de306bb62fec4`: [C06-02 A/B/C #45488601928](https://github.com/crecisol-platform/CRECISOL/actions/runs/45488601928), **3/3 SUCCESS**; [C06-01 #45488601987](https://github.com/crecisol-platform/CRECISOL/actions/runs/45488601987) SUCCESS y fundamentos [#45488601855](https://github.com/crecisol-platform/CRECISOL/actions/runs/45488601855) SUCCESS.
+- **POSTMERGE** en `dev` SHA `68f9e3d638dff77ef95870b9a15cb1b18825c671`: [C06-02 A/B/C #45488939368](https://github.com/crecisol-platform/CRECISOL/actions/runs/45488939368), **3/3 SUCCESS**, [C06-01 #45488939384](https://github.com/crecisol-platform/CRECISOL/actions/runs/45488939384) **3/3 SUCCESS** y fundamentos [#45488939203](https://github.com/crecisol-platform/CRECISOL/actions/runs/45488939203) SUCCESS.
+- **Pruebas de seguridad nuevas y anteriores ejecutadas sobre el último SHA técnico:** **31 mutaciones ofensivas del catálogo de roles rechazadas**, **40 verificaciones .NET** de candidatos (incluidas 3 de branch-manager por tenant/sucursal), **23 negativas SQL reales**, **20 verificaciones SQL→.NET** antes/después de revocar, rollback MySQL 8.4 y cero grants de producto.
+- **Defensa adicional:** CHECK SQL `ck_c06_role_realm_separation` rechaza `platform-*`, `superadmin` y `super-admin` dentro de `c06_tenant_role`; no se materializó ninguna cuenta o permiso de plataforma como tenant.
+- **Auditoría A:** Word vigente (SHA-256 previamente verificado), coincidencia 108/108 y 12/12 de C06-01, perfiles explícitos y alcance. **B:** default-deny, realm, branch, financieros, titular, excepciones, grants cero, mutaciones. **C:** Domain/Application/Infrastructure; schema de propuestas; compilación API .NET 10 warnings-as-errors, Angular 22. Sin cambios de interfaz: **nota UX/visual 9.5 no aplicable**, y las advertencias históricas CSS/CommonJS de Angular no desaparecen por esta ampliación.
+
+**Observaciones:** en la primera CI la lista estricta de rutas C06-02 rechazó correctamente los dos nombres documentales nuevos; se añadieron solo esos paths a la lista y se ejecutaron de nuevo A/B/C, sin eliminar el bloqueo del auditor. Las regresiones amplias C03/C05 deben consignarse por SHA y estado verificado; no declarar SUCCESS mientras estén en ejecución. No se emitió evaluación BOLA/IDOR de permisos activos, reservada a C06-10.
+
+### Regla de calidad 9.5/10
+
+Para el **alcance técnico documentado**, el mínimo solo se acredita cuando pasen: catálogo total, perfiles completos, aislamiento PLATFORM/TENANT, sucursal explícita, finanzas segregadas, derechos del titular protegidos, excepciones sin grants, contratos .NET, MySQL/rollback y A/B/C PRE/POST por SHA. El resultado técnico de estos 10 controles es **10/10 comprobaciones requeridas** en las CI identificadas; **no es una valoración visual subjetiva** ni una garantía de seguridad de todo CRECISOL.
+
+**Dictamen prospectivo de esta adenda:** tras sus gates documentales, C06-02 conserva certificación **completa en la definición probada de roles/funciones y propuestas sin acceso efectivo**. Se mantienen **2/11 microfases C06 en sus alcances** y **5/37 capítulos completos**; C06 global NO CERTIFICADO, C06-03 solo preparación, C07 bloqueado. Rollback: revertir PR técnico y adenda con revisión de dependencias; SQL 019 solo en base autorizada/desechable tras backup; jamás modificar datos reales en esta etapa.
+
+---
+
 **Fecha:** 24-11-2026 (America/Tegucigalpa). **Repositorio:** `crecisol-platform/CRECISOL`, ID original `1450414592`.  
 **Microfase:** C06-02 — Modelo de roles y capacidades. **Dictamen:** **CERTIFICABLE ÚNICAMENTE COMO MODELO INTERNO DE ROLES Y PROPUESTAS POR TENANT/SUCURSAL, CON CONTRATOS .NET Y MYSQL AISLADOS**. **NO es RBAC/ABAC de producto ni concede derechos sobre HTTP o recursos privados**. Este cierre se considera **institucionalmente efectivo solo cuando el PR documental de esta acta sea fusionado a `dev` tras A/B/C PREMERGE y su CI POSTMERGE sobre SHA exacto**.
 
