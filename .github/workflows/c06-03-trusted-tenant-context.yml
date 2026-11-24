@@ -1,0 +1,79 @@
+name: CRECISOL C06-03 trusted actor tenant membership A-B-C
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/C06OperationalMembershipContext.cs'
+      - 'backend/src/Crecisol.Infrastructure/Tenancy/C06OperationalContextProjection.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs'
+      - 'backend/tests/Crecisol.C06Membership.ContractsTests/**'
+      - 'docs/c06/C06_03_*'
+      - 'qa/c06_03_*'
+      - '.github/workflows/c06-03-trusted-tenant-context.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Tenancy/C06OperationalMembershipContext.cs'
+      - 'backend/src/Crecisol.Infrastructure/Tenancy/C06OperationalContextProjection.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs'
+      - 'backend/tests/Crecisol.C06Membership.ContractsTests/**'
+      - 'docs/c06/C06_03_*'
+      - 'qa/c06_03_*'
+      - '.github/workflows/c06-03-trusted-tenant-context.yml'
+permissions:
+  contents: read
+jobs:
+  a-traceability:
+    name: A | Approved master, C06 inventory, exact scope and trusted host
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 qa/master_source_guard.py
+      - run: python3 qa/c06_01_permissions_catalog_audit.py A
+      - run: python3 qa/c06_03_context_audits.py A
+  b-security:
+    name: B | Actor spoofing, wrong tenant, membership revocation and UTC
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 qa/c06_03_context_audits.py B
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet build backend/tests/Crecisol.C06Membership.ContractsTests/Crecisol.C06Membership.ContractsTests.csproj -c Release -warnaserror
+      - run: dotnet run --no-build -c Release --project backend/tests/Crecisol.C06Membership.ContractsTests/Crecisol.C06Membership.ContractsTests.csproj
+      - name: C04 existing server-side tenant membership regression
+        run: dotnet run -c Release --project backend/tests/Crecisol.TenantIdentity.ContractsTests/Crecisol.TenantIdentity.ContractsTests.csproj
+  c-architecture:
+    name: C | .NET 10 Angular 22 compile and no new browser authority
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 qa/c06_03_context_audits.py C
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release -warnaserror
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Frontend unchanged and usable
+        run: |
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
