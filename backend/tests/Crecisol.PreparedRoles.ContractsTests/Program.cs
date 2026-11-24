@@ -11,6 +11,7 @@ var actorA = TenantActorId.From(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01
 var actorB = TenantActorId.From(Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb02"));
 var branchA = TenantBranchId.From(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa11"));
 var branchB = TenantBranchId.From(Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb12"));
+var branchAltA = TenantBranchId.From(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa12"));
 var actionRead = TenantRequiredAction.FromServerPolicy("cases.read");
 var actionExport = TenantRequiredAction.FromServerPolicy("cases.export");
 var roleId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa21");
@@ -90,6 +91,13 @@ Check(!good.IsCurrentCandidateFor(tenantA, actorB, branchA, actionRead, now),
     "actor B cannot use actor A membership");
 Check(!good.IsCurrentCandidateFor(tenantA, actorA, branchB, actionRead, now),
     "foreign branch not inherited");
+var manager = Row(branch: branchAltA, roleCode: "tenant-branch-manager");
+Check(manager.IsCurrentCandidateFor(tenantA, actorA, branchAltA, actionRead, now),
+    "branch manager candidate valid only for its assigned branch");
+Check(!manager.IsCurrentCandidateFor(tenantA, actorA, branchA, actionRead, now),
+    "branch manager candidate not inherited by a second branch");
+Check(!manager.IsCurrentCandidateFor(tenantB, actorA, branchAltA, actionRead, now),
+    "branch manager candidate not inherited by a second tenant");
 Check(!good.IsCurrentCandidateFor(tenantA, actorA, branchA, actionExport, now),
     "separate export action not inherited");
 Check(!good.IsCurrentCandidateFor(tenantA, actorA, branchA, actionRead, now.AddHours(1)),
