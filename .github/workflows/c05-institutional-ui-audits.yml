@@ -70,15 +70,13 @@ jobs:
           set -euo pipefail
           python3 qa/c05_institutional_modal_audits.py C
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-          BASE="origin/${{ github.base_ref }}"
-          # The full integration candidate includes reviewed identity security
-          # and MySQL changes from C05-017/018. Do not trust the branch name:
-          # every changed protected backend/database path must pass the exact
-          # SHA1 source/tenant scope allowlist and negative security auditor.
-          if ! git diff --quiet "$BASE"...HEAD -- backend/ database/; then
-            python3 qa/c05_sha1_exclusive_audits.py C
+            BASE="origin/${{ github.base_ref }}"
+            # Check all changed protected files, never trust a branch name.
+            # SHA1 C validates exact C05 backend/database paths and invariants.
+            if ! git diff --quiet "$BASE"...HEAD -- backend/ database/; then
+              python3 qa/c05_sha1_exclusive_audits.py C
+            fi
           fi
-        fi
       - name: TypeScript, Angular production and public visual regressions
         shell: bash
         run: |

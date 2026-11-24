@@ -31,7 +31,7 @@ ALLOWED = frozenset({
 })
 POST_F07_QA_BLOBS = {
     "qa/c05_institutional_modal_audits.py": "ae0a084a53bb0f85a93ff20acdf478beeee04c50",
-    ".github/workflows/c05-institutional-ui-audits.yml": "de7ff05e9d17ca93275f0c68859abc173df25963",
+    ".github/workflows/c05-institutional-ui-audits.yml": "5f6a01c6093037cacc6d4a0a02ff140d91346d95",
     "qa/c05_sha1_exclusive_audits.py": "741d3e5369014a20980fd499fad9e159ad556a40",
 }
 CATALOG = ROOT / "docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv"
