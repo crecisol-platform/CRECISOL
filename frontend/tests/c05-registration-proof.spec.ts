@@ -81,9 +81,25 @@ test('identity flows expose individual navigable views', async ({ page }) => {
   await expect(page).toHaveURL(/vista=registro/);
   await expect(page.getByRole('heading', { name: 'Solicitar una cuenta', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Iniciar sesión', exact: true })).toHaveCount(0);
-  await page.getByRole('link', { name: 'Confirmar correo', exact: true }).click();
+  // F02/F07: secondary identity routes are intentionally collapsed by
+  // default; navigating between account tasks closes the disclosure again.
+  // Exercise the accessible user flow instead of clicking a hidden link.
+  const secondary = page.locator('details.account-more');
+  const summary = secondary.locator('summary');
+  const confirm = secondary.getByRole('link', { name: 'Confirmar correo', exact: true });
+  const recover = secondary.getByRole('link', { name: 'Recuperar acceso', exact: true });
+  await expect(summary).toBeVisible();
+  await expect(confirm).not.toBeVisible();
+  await summary.click();
+  await expect(confirm).toBeVisible();
+  await confirm.click();
+  await expect(page).toHaveURL(/vista=confirmar/);
   await expect(page.getByLabel('Identificador de confirmación')).toBeVisible();
-  await page.getByRole('link', { name: 'Recuperar acceso', exact: true }).click();
+  await expect(recover).not.toBeVisible();
+  await summary.click();
+  await expect(recover).toBeVisible();
+  await recover.click();
+  await expect(page).toHaveURL(/vista=recuperar/);
   await expect(page.getByLabel('Correo para recuperación')).toBeVisible();
   await expect(page.getByLabel('Identificador de confirmación')).toHaveCount(0);
   await page.getByRole('link', { name: 'Acceso de personal autorizado' }).click();
