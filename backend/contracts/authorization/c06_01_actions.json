@@ -1618,5 +1618,577 @@
     }
   ],
   "grant_decisions": "C06-02_and_later; backend_session_tenant_membership_branch_resource_checks_remain_required",
-  "status": "candidate_inventory_not_certification"
+  "status": "candidate_inventory_not_certification",
+  "normative_actions": [
+    {
+      "action_id": "approval.decide",
+      "module": "universal_case",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_case_action",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "role_action",
+        "branch_scope",
+        "resource_ownership_and_state",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_68",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "authorization.role.assign",
+      "module": "delegated_authorization",
+      "realm": "tenant",
+      "minimum_boundary": "delegation_under_owners_ceiling",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "grant_ceiling",
+        "no_platform_escalation",
+        "audit"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_22",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "authorization.role.delegate",
+      "module": "delegated_authorization",
+      "realm": "tenant",
+      "minimum_boundary": "delegation_under_owners_ceiling",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "grant_ceiling",
+        "no_platform_escalation",
+        "audit"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_22",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "authorization.role.revoke",
+      "module": "delegated_authorization",
+      "realm": "tenant",
+      "minimum_boundary": "delegation_under_owners_ceiling",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "grant_ceiling",
+        "no_platform_escalation",
+        "audit"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_22",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "case.close",
+      "module": "universal_case",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_case_action",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "role_action",
+        "branch_scope",
+        "resource_ownership_and_state",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_68",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "cases.read",
+      "module": "universal_case",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_case_action",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "role_action",
+        "branch_scope",
+        "resource_ownership_and_state",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_68",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "delivery.confirm",
+      "module": "universal_case",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_case_action",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "role_action",
+        "branch_scope",
+        "resource_ownership_and_state",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_68",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "diagnosis.publish",
+      "module": "universal_case",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_case_action",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "role_action",
+        "branch_scope",
+        "resource_ownership_and_state",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_68",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "dispute.manage",
+      "module": "universal_case",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_case_action",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "role_action",
+        "branch_scope",
+        "resource_ownership_and_state",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_68",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "finance.cash.manage",
+      "module": "financial_segregation",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_financial_sensitive",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_financial_permission",
+        "branch_scope",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_13",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "finance.margin.read",
+      "module": "financial_segregation",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_financial_sensitive",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_financial_permission",
+        "branch_scope",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_13",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "finance.refund.issue",
+      "module": "financial_segregation",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_financial_sensitive",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_financial_permission",
+        "branch_scope",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_13",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "finance.report.export",
+      "module": "financial_segregation",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_financial_sensitive",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_financial_permission",
+        "branch_scope",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_13",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "finance.revenue.read",
+      "module": "financial_segregation",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_financial_sensitive",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_financial_permission",
+        "branch_scope",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_13",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "media.private.export",
+      "module": "private_media",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_media_authorized",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "role_action",
+        "branch_scope",
+        "resource_ownership_and_state",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_03",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "media.private.read",
+      "module": "private_media",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_media_authorized",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "role_action",
+        "branch_scope",
+        "resource_ownership_and_state",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_03",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "note.create",
+      "module": "universal_case",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_case_action",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "role_action",
+        "branch_scope",
+        "resource_ownership_and_state",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_68",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "platform.breakglass.close",
+      "module": "platform_support",
+      "realm": "platform",
+      "minimum_boundary": "platform_temporary_exception",
+      "required_attributes": [
+        "platform_mfa",
+        "justified_reason",
+        "explicit_grant",
+        "expiry",
+        "audit",
+        "independent_review_when_applicable"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_19",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "platform.breakglass.open",
+      "module": "platform_support",
+      "realm": "platform",
+      "minimum_boundary": "platform_temporary_exception",
+      "required_attributes": [
+        "platform_mfa",
+        "justified_reason",
+        "explicit_grant",
+        "expiry",
+        "audit",
+        "independent_review_when_applicable"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_19",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "platform.breakglass.read",
+      "module": "platform_support",
+      "realm": "platform",
+      "minimum_boundary": "platform_temporary_exception",
+      "required_attributes": [
+        "platform_mfa",
+        "justified_reason",
+        "explicit_grant",
+        "expiry",
+        "audit",
+        "independent_review_when_applicable"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_19",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "platform.support.metadata.read",
+      "module": "platform_support",
+      "realm": "platform",
+      "minimum_boundary": "platform_metadata_only",
+      "required_attributes": [
+        "verified_platform_operator",
+        "platform_mfa",
+        "no_private_tenant_content"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_19",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "privacy.subject.access",
+      "module": "privacy_rights",
+      "realm": "tenant",
+      "minimum_boundary": "verified_data_subject",
+      "required_attributes": [
+        "verified_subject",
+        "purpose_and_legal_basis",
+        "retention_constraints",
+        "tenant_scope",
+        "audited_response"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_28",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "privacy.subject.erase",
+      "module": "privacy_rights",
+      "realm": "tenant",
+      "minimum_boundary": "verified_data_subject",
+      "required_attributes": [
+        "verified_subject",
+        "purpose_and_legal_basis",
+        "retention_constraints",
+        "tenant_scope",
+        "audited_response"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_28",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "privacy.subject.object",
+      "module": "privacy_rights",
+      "realm": "tenant",
+      "minimum_boundary": "verified_data_subject",
+      "required_attributes": [
+        "verified_subject",
+        "purpose_and_legal_basis",
+        "retention_constraints",
+        "tenant_scope",
+        "audited_response"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_28",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "privacy.subject.rectify",
+      "module": "privacy_rights",
+      "realm": "tenant",
+      "minimum_boundary": "verified_data_subject",
+      "required_attributes": [
+        "verified_subject",
+        "purpose_and_legal_basis",
+        "retention_constraints",
+        "tenant_scope",
+        "audited_response"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_28",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "quote.request",
+      "module": "universal_case",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_case_action",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "role_action",
+        "branch_scope",
+        "resource_ownership_and_state",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_68",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "realtime.channel.publish",
+      "module": "realtime_channels",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_realtime_authorized",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "role_action",
+        "branch_scope",
+        "resource_ownership_and_state",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_03",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    },
+    {
+      "action_id": "realtime.channel.subscribe",
+      "module": "realtime_channels",
+      "realm": "tenant",
+      "minimum_boundary": "tenant_realtime_authorized",
+      "required_attributes": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "role_action",
+        "branch_scope",
+        "resource_ownership_and_state",
+        "commercial_condition"
+      ],
+      "master_source_locator": "C06_WORD_PARAGRAPH_03",
+      "http_registered": false,
+      "grantable": false,
+      "status": "normative_proposed_not_implemented",
+      "source": "approved_C06_Word_not_an_API_claim"
+    }
+  ],
+  "source_contract": {
+    "approved_word_sha256": "ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c",
+    "chapter": "C06",
+    "source_paragraph_count": 70,
+    "canonical_action_verbs": [
+      "view",
+      "create",
+      "update",
+      "approve",
+      "export",
+      "refund",
+      "soft_delete",
+      "publish",
+      "administer"
+    ],
+    "cross_tenant_controls": [
+      "TEN-001",
+      "TEN-002",
+      "TEN-008",
+      "TEN-009",
+      "TEN-010",
+      "TEN-021",
+      "TEN-032"
+    ],
+    "universal_case_action_codes": [
+      "cases.read",
+      "note.create",
+      "diagnosis.publish",
+      "quote.request",
+      "approval.decide",
+      "delivery.confirm",
+      "case.close",
+      "dispute.manage"
+    ],
+    "normative_not_executable": "No endpoint, UI permission or role/grant exists because an item appears here."
+  }
 }
