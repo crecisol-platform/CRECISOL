@@ -54,8 +54,8 @@ def guard_feedback_announcements(modal_template: str, feedback_template: str,
                    '<cs-operation-feedback kind="success"'):
         require(marker in modal_template, "modal feedback state missing: " + marker)
     for marker in (
-        """[attr.role]="kind() === 'error' ? 'alert' : 'status'"""",
-        """[attr.aria-live]="kind() === 'error' ? 'assertive' : 'polite'"""",
+        '''[attr.role]="kind() === 'error' ? 'alert' : 'status'"''',
+        '''[attr.aria-live]="kind() === 'error' ? 'assertive' : 'polite'"''',
         'aria-atomic="true"',
     ):
         require(marker in feedback_template, "status or failure announcement missing: " + marker)
