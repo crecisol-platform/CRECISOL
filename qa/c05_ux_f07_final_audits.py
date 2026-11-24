@@ -27,9 +27,12 @@ ALLOWED = frozenset({
     "qa/c05_sha1_exclusive_audits.py",
     # QA fixture only: prevent stale headings racing screenshots, no product code.
     "frontend/tests/c05-f06-inventory-65.spec.ts",
+    # Exact legacy Chromium regression reconciled with accessible guest disclosure.
+    "frontend/tests/c05-identity-responsive.spec.ts",
     "docs/c05/ux/F07_REGRESIONES_EVALUACION_INTEGRAL_2026_11_23.md",
 })
 POST_F07_QA_BLOBS = {
+    "frontend/tests/c05-identity-responsive.spec.ts": "f1c65fba208c684c93273857fa812c87b2800ccd",
     "qa/c05_institutional_modal_audits.py": "ae0a084a53bb0f85a93ff20acdf478beeee04c50",
     ".github/workflows/c05-institutional-ui-audits.yml": "5f6a01c6093037cacc6d4a0a02ff140d91346d95",
     "qa/c05_sha1_exclusive_audits.py": "741d3e5369014a20980fd499fad9e159ad556a40",

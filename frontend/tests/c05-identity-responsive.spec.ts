@@ -15,7 +15,17 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1366, height: 768 
     expect(overflow).toBeLessThanOrEqual(2);
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
     expect(results.violations.filter(v => v.impact === 'critical' || v.impact === 'serious')).toEqual([]);
-    await page.getByRole('link', { name: 'Recuperar acceso', exact: true }).click();
+    // F02 premium guest navigation deliberately keeps secondary actions inside
+    // an accessible disclosure. Exercise the real user path before recovery.
+    const more = page.locator('details.account-more');
+    const recoveryLink = more.getByRole('link', { name: 'Recuperar acceso', exact: true });
+    await expect(recoveryLink).not.toBeVisible();
+    await more.locator('summary').click();
+    await expect(recoveryLink).toBeVisible();
+    const expandedOverflow = await page.evaluate(() => Math.max(
+      0, document.documentElement.scrollWidth - document.documentElement.clientWidth));
+    expect(expandedOverflow).toBeLessThanOrEqual(2);
+    await recoveryLink.click();
     await expect(page.getByLabel('Correo para recuperación')).toBeVisible();
     await expect(page.getByLabel('Token de recuperación')).not.toBeVisible();
     await page.getByText('Ya tengo mi código de recuperación', { exact: true }).click();
@@ -78,7 +88,11 @@ test('C05 public entry presents two primary choices and secondary recovery actio
   await expect(primary.getByRole('link')).toHaveCount(2);
   await expect(primary.getByRole('link', { name: 'Iniciar sesión', exact: true })).toBeVisible();
   await expect(primary.getByRole('link', { name: 'Solicitar cuenta', exact: true })).toBeVisible();
-  const secondary = page.getByRole('navigation', { name: 'Otras opciones de cuenta' });
+  const more = page.locator('details.account-more');
+  const secondary = more.getByRole('navigation', { name: 'Otras opciones de cuenta' });
+  await expect(secondary.getByRole('link', { name: 'Recuperar acceso', exact: true })).not.toBeVisible();
+  await expect(secondary.getByRole('link', { name: 'Confirmar correo', exact: true })).not.toBeVisible();
+  await more.locator('summary').click();
   await expect(secondary.getByRole('link', { name: 'Recuperar acceso', exact: true })).toBeVisible();
   await expect(secondary.getByRole('link', { name: 'Confirmar correo', exact: true })).toBeVisible();
 });
