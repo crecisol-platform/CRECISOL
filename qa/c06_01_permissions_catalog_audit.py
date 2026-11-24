@@ -158,9 +158,15 @@ def verify_word():
     start = [i for i, p in enumerate(paragraphs) if re.search(r"capitulo\s+0?6\s+de\s+37", normal(p))]
     end = [i for i, p in enumerate(paragraphs) if re.search(r"capitulo\s+0?7\s+de\s+37", normal(p))]
     need(start and end and start[0] < end[0], "C06 chapter not bounded in Word")
-    chapter = " ".join(normal(p) for p in paragraphs[start[0]:end[0]])
+    chapter_paragraphs = paragraphs[start[0]:end[0]]
+    chapter = " ".join(normal(p) for p in chapter_paragraphs)
     need("autorizacion" in chapter and "privacidad" in chapter, "C06 Word chapter mismatch")
-    return len(paragraphs[start[0]:end[0]])
+    # This source is already a public repository document. Emit bounded excerpts
+    # for human review of every paragraph before certifying C06-01 scope.
+    for index, paragraph in enumerate(chapter_paragraphs):
+        if paragraph.strip():
+            print(f"C06-WORD-LINE {index:02d}: {paragraph.strip()[:350]}")
+    return len(chapter_paragraphs)
 
 def run(stage):
     data = json.loads(CATALOG.read_text(encoding="utf-8"))
