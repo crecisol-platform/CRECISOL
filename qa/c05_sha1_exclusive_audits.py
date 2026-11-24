@@ -2,6 +2,7 @@
 """C05 exclusive TOTP-SHA1 current-source A/B/C. Historical certificates unchanged."""
 from __future__ import annotations
 from pathlib import Path
+import os
 import sys,subprocess
 ROOT=Path(__file__).resolve().parents[1]
 BASE="b996798c1c1adf8cf08e9798f03d6570de061c0b"
@@ -87,6 +88,55 @@ PROTECTED={
 }
 def ensure(ok,msg):
  if not ok: raise AssertionError(msg)
+
+# C05's original SHA1 cutover has already landed. Restrict later change
+# policing to C05 security boundaries; other chapters have their own gates.
+# All SHA1/TOTP source invariants and original 017-cutover provenance remain.
+def is_c05_security_path(path):
+ return (
+  path.startswith((
+   "backend/src/Crecisol.CredentialSecurity/",
+   "backend/src/Crecisol.Infrastructure/Identity/",
+   "backend/src/Crecisol.Application/Identity/",
+   "backend/src/Crecisol.Api/Modules/Identity/",
+   "backend/tools/Crecisol.LocalIdentityProvisioner/",
+   "backend/tests/Crecisol.MfaRisk.",
+   "database/operations/c05_",
+   "database/tests/c05_",
+   "frontend/src/app/identity/",
+   ".github/workflows/c05-",
+  )) or
+  (path.startswith("database/migrations/") and "_c05_" in path) or
+  path in {
+    "frontend/src/app/pages/identity-mfa.component.html",
+    "frontend/src/app/pages/platform-operator-security.component.html",
+    "frontend/src/app/pages/platform-identity-panel.component.html",
+  }
+ )
+
+def check_current_scope(paths):
+ ensure(bool(paths), "empty current change scope")
+ for path in paths:
+  if path.startswith(("frontend/src/app/pages/platform-home",
+                      "docs/CRECISOL_DOCUMENTO_MAESTRO")):
+   raise AssertionError("unapproved original brand/master change "+path)
+  if is_c05_security_path(path) and path not in PROTECTED:
+   raise AssertionError("unapproved NEW C05 security entrypoint "+path)
+ return len(paths)
+
+def current_diff():
+ event=os.environ.get("GITHUB_EVENT_NAME","")
+ if event=="pull_request":
+  ensure(os.environ.get("GITHUB_BASE_REF")=="dev", "C05 scope PR must target dev")
+  spec=["origin/dev...HEAD"]
+ elif event=="push":
+  ensure(os.environ.get("GITHUB_REF")=="refs/heads/dev", "C05 scope push must target dev")
+  spec=["HEAD^","HEAD"]
+ else:
+  spec=[BASE+"...HEAD"]
+ return subprocess.run(["git","diff","--name-only",*spec],cwd=ROOT,
+                       capture_output=True,text=True,check=True).stdout.splitlines()
+
 def read(): return {p:(ROOT/p).read_text() for p in F}
 def verify(d):
  for p,markers in F.items():
@@ -132,17 +182,34 @@ def run(which):
     except AssertionError: n+=1
     else: raise AssertionError("undetected negative guard deletion")
   ensure(n>=32,"insufficient negative tests")
-  print(f"PASS exclusive SHA1 B: {n} negative guard removals rejected")
+  # Seven adversarial additions to C05 are still rejected; an independent
+  # C06 authorization module must not fail a historical C05-only scope gate.
+  for injected in (
+    "backend/src/Crecisol.CredentialSecurity/TotpSha256Fallback.cs",
+    "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Bypass.cs",
+    "backend/src/Crecisol.Application/Identity/UnsafeSessionOverride.cs",
+    "backend/src/Crecisol.Api/Modules/Identity/DebugLogin.cs",
+    "backend/tools/Crecisol.LocalIdentityProvisioner/Unreviewed.cs",
+    "database/migrations/020_c05_unsafe_grants.sql",
+    "database/operations/c05_unscoped_runtime_role.sql",
+  ):
+   try: check_current_scope([injected])
+   except AssertionError: n+=1
+   else: raise AssertionError("unapproved C05 security file passed: "+injected)
+  ensure(check_current_scope([
+    "backend/src/Crecisol.Application/Authorization/InspectPreparedTenantRoles.cs",
+    "database/migrations/019_c06_prepared_roles.sql"])==2,
+    "independent C06 contract incorrectly classified as C05")
+  print(f"PASS exclusive SHA1 B: {n} negative guards (includes 7 C05 scope intrusions) rejected")
  else:
   verify(d)
-  out=subprocess.run(["git","diff","--name-only",BASE+"...HEAD"],cwd=ROOT,capture_output=True,text=True,check=True).stdout.splitlines()
-  ensure(out,"missing diff")
-  for path in out:
-   if path.startswith(("backend/","database/")):
-    ensure(path in PROTECTED,"unauthorized protected scope "+path)
-   ensure(not path.startswith(("frontend/src/app/pages/platform-home","docs/CRECISOL_DOCUMENTO_MAESTRO")),"C01/master changed")
-  ensure("database/migrations/017_c05_totp_sha1_exclusive.sql" in out,"cutover absent")
-  print(f"PASS exclusive SHA1 C: {len(out)} scoped paths, no C01/C02/master changes")
+  history=subprocess.run(["git","diff","--name-only",BASE+"...HEAD"],cwd=ROOT,
+                         capture_output=True,text=True,check=True).stdout.splitlines()
+  ensure("database/migrations/017_c05_totp_sha1_exclusive.sql" in history,
+         "SHA1 cutover history is missing")
+  changed=current_diff()
+  checked=check_current_scope(changed)
+  print(f"PASS exclusive SHA1 C: original 017 cutover intact; {checked} current paths checked for C05 security, no C01/master changes")
 if __name__=="__main__":
  try:
   ensure(len(sys.argv)==2 and sys.argv[1] in ("A","B","C"),"usage A|B|C")
