@@ -157,7 +157,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.assisted.handoff-complete",
@@ -173,7 +173,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.assisted.request",
@@ -189,7 +189,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.browser.restore",
@@ -205,7 +205,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.factor.recover-passkey",
@@ -221,7 +221,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.factor.replace",
@@ -237,7 +237,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.incidents.report",
@@ -253,7 +253,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.invitations.accept",
@@ -269,7 +269,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.invitations.issue",
@@ -293,7 +293,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.login",
@@ -309,7 +309,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.logout",
@@ -325,7 +325,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.mailbox.complete",
@@ -341,7 +341,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.mailbox.request",
@@ -357,7 +357,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.memberships.decide",
@@ -381,7 +381,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.memberships.pending",
@@ -405,7 +405,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.memberships.request",
@@ -421,7 +421,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.mfa.enroll",
@@ -437,7 +437,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.mfa.verify",
@@ -453,7 +453,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.pairings.approve",
@@ -469,7 +469,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.pairings.complete",
@@ -485,7 +485,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.pairings.start",
@@ -501,7 +501,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.passkeys",
@@ -517,7 +517,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.passkeys.login",
@@ -533,7 +533,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.passkeys.options",
@@ -549,7 +549,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.passkeys.register",
@@ -565,7 +565,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.passkeys.register-options",
@@ -581,7 +581,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.passkeys.revoke",
@@ -597,7 +597,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.password.change",
@@ -613,7 +613,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.private.read",
@@ -640,7 +640,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.profile.photo",
@@ -656,7 +656,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.profile.photo-remove",
@@ -672,7 +672,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.profile.photo-upload",
@@ -688,7 +688,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.profile.read",
@@ -704,7 +704,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.profile.save",
@@ -720,7 +720,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.recovery.complete",
@@ -736,7 +736,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.recovery.request",
@@ -752,7 +752,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.registration.complete",
@@ -768,7 +768,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.registration.intent",
@@ -784,7 +784,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.registration.proof.confirm",
@@ -800,7 +800,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.security.events",
@@ -816,7 +816,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.sessions",
@@ -832,7 +832,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.sessions.keepalive",
@@ -848,7 +848,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.sessions.revoke",
@@ -864,7 +864,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.sessions.revoke-all",
@@ -880,7 +880,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.sessions.rotate",
@@ -896,7 +896,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.terms",
@@ -912,7 +912,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "identity.terms.accept",
@@ -928,7 +928,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.abuse-summary",
@@ -950,7 +950,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.case",
@@ -974,7 +974,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.cases.find",
@@ -995,7 +995,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.factor.confirm",
@@ -1011,7 +1011,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.factor.replace",
@@ -1027,7 +1027,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.incidents.report",
@@ -1043,7 +1043,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.login",
@@ -1059,7 +1059,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.logout",
@@ -1075,7 +1075,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.mailbox.complete",
@@ -1091,7 +1091,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.mailbox.request",
@@ -1107,7 +1107,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.mfa",
@@ -1123,7 +1123,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.operator-recovery.complete",
@@ -1139,7 +1139,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.operator-recovery.enroll",
@@ -1155,7 +1155,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.operator-recovery.request",
@@ -1171,7 +1171,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.password.change",
@@ -1187,7 +1187,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.profile.photo",
@@ -1203,7 +1203,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.profile.photo-remove",
@@ -1219,7 +1219,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.profile.photo-upload",
@@ -1235,7 +1235,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.profile.read",
@@ -1251,7 +1251,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.profile.save",
@@ -1267,7 +1267,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.release-share",
@@ -1291,7 +1291,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.restore",
@@ -1307,7 +1307,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.review",
@@ -1331,7 +1331,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.session",
@@ -1347,7 +1347,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.session-policy",
@@ -1363,7 +1363,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.session-policy.update",
@@ -1387,7 +1387,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.sessions",
@@ -1403,7 +1403,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.sessions.keepalive",
@@ -1419,7 +1419,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.sessions.revoke",
@@ -1435,7 +1435,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.sessions.revoke-all",
@@ -1451,7 +1451,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "platform.sessions.rotate",
@@ -1467,7 +1467,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "private.case.read.harness_only",
@@ -1483,7 +1483,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "public.platform_brand.read",
@@ -1499,7 +1499,7 @@
       "grantable": false,
       "policy_activated": false,
       "inherited_across_tenants": false,
-      "implementation_state": "c05_existing_gate_unmodified"
+      "implementation_state": "registered_backend_boundary_unmodified"
     },
     {
       "action_id": "approval.decide",
