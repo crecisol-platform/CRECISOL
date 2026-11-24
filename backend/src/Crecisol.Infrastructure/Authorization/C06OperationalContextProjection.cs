@@ -16,7 +16,7 @@ public sealed partial class MySqlOperationalIdentityFlow
         Dictionary<string, object> membership,
         Dictionary<string, object> session,
         Dictionary<string, object> factor,
-        int trustedIdleMinutes)
+        int trustedIdleMinutes, DateTimeOffset trustedDatabaseUtc)
     {
         ArgumentNullException.ThrowIfNull(verifiedHost);
         ArgumentNullException.ThrowIfNull(verifiedTenant);
@@ -71,7 +71,7 @@ public sealed partial class MySqlOperationalIdentityFlow
             MfaVerifiedAtUtc = Utc(session, "mfa_verified_at_utc"),
             MembershipGrantedAtUtc = Utc(membership, "granted_at_utc"),
             MembershipExpiresAtUtc = Utc(membership, "expires_at_utc"),
-            ServerNowUtc = Utc(verifiedHost, "server_now_utc"),
+            ServerNowUtc = trustedDatabaseUtc,
             ServerIdleMinutes = trustedIdleMinutes
         };
         return C06OperationalMembershipContext.VerifyLockedServerEvidence(evidence);
