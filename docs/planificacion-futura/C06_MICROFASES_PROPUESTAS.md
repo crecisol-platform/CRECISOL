@@ -1,5 +1,8 @@
 # C06 · Autorización fina, protección de datos y privacidad — microfases propuestas
 
+
+**ADENDA DE ACTIVACIÓN PARCIAL (24-11-2026; ESTADO VIGENTE):** `C06-01` (inventario y catálogo de acciones/ámbitos) **CERTIFICADA en su alcance documental y QA automatizada** sobre `dev` SHA `690a59a74e4607e2c31e008d715f2f6dc9f2f50b`, PR #192, PRE/POSTMERGE A/B/C 3/3 SUCCESS cada uno. Contrato JSON canónico `docs/c06/C06_01_CATALOGO_ACCIONES.json`, 80 rutas, 12 contratos no HTTP y 28 acciones futuras sin grants, acta `docs/c06/C06_01_ACTA_CIERRE.md`. **C06-02 puede prepararse** con su propio contrato y prueba negativa; C06-02..11 permanecen NO IMPLEMENTADAS/NO CERTIFICADAS. C06 capítulo y C07 no certificados/inhabilitados. La nota de «BORRADOR NO HABILITADO» que sigue corresponde al plan anterior a esta activación selectiva; las once microfases conservan su numeración.
+
 > **BORRADOR DE PLANIFICACIÓN; NO HABILITADO PARA DESARROLLO NI CERTIFICACIÓN.** Esta guía deriva del índice `docs/PLAN_37_CAPITULOS.md` y de las políticas transversales de CRECISOL. Antes de activar C06, contrastar cada punto con el texto íntegro del capítulo en el Word canónico, su SHA registrado en `docs/MASTER_REFERENCE.md` y sus anexos; ajustar el número o alcance por PR trazable. Este archivo **no modifica el Documento Maestro Único**.
 
 **Puerta de entrada:** C05 certificado, acta aceptada y CI de `dev` verde. Ninguna microfase de C06 puede codificarse durante C01 u otro capítulo anterior.
