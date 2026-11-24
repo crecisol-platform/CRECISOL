@@ -27,6 +27,10 @@ CREATE TABLE c06_tenant_role (
     REFERENCES c04_tenant_catalog(tenant_id) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT ck_c06_role_code CHECK (
     REGEXP_LIKE(role_code, '^[a-z][a-z0-9-]{2,63}$', 'c')),
+  -- PLATFORM and SuperAdmin identities are separate from tenant role proposals.
+  CONSTRAINT ck_c06_role_realm_separation CHECK (
+    role_code NOT LIKE 'platform-%' AND
+    role_code NOT IN ('superadmin','super-admin')),
   CONSTRAINT ck_c06_role_state CHECK (role_state IN (1,2,3)),
   CONSTRAINT ck_c06_role_revision CHECK (role_revision > 0),
   CONSTRAINT ck_c06_role_id CHECK (role_id <> X'00000000000000000000000000000000')
