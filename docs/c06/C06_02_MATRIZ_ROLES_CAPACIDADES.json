@@ -1,0 +1,2237 @@
+{
+  "schema_version": 1,
+  "model": "CRECISOL_C06_02_SCOPED_ROLE_INTENT_MATRIX",
+  "authority": "DESIGN_AND_TESTED_PROPOSALS_ONLY_NOT_EXECUTABLE_AUTHORIZATION",
+  "source_catalog": {
+    "path": "docs/c06/C06_01_CATALOGO_ACCIONES.json",
+    "git_blob_sha": "5b72dd4a35db1cdd53187a62637a5c3217afda50",
+    "http_actions": 80,
+    "future_actions": 28,
+    "non_http_contracts": 12
+  },
+  "guarantees": {
+    "default_deny": true,
+    "auto_grant": false,
+    "tenant_role_can_be_platform_operator": false,
+    "platform_role_can_be_tenant_member": false,
+    "branch_inheritance": false,
+    "assignment_requires_server_verified_membership": true,
+    "default_finance_privilege": false,
+    "default_breakglass_privilege": false,
+    "ui_authorization_source": false
+  },
+  "roles": [
+    {
+      "role_code": "platform-operator",
+      "realm": "platform",
+      "scope": "platform_global_verified",
+      "display_name": "Operador de plataforma",
+      "purpose": "Consulta operativa y metadatos explícitamente habilitados; nunca datos privados de tenants",
+      "default_grants": [],
+      "auto_assigned": false,
+      "executable_in_c06_02": false,
+      "cross_tenant_inheritance": false,
+      "grant_ceiling": "future_server_policy_required"
+    },
+    {
+      "role_code": "platform-security-operator",
+      "realm": "platform",
+      "scope": "platform_global_verified",
+      "display_name": "Operador de seguridad de plataforma",
+      "purpose": "Casos y políticas de plataforma; step-up MFA, motivo y auditoría independientes",
+      "default_grants": [],
+      "auto_assigned": false,
+      "executable_in_c06_02": false,
+      "cross_tenant_inheritance": false,
+      "grant_ceiling": "future_server_policy_required"
+    },
+    {
+      "role_code": "platform-incident-responder",
+      "realm": "platform",
+      "scope": "platform_exception_only",
+      "display_name": "Interviniente de emergencia",
+      "purpose": "No dispone de acceso normal; excepciones break-glass solo bajo C06-06",
+      "default_grants": [],
+      "auto_assigned": false,
+      "executable_in_c06_02": false,
+      "cross_tenant_inheritance": false,
+      "grant_ceiling": "future_server_policy_required"
+    },
+    {
+      "role_code": "tenant-owner",
+      "realm": "tenant",
+      "scope": "tenant_verified_branches",
+      "display_name": "Propietario de empresa",
+      "purpose": "Gobernanza empresarial dentro de su tenant y sucursales verificadas; sin finanzas implícitas",
+      "default_grants": [],
+      "auto_assigned": false,
+      "executable_in_c06_02": false,
+      "cross_tenant_inheritance": false,
+      "grant_ceiling": "future_server_policy_required"
+    },
+    {
+      "role_code": "tenant-admin",
+      "realm": "tenant",
+      "scope": "tenant_verified_branches",
+      "display_name": "Administrador de empresa",
+      "purpose": "Delegación acotada por propietario sin ampliar derechos propios ni cruzar empresa",
+      "default_grants": [],
+      "auto_assigned": false,
+      "executable_in_c06_02": false,
+      "cross_tenant_inheritance": false,
+      "grant_ceiling": "future_server_policy_required"
+    },
+    {
+      "role_code": "tenant-branch-manager",
+      "realm": "tenant",
+      "scope": "explicit_branch_only",
+      "display_name": "Encargado de sucursal",
+      "purpose": "Gestión de expedientes, diagnóstico y entrega únicamente en sucursales asignadas",
+      "default_grants": [],
+      "auto_assigned": false,
+      "executable_in_c06_02": false,
+      "cross_tenant_inheritance": false,
+      "grant_ceiling": "future_server_policy_required"
+    },
+    {
+      "role_code": "tenant-staff",
+      "realm": "tenant",
+      "scope": "explicit_branch_only",
+      "display_name": "Colaborador de sucursal",
+      "purpose": "Funciones operativas explícitas sin delegación ni administración empresarial",
+      "default_grants": [],
+      "auto_assigned": false,
+      "executable_in_c06_02": false,
+      "cross_tenant_inheritance": false,
+      "grant_ceiling": "future_server_policy_required"
+    },
+    {
+      "role_code": "tenant-viewer",
+      "realm": "tenant",
+      "scope": "explicit_branch_only",
+      "display_name": "Lector de sucursal",
+      "purpose": "Lectura contextual sin cambios ni exportación heredada",
+      "default_grants": [],
+      "auto_assigned": false,
+      "executable_in_c06_02": false,
+      "cross_tenant_inheritance": false,
+      "grant_ceiling": "future_server_policy_required"
+    },
+    {
+      "role_code": "tenant-finance-specialist",
+      "realm": "tenant",
+      "scope": "explicit_tenant_branch_and_sensitive_approval",
+      "display_name": "Responsable financiero específico",
+      "purpose": "Funciones financieras sensibles sujetas a step-up, segregación de tareas y doble control",
+      "default_grants": [],
+      "auto_assigned": false,
+      "executable_in_c06_02": false,
+      "cross_tenant_inheritance": false,
+      "grant_ceiling": "future_server_policy_required"
+    },
+    {
+      "role_code": "tenant-custom",
+      "realm": "tenant",
+      "scope": "explicit_branch_only",
+      "display_name": "Permisos específicos delegados",
+      "purpose": "Cero capacidades por defecto; futuras propuestas acción por acción con techo de delegación",
+      "default_grants": [],
+      "auto_assigned": false,
+      "executable_in_c06_02": false,
+      "cross_tenant_inheritance": false,
+      "grant_ceiling": "future_server_policy_required"
+    }
+  ],
+  "actions": [
+    {
+      "action_id": "identity.assisted.complete",
+      "realm": "tenant",
+      "module": "tenant_recovery",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.assisted.handoff-complete",
+      "realm": "tenant",
+      "module": "tenant_recovery",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.assisted.request",
+      "realm": "tenant",
+      "module": "tenant_recovery",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.browser.restore",
+      "realm": "tenant",
+      "module": "tenant_sessions",
+      "source": "existing_http",
+      "boundary": "tenant_own_session",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.factor.recover-passkey",
+      "realm": "tenant",
+      "module": "tenant_security",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.factor.replace",
+      "realm": "tenant",
+      "module": "tenant_security",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.incidents.report",
+      "realm": "tenant",
+      "module": "tenant_identity",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.invitations.accept",
+      "realm": "tenant",
+      "module": "tenant_membership",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.invitations.issue",
+      "realm": "tenant",
+      "module": "tenant_membership",
+      "source": "existing_http",
+      "boundary": "tenant_approver_grant",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-owner",
+        "tenant-admin"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.login",
+      "realm": "tenant",
+      "module": "tenant_identity",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.logout",
+      "realm": "tenant",
+      "module": "tenant_sessions",
+      "source": "existing_http",
+      "boundary": "tenant_own_session",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.mailbox.complete",
+      "realm": "tenant",
+      "module": "tenant_identity",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.mailbox.request",
+      "realm": "tenant",
+      "module": "tenant_identity",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.memberships.decide",
+      "realm": "tenant",
+      "module": "tenant_membership",
+      "source": "existing_http",
+      "boundary": "tenant_approver_grant",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-owner",
+        "tenant-admin"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.memberships.pending",
+      "realm": "tenant",
+      "module": "tenant_membership",
+      "source": "existing_http",
+      "boundary": "tenant_approver_grant",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-owner",
+        "tenant-admin"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.memberships.request",
+      "realm": "tenant",
+      "module": "tenant_membership",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.mfa.enroll",
+      "realm": "tenant",
+      "module": "tenant_security",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.mfa.verify",
+      "realm": "tenant",
+      "module": "tenant_security",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.pairings.approve",
+      "realm": "tenant",
+      "module": "tenant_pairing",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.pairings.complete",
+      "realm": "tenant",
+      "module": "tenant_pairing",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.pairings.start",
+      "realm": "tenant",
+      "module": "tenant_pairing",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.passkeys",
+      "realm": "tenant",
+      "module": "tenant_security",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.passkeys.login",
+      "realm": "tenant",
+      "module": "tenant_security",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.passkeys.options",
+      "realm": "tenant",
+      "module": "tenant_security",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.passkeys.register",
+      "realm": "tenant",
+      "module": "tenant_security",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.passkeys.register-options",
+      "realm": "tenant",
+      "module": "tenant_security",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.passkeys.revoke",
+      "realm": "tenant",
+      "module": "tenant_security",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.password.change",
+      "realm": "tenant",
+      "module": "tenant_security",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.private.read",
+      "realm": "tenant",
+      "module": "tenant_resource",
+      "source": "existing_http",
+      "boundary": "tenant_branch_resource_grant",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-owner",
+        "tenant-admin",
+        "tenant-branch-manager",
+        "tenant-staff",
+        "tenant-viewer"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.profile.photo",
+      "realm": "tenant",
+      "module": "tenant_profile",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.profile.photo-remove",
+      "realm": "tenant",
+      "module": "tenant_profile",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.profile.photo-upload",
+      "realm": "tenant",
+      "module": "tenant_profile",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.profile.read",
+      "realm": "tenant",
+      "module": "tenant_profile",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.profile.save",
+      "realm": "tenant",
+      "module": "tenant_profile",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.recovery.complete",
+      "realm": "tenant",
+      "module": "tenant_recovery",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.recovery.request",
+      "realm": "tenant",
+      "module": "tenant_recovery",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.registration.complete",
+      "realm": "tenant",
+      "module": "tenant_registration",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.registration.intent",
+      "realm": "tenant",
+      "module": "tenant_registration",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.registration.proof.confirm",
+      "realm": "tenant",
+      "module": "tenant_registration",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.security.events",
+      "realm": "tenant",
+      "module": "tenant_identity",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.sessions",
+      "realm": "tenant",
+      "module": "tenant_sessions",
+      "source": "existing_http",
+      "boundary": "tenant_own_session",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.sessions.keepalive",
+      "realm": "tenant",
+      "module": "tenant_sessions",
+      "source": "existing_http",
+      "boundary": "tenant_own_session",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.sessions.revoke",
+      "realm": "tenant",
+      "module": "tenant_sessions",
+      "source": "existing_http",
+      "boundary": "tenant_own_session",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.sessions.revoke-all",
+      "realm": "tenant",
+      "module": "tenant_sessions",
+      "source": "existing_http",
+      "boundary": "tenant_own_session",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.sessions.rotate",
+      "realm": "tenant",
+      "module": "tenant_sessions",
+      "source": "existing_http",
+      "boundary": "tenant_own_session",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.terms",
+      "realm": "tenant",
+      "module": "tenant_identity",
+      "source": "existing_http",
+      "boundary": "tenant_preauth_or_proof",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "identity.terms.accept",
+      "realm": "tenant",
+      "module": "tenant_identity",
+      "source": "existing_http",
+      "boundary": "tenant_own_account",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.abuse-summary",
+      "realm": "platform",
+      "module": "platform_identity",
+      "source": "existing_http",
+      "boundary": "platform_privileged",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "platform-operator",
+        "platform-security-operator"
+      ],
+      "required_checks": [
+        "verified_platform_actor",
+        "explicit_platform_operator_membership",
+        "server_policy_not_activated",
+        "audit_sensitive_operation"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.case",
+      "realm": "platform",
+      "module": "platform_recovery",
+      "source": "existing_http",
+      "boundary": "platform_privileged",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "platform-security-operator"
+      ],
+      "required_checks": [
+        "verified_platform_actor",
+        "explicit_platform_operator_membership",
+        "server_policy_not_activated",
+        "audit_sensitive_operation",
+        "mfa_step_up",
+        "purpose_and_expiry",
+        "four_eyes_for_sensitive_action"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.cases.find",
+      "realm": "platform",
+      "module": "platform_recovery",
+      "source": "existing_http",
+      "boundary": "platform_privileged",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "platform-security-operator"
+      ],
+      "required_checks": [
+        "verified_platform_actor",
+        "explicit_platform_operator_membership",
+        "server_policy_not_activated",
+        "audit_sensitive_operation"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.factor.confirm",
+      "realm": "platform",
+      "module": "platform_identity",
+      "source": "existing_http",
+      "boundary": "platform_operator",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.factor.replace",
+      "realm": "platform",
+      "module": "platform_identity",
+      "source": "existing_http",
+      "boundary": "platform_operator",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.incidents.report",
+      "realm": "platform",
+      "module": "platform_identity",
+      "source": "existing_http",
+      "boundary": "platform_recovery_or_challenge",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.login",
+      "realm": "platform",
+      "module": "platform_identity",
+      "source": "existing_http",
+      "boundary": "platform_recovery_or_challenge",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.logout",
+      "realm": "platform",
+      "module": "platform_sessions",
+      "source": "existing_http",
+      "boundary": "platform_session",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.mailbox.complete",
+      "realm": "platform",
+      "module": "platform_identity",
+      "source": "existing_http",
+      "boundary": "platform_operator",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.mailbox.request",
+      "realm": "platform",
+      "module": "platform_identity",
+      "source": "existing_http",
+      "boundary": "platform_operator",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.mfa",
+      "realm": "platform",
+      "module": "platform_identity",
+      "source": "existing_http",
+      "boundary": "platform_recovery_or_challenge",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.operator-recovery.complete",
+      "realm": "platform",
+      "module": "platform_recovery",
+      "source": "existing_http",
+      "boundary": "platform_recovery_or_challenge",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.operator-recovery.enroll",
+      "realm": "platform",
+      "module": "platform_recovery",
+      "source": "existing_http",
+      "boundary": "platform_recovery_or_challenge",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.operator-recovery.request",
+      "realm": "platform",
+      "module": "platform_recovery",
+      "source": "existing_http",
+      "boundary": "platform_recovery_or_challenge",
+      "handling": "proof_or_preauth_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.password.change",
+      "realm": "platform",
+      "module": "platform_identity",
+      "source": "existing_http",
+      "boundary": "platform_operator",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.profile.photo",
+      "realm": "platform",
+      "module": "platform_identity",
+      "source": "existing_http",
+      "boundary": "platform_operator",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.profile.photo-remove",
+      "realm": "platform",
+      "module": "platform_identity",
+      "source": "existing_http",
+      "boundary": "platform_operator",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.profile.photo-upload",
+      "realm": "platform",
+      "module": "platform_identity",
+      "source": "existing_http",
+      "boundary": "platform_operator",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.profile.read",
+      "realm": "platform",
+      "module": "platform_identity",
+      "source": "existing_http",
+      "boundary": "platform_operator",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.profile.save",
+      "realm": "platform",
+      "module": "platform_identity",
+      "source": "existing_http",
+      "boundary": "platform_operator",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.release-share",
+      "realm": "platform",
+      "module": "platform_recovery",
+      "source": "existing_http",
+      "boundary": "platform_privileged",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "platform-security-operator"
+      ],
+      "required_checks": [
+        "verified_platform_actor",
+        "explicit_platform_operator_membership",
+        "server_policy_not_activated",
+        "audit_sensitive_operation",
+        "mfa_step_up",
+        "purpose_and_expiry",
+        "four_eyes_for_sensitive_action"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.restore",
+      "realm": "platform",
+      "module": "platform_sessions",
+      "source": "existing_http",
+      "boundary": "platform_session",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.review",
+      "realm": "platform",
+      "module": "platform_recovery",
+      "source": "existing_http",
+      "boundary": "platform_privileged",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "platform-security-operator"
+      ],
+      "required_checks": [
+        "verified_platform_actor",
+        "explicit_platform_operator_membership",
+        "server_policy_not_activated",
+        "audit_sensitive_operation",
+        "mfa_step_up",
+        "purpose_and_expiry",
+        "four_eyes_for_sensitive_action"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.session",
+      "realm": "platform",
+      "module": "platform_sessions",
+      "source": "existing_http",
+      "boundary": "platform_session",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.session-policy",
+      "realm": "platform",
+      "module": "platform_policy",
+      "source": "existing_http",
+      "boundary": "platform_session",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.session-policy.update",
+      "realm": "platform",
+      "module": "platform_policy",
+      "source": "existing_http",
+      "boundary": "platform_privileged",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "platform-security-operator"
+      ],
+      "required_checks": [
+        "verified_platform_actor",
+        "explicit_platform_operator_membership",
+        "server_policy_not_activated",
+        "audit_sensitive_operation",
+        "mfa_step_up",
+        "purpose_and_expiry",
+        "four_eyes_for_sensitive_action"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.sessions",
+      "realm": "platform",
+      "module": "platform_sessions",
+      "source": "existing_http",
+      "boundary": "platform_session",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.sessions.keepalive",
+      "realm": "platform",
+      "module": "platform_sessions",
+      "source": "existing_http",
+      "boundary": "platform_session",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.sessions.revoke",
+      "realm": "platform",
+      "module": "platform_sessions",
+      "source": "existing_http",
+      "boundary": "platform_session",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.sessions.revoke-all",
+      "realm": "platform",
+      "module": "platform_sessions",
+      "source": "existing_http",
+      "boundary": "platform_session",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "platform.sessions.rotate",
+      "realm": "platform",
+      "module": "platform_sessions",
+      "source": "existing_http",
+      "boundary": "platform_session",
+      "handling": "own_account_or_session_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "private.case.read.harness_only",
+      "realm": "tenant",
+      "module": "tenant_private_case",
+      "source": "existing_http",
+      "boundary": "tenant_branch_resource_grant",
+      "handling": "harness_non_product",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "public.platform_brand.read",
+      "realm": "public",
+      "module": "public_branding",
+      "source": "existing_http",
+      "boundary": "anonymous_public_projection",
+      "handling": "anonymous_public_projection",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "current_existing_backend_boundary_not_role_policy"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "c05_existing_gate_unmodified"
+    },
+    {
+      "action_id": "approval.decide",
+      "realm": "tenant",
+      "module": "universal_case",
+      "source": "future_normative",
+      "boundary": "tenant_case_action",
+      "handling": "verified_data_subject_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "verified_data_subject",
+        "verified_tenant",
+        "resource_ownership",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "authorization.role.assign",
+      "realm": "tenant",
+      "module": "delegated_authorization",
+      "source": "future_normative",
+      "boundary": "delegation_under_owners_ceiling",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-owner",
+        "tenant-admin"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated",
+        "step_up_or_segregated_approval"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "authorization.role.delegate",
+      "realm": "tenant",
+      "module": "delegated_authorization",
+      "source": "future_normative",
+      "boundary": "delegation_under_owners_ceiling",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-owner",
+        "tenant-admin"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated",
+        "step_up_or_segregated_approval"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "authorization.role.revoke",
+      "realm": "tenant",
+      "module": "delegated_authorization",
+      "source": "future_normative",
+      "boundary": "delegation_under_owners_ceiling",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-owner",
+        "tenant-admin"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated",
+        "step_up_or_segregated_approval"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "case.close",
+      "realm": "tenant",
+      "module": "universal_case",
+      "source": "future_normative",
+      "boundary": "tenant_case_action",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-owner",
+        "tenant-admin",
+        "tenant-branch-manager"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated",
+        "step_up_or_segregated_approval"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "cases.read",
+      "realm": "tenant",
+      "module": "universal_case",
+      "source": "future_normative",
+      "boundary": "tenant_case_action",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-owner",
+        "tenant-admin",
+        "tenant-branch-manager",
+        "tenant-staff",
+        "tenant-viewer"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "delivery.confirm",
+      "realm": "tenant",
+      "module": "universal_case",
+      "source": "future_normative",
+      "boundary": "tenant_case_action",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-branch-manager",
+        "tenant-staff"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "diagnosis.publish",
+      "realm": "tenant",
+      "module": "universal_case",
+      "source": "future_normative",
+      "boundary": "tenant_case_action",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-branch-manager"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated",
+        "step_up_or_segregated_approval"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "dispute.manage",
+      "realm": "tenant",
+      "module": "universal_case",
+      "source": "future_normative",
+      "boundary": "tenant_case_action",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-owner",
+        "tenant-admin"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated",
+        "step_up_or_segregated_approval"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "finance.cash.manage",
+      "realm": "tenant",
+      "module": "financial_segregation",
+      "source": "future_normative",
+      "boundary": "tenant_financial_sensitive",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-finance-specialist"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated",
+        "step_up_or_segregated_approval"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "finance.margin.read",
+      "realm": "tenant",
+      "module": "financial_segregation",
+      "source": "future_normative",
+      "boundary": "tenant_financial_sensitive",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-finance-specialist"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated",
+        "step_up_or_segregated_approval"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "finance.refund.issue",
+      "realm": "tenant",
+      "module": "financial_segregation",
+      "source": "future_normative",
+      "boundary": "tenant_financial_sensitive",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-finance-specialist"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated",
+        "step_up_or_segregated_approval"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "finance.report.export",
+      "realm": "tenant",
+      "module": "financial_segregation",
+      "source": "future_normative",
+      "boundary": "tenant_financial_sensitive",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-finance-specialist"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated",
+        "step_up_or_segregated_approval"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "finance.revenue.read",
+      "realm": "tenant",
+      "module": "financial_segregation",
+      "source": "future_normative",
+      "boundary": "tenant_financial_sensitive",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-finance-specialist"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated",
+        "step_up_or_segregated_approval"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "media.private.export",
+      "realm": "tenant",
+      "module": "private_media",
+      "source": "future_normative",
+      "boundary": "tenant_media_authorized",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-owner",
+        "tenant-admin"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated",
+        "step_up_or_segregated_approval"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "media.private.read",
+      "realm": "tenant",
+      "module": "private_media",
+      "source": "future_normative",
+      "boundary": "tenant_media_authorized",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-owner",
+        "tenant-admin",
+        "tenant-branch-manager",
+        "tenant-staff"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "note.create",
+      "realm": "tenant",
+      "module": "universal_case",
+      "source": "future_normative",
+      "boundary": "tenant_case_action",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-branch-manager",
+        "tenant-staff"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "platform.breakglass.close",
+      "realm": "platform",
+      "module": "platform_support",
+      "source": "future_normative",
+      "boundary": "platform_temporary_exception",
+      "handling": "reserved_c06_06_exception",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "separate_mfa",
+        "business_justification",
+        "time_bound_approval",
+        "audited_no_implicit_private_access",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "platform.breakglass.open",
+      "realm": "platform",
+      "module": "platform_support",
+      "source": "future_normative",
+      "boundary": "platform_temporary_exception",
+      "handling": "reserved_c06_06_exception",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "separate_mfa",
+        "business_justification",
+        "time_bound_approval",
+        "audited_no_implicit_private_access",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "platform.breakglass.read",
+      "realm": "platform",
+      "module": "platform_support",
+      "source": "future_normative",
+      "boundary": "platform_temporary_exception",
+      "handling": "reserved_c06_06_exception",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "separate_mfa",
+        "business_justification",
+        "time_bound_approval",
+        "audited_no_implicit_private_access",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "platform.support.metadata.read",
+      "realm": "platform",
+      "module": "platform_support",
+      "source": "future_normative",
+      "boundary": "platform_metadata_only",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "platform-operator",
+        "platform-security-operator"
+      ],
+      "required_checks": [
+        "verified_platform_actor",
+        "explicit_platform_operator_membership",
+        "server_policy_not_activated",
+        "audit_sensitive_operation"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "privacy.subject.access",
+      "realm": "tenant",
+      "module": "privacy_rights",
+      "source": "future_normative",
+      "boundary": "verified_data_subject",
+      "handling": "verified_data_subject_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "verified_data_subject",
+        "verified_tenant",
+        "resource_ownership",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "privacy.subject.erase",
+      "realm": "tenant",
+      "module": "privacy_rights",
+      "source": "future_normative",
+      "boundary": "verified_data_subject",
+      "handling": "verified_data_subject_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "verified_data_subject",
+        "verified_tenant",
+        "resource_ownership",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "privacy.subject.object",
+      "realm": "tenant",
+      "module": "privacy_rights",
+      "source": "future_normative",
+      "boundary": "verified_data_subject",
+      "handling": "verified_data_subject_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "verified_data_subject",
+        "verified_tenant",
+        "resource_ownership",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "privacy.subject.rectify",
+      "realm": "tenant",
+      "module": "privacy_rights",
+      "source": "future_normative",
+      "boundary": "verified_data_subject",
+      "handling": "verified_data_subject_not_role",
+      "candidate_role_codes": [],
+      "required_checks": [
+        "verified_data_subject",
+        "verified_tenant",
+        "resource_ownership",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "quote.request",
+      "realm": "tenant",
+      "module": "universal_case",
+      "source": "future_normative",
+      "boundary": "tenant_case_action",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-branch-manager",
+        "tenant-staff"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "realtime.channel.publish",
+      "realm": "tenant",
+      "module": "realtime_channels",
+      "source": "future_normative",
+      "boundary": "tenant_realtime_authorized",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-branch-manager",
+        "tenant-staff"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    },
+    {
+      "action_id": "realtime.channel.subscribe",
+      "realm": "tenant",
+      "module": "realtime_channels",
+      "source": "future_normative",
+      "boundary": "tenant_realtime_authorized",
+      "handling": "role_candidate",
+      "candidate_role_codes": [
+        "tenant-branch-manager",
+        "tenant-staff",
+        "tenant-viewer"
+      ],
+      "required_checks": [
+        "trusted_actor",
+        "verified_tenant",
+        "active_membership",
+        "explicit_branch_scope",
+        "resource_state_and_ownership",
+        "server_policy_not_activated"
+      ],
+      "grantable": false,
+      "policy_activated": false,
+      "inherited_across_tenants": false,
+      "implementation_state": "future_not_http_registered"
+    }
+  ],
+  "internal_contracts": [
+    {
+      "name": "ReadInternalTenantCatalog",
+      "source_file": "backend/src/Crecisol.Application/Tenancy/ReadInternalTenantCatalog.cs",
+      "role_assignable": false,
+      "exposed_by_matrix": false,
+      "reason": "internal_application_port_not_HTTP_capability"
+    },
+    {
+      "name": "ProvisionApprovedTenantDraft",
+      "source_file": "backend/src/Crecisol.Application/Tenancy/ProvisionApprovedTenantDraft.cs",
+      "role_assignable": false,
+      "exposed_by_matrix": false,
+      "reason": "internal_application_port_not_HTTP_capability"
+    },
+    {
+      "name": "ChangeTenantLifecycle",
+      "source_file": "backend/src/Crecisol.Application/Tenancy/ChangeTenantLifecycle.cs",
+      "role_assignable": false,
+      "exposed_by_matrix": false,
+      "reason": "internal_application_port_not_HTTP_capability"
+    },
+    {
+      "name": "PlanTenantMigration",
+      "source_file": "backend/src/Crecisol.Application/Tenancy/PlanTenantMigration.cs",
+      "role_assignable": false,
+      "exposed_by_matrix": false,
+      "reason": "internal_application_port_not_HTTP_capability"
+    },
+    {
+      "name": "PlanSharedSchemaMigration",
+      "source_file": "backend/src/Crecisol.Application/Tenancy/PlanSharedSchemaMigration.cs",
+      "role_assignable": false,
+      "exposed_by_matrix": false,
+      "reason": "internal_application_port_not_HTTP_capability"
+    },
+    {
+      "name": "ReadSharedTenantResource",
+      "source_file": "backend/src/Crecisol.Application/Tenancy/ReadSharedTenantResource.cs",
+      "role_assignable": false,
+      "exposed_by_matrix": false,
+      "reason": "internal_application_port_not_HTTP_capability"
+    },
+    {
+      "name": "ResolveCurrentBranchResourceScope",
+      "source_file": "backend/src/Crecisol.Application/Tenancy/ResolveCurrentBranchResourceScope.cs",
+      "role_assignable": false,
+      "exposed_by_matrix": false,
+      "reason": "internal_application_port_not_HTTP_capability"
+    },
+    {
+      "name": "ReadMfaAuthorizedPrivateResource",
+      "source_file": "backend/src/Crecisol.Application/Tenancy/ReadMfaAuthorizedPrivateResource.cs",
+      "role_assignable": false,
+      "exposed_by_matrix": false,
+      "reason": "internal_application_port_not_HTTP_capability"
+    },
+    {
+      "name": "ApplyScopedTenantArtifact",
+      "source_file": "backend/src/Crecisol.Application/Tenancy/ApplyScopedTenantArtifact.cs",
+      "role_assignable": false,
+      "exposed_by_matrix": false,
+      "reason": "internal_application_port_not_HTTP_capability"
+    },
+    {
+      "name": "ResolveCurrentTenantStorage",
+      "source_file": "backend/src/Crecisol.Application/Tenancy/ResolveCurrentTenantStorage.cs",
+      "role_assignable": false,
+      "exposed_by_matrix": false,
+      "reason": "internal_application_port_not_HTTP_capability"
+    },
+    {
+      "name": "ResolveCurrentTenantIdentityContext",
+      "source_file": "backend/src/Crecisol.Application/Tenancy/ResolveCurrentTenantIdentityContext.cs",
+      "role_assignable": false,
+      "exposed_by_matrix": false,
+      "reason": "internal_application_port_not_HTTP_capability"
+    },
+    {
+      "name": "ResolveVerifiedTenantHost",
+      "source_file": "backend/src/Crecisol.Application/Tenancy/ResolveVerifiedTenantHost.cs",
+      "role_assignable": false,
+      "exposed_by_matrix": false,
+      "reason": "internal_application_port_not_HTTP_capability"
+    }
+  ]
+}
