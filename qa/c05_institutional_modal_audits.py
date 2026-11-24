@@ -45,6 +45,22 @@ def guard_modal(source: str) -> None:
         require(fragment not in source, "unsafe DOM or local persistence in modal: " + fragment)
 
 
+def guard_feedback_announcements(modal_template: str, feedback_template: str,
+                                 modal_source: str) -> None:
+    require("OperationFeedbackComponent" in modal_source,
+            "shared status announcement is not imported by the modal")
+    for marker in ('<cs-operation-feedback kind="pending"',
+                   '<cs-operation-feedback kind="error"',
+                   '<cs-operation-feedback kind="success"'):
+        require(marker in modal_template, "modal feedback state missing: " + marker)
+    for marker in (
+        """[attr.role]="kind() === 'error' ? 'alert' : 'status'"""",
+        """[attr.aria-live]="kind() === 'error' ? 'assertive' : 'polite'"""",
+        'aria-atomic="true"',
+    ):
+        require(marker in feedback_template, "status or failure announcement missing: " + marker)
+
+
 def audit_a() -> None:
     operator = "\n".join(read(PAGES / path) for path in OPERATOR)
     workspace = read(PAGES / "identity-workspace.component.html")
@@ -61,10 +77,22 @@ def audit_a() -> None:
                   "currentPassword", "newPassword", "mailbox", "code", "confirmed"):
         require(f'name="{field}"' in workspace, "account critical field lost: " + field)
     panel = read(PAGES / "platform-identity-panel.component.html")
+    panel_logic = read(PAGES / "platform-identity-panel.component.ts")
+    navigation = read(PAGES / "c05-navigation.model.ts")
+    # F04/F07 replaces five ad-hoc buttons with one accessible navigation
+    # component. Require every exact section AND the fail-closed selector;
+    # this check must not mistake merely visible tabs for authorization.
     for tab in ("casos", "sesiones", "perfil", "seguridad", "monitor"):
-        require((f"panel.set('{tab}')" in panel) or
-                (tab == "seguridad" and '(click)="openSecurity()"' in panel),
-                "operator task tab missing: " + tab)
+        require(f"{{ id: '{tab}', label:" in navigation,
+                "operator task section missing from allowlisted navigation: " + tab)
+    for marker in ('<cs-ui-navigation class="operator-navigation"',
+                   '[items]="navigationItems()"', '[activeId]="panel()"',
+                   '(selected)="selectPanel($event)"'):
+        require(marker in panel, "operator navigation contract missing: " + marker)
+    for marker in ("operatorSections.map", "operatorSectionFor(requested)",
+                   "if (!next || this.busy() || next === this.panel()) return;",
+                   "this.panel.set(next)", "void this.openSecurity();"):
+        require(marker in panel_logic, "operator selection authorization boundary missing: " + marker)
     require("panel-operator" not in workspace, "business account leaked platform view")
     require("Registrar decisión" in workspace, "private approval lost")
     require("Comprobar un acceso privado" in workspace and
@@ -88,8 +116,20 @@ def audit_b() -> None:
     require("<dialog" in tpl and "(cancel)=\"onCancel($event)\"" in tpl and
             "(close)=\"onClosed()\"" in tpl,
             "native dialog lifecycle not wired")
-    require("role=\"alert\"" in tpl and "aria-live=\"polite\"" in tpl,
-            "status or failure announcement missing")
+    # F06 moves announcements to a reusable component, keeping an alert
+    # for errors and a polite status for outcomes and pending operations.
+    feedback = read(FRONT / "ui/feedback/operation-feedback.component.html")
+    guard_feedback_announcements(tpl, feedback, modal)
+    for mutation in (
+        feedback.replace("'alert' : 'status'", "'status' : 'status'", 1),
+        feedback.replace("'assertive' : 'polite'", "'polite' : 'polite'", 1),
+        feedback.replace('aria-atomic="true"', "", 1),
+    ):
+        try:
+            guard_feedback_announcements(tpl, mutation, modal)
+        except AssertionError:
+            continue
+        raise AssertionError("C05 UX NO-GO: altered live-region announcement was accepted")
     cases = read(PAGES / "platform-operator-cases.component.html")
     require("(dismissed)=\"platform.handoffShare.set('')\"" in cases,
             "operator recovery secret not cleared when its modal closes")
