@@ -11,6 +11,10 @@ F={
 "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs":["SELECT policy_id FROM c05_totp_sha1_policy WHERE policy_id=1 AND status=1","algorithm=SHA1&digits=6&period=30"],
 "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.PasswordMfa.cs":["GetBytes(20)",'TotpUri(actor, seed, "cuenta")'],
 "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.OperatorRecovery.cs":["GetBytes(20)",'TotpUri(target, seed, "operador")','TotpUri(actor, seed, "operador")'],
+"backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.PendingApprovals.cs":[
+ "WHERE tenant_id=@t AND account_id=@a", "scope_kind=2 AND resource_id IS NULL AND branch_id=@t",
+ "WHERE m.tenant_id=@t AND m.membership_state=0", "LIMIT 13",
+ "MaskedPendingMailbox(row)", "CryptographicOperations.ZeroMemory(plain)"],
 "backend/tools/Crecisol.LocalIdentityProvisioner/Program.cs":["--isolated-existing-factor-bundle","@example.test","GetBytes(20)"],
 "database/migrations/017_c05_totp_sha1_exclusive.sql":["c05_totp_sha1_policy","UPDATE c05_identity_mfa_factor","protected_secret=X''","UPDATE c05_platform_operator","recovery_pending=1,protected_seed=X''","UPDATE c05_identity_session SET revoked_at_utc","UPDATE c05_platform_session SET revoked_at_utc","NOT EXISTS(SELECT 1 FROM c05_platform_operator"],
 "database/operations/c05_local_runtime_role.sql":["GRANT SELECT ON crecisol_c05.c05_totp_sha1_policy"],
@@ -58,6 +62,7 @@ PROTECTED={
 "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs",
 "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.PasswordMfa.cs",
 "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.OperatorRecovery.cs",
+"backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.PendingApprovals.cs",
 "backend/tests/Crecisol.MfaRisk.ContractsTests/Program.cs",
 "backend/tests/Crecisol.MfaRisk.MySqlTests/Program.cs",
 "backend/tests/Crecisol.NeutralRegistration.IntegrationTests/LocalMfaBoundSessionHarness.cs",
