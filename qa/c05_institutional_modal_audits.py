@@ -103,9 +103,23 @@ def audit_a() -> None:
     require("Emitir parte de recuperación" in operator, "handoff flow lost")
     require("C06" not in panel, "unauthorized future chapter exposed in C05")
     sessions = read(PAGES / "platform-operator-sessions.component.html")
-    require(sessions.count('Cerrar todas mis sesiones de plataforma') == 2 and
-            'Confirmar cierre de todas mis sesiones de plataforma' in sessions,
-            "operator session action must distinguish trigger from confirmation")
+    # Premium F04 shows an accessible trigger, a destructive modal title, and
+    # its explicit MFA confirmation. Counting labels is no longer a valid gate.
+    # Scope the authorization command to the modal, never the outer trigger.
+    require(sessions.count('(click)="opDialog47.open()"') == 1 and
+            'aria-label="Cerrar todas mis sesiones de plataforma"' in sessions,
+            "operator revoke-all trigger is missing or duplicated")
+    revoke = sessions.split('<cs-institutional-modal #opDialog47', 1)
+    require(len(revoke) == 2 and '</cs-institutional-modal>' in revoke[1],
+            "operator revoke-all confirmation modal is missing")
+    confirmation = revoke[1].split('</cs-institutional-modal>', 1)[0]
+    require('kind="destructive"' in confirmation and
+            '<form csFieldFeedback' in confirmation and
+            "action: 'revoke-all'" in confirmation and
+            'name="code"' in confirmation and
+            '>Confirmar cierre de todas mis sesiones de plataforma</button>' in confirmation and
+            sessions.count("action: 'revoke-all'") == 1,
+            "operator session action must distinguish trigger from MFA confirmation")
     print("PASS C05-UI-A: 18 original operator forms, 1 administrative policy form, 15 account forms, task navigation and authority boundaries")
 
 

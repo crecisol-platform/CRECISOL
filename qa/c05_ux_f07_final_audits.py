@@ -23,13 +23,15 @@ ALLOWED = frozenset({
     "qa/c05_operational_flow_e2e.mjs",
     # Post-F07 reconciliation of legacy QA gates, exact content blobs pinned below.
     "qa/c05_institutional_modal_audits.py",
+    ".github/workflows/c05-institutional-ui-audits.yml",
     "qa/c05_sha1_exclusive_audits.py",
     # QA fixture only: prevent stale headings racing screenshots, no product code.
     "frontend/tests/c05-f06-inventory-65.spec.ts",
     "docs/c05/ux/F07_REGRESIONES_EVALUACION_INTEGRAL_2026_11_23.md",
 })
 POST_F07_QA_BLOBS = {
-    "qa/c05_institutional_modal_audits.py": "474b12e5feba47016dc2b96b1e777676d7c5033d",
+    "qa/c05_institutional_modal_audits.py": "ae0a084a53bb0f85a93ff20acdf478beeee04c50",
+    ".github/workflows/c05-institutional-ui-audits.yml": "de7ff05e9d17ca93275f0c68859abc173df25963",
     "qa/c05_sha1_exclusive_audits.py": "741d3e5369014a20980fd499fad9e159ad556a40",
 }
 CATALOG = ROOT / "docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv"
