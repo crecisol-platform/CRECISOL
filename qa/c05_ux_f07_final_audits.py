@@ -25,6 +25,8 @@ ALLOWED = frozenset({
     "qa/c05_institutional_modal_audits.py",
     ".github/workflows/c05-institutional-ui-audits.yml",
     "qa/c05_sha1_exclusive_audits.py",
+    # Final MySQL TCP readiness: this exact QA supervisor blob only.
+    "qa/c05_local_persistent.mjs",
     # QA fixture only: prevent stale headings racing screenshots, no product code.
     "frontend/tests/c05-f06-inventory-65.spec.ts",
     # Exact legacy Chromium regression reconciled with accessible guest disclosure.
@@ -35,7 +37,8 @@ POST_F07_QA_BLOBS = {
     "frontend/tests/c05-identity-responsive.spec.ts": "f1c65fba208c684c93273857fa812c87b2800ccd",
     "qa/c05_institutional_modal_audits.py": "ae0a084a53bb0f85a93ff20acdf478beeee04c50",
     ".github/workflows/c05-institutional-ui-audits.yml": "5f6a01c6093037cacc6d4a0a02ff140d91346d95",
-    "qa/c05_sha1_exclusive_audits.py": "741d3e5369014a20980fd499fad9e159ad556a40",
+    "qa/c05_sha1_exclusive_audits.py": "e271c22eba3a1fa27c283785cfa9e55c909262e1",
+    "qa/c05_local_persistent.mjs": "117aad3cf51b5f82dac6fe3a20ac9104d9c9c4d1",
 }
 CATALOG = ROOT / "docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv"
 

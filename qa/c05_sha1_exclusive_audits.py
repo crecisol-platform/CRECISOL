@@ -49,7 +49,8 @@ F={
  "this.clear();"],
 "qa/c05_local_persistent.mjs":[
  "C05-local-backup-v2","backupManifestMac","authenticatedManifest",
- "timingSafeEqual","assertProtectedFile","legacy manifest is insufficient"],
+ "timingSafeEqual","assertProtectedFile","legacy manifest is insufficient",
+ "'mysql', '--protocol=TCP', '-h127.0.0.1'"],
 "qa/c05_sha1_local_operator_rekey.mjs":["--rekey-after-verified-017",
  "CRECISOL_C05_LOCAL_SHA1_REKEY_APPROVED", "START TRANSACTION;",
  "c05_rekey_guard", "access.md.sha1-pending",
@@ -98,6 +99,8 @@ def verify(d):
  ensure(policy.count("AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE") >= 2,
         "tenant and operator renewals must recheck inactivity at UPDATE")
  supervisor=d["qa/c05_local_persistent.mjs"]
+ ensure(supervisor.count("'mysql', '--protocol=TCP', '-h127.0.0.1'") == 2,
+        "C05 startup and isolated restore require final TCP readiness, not temporary socket")
  ensure("`MYSQL_PWD=${" not in supervisor,"MySQL credentials must never be interpolated into Docker CLI argv")
  workflow=(ROOT/".github/workflows/c05-sha1-persistent-backup.yml").read_text()
  ensure('-e "MYSQL_PWD=$ROOT_PWD"' not in workflow,"workflow exposes MySQL password in argv")

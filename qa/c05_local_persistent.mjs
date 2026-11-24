@@ -162,10 +162,18 @@ function sha256(file) {
 
 function waitForMysql() {
   const deadline = Date.now() + 120000;
+  const password = readFileSync(rootPasswordFile, 'utf8').trim();
   while (Date.now() < deadline) {
     try {
-      if (mysqlSql('SELECT 1;') === '1') return;
-    } catch { /* MySQL is still initializing. */ }
+      // The official MySQL 8.4 entrypoint briefly runs a socket-only,
+      // --skip-networking bootstrap server. TCP proves the FINAL server is
+      // available; accepting socket-only readiness can race its shutdown.
+      const ready = run('docker', [
+        'exec', '-e', 'MYSQL_PWD', container,
+        'mysql', '--protocol=TCP', '-h127.0.0.1', '-uroot', '-Nse', 'SELECT 1'
+      ], { env: { ...process.env, MYSQL_PWD: password } });
+      if (ready === '1') return;
+    } catch { /* Final MySQL TCP server is still initializing. */ }
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1000);
   }
   throw new Error('MySQL C05 did not become ready within 120 seconds.');
@@ -833,7 +841,9 @@ function verifyBackup() {
       try {
         const answer = run('docker', [
           'exec', '-e', 'MYSQL_PWD', ownedContainerId,
-          'mysql', '-uroot', '-Nse', 'SELECT 1'
+          // Temporary MySQL bootstrap has no TCP listener; only the final
+          // server is acceptable before attempting restoration.
+          'mysql', '--protocol=TCP', '-h127.0.0.1', '-uroot', '-Nse', 'SELECT 1'
         ], { env: { ...process.env, MYSQL_PWD: tempPassword } });
         if (answer === '1') { ready = true; break; }
       } catch { /* MySQL starts inside a temporary network-isolated container. */ }
