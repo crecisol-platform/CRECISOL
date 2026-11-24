@@ -1,10 +1,10 @@
 # CRECISOL C06-02 — Modelo de roles y capacidades · especificación y estado candidato
 
-**ESTADO VIGENTE (24-11-2026): CANDIDATA IMPLEMENTADA EN CONTRATOS INTERNOS Y SQL AISLADO; A/B/C ESPECÍFICAS APROBADAS; NO CERTIFICADA NI FUSIONADA.** El material de preparación que sigue al informe actual es historial: su estado "NO IMPLEMENTADO" describe únicamente el momento inicial del PR #194. No es la situación de esta candidata.
+**ESTADO VIGENTE (24-11-2026): CÓDIGO IMPLEMENTADO, A/B/C PRE Y POSTMERGE APROBADAS; PR #194 FUSIONADO EN DEV SHA `5022328e499f1e3f039a3d308e2b1d754231215c`. CERTIFICACIÓN TÉCNICA SOLO EN MODELO INTERNO CONDICIONADA A GATES PROPIOS DEL ACTA.** El material de preparación que sigue al informe actual es historial: su estado "NO IMPLEMENTADO" describe únicamente el momento inicial del PR #194. No es la situación de esta candidata.
 
 **Alcance exacto:** roles y propuestas de capacidades/adscripción por empresa y sucursal, verificables en Domain/Application/Infrastructure y MySQL 8.4 aislado, **sin concesión efectiva de derechos**. Se mantienen las 28 acciones futuras de C06-01 sin posibilidad de grant, y los 80 registros de inventario sin políticas C06 conectadas. C06-03/C06-04 conservan sus propias puertas de identidad y ABAC, respectivamente. No hay ninguna nueva pantalla, operación HTTP ni concesión de rol en sesiones C05.
 
-## Informe actual de implementación, pruebas y auditorías
+## Informe de la candidata antes de integrar (historial preservado)
 
 1. **Identidad:** repositorio original ID `1450414592`, ahora `crecisol-platform/CRECISOL`; base inmutable `dev` `b2e436221bca684eb43d4ce72e7044080cfd6601`. PR #194 `feature/c06-02-modelo-roles-preparacion-20261124` abierto en borrador. Ni `dev` ni `main` modificados por C06-02.
 2. **Modelos y puertos:** `backend/src/Crecisol.Domain/Authorization/C06PreparedRoleSnapshot.cs`, `backend/src/Crecisol.Application/Authorization/InspectPreparedTenantRoles.cs`, `backend/src/Crecisol.Infrastructure/Authorization/MySqlPreparedRoleReader.cs`. Validación en servidor de tenant, actor, sucursal, acción y tiempo; rol/revocación; consulta SQL con JOIN por tenant y parámetros; solo devuelve candidatos no autorizantes. `AuthorizesPrivateResource=false` por contrato.
@@ -19,7 +19,7 @@
 11. **Regresiones ampliadas:** C05 operacional Angular/API/MySQL y C03-10 integral deben verificarse en el SHA exacto antes del cierre. C06-02 no certifica un motor RBAC/ABAC ni pruebas de escalada C06-10.
 12. **Rollback:** revertir el PR antes de fusión no afecta datos. Si se ejecutase la migración C06 solo en un ambiente desechable, aplicar `.down.sql` con copia previa y verificar que permanezcan C05 y C04. Prohibida toda operación sobre datos reales de propietario, producción, `main` o SOLQARYN.
 
-**Decisión actual:** arquitectura y pruebas propias aprobadas; **C06-02 NO CERTIFICADA** hasta completar regresiones aplicables y resolver formalmente la incompatibilidad de alcance del gate antiguo, sin permitir privilegios ni avanzar a C06-03. No se adjudica 9.5/10 sin evidencia completa de las puertas exigidas.
+**Nota posterior:** la incompatibilidad histórica de C05 se corrigió por PR #195, sus gates A/B/C PRE/POST pasaron, y los de C06-02 PRE/POST pasaron sobre los SHAs registrados en `C06_02_ACTA_CIERRE.md`. La institucionalización sigue condicionada a CI propia del acta. Ningún permiso HTTP C06 se ha activado.
 
 ---
 
@@ -101,4 +101,4 @@ Estos son **arquetipos para probar**, no roles persistidos, permisos predetermin
 - **NO-GO:** ausencia de contraste nuevo del Word, esquema incompatible, pruebas no ejecutadas, P0/P1, claim o frontend como origen de autoridad, cambio de permisos por defecto, falta de rollback o ruptura de C05.
 - **Reversión preparatoria:** cerrar el PR o revertir el único commit documental; no afecta sesiones, datos ni grants.
 
-**Dictamen actual:** PREPARACIÓN ABIERTA. La implementación de C06-02 requiere su propio contrato, diseño revisado y pruebas con evidencia por SHA; este texto no certifica C06-02 ni habilita C06-03/C07.
+**Fin de la instantánea de preparación histórica:** sustituida por el dictamen acotado del acta C06-02 y su puerta documental. C06-03 solo se habilitará para preparación tras la certificación propia del acta; C07 continúa bloqueado.
