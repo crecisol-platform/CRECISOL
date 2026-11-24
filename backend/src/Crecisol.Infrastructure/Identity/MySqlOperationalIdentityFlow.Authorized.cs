@@ -48,6 +48,18 @@ public sealed partial class MySqlOperationalIdentityFlow
         var factor = await u.One("SELECT * FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_id=@f AND factor_state=1 AND revoked_at_utc IS NULL FOR UPDATE",
             ("a", actor), ("f", Bytes(session, "mfa_factor_id")));
         if (factor is null) return new(false);
+
+        // C06-03 runs before ANY authenticated operation, including session
+        // reads, keepalive, account changes and tenant-private resource work.
+        // Actor/tenant/membership/factor are sourced exclusively from locked
+        // C05/C04 backend rows, never browser IDs, roles or JWT assertions.
+        var trustedClock = await u.One("SELECT UTC_TIMESTAMP(6) AS trusted_now_utc");
+        if (trustedClock is null || u.VerifiedHost is null)
+            throw new UnauthorizedAccessException("Trusted identity context unavailable.");
+        _ = ResolveC06TenantContextFromLockedRows(
+            u.VerifiedHost, tenant, account, member, session, factor, idle,
+            Utc(trustedClock, "trusted_now_utc"));
+
         u.VerifiedActor = true;
         await SlideTenantSession(u, tenant, hash, idle);
         if (r.Operation == "sessions/keepalive")
