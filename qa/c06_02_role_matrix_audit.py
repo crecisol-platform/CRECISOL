@@ -114,7 +114,7 @@ def validate(m):
              "candidate became executable or inherited: " + key)
         need(row.get("implementation_state") ==
              ("future_not_http_registered" if provenance == "future_normative"
-              else "c05_existing_gate_unmodified"),
+              else "registered_backend_boundary_unmodified"),
              "future status or existing boundary changed: " + key)
         codes = row["candidate_role_codes"]
         need(len(codes) == len(set(codes)) and all(c in index for c in codes),
@@ -152,6 +152,8 @@ def validate(m):
     need("tenant-viewer" not in by_id["case.close"]["candidate_role_codes"] and
          "tenant-staff" not in by_id["authorization.role.assign"]["candidate_role_codes"],
          "operational or viewer role escalated to authority")
+    need(set(by_id["media.private.export"]["candidate_role_codes"]) ==
+         {"tenant-owner","tenant-admin"}, "private export delegated to branch staff")
     for key in SENSITIVE_SUBJECT:
         need(by_id[key]["handling"] == "verified_data_subject_not_role" and
              not by_id[key]["candidate_role_codes"],
