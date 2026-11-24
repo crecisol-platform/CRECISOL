@@ -15,7 +15,23 @@
 | Consulta privada de casos (GET) solo arnés | 1 | Implementación disponible para pruebas desechables; **NO mapeada en `Program.cs`** |
 | Contratos internos de C04 (no HTTP) | 12 | Interfaces de casos de uso y contexto multitenant; **NO son endpoints ni grants** |
 
-**Total:** 80 entradas HTTP declaradas (79 registrables en producto bajo las condiciones señaladas, 1 exclusivamente de arnés) más 12 contratos internos fuera de HTTP. **No son 80 permisos concedidos:** las rutas públicas o de preautenticación no son privilegios y el catálogo no se conecta todavía a un autorizador.
+**Total:** 80 entradas HTTP declaradas (79 registrables en producto bajo las condiciones señaladas, 1 exclusivamente de arnés) más 12 contratos internos fuera de HTTP **y 28 códigos normativos propuestos sin URL, grant ni implementación**. **No son 80 permisos concedidos:** las rutas públicas o de preautenticación no son privilegios y el catálogo no se conecta todavía a un autorizador.
+
+## Obligaciones adicionales contrastadas con el Word maestro (C06)
+
+La extracción A del Word vigente (SHA-256 `ea5afc...`) contiene **70 nodos de párrafo** y exige nueve verbos canónicos por módulo: ver, crear, actualizar, aprobar, exportar, reembolsar, borrar lógicamente, publicar y administrar. Sus matrices deberán considerar usuario, tenant, membresía vigente, permiso explícito, sucursal, propiedad/estado del recurso **y condición comercial**.
+
+**Acciones futuras explícitas, separadas de las 80 rutas reales:**
+- **Expedientes G.7 (ocho códigos literales):** `cases.read`, `note.create`, `diagnosis.publish`, `quote.request`, `approval.decide`, `delivery.confirm`, `case.close`, `dispute.manage`.
+- **Finanzas:** lectura de ingresos/márgenes, manejo de caja, emisión de reembolsos y exportación de informes, siempre con privilegio financiero explícito.
+- **Privacidad:** acceso, rectificación, supresión y oposición del titular según base legal/retención; serialización campo por campo.
+- **Delegación:** asignar, revocar y delegar roles dentro del techo del propietario, sin elevar privilegios de plataforma.
+- **Soporte plataforma:** lectura de metadatos y acceso break-glass a datos privados solo con MFA, causa, permiso explícito, duración y auditoría.
+- **Medios y tiempo real:** descargas/exportaciones privadas y suscripciones/publicación en canales sometidas a la misma autorización de backend.
+
+La matriz `normative_actions` registra **28 identificadores propuestos** con `http_registered=false`, `grantable=false`, `status=normative_proposed_not_implemented`. **No son endpoints existentes ni permisos asignables.** Conservamos los casos de prueba obligatorios `TEN-001`, `TEN-002`, `TEN-008`, `TEN-009`, `TEN-010`, `TEN-021`, `TEN-032` como pendientes de ejecución según la superficie aplicable.
+
+El Word usa ocho pasos normativos (`C06-01 Extraer` a `C06-08 Acta`); **son distintos** de las once microfases técnicas del plan derivado. Las pruebas ofensivas completas de BOLA/IDOR, permisos por campo, revocación en caché/realtime y placement SHARED/DEDICATED permanecen pendientes de su microfase específica. No se inventará su ejecución.
 
 ## Criterios de ámbito (target de C06, no concesiones actuales)
 
@@ -43,7 +59,7 @@
 ## Pruebas y auditorías C06-01
 
 - **A**: cargar catálogo, recorrer la tabla real de 75 operaciones, comprobar contratos de campos, mapeo HTTP y los otros cinco patrones; extraer y comprobar el capítulo 06 del Word canónico (SHA-256).
-- **B**: nueve mutaciones negativas del catálogo (omisión, duplicado, degradación de realm plataforma, pérdida de grant de recurso, UI como fuente, autorización prematura, fuente frontend, contrato omitido, arnés publicado) y aserciones de host, origen y encabezados controlados por backend.
+- **B**: catorce mutaciones negativas del catálogo (omisión, duplicado, degradación de realm plataforma, pérdida de grant de recurso, UI como fuente, autorización prematura, fuente frontend, contrato omitido, arnés publicado) y aserciones de host, origen y encabezados controlados por backend.
 - **C**: asegurar >10 módulos funcionales, separar el arnés, respetar arquitectura y reconstruir .NET 10 y Angular 22 en CI sin cambios de `frontend/src`, `backend/src` ni migraciones.
 - **No ejecutadas aquí:** intentos ofensivos BOLA/IDOR de la implementación C06, prueba de roles asignados y escaneo de producción; corresponden a C06-02..C06-10. No atribuirles PASS retrospectivo.
 

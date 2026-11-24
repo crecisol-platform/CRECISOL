@@ -11,7 +11,7 @@
 
 ## Puerta autónoma de entrada — decisión acotada
 
-**Se permite preparar y revisar C06-01 en rama `feature/c06-01-*`, como contrato de inventario; no equivale a habilitar todavía políticas productivas de C06.** La aceptación delegada del propietario habilita el trabajo, pero la formalización del gate exige A/B/C reales, contraste con Word y CI en el SHA de la candidata.
+**Se permite preparar y revisar C06-01 en rama `feature/c06-01-*`, como contrato de inventario; no equivale a habilitar todavía políticas productivas de C06.** La aceptación delegada del propietario habilita el trabajo, pero la formalización del gate exige A/B/C reales, contraste con las 70 unidades de párrafo del Word y sus ocho acciones G.7 y CI en el SHA de la candidata.
 
 - **A (funcional y trazabilidad):** inventario exhaustivo de endpoints que `Program.cs` registra en el entorno aplicable y lista de contratos no expuestos; métodos/rutas/operaciones sin inventos; trazabilidad al Word y al código.
 - **B (seguridad, tenant y privacidad):** realm PUBLIC/TENANT/PLATFORM, contexto verificado por backend, rutas condicionales, ausencia de privilegios por etiquetas Angular, controles negativos contra omisión, duplicación, falsificación de tenant y exposición del endpoint de prueba.
@@ -20,3 +20,7 @@
 - **Separación:** la autenticación y MFA local de C05 ofrecen evidencia suficiente para inventariar límites existentes; **no certifican** todavía la gestión de roles C06-02, ABAC C06-04 ni el SuperAdmin excepcional C06-06.
 
 **Estado de este documento antes de la CI:** puerta de revisión abierta para **inventario solamente**, con certificación C06-01 condicionada a evidencia del PR. No se autorizan C06-02/C07, VPS, R2, producción, cobros, corte persistente de C05 ni SOLQARYN.
+
+## Contraste del maestro completado en la rama candidata
+
+La extracción auditada del capítulo C06 identificó expresamente: permisos por acción y RBAC+ABAC, separación financiera, privacidad campo por campo, soporte break-glass, delegación sin escalada, revocación, logs, condición comercial, protección de realtime/medios y ocho acciones universales G.7. Los 28 códigos normativos candidatos se separan de la superficie HTTP existente y **no se activan**. Se exige mantener siete controles TEN señalados en el maestro. Aceptación definitiva sujeta a CI en el HEAD y cierre en `dev`.

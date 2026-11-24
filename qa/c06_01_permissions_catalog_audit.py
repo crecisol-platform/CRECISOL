@@ -23,6 +23,14 @@ ELEVATED_PLATFORM = set("platform/case platform/cases/find platform/abuse-summar
 TENANT_SESSIONS = set("sessions sessions/keepalive sessions/rotate sessions/revoke sessions/revoke-all logout browser/restore".split())
 PLATFORM_SESSIONS = set("platform/session platform/restore platform/logout platform/sessions platform/sessions/keepalive platform/sessions/rotate platform/sessions/revoke platform/sessions/revoke-all platform/session-policy platform/session-policy/update".split())
 
+WORD_CASE_ACTIONS = set("cases.read note.create diagnosis.publish quote.request approval.decide delivery.confirm case.close dispute.manage".split())
+EXPECTED_NORMATIVE = WORD_CASE_ACTIONS | set(("finance.revenue.read finance.margin.read finance.cash.manage finance.refund.issue finance.report.export "
+    "privacy.subject.access privacy.subject.rectify privacy.subject.erase privacy.subject.object "
+    "authorization.role.assign authorization.role.revoke authorization.role.delegate "
+    "platform.support.metadata.read platform.breakglass.open platform.breakglass.read platform.breakglass.close "
+    "media.private.read media.private.export realtime.channel.subscribe realtime.channel.publish").split())
+TEN_CROSS = ["TEN-001", "TEN-002", "TEN-008", "TEN-009", "TEN-010", "TEN-021", "TEN-032"]
+
 def need(value, reason):
     if not value:
         raise AssertionError("C06-01 NO-GO: " + reason)
@@ -142,7 +150,33 @@ def verify_catalog(data, source, program):
              "contract promoted to HTTP grant")
         need(src.startswith("backend/src/Crecisol.Application/Tenancy/") and (ROOT / src).is_file(),
              "invented C04 contract")
-    return len(found), len(rows), sum(x["registered_in_product_api"] for x in rows), len(internal)
+
+    contract = data.get("source_contract", {})
+    need(contract.get("approved_word_sha256") == WORD_SHA256 and contract.get("chapter") == "C06"
+         and contract.get("source_paragraph_count") == 70, "normative Word source identity/extent drift")
+    need(contract.get("cross_tenant_controls") == TEN_CROSS and
+         set(contract.get("universal_case_action_codes", [])) == WORD_CASE_ACTIONS, "omitted mandatory TEN/G7 controls")
+    need(contract.get("canonical_action_verbs") ==
+         ["view", "create", "update", "approve", "export", "refund", "soft_delete", "publish", "administer"],
+         "C06 source permission verbs changed")
+    normative = data.get("normative_actions")
+    need(isinstance(normative, list) and
+         {x["action_id"] for x in normative} == EXPECTED_NORMATIVE and
+         len(normative) == len(EXPECTED_NORMATIVE), "missing, duplicated or invented normative action")
+    for row in normative:
+        action_id = row["action_id"]
+        need(row.get("http_registered") is False and row.get("grantable") is False and
+             row.get("status") == "normative_proposed_not_implemented" and
+             row.get("source") == "approved_C06_Word_not_an_API_claim",
+             "planned action promoted to executable grant " + action_id)
+        need(row.get("realm") == ("platform" if action_id.startswith("platform.") else "tenant"),
+             "planned platform/tenant scope confusion " + action_id)
+        need(isinstance(row.get("required_attributes"), list) and len(row["required_attributes"]) >= 3,
+             "planned action lacks explicit context dimensions " + action_id)
+        source_locator = row.get("master_source_locator", "")
+        need(re.fullmatch(r"C06_WORD_PARAGRAPH_\d\d", source_locator),
+             "planned permission not traceable to the approved Word")
+    return len(found), len(rows), sum(x["registered_in_product_api"] for x in rows), len(internal), len(normative)
 
 def verify_word():
     need(WORD.is_file(), "canonical Word unavailable")
@@ -161,6 +195,14 @@ def verify_word():
     chapter_paragraphs = paragraphs[start[0]:end[0]]
     chapter = " ".join(normal(p) for p in chapter_paragraphs)
     need("autorizacion" in chapter and "privacidad" in chapter, "C06 Word chapter mismatch")
+    for action_id in WORD_CASE_ACTIONS:
+        need(action_id in chapter, "Word C06 no longer identifies mandatory case action " + action_id)
+    for keyword in ("condicion comercial", "separacion financiera", "permisos delegados",
+                    "revocacion inmediata", "retencion y derechos", "break-glass",
+                    "sucursal", "canales en tiempo real", "superadmin"):
+        need(keyword in chapter, "C06 Word mandatory permission dimension missing: " + keyword)
+    for control in TEN_CROSS:
+        need(control.lower() in chapter, "Word no longer requires " + control)
     # This source is already a public repository document. Emit bounded excerpts
     # for human review of every paragraph before certifying C06-01 scope.
     for index, paragraph in enumerate(chapter_paragraphs):
@@ -188,6 +230,11 @@ def run(stage):
             lambda d: d["api_actions"][0].update(source_file="frontend/src/app/buttons.ts"),
             lambda d: next(r for r in d["api_actions"] if r["operation_code"] == "memberships/decide").update(required_fields=[]),
             lambda d: next(r for r in d["api_actions"] if r["http_route"].startswith("/api/v1/private/cases/")).update(registered_in_product_api=True),
+            lambda d: d["normative_actions"].pop(),
+            lambda d: d["normative_actions"][0].update(grantable=True),
+            lambda d: d["normative_actions"][0].update(http_registered=True),
+            lambda d: next(r for r in d["normative_actions"] if r["action_id"] == "cases.read").update(realm="platform"),
+            lambda d: d["source_contract"]["cross_tenant_controls"].remove("TEN-032"),
         ):
             mutant = copy.deepcopy(data)
             mutate(mutant)
@@ -205,7 +252,9 @@ def run(stage):
         need(len({r["module"] for r in data["api_actions"]}) >= 10, "module coverage collapsed")
         need(not any(r["registered_in_product_api"] for r in data["api_actions"]
                      if r["source_file"].endswith("PrivateResourceReadModule.cs")), "test-only route exposed")
-        print("PASS C06-01 C: modular inventory only; no authorization code or permission assignments")
+        need(all(not r["grantable"] and not r["http_registered"]
+                 for r in data["normative_actions"]), "future permissions exposed without implementation")
+        print("PASS C06-01 C: modular current + normative inventories; no runtime grants or implementation")
     else:
         raise SystemExit("Usage: python3 qa/c06_01_permissions_catalog_audit.py A|B|C")
 

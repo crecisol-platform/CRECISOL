@@ -33,14 +33,14 @@ jobs:
       - name: Chapter 06 extracted from authentic approved Word and source-code parity
         run: python3 qa/c06_01_permissions_catalog_audit.py A
   b-seguridad:
-    name: B | Host, platform/tenant, grant isolation and 9 mutation negatives
+    name: B | Host, platform/tenant, grant isolation and 14 mutation negatives
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-      - name: Nine hostile catalogue mutations must be rejected
+      - name: Fourteen hostile catalogue mutations must be rejected
         run: python3 qa/c06_01_permissions_catalog_audit.py B
   c-arquitectura:
     name: C | No UI grants, .NET 10 and Angular 22 source regression
