@@ -21,10 +21,17 @@ ALLOWED = frozenset({
     "qa/c05_ux_f07_visual_comparison.py",
     # QA-only pacing of a real 80/min security limit; exact test assertions unchanged.
     "qa/c05_operational_flow_e2e.mjs",
+    # Post-F07 reconciliation of legacy QA gates, exact content blobs pinned below.
+    "qa/c05_institutional_modal_audits.py",
+    "qa/c05_sha1_exclusive_audits.py",
     # QA fixture only: prevent stale headings racing screenshots, no product code.
     "frontend/tests/c05-f06-inventory-65.spec.ts",
     "docs/c05/ux/F07_REGRESIONES_EVALUACION_INTEGRAL_2026_11_23.md",
 })
+POST_F07_QA_BLOBS = {
+    "qa/c05_institutional_modal_audits.py": "474b12e5feba47016dc2b96b1e777676d7c5033d",
+    "qa/c05_sha1_exclusive_audits.py": "741d3e5369014a20980fd499fad9e159ad556a40",
+}
 CATALOG = ROOT / "docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv"
 
 
@@ -55,6 +62,13 @@ def scope() -> set[str]:
     changed = git_paths("diff", "--name-only", "--no-renames", BASE + "...HEAD")
     history = git_paths("log", "--format=", "--name-only", "--no-renames", BASE + "..HEAD")
     validate_scope(changed, history, ancestor)
+    # Accept only the exact two audited source-gate repairs. An arbitrary
+    # mutation of either file (even though QA-only) remains a hard NO-GO.
+    for path, expected_blob in POST_F07_QA_BLOBS.items():
+        actual_blob = subprocess.check_output(["git", "hash-object", path],
+                                              cwd=ROOT, text=True).strip()
+        need(actual_blob == expected_blob,
+             "unreviewed post-F07 auditor mutation: " + path)
     # All product sources are immutable during this revalidation; no weaker
     # gate can be substituted for a new UI review after future code changes.
     for prefix in ("frontend/src/", "backend/", "database/", "frontend/package-lock.json"):
