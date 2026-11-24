@@ -1,0 +1,170 @@
+name: CRECISOL C05 SHA1 persistent backup restore isolated QA
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'qa/c05_local_persistent.mjs'
+      - 'qa/c05_sha1_persistent_guards.mjs'
+      - 'qa/c05_sha1_persistent_guards.test.mjs'
+      - 'docs/c05/C05_SUPERVISION_LOCAL_PERSISTENTE.md'
+      - '.github/workflows/c05-sha1-persistent-backup.yml'
+permissions:
+  contents: read
+
+jobs:
+  isolated-backup-restore:
+    name: Verify C05 isolated schema-017 persistence, SQL restore and external keys
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact PR commit, read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Audit inputs and compile only local synthetic provisioning helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/validate_foundation.py
+          node --check qa/c05_local_persistent.mjs
+          node --test qa/c05_sha1_persistent_guards.test.mjs
+          dotnet build backend/tools/Crecisol.LocalIdentityProvisioner/Crecisol.LocalIdentityProvisioner.csproj -c Release --nologo -warnaserror
+      - name: Real disposable MySQL8.4 init, backup, restore and negative recovery tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          # Refuse to reuse or delete any unrelated preexisting resource.
+          test -z "$(docker ps -a --filter 'name=^/crecisol-c05-mysql-persistent$' --format '{{.Names}}')"
+          test -z "$(docker volume ls --filter 'name=^crecisol-c05-mysql-data$' --format '{{.Name}}')"
+          export CRECISOL_C05_PERSISTENT_SECRET_DIR
+          CRECISOL_C05_PERSISTENT_SECRET_DIR="$(mktemp -d "$RUNNER_TEMP/c05-sha1-qa-XXXXXXXX")"
+          chmod 700 "$CRECISOL_C05_PERSISTENT_SECRET_DIR"
+          cleanup() {
+            docker rm -f crecisol-c05-mysql-persistent >/dev/null 2>&1 || true
+            docker volume rm crecisol-c05-mysql-data >/dev/null 2>&1 || true
+            rm -rf -- "$CRECISOL_C05_PERSISTENT_SECRET_DIR"
+          }
+          trap cleanup EXIT
+          node qa/c05_local_persistent.mjs init
+          # The optional human-readable private tenant credentials must be covered,
+          # and an interrupted offline rekey must block both backup and restoration.
+          printf 'Synthetic tenant password fixture only\n' > "$CRECISOL_C05_PERSISTENT_SECRET_DIR/tenant-accounts.md"
+          chmod 600 "$CRECISOL_C05_PERSISTENT_SECRET_DIR/tenant-accounts.md"
+          cp "$CRECISOL_C05_PERSISTENT_SECRET_DIR/tenant-accounts.md" "$RUNNER_TEMP/c05-tenant-md-reference"
+          touch "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md.sha1-pending"
+          chmod 600 "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md.sha1-pending"
+          if node qa/c05_local_persistent.mjs backup > "$RUNNER_TEMP/c05-negative-pending-backup.log" 2>&1; then
+            echo 'FAIL: unresolved offline rekey allowed a new backup' >&2
+            exit 1
+          fi
+          rm -f "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md.sha1-pending"
+          cp "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md" "$RUNNER_TEMP/c05-access-reference"
+          cp "$CRECISOL_C05_PERSISTENT_SECRET_DIR/runtime.env" "$RUNNER_TEMP/c05-runtime-reference"
+          node qa/c05_local_persistent.mjs backup
+          node qa/c05_local_persistent.mjs verify-backup
+          RUNTIME_FILE="$CRECISOL_C05_PERSISTENT_SECRET_DIR/runtime.env"
+          mv "$RUNTIME_FILE" "$RUNNER_TEMP/c05-private-env-reference"
+          ln -s "$RUNNER_TEMP/c05-private-env-reference" "$RUNTIME_FILE"
+          if node qa/c05_local_persistent.mjs verify-backup > "$RUNNER_TEMP/c05-negative-symlink.log" 2>&1; then
+            echo 'FAIL: private runtime key symlink accepted as a backup source' >&2
+            exit 1
+          fi
+          rm "$RUNTIME_FILE"
+          mv "$RUNNER_TEMP/c05-private-env-reference" "$RUNTIME_FILE"
+          node qa/c05_local_persistent.mjs verify-backup
+          printf '# modified synthetic tenant credentials\n' >> "$CRECISOL_C05_PERSISTENT_SECRET_DIR/tenant-accounts.md"
+          if node qa/c05_local_persistent.mjs verify-backup > "$RUNNER_TEMP/c05-negative-tenant-md.log" 2>&1; then
+            echo 'FAIL: modified private tenant credentials were accepted' >&2
+            exit 1
+          fi
+          cp "$RUNNER_TEMP/c05-tenant-md-reference" "$CRECISOL_C05_PERSISTENT_SECRET_DIR/tenant-accounts.md"
+          touch "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md.sha1-pending"
+          chmod 600 "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md.sha1-pending"
+          if node qa/c05_local_persistent.mjs verify-backup > "$RUNNER_TEMP/c05-negative-pending-verify.log" 2>&1; then
+            echo 'FAIL: unresolved offline rekey accepted during restore verification' >&2
+            exit 1
+          fi
+          rm -f "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md.sha1-pending"
+          node qa/c05_local_persistent.mjs verify-backup
+          LATEST="$(cat "$CRECISOL_C05_PERSISTENT_SECRET_DIR/backups/.latest")"
+          ARCHIVE="$CRECISOL_C05_PERSISTENT_SECRET_DIR/backups/$LATEST"
+          cp "$ARCHIVE" "$RUNNER_TEMP/c05-archive-reference"
+          printf '# simulate replaced secret\n' >> "$CRECISOL_C05_PERSISTENT_SECRET_DIR/runtime.env"
+          if node qa/c05_local_persistent.mjs verify-backup > "$RUNNER_TEMP/c05-negative-key.log" 2>&1; then
+            echo 'FAIL: modified external key/config was accepted' >&2
+            exit 1
+          fi
+          # Restore protected runtime environment exactly, without logging its contents.
+          cp "$RUNNER_TEMP/c05-runtime-reference" "$CRECISOL_C05_PERSISTENT_SECRET_DIR/runtime.env"
+          printf 'tamper' >> "$ARCHIVE"
+          if node qa/c05_local_persistent.mjs verify-backup > "$RUNNER_TEMP/c05-negative-archive.log" 2>&1; then
+            echo 'FAIL: modified SQL backup was accepted' >&2
+            exit 1
+          fi
+          cp "$RUNNER_TEMP/c05-archive-reference" "$ARCHIVE"
+          node qa/c05_local_persistent.mjs verify-backup
+          LATEST_SIGNED="$(cat "$CRECISOL_C05_PERSISTENT_SECRET_DIR/backups/.latest")"
+          cp "$CRECISOL_C05_PERSISTENT_SECRET_DIR/backups/$LATEST_SIGNED.manifest.json" "$RUNNER_TEMP/c05-signed-manifest-reference"
+          node -e '
+            const fs = require("fs");
+            const file = process.argv[1], manifest = JSON.parse(fs.readFileSync(file, "utf8"));
+            manifest.injectedUntrustedField = "tampered-manifest";
+            fs.writeFileSync(file, JSON.stringify(manifest));
+          ' "$CRECISOL_C05_PERSISTENT_SECRET_DIR/backups/$LATEST_SIGNED.manifest.json"
+          if node qa/c05_local_persistent.mjs verify-backup > "$RUNNER_TEMP/c05-negative-manifest-mac.log" 2>&1; then
+            echo 'FAIL: altered signed backup manifest accepted' >&2
+            exit 1
+          fi
+          cp "$RUNNER_TEMP/c05-signed-manifest-reference" "$CRECISOL_C05_PERSISTENT_SECRET_DIR/backups/$LATEST_SIGNED.manifest.json"
+          node qa/c05_local_persistent.mjs verify-backup
+          node qa/c05_local_persistent.mjs stop
+          node qa/c05_local_persistent.mjs init
+          cmp "$CRECISOL_C05_PERSISTENT_SECRET_DIR/access.md" "$RUNNER_TEMP/c05-access-reference"
+          node qa/c05_local_persistent.mjs backup
+          node qa/c05_local_persistent.mjs verify-backup
+
+          echo "PASS isolated C05 SHA1 database, secrets fingerprint, backup/restore, tamper rejection and persistent restart on commit $GITHUB_SHA"
+          # Recreate a synthetic 001-017 legacy installation on THIS
+          # disposable container only, then exercise the guarded offline
+          # upgrade mode, including denied attempts and one-time privileges.
+          ROOT_PWD="$(cat "$CRECISOL_C05_PERSISTENT_SECRET_DIR/mysql-root.password")"
+          MYSQL_PWD="$ROOT_PWD" docker exec -i -e MYSQL_PWD crecisol-c05-mysql-persistent \
+            mysql -uroot crecisol_c05 < database/migrations/018_c05_session_idle_policy.down.sql
+          MYSQL_PWD="$ROOT_PWD" docker exec -i -e MYSQL_PWD crecisol-c05-mysql-persistent \
+            mysql -uroot crecisol_c05 -e "DELETE FROM c05_schema_migrations WHERE version=18"
+          node qa/c05_local_persistent.mjs backup
+          node qa/c05_local_persistent.mjs verify-backup
+          if node qa/c05_local_persistent.mjs upgrade-session-policy > "$RUNNER_TEMP/c05-upgrade-no-approval.log" 2>&1; then
+            echo 'FAIL: offline policy upgrade without owner approval was accepted' >&2
+            exit 1
+          fi
+          export CRECISOL_C05_LOCAL_IDLE_POLICY_UPGRADE_APPROVED=YES
+          export CRECISOL_C05_LOCAL_POLICY_ADMIN_APPROVED=YES
+          node qa/c05_local_persistent.mjs upgrade-session-policy
+          POLICY="$(MYSQL_PWD="$ROOT_PWD" docker exec -i -e MYSQL_PWD crecisol-c05-mysql-persistent \
+            mysql -uroot -N -B crecisol_c05 -e "SELECT CONCAT(idle_minutes,':',revision) FROM c05_session_idle_policy WHERE policy_id=1")"
+          test "$POLICY" = "30:1"
+          LEDGER="$(MYSQL_PWD="$ROOT_PWD" docker exec -i -e MYSQL_PWD crecisol-c05-mysql-persistent \
+            mysql -uroot -N -B crecisol_c05 -e "SELECT COUNT(*) FROM c05_schema_migrations")"
+          test "$LEDGER" = 18
+          ADMINS="$(MYSQL_PWD="$ROOT_PWD" docker exec -i -e MYSQL_PWD crecisol-c05-mysql-persistent \
+            mysql -uroot -N -B crecisol_c05 -e "SELECT COUNT(*) FROM c05_platform_operator WHERE can_manage_session_policy=1")"
+          test "$ADMINS" = 1
+          if node qa/c05_local_persistent.mjs upgrade-session-policy > "$RUNNER_TEMP/c05-upgrade-replay.log" 2>&1; then
+            echo 'FAIL: offline policy upgrade unexpectedly allowed replay' >&2
+            exit 1
+          fi
+          node qa/c05_local_persistent.mjs backup
+          node qa/c05_local_persistent.mjs verify-backup
+          echo "PASS C05-018 offline upgrade 017-to-018: secure backup gate, one synthetic admin, 30-minute timeout, replay refused"
+

@@ -962,7 +962,7 @@ sealed class FixtureMfaSecrets : ITrustedDisposableMfaSecrets, IDisposable
         TenantActorId actor,DisposableMfaKind kind)
     {
         byte[]? seed=kind==DisposableMfaKind.Totp?
-            TotpSha256Verifier.GenerateSeed():null;
+            TotpSha1Verifier.GenerateSeed():null;
         var signer=kind==DisposableMfaKind.Passkey?
             ECDsa.Create(ECCurve.NamedCurves.nistP256):null;
         byte[]? credential=signer is null?null:RandomNumberGenerator.GetBytes(32);
@@ -983,8 +983,8 @@ sealed class FixtureMfaSecrets : ITrustedDisposableMfaSecrets, IDisposable
     {
         if(!factors.TryGetValue(id,out var value) || value.Seed is null)
             throw new InvalidOperationException("Missing synthetic factor secret.");
-        return TotpSha256Verifier.ComputeCode(value.Seed,
-            TotpSha256Verifier.StepAt(TrustedNow()));
+        return TotpSha1Verifier.ComputeCode(value.Seed,
+            TotpSha1Verifier.StepAt(TrustedNow()));
     }
     public bool TryVerifyTotp(Guid id,TenantId tenant,TenantActorId actor,
         string? candidate,long last,out long next)
@@ -993,7 +993,7 @@ sealed class FixtureMfaSecrets : ITrustedDisposableMfaSecrets, IDisposable
         return factors.TryGetValue(id,out var v) &&
             v.Tenant==tenant && v.Actor==actor &&
             v.Seed is not null &&
-            TotpSha256Verifier.TryVerify(v.Seed,candidate,TrustedNow(),
+            TotpSha1Verifier.TryVerify(v.Seed,candidate,TrustedNow(),
                 last,out next);
     }
     public DisposableMfaAssertion SignFixtureAssertion(

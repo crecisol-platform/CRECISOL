@@ -1,0 +1,196 @@
+name: CRECISOL C05 UX F06 contextual feedback and privacy
+on:
+  pull_request:
+    branches: [feature/c05-ux-f06-mensajeria-estados-20261120]
+    paths:
+      - 'frontend/tests/c05-f05-secure-modals.spec.ts'
+      - 'qa/c05_ux_f05_modal_audits.py'
+      - 'qa/c05_ux_f06_feedback_audits.py'
+      - 'qa/c05_ux_f06_commercial_rating_tests.py'
+      - 'qa/c05_ux_f06_65_coverage.py'
+      - 'qa/c05_ux_f06_commercial_rating_tests.py'
+      - 'docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv'
+      - 'docs/c05/ux/F06_65_COBERTURA_Y_CRITERIOS.md'
+      - 'qa/c05_ux_f06_feedback_scope_tests.py'
+      - 'docs/c05/ux/F06_GATE_ALCANCE_POSTMERGE_2026_11_23.md'
+      - '.github/workflows/c05-ux-f06-feedback.yml'
+  push:
+    branches: [feature/c05-ux-f06-mensajeria-estados-20261120]
+    paths:
+      - 'frontend/src/app/ui/feedback/**'
+      - 'frontend/src/app/identity/identity-api.service.ts'
+      - 'frontend/src/app/identity/platform-identity-api.service.ts'
+      - 'frontend/src/app/pages/identity-*'
+      - 'frontend/src/app/pages/platform-*'
+      - 'frontend/src/app/ui/institutional-modal/**'
+      - 'frontend/src/styles.css'
+      - 'frontend/tests/c05-f06-context-feedback.spec.ts'
+      - 'frontend/tests/c05-f06-inventory-65.spec.ts'
+      - 'qa/c05_ux_f06_65_coverage.py'
+      - 'frontend/playwright.c05-f06-feedback.config.ts'
+      - 'qa/c05_ux_f05_modal_audits.py'
+      - 'qa/c05_operational_flow_e2e.mjs'
+      - 'qa/c05_*_checks.mjs' # Real passkey, pairing, assisted, profile and operator helpers
+      - 'qa/c05_ux_f06_feedback_*'
+      - 'docs/c05/ux/F06_*'
+      - '.github/workflows/c05-ux-f06-feedback.yml'
+      - '.github/workflows/c05-ux-f06-65-inventory.yml'
+permissions:
+  contents: read
+concurrency:
+  group: c05-ux-f06-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  feedback-accessibility:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - name: Checkout exact branch with complete parent trace
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: A/B/C strict scope, encoding, presentation and privacy audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_ux_f06_feedback_scope_tests.py -v
+          python3 qa/c05_ux_f06_commercial_rating_tests.py -v
+          for gate in A B C; do
+            python3 qa/c05_ux_f06_feedback_audits.py "$gate"
+          done
+          for gate in A B C; do
+            python3 qa/c05_ux_f05_modal_audits.py "$gate"
+          done
+      - name: Install pinned Node 24
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Install locked Angular dependencies
+        run: npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+      - name: TypeScript, Angular 22 production and institutional harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+          cd frontend
+          npx ng build --configuration institutional-harness
+      - name: Install Chromium
+        shell: bash
+        timeout-minutes: 6
+        run: |
+          set -euo pipefail
+          cd frontend
+          timeout 300s npx playwright install chromium
+      - name: F06 contextual states, form errors, privacy, WCAG and 30 individual PNG
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f06-feedback.config.ts --reporter=line
+      - name: Verify F06 PNG and JSON evidence on exact SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_ux_f06_feedback_evidence.py frontend/test-results-f06-feedback
+      - name: Require 70 individual premium UI captures on exact SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_ux_f06_premium_evidence.py frontend/test-results-f06-feedback
+      - name: F05 secure modal and four-pattern regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f05-modals.config.ts --reporter=line
+      - name: F05 preserve original 55 PNG and verify all 165 deep-state screenshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_ux_f05_modal_evidence.py frontend/test-results-f05-modals
+          python3 qa/c05_ux_f05_modal_audits.py deep-evidence frontend/test-results-f05-modals
+      - name: F04 operator console regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f04-operators.config.ts --reporter=line
+      - name: F03 navigation, account and privacy regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f03.config.ts --reporter=line
+          npx playwright test --config=playwright.c05-f03-account.config.ts --reporter=line
+      - name: F02 institutional design-system regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.institutional.config.ts --reporter=line
+      - name: C05 original and deep modal accessibility regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test tests/c05-institutional-modals.spec.ts --config=playwright.config.ts --reporter=line
+          npx playwright test tests/c05-modal-accessibility-deep.spec.ts --config=playwright.config.ts --reporter=line
+      - name: Preserve every screenshot and regression result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: c05-f06-feedback-evidence-${{ github.sha }}
+          path: |
+            frontend/test-results-f06-feedback/
+            frontend/test-results-f05-modals/
+            frontend/test-results-f04-operators/
+            frontend/test-results-f03/
+            frontend/test-results-f03-account/
+            frontend/test-results-institutional/
+            frontend/test-results/
+          if-no-files-found: warn
+          retention-days: 14
+  real-authorization-integration:
+    name: F06 real .NET10/MySQL8.4 authentication, privacy and tenant denials
+    needs: feedback-accessibility
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout exact F06 commit, no persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Install Node 24
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile API, isolated provisioner and SMTP receiver
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tools/Crecisol.LocalIdentityProvisioner/Crecisol.LocalIdentityProvisioner.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.LoopbackSmtpReceiver/Crecisol.LoopbackSmtpReceiver.csproj -c Release --nologo -warnaserror
+      - name: Locked Angular test dependencies and Chromium
+        shell: bash
+        timeout-minutes: 8
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          cd frontend
+          timeout 420s npx playwright install chromium
+      - name: Real disposable MySQL 8.4 and Angular to .NET 10 identity/security E2E
+        shell: bash
+        timeout-minutes: 35
+        run: |
+          set -euo pipefail
+          node qa/c05_operational_flow_e2e.mjs

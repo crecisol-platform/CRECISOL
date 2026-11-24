@@ -1,0 +1,77 @@
+/* F02 integration: feedback shares the institutional semantic color contract.
+   Statuses remain distinct via text, icon, ARIA and border, not color alone. */
+:host { display: block; min-width: 0; }
+.cs-operation-feedback {
+  --feedback-accent: var(--cs-color-info, #184e7e);
+  --feedback-border: var(--cs-color-info-border, #b9d6ec);
+  --feedback-surface: var(--cs-color-info-bg, #eef6fd);
+  display: grid;
+  grid-template-columns: 2.2rem minmax(0, 1fr);
+  align-items: start;
+  gap: .9rem;
+  padding: clamp(.85rem, 2vw, 1.05rem) clamp(.95rem, 2.2vw, 1.2rem);
+  margin: .85rem 0 1.1rem;
+  max-width: 100%;
+  border: 1px solid var(--feedback-border);
+  border-left: 3px solid var(--feedback-accent);
+  border-radius: var(--cs-radius-md, .85rem);
+  background: var(--feedback-surface);
+  box-shadow: 0 3px 14px rgba(21, 54, 80, .035);
+  color: var(--cs-color-text, #172d46);
+  overflow-wrap: anywhere;
+  /* Never fade security messages through sub-WCAG contrast while appearing. */
+  animation: feedback-enter var(--cs-motion-fast, 140ms) ease-out both;
+}
+.cs-operation-feedback[data-feedback-kind="success"] {
+  --feedback-accent: var(--cs-color-success, #1d6048);
+  --feedback-border: var(--cs-color-success-border, #a4d3bd);
+  --feedback-surface: var(--cs-color-success-bg, #ecf8f2);
+}
+.cs-operation-feedback[data-feedback-kind="error"] {
+  --feedback-accent: var(--cs-color-danger, #8b272e);
+  --feedback-border: var(--cs-color-danger-border, #eac3c4);
+  --feedback-surface: var(--cs-color-danger-bg, #fff2f2);
+}
+.cs-operation-feedback[data-feedback-kind="pending"] {
+  --feedback-accent: var(--cs-color-info, #184e7e);
+  --feedback-border: var(--cs-color-info-border, #b9d6ec);
+  --feedback-surface: var(--cs-color-info-bg, #eef6fd);
+}
+.cs-operation-feedback__mark {
+  display: grid; place-items: center; width: 2rem; height: 2rem;
+  border-radius: .7rem; border: 1px solid var(--feedback-border);
+  background: var(--cs-color-surface, #fff); color: var(--feedback-accent);
+  font-size: 1.13rem; font-weight: 900; line-height: 1;
+}
+.cs-operation-feedback__body { display: grid; gap: .17rem; min-width: 0; }
+.cs-operation-feedback__context {
+  color: var(--cs-color-muted, #455f79); font-size: .67rem; font-weight: 800;
+  letter-spacing: .08em; text-transform: uppercase; line-height: 1.4;
+}
+.cs-operation-feedback__title { font-size: .96rem; font-weight: 760; line-height: 1.45; }
+.cs-operation-feedback__message {
+  font-size: .87rem; line-height: 1.6; margin: .15rem 0 0; color: var(--cs-color-muted, #455f79);
+}
+.cs-operation-feedback[data-feedback-kind="error"] .cs-operation-feedback__message { color: var(--cs-color-danger, #8b272e); }
+.cs-operation-feedback__pulse {
+  width: .65rem; height: .65rem; border: 2px solid currentColor; border-radius: 50%;
+  animation: feedback-pulse 1.2s ease-in-out infinite;
+}
+@keyframes feedback-pulse { 50% { opacity: .28; transform: scale(.72); } }
+@keyframes feedback-enter { from { transform: translateY(3px); } to { transform: translateY(0); } }
+@media (max-width: 390px) {
+  .cs-operation-feedback { grid-template-columns: 1.8rem minmax(0,1fr); gap: .7rem; padding: .85rem; }
+  .cs-operation-feedback__mark { width: 1.75rem; height: 1.75rem; }
+}
+@media (forced-colors: active) {
+  .cs-operation-feedback { background: Canvas; color: CanvasText; border: 2px solid CanvasText; box-shadow: none; }
+  .cs-operation-feedback__mark { background: Canvas; color: CanvasText; border-color: CanvasText; }
+  .cs-operation-feedback__title, .cs-operation-feedback__message, .cs-operation-feedback__context { color: CanvasText; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cs-operation-feedback, .cs-operation-feedback__pulse { animation: none; transition: none; }
+}
+
+
+.cs-operation-feedback__next { margin: .35rem 0 0; font-size: .79rem; line-height: 1.5; color: var(--cs-color-warning, #724513); overflow-wrap: anywhere; }
+@media (forced-colors: active) { .cs-operation-feedback__next { color: CanvasText; } }

@@ -45,10 +45,29 @@ def guard_modal(source: str) -> None:
         require(fragment not in source, "unsafe DOM or local persistence in modal: " + fragment)
 
 
+def guard_feedback_announcements(modal_template: str, feedback_template: str,
+                                 modal_source: str) -> None:
+    require("OperationFeedbackComponent" in modal_source,
+            "shared status announcement is not imported by the modal")
+    for marker in ('<cs-operation-feedback kind="pending"',
+                   '<cs-operation-feedback kind="error"',
+                   '<cs-operation-feedback kind="success"'):
+        require(marker in modal_template, "modal feedback state missing: " + marker)
+    for marker in (
+        '''[attr.role]="kind() === 'error' ? 'alert' : 'status'"''',
+        '''[attr.aria-live]="kind() === 'error' ? 'assertive' : 'polite'"''',
+        'aria-atomic="true"',
+    ):
+        require(marker in feedback_template, "status or failure announcement missing: " + marker)
+
+
 def audit_a() -> None:
     operator = "\n".join(read(PAGES / path) for path in OPERATOR)
     workspace = read(PAGES / "identity-workspace.component.html")
-    require(operator.count("<form ") == 18, "18 original operator forms not preserved")
+    require(operator.count("<form ") == 19, "18 original forms plus configurable session policy form not preserved")
+    require('name="minutes"' in operator and 'name="expectedRevision"' in operator and
+            'action: \'session-policy\'' in operator and 'name="code"' in operator,
+            "session-policy administrator form missing mandatory revision/MFA proof")
     require(workspace.count("<form ") == 15, "15 original consumer account forms not preserved")
     for field in ("caseId", "verified", "evidenceHash", "reason",
                   "shareA", "shareB", "currentPassword", "newPassword",
@@ -58,8 +77,22 @@ def audit_a() -> None:
                   "currentPassword", "newPassword", "mailbox", "code", "confirmed"):
         require(f'name="{field}"' in workspace, "account critical field lost: " + field)
     panel = read(PAGES / "platform-identity-panel.component.html")
+    panel_logic = read(PAGES / "platform-identity-panel.component.ts")
+    navigation = read(PAGES / "c05-navigation.model.ts")
+    # F04/F07 replaces five ad-hoc buttons with one accessible navigation
+    # component. Require every exact section AND the fail-closed selector;
+    # this check must not mistake merely visible tabs for authorization.
     for tab in ("casos", "sesiones", "perfil", "seguridad", "monitor"):
-        require(f"panel.set('{tab}')" in panel, "operator task tab missing: " + tab)
+        require(f"{{ id: '{tab}', label:" in navigation,
+                "operator task section missing from allowlisted navigation: " + tab)
+    for marker in ('<cs-ui-navigation class="operator-navigation"',
+                   '[items]="navigationItems()"', '[activeId]="panel()"',
+                   '(selected)="selectPanel($event)"'):
+        require(marker in panel, "operator navigation contract missing: " + marker)
+    for marker in ("operatorSections.map", "operatorSectionFor(requested)",
+                   "if (!next || this.busy() || next === this.panel()) return;",
+                   "this.panel.set(next)", "void this.openSecurity();"):
+        require(marker in panel_logic, "operator selection authorization boundary missing: " + marker)
     require("panel-operator" not in workspace, "business account leaked platform view")
     require("Registrar decisión" in workspace, "private approval lost")
     require("Comprobar un acceso privado" in workspace and
@@ -70,10 +103,24 @@ def audit_a() -> None:
     require("Emitir parte de recuperación" in operator, "handoff flow lost")
     require("C06" not in panel, "unauthorized future chapter exposed in C05")
     sessions = read(PAGES / "platform-operator-sessions.component.html")
-    require(sessions.count('Cerrar todas mis sesiones de plataforma') == 2 and
-            'Confirmar cierre de todas mis sesiones de plataforma' in sessions,
-            "operator session action must distinguish trigger from confirmation")
-    print("PASS C05-UI-A: 18 operator forms, 15 account forms, task navigation and authority boundaries")
+    # Premium F04 shows an accessible trigger, a destructive modal title, and
+    # its explicit MFA confirmation. Counting labels is no longer a valid gate.
+    # Scope the authorization command to the modal, never the outer trigger.
+    require(sessions.count('(click)="opDialog47.open()"') == 1 and
+            'aria-label="Cerrar todas mis sesiones de plataforma"' in sessions,
+            "operator revoke-all trigger is missing or duplicated")
+    revoke = sessions.split('<cs-institutional-modal #opDialog47', 1)
+    require(len(revoke) == 2 and '</cs-institutional-modal>' in revoke[1],
+            "operator revoke-all confirmation modal is missing")
+    confirmation = revoke[1].split('</cs-institutional-modal>', 1)[0]
+    require('kind="destructive"' in confirmation and
+            '<form csFieldFeedback' in confirmation and
+            "action: 'revoke-all'" in confirmation and
+            'name="code"' in confirmation and
+            '>Confirmar cierre de todas mis sesiones de plataforma</button>' in confirmation and
+            sessions.count("action: 'revoke-all'") == 1,
+            "operator session action must distinguish trigger from MFA confirmation")
+    print("PASS C05-UI-A: 18 original operator forms, 1 administrative policy form, 15 account forms, task navigation and authority boundaries")
 
 
 def audit_b() -> None:
@@ -83,8 +130,20 @@ def audit_b() -> None:
     require("<dialog" in tpl and "(cancel)=\"onCancel($event)\"" in tpl and
             "(close)=\"onClosed()\"" in tpl,
             "native dialog lifecycle not wired")
-    require("role=\"alert\"" in tpl and "aria-live=\"polite\"" in tpl,
-            "status or failure announcement missing")
+    # F06 moves announcements to a reusable component, keeping an alert
+    # for errors and a polite status for outcomes and pending operations.
+    feedback = read(FRONT / "ui/feedback/operation-feedback.component.html")
+    guard_feedback_announcements(tpl, feedback, modal)
+    for mutation in (
+        feedback.replace("'alert' : 'status'", "'status' : 'status'", 1),
+        feedback.replace("'assertive' : 'polite'", "'polite' : 'polite'", 1),
+        feedback.replace('aria-atomic="true"', "", 1),
+    ):
+        try:
+            guard_feedback_announcements(tpl, mutation, modal)
+        except AssertionError:
+            continue
+        raise AssertionError("C05 UX NO-GO: altered live-region announcement was accepted")
     cases = read(PAGES / "platform-operator-cases.component.html")
     require("(dismissed)=\"platform.handoffShare.set('')\"" in cases,
             "operator recovery secret not cleared when its modal closes")

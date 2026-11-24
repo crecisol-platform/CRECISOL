@@ -1,0 +1,408 @@
+/* F02 parity: institutional semantic roles for console chrome; controls,
+   protected actions and tenant boundaries remain handled by their owners. */
+/* CRECISOL C05 UX F04 — a scoped, responsive platform-console layer.
+   These styles do not change business account or public marketing surfaces. */
+:host { display: block; min-width: 0; color: var(--cs-color-text, #172d46); }
+.operator-workspace { display: grid; gap: 1.2rem; min-width: 0; }
+.operator-section-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+.operator-section-head h2 { font-size: clamp(1.35rem, 2.8vw, 1.85rem); margin: .2rem 0 .35rem; color: var(--cs-color-text-strong, #12375b); }
+.operator-section-head p { margin: 0; max-width: 61ch; }
+.operator-kicker { color: var(--cs-color-accent-text, #43688c); text-transform: uppercase; font-size: .72rem; letter-spacing: .12em; font-weight: 800; }
+.operator-scope-note { background: var(--cs-color-surface-soft, #f1f7fc); border: 1px solid var(--cs-color-border, #d7e6f3); border-radius: .85rem;
+  color: var(--cs-color-muted, #365674); padding: .85rem 1.05rem; line-height: 1.6; font-size: .88rem; }
+.operator-stack { display: grid; gap: .95rem; min-width: 0; }
+.operator-grid { display: grid; gap: .95rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); }
+.operator-card { min-width: 0; border: 1px solid var(--cs-color-border, #dce8f2); border-radius: var(--cs-radius-lg, 1.15rem);
+  padding: clamp(1rem, 2vw, 1.35rem); background: var(--cs-color-surface, #fff); box-shadow: var(--cs-shadow-card, 0 6px 22px #173b5909); }
+.operator-card--quiet { background: var(--cs-color-surface-soft, #f8fbfe); }
+.operator-card--alert { border-color: var(--cs-color-warning-border, #ebcfc5); background: var(--cs-color-warning-bg, #fff9f6); }
+.operator-card h3 { margin: .15rem 0 .65rem; color: var(--cs-color-text-strong, #143b5c); }
+.operator-card p:last-child { margin-bottom: 0; }
+.operator-card__header { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+.operator-card__header strong { color: var(--cs-color-text-strong, #153957); line-height: 1.4; overflow-wrap: anywhere; }
+.operator-tag { display: inline-flex; align-items: center; max-width: 100%; border-radius: var(--cs-radius-pill, 999px);
+  background: var(--cs-color-accent-soft, #eaf3f9); color: var(--cs-color-accent-text, #205577); border: 1px solid var(--cs-color-border, #d7e6f0); padding: .3rem .7rem;
+  font-size: .78rem; font-weight: 750; line-height: 1.45; }
+.operator-tag--high { background: var(--cs-color-warning-bg, #fff1e9); color: var(--cs-color-warning, #873c23); border-color: var(--cs-color-warning-border, #ead2c5); }
+.operator-tag--muted { background: var(--cs-color-surface-soft, #f2f5f9); color: var(--cs-color-muted, #536b82); }
+.operator-facts { display: grid; gap: .75rem; margin: 1rem 0; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); }
+.operator-facts div { min-width: 0; }
+.operator-facts dt { color: var(--cs-color-muted, #5c7189); font-weight: 730; font-size: .78rem; margin-bottom: .2rem; }
+.operator-facts dd { color: var(--cs-color-text, #173a58); margin: 0; line-height: 1.5; overflow-wrap: anywhere; }
+.operator-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem .9rem; }
+.operator-filters label { margin: 0; }
+.operator-filters select { width: min(100%, 15rem); min-height: var(--cs-hit-target, 2.75rem); margin: 0; }
+.operator-actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
+.operator-actions button { min-height: var(--cs-hit-target, 2.75rem); }
+.operator-empty { display: grid; gap: .4rem; padding: 1.5rem; border: 1px dashed var(--cs-color-border-strong, #bfd4e7);
+  border-radius: .9rem; background: var(--cs-color-surface-soft, #f8fbfe); }
+.operator-empty h3 { margin: 0; }
+.operator-empty p { margin: 0; }
+.operator-list { display: grid; gap: .85rem; padding: 0; margin: 0; list-style: none; }
+.operator-list > li { min-width: 0; }
+.operator-stat { display: grid; gap: .25rem; }
+.operator-stat strong { color: var(--cs-color-text-strong, #133e67); font-size: clamp(1.35rem, 3vw, 2rem);
+  font-variant-numeric: tabular-nums; }
+.operator-stat span { font-size: .82rem; color: var(--cs-color-muted, #4b6680); }
+.operator-reassurance { margin: 0; font-size: .85rem; color: var(--cs-color-muted, #48657d); line-height: 1.6; }
+.operator-reassurance strong { color: var(--cs-color-accent-text, #234c70); }
+.operator-task-note { display: block; margin-top: .25rem; color: var(--cs-color-muted, #586f85);
+  font-size: .875rem; font-weight: 500; line-height: 1.5; }
+.operator-avatar { display: inline-grid; place-items: center; flex: 0 0 auto;
+  width: 4.4rem; height: 4.4rem; border-radius: 1.1rem; background: var(--cs-color-accent-soft, #e4f0fa);
+  color: var(--cs-color-accent-text, #1d5682); font-size: 1.6rem; font-weight: 850; }
+.operator-profile-head { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.operator-profile-head img { width: 4.4rem; height: 4.4rem; object-fit: cover; }
+.operator-monitor-count { color: var(--cs-color-text-strong, #173c60); font-weight: 840; font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+.operator-divider { border: 0; height: 1px; background: #e2eaf2; margin: .4rem 0; }
+@media (max-width: 620px) {
+  .operator-section-head, .operator-actions { flex-direction: column; align-items: stretch; }
+  .operator-section-head button, .operator-actions button { width: 100%; }
+  .operator-card { padding: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) { .operator-card, .operator-tag { transition: none; } }
+@media (forced-colors: active) {
+  .operator-card, .operator-scope-note, .operator-empty, .operator-tag { border-color: CanvasText; }
+  .operator-tag { background: Canvas; color: CanvasText; }
+}
+
+
+/* F06 premium - child workspace density; parent navigation rules live in identity-flow CSS. */
+.operator-workspace { gap: .85rem; }
+.operator-section-head h2 { font-size: clamp(1.25rem, 2.7vw, 1.7rem); }
+.operator-section-head p { font-size: .89rem; line-height: 1.5; }
+.operator-scope-details { padding: 0; margin: 0; border-left-width: 2px; background: transparent; }
+.operator-scope-details summary { display: list-item; cursor: pointer; padding: .65rem .9rem; font-size: .83rem; font-weight: 750; color: var(--cs-color-accent-text, #24587e); }
+.operator-scope-details[open] p { margin: 0; padding: .15rem .95rem .85rem; font-size: .83rem; }
+.operator-card--result { padding: 0; box-shadow: none; background: transparent; border: 0; }
+.operator-card--result > .operator-section-head { margin-bottom: .55rem; }
+.operator-card--result .operator-empty--result { padding: 1.05rem 1.2rem; border-style: solid; border-color: var(--cs-color-border, #dbe6ee); background: var(--cs-color-surface-soft, #f8fbfe); }
+.operator-empty--result h3 { font-size: .95rem; margin: 0; }
+.operator-empty--result p { font-size: .85rem; line-height: 1.5; }
+.operator-task-secondary { margin: .2rem 0 .65rem; }
+.operator-task-secondary .institutional-task__trigger { box-shadow: none; background: var(--cs-color-surface-soft, #f6f9fc) !important; min-height: 2.9rem; font-size: .84rem; border-style: dashed; }
+@media (max-width: 720px) {
+ .operator-section-head h2 { font-size: 1.25rem; }
+ .operator-card { padding: .9rem; }
+ .operator-card--result { padding: 0; }
+}
+@media (forced-colors: active) {
+ .operator-scope-details, .operator-card--result .operator-empty--result {
+   border: 1px solid CanvasText; background: Canvas;
+ }
+}
+
+
+/* F06 premium - compact state summaries per platform workspace. */
+.operator-card--session-list { padding: 0; border: 0; background: transparent; box-shadow: none; }
+.operator-card--session-list > .operator-section-head { margin-bottom: .6rem; }
+.operator-card--session-list .operator-card--quiet { background: var(--cs-color-surface-soft, #f8fbfe); }
+.operator-card--policy { padding-block: .85rem; }
+.operator-card--policy h3 { margin-bottom: .25rem; }
+.operator-card--policy p { margin: .35rem 0; font-size: .875rem; }
+.operator-profile-head { gap: .7rem; }
+.operator-profile-head h3 { margin: .1rem 0 .3rem; }
+.operator-profile-head + .operator-facts { margin: .85rem 0 .2rem; }
+.operator-monitor-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.operator-monitor-stats .operator-card { padding: .9rem; }
+.operator-monitor-stats .operator-stat strong { font-size: clamp(1.25rem, 3vw, 1.7rem); }
+.operator-monitor-stats .operator-stat span { font-size: .76rem; }
+@media (max-width: 620px) {
+  .operator-monitor-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
+  .operator-monitor-stats .operator-stat:first-child { grid-column: 1 / -1; }
+  .operator-monitor-stats .operator-card { padding: .7rem .85rem; }
+  .operator-profile-head + .operator-facts { grid-template-columns: repeat(2,minmax(0,1fr)); gap: .75rem; }
+  .operator-card--session-list { padding: 0; }
+}
+@media (forced-colors: active) {
+  .operator-card--session-list { border-color: CanvasText; background: Canvas; }
+}
+
+
+/* F06 accessibility regression: 320px viewport and 200% browser text. */
+.operator-workspace,
+.operator-workspace .operator-card,
+.operator-workspace .operator-section-head,
+.operator-workspace .operator-stat,
+.operator-workspace .operator-stat span,
+.operator-workspace .operator-stat strong {
+  min-width: 0; max-width: 100%; overflow-wrap: anywhere;
+}
+@media (max-width: 480px) {
+  .operator-workspace .operator-card { padding: 10px; }
+  .operator-monitor-stats { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .operator-monitor-stats .operator-stat:first-child { grid-column: auto; }
+  .operator-monitor-stats .operator-stat span { display: block; }
+  .operator-section-head { gap: 8px; }
+  .operator-workspace .operator-card--result,
+  .operator-workspace .operator-card--session-list { padding: 0; }
+}
+
+
+/* F06 premium polish · Operator cases prioritize exact-lookup and secondary actions. */
+.operator-workspace .operator-case-caution { margin: .35rem .2rem; color: var(--cs-color-muted, #506780); font-size: .875rem; line-height: 1.5; }
+.operator-card--result:has(.operator-empty--result) { padding: 0; }
+.operator-card--result .operator-empty--result { padding: .8rem 1rem; border-radius: .8rem; }
+.operator-card--result .operator-empty--result h3 { font-size: .9rem; margin: 0 0 .15rem; }
+.operator-card--result .operator-empty--result p { font-size: .875rem; margin: .2rem 0 0; }
+@media (max-width: 720px) {
+  .operator-workspace { gap: .65rem; }
+  .operator-section-head p { margin: .25rem 0 0; }
+  .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] {
+    padding: .8rem .9rem;
+  }
+  .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] > p {
+    font-size: .875rem; margin: .3rem 0 .65rem;
+  }
+  .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] h3 { margin: 0; font-size: 1rem; }
+  .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] form { gap: .35rem; }
+  .operator-workspace .operator-card--quiet[aria-label='Consulta puntual de caso'] input { min-height: 2.65rem; }
+}
+
+
+/* F06 buyer refinement: one editorial rhythm on the five platform areas. */
+.operator-workspace .operator-section-head { gap: .5rem; }
+.operator-workspace .operator-section-head p { margin-top: .18rem; font-size: .875rem; line-height: 1.5; }
+.operator-workspace .operator-kicker { font-size: .78rem; letter-spacing: .06em; }
+/* The workspace title already identifies its area; avoid a duplicate eyebrow. */
+.operator-workspace > .operator-section-head .operator-kicker { display: none; }
+.operator-workspace .operator-empty { padding: .9rem 1rem; border-radius: .8rem; }
+.operator-workspace .operator-empty h3 { margin: 0 0 .2rem; font-size: .98rem; }
+.operator-workspace .operator-empty p { margin: .2rem 0 0; font-size: .875rem; line-height: 1.5; }
+.operator-workspace .operator-card__header h3 { margin: 0; }
+.operator-workspace .operator-scope-details { margin: .1rem 0; }
+.operator-workspace .operator-scope-details summary { box-sizing: border-box; min-height: 2.75rem; padding: .65rem .8rem; font-size: .875rem; }
+@media (max-width: 720px) {
+  .operator-workspace .operator-section-head h2 { font-size: 1.2rem; line-height: 1.19; }
+  .operator-workspace .operator-section-head p { font-size: .875rem; }
+  .operator-workspace .operator-empty { padding: .78rem .9rem; }
+  .operator-workspace .operator-card--policy { padding: .78rem .85rem; }
+  .operator-workspace .operator-card--session-list { padding: 0; }
+  .operator-workspace .institutional-task__trigger { min-height: 3rem; }
+}
+
+
+/* Exact-reference lookup leads; the privacy explanation is still available
+   immediately after the protected form and before review/recovery actions. */
+@media (max-width: 720px) {
+  .operator-workspace .operator-scope-details { margin-top: -.2rem; }
+  .operator-workspace .operator-card[aria-label='Consulta puntual de caso'] {
+    border-color: var(--cs-color-border, #c9ddeb);
+    background: var(--cs-color-surface-soft, #f8fbfe);
+  }
+}
+
+/* F06 purchase gate: case lookup first, readable on a 320px phone.
+   Keep 44px summary targets and avoid narrowing labels at 200% text zoom. */
+@media (max-width: 720px) {
+  .operator-workspace > .operator-section-head h2 { margin: .1rem 0 .2rem; }
+  .operator-workspace > .operator-section-head p { margin: 0; }
+  .operator-workspace .operator-card[aria-label='Consulta puntual de caso'] {
+    padding: .75rem .85rem;
+  }
+  .operator-workspace .operator-card[aria-label='Consulta puntual de caso'] form { gap: .3rem; }
+  .operator-workspace .operator-card[aria-label='Consulta puntual de caso'] label { font-size: .875rem; }
+  .operator-card--policy .operator-tag { display: none; }
+  .operator-workspace .operator-scope-details summary { min-height: 2.75rem; }
+}
+
+
+/* F06 buyer: both operator mailbox operations remain available. Distinguish
+   their sequence and keep native forms/MFA proof fields in the tab order. */
+.operator-mailbox-step {
+  display: grid;
+  gap: .15rem;
+  min-width: 0;
+  margin: .12rem 0 .2rem;
+  padding-top: .55rem;
+  border-top: 1px solid var(--cs-color-border, #d7e4f0);
+}
+.operator-mailbox-step + .operator-mailbox-step { margin-top: .6rem; }
+.operator-mailbox-step__title {
+  margin: 0 0 .15rem;
+  color: var(--cs-color-accent-text, #215476);
+  font-size: .85rem;
+  line-height: 1.38;
+  font-weight: 800;
+}
+.operator-mailbox-step > form { margin: .1rem 0 .2rem; }
+@media (forced-colors: active) {
+  .operator-mailbox-step { border-color: CanvasText; }
+  .operator-mailbox-step__title { color: CanvasText; }
+}
+
+/* F02 mobile buyer review: evidence fields form a readable, non-destructive
+   grid. No input, independent attestation or server-required MFA is hidden. */
+.operator-identity-review {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .7rem 1rem;
+  min-width: 0;
+  margin: .35rem 0 .55rem;
+}
+.operator-review-field {
+  display: grid;
+  align-content: start;
+  gap: .25rem;
+  min-width: 0;
+}
+.operator-review-field > label {
+  margin: 0;
+  color: var(--cs-color-text-strong, #102e4c);
+  font-weight: 730;
+  line-height: 1.42;
+}
+.operator-review-field > :is(input, select) {
+  display: block;
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  min-height: 3rem;
+  margin: 0;
+}
+.operator-review-attestations {
+  display: grid;
+  gap: .55rem;
+  grid-column: 1 / -1;
+  margin-top: .1rem;
+  padding: .75rem 0 .1rem;
+  border-top: 1px solid var(--cs-color-border, #d3e1ee);
+}
+.operator-review-attestations > label {
+  display: flex;
+  align-items: flex-start;
+  gap: .65rem;
+  min-height: var(--cs-hit-target, 2.75rem);
+  margin: 0;
+  color: var(--cs-color-text, #172d46);
+  font-size: .86rem;
+  line-height: 1.48;
+}
+.operator-review-attestations input[type='checkbox'] {
+  flex: 0 0 auto;
+  margin-top: .15rem;
+}
+.operator-identity-review > button {
+  grid-column: 1 / -1;
+  margin-top: .25rem;
+  min-height: 3rem;
+}
+@media (min-width: 700px) {
+  .operator-identity-review { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .operator-review-field--proof { grid-column: 1 / -1; max-width: 24rem; }
+  .operator-review-attestations { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 400px) {
+  .operator-identity-review { gap: .6rem; margin-top: .2rem; }
+  .operator-review-attestations { gap: .45rem; padding-top: .55rem; }
+}
+
+/* F02 operator mailbox: independent request/confirmation forms remain
+   simultaneously available and keyboard reachable, now with a single
+   progression rail and balanced vertical rhythm on narrow viewports. */
+.operator-mailbox-step {
+  border-top: 0;
+  border-left: 3px solid var(--cs-color-action, #103f75);
+  padding: .3rem 0 .4rem .85rem;
+  margin: .15rem 0 .3rem;
+}
+.operator-mailbox-step + .operator-mailbox-step {
+  border-top: 1px solid var(--cs-color-border, #d3e1ee);
+  border-left-color: var(--cs-color-accent-text, #174b77);
+  padding-top: .85rem;
+  margin-top: .45rem;
+}
+.operator-mailbox-step__title {
+  color: var(--cs-color-accent-text, #174b77);
+  font-size: .88rem;
+  line-height: 1.4;
+}
+.operator-mailbox-step > form {
+  display: grid;
+  gap: .38rem;
+  min-width: 0;
+  margin: .38rem 0 .15rem;
+}
+.operator-mailbox-step > form label { margin-top: .1rem; line-height: 1.45; }
+.operator-mailbox-step > form :is(input, select) { min-height: 3rem; }
+.operator-mailbox-step > form button {
+  min-height: 3rem;
+  margin-top: .2rem;
+}
+@media (max-width: 400px) {
+  .operator-mailbox-step { padding-left: .68rem; }
+  .operator-mailbox-step + .operator-mailbox-step { padding-top: .7rem; }
+  .operator-mailbox-step > form { gap: .3rem; }
+}
+@media (forced-colors: active) {
+  .operator-review-attestations, .operator-mailbox-step + .operator-mailbox-step {
+    border-color: CanvasText;
+  }
+  .operator-mailbox-step { border-left-color: CanvasText; }
+  .operator-review-field > label, .operator-review-attestations > label,
+  .operator-mailbox-step__title { color: CanvasText; }
+}
+
+
+/* F02 buyer gate — isolated identity case lookup, without changing authority
+   or weakening the required scope, reason and fresh MFA. */
+.operator-case-lookup {
+  display: grid;
+  grid-template-columns: minmax(0,1fr);
+  gap: .62rem 1rem;
+  min-width: 0;
+}
+.operator-case-lookup__field {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: .25rem;
+}
+.operator-case-lookup__field > label { margin: 0; line-height: 1.42; }
+.operator-case-lookup__field > :is(input, select) {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 3rem;
+  margin: 0;
+}
+.operator-case-lookup > button { min-height: 3rem; grid-column: 1 / -1; margin-top: .2rem; }
+@media (min-width: 700px) {
+  .operator-case-lookup { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 400px) {
+  .operator-case-lookup { gap: .46rem; }
+}
+@media (forced-colors: active) {
+  .operator-case-lookup__field > label { color: CanvasText; }
+}
+
+
+/* F02 buyer consistency: equal affordances for protected operator tasks.
+   Distinguishes task launchers from the final destructive/MFA action. */
+.operator-workspace .institutional-task__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.35rem;
+  padding: .78rem 1rem;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.operator-workspace .institutional-task__trigger:hover:not(:disabled) {
+  border-color: var(--cs-color-border-strong, #9bb5cb);
+  background: var(--cs-color-surface-soft, #f5f9fd) !important;
+}
+.operator-workspace .operator-scope-note { line-height: 1.52; }
+@media (max-width: 480px) {
+  .operator-workspace { gap: .9rem; }
+  .operator-workspace .institutional-task__trigger { min-height: 3.15rem; padding: .73rem .85rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .operator-workspace .institutional-task__trigger { transition: none; }
+}
+@media (forced-colors: active) {
+  .operator-workspace .institutional-task__trigger { border-color: ButtonText; }
+}
+
+/* F04 premium rules are scoped in platform-operator-f04-premium.component.css. */

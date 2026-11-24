@@ -1,5 +1,52 @@
-<section class="operator-readonly-panel" aria-label="Señales de abuso"><h3>Señales de abuso de identidad</h3>
-          <p>Solo cantidades agregadas; no expone correos, direcciones IP ni datos de otros negocios.</p>
-          <button type="button" [disabled]="busy()" (click)="loadAbuseRequested.emit()">Consultar señales agregadas</button>
-          <ul>@for (signal of platform.abuse(); track signal.kind) { <li>{{ signal.kind }}: {{ signal.count }}</li> }</ul>
-        </section>
+<section class="operator-workspace operator-workspace--monitor" aria-label="Monitor de seguridad de plataforma">
+  <header class="operator-section-head">
+    <div><span class="operator-kicker">OBSERVABILIDAD / PROTECCIÓN</span>
+      <h2>Monitor de identidad</h2>
+      <p>Consulta señales agregadas de las últimas 24 horas y sus niveles de atención.</p></div>
+    <button type="button" [disabled]="busy()" (click)="loadAbuseRequested.emit()">Consultar señales agregadas</button>
+  </header>
+  <details class="operator-scope-note operator-scope-details">
+    <summary>Privacidad de los indicadores</summary>
+    <p>Información agregada del servicio de plataforma. No muestra correos, IP, identificadores de clientes ni detalle de tenants. La prioridad visual no sustituye investigación ni autorización backend.</p>
+  </details>
+  @if (platform.abuseLoaded()) {
+    <div class="operator-grid operator-monitor-stats" aria-label="Indicadores agregados">
+      <div class="operator-card operator-stat operator-stat--total"><strong>{{ totalSignals() }}</strong><span>Señales agregadas</span></div>
+      <div class="operator-card operator-stat"><strong>{{ signals().length }}</strong><span>Categorías devueltas</span></div>
+      <div class="operator-card operator-stat"><strong>24 h</strong><span>Ventana de observación</span></div>
+    </div>
+    <section class="operator-card operator-card--monitor-list" aria-label="Categorías de señales de seguridad">
+      <div class="operator-section-head">
+        <div><h3>Señales por nivel de atención</h3><p>Los niveles se calculan solo para ordenar los contadores: alta ≥10; revisión 3–9; informativa 0–2.</p></div>
+        <div class="operator-filters">
+          <label for="operator-priority-filter">Filtrar atención</label>
+          <select id="operator-priority-filter" [value]="priorityFilter()" (change)="priorityFilter.set($any($event.target).value)">
+            <option value="all">Todas las prioridades</option>
+            <option value="alta">Atención alta</option>
+            <option value="revision">Por revisar</option>
+            <option value="informativa">Informativas</option>
+          </select>
+        </div>
+      </div>
+      @if (filteredSignals().length) {
+        <ol class="operator-list">
+          @for (item of filteredSignals(); track item.id) {
+            <li class="operator-card operator-card--quiet operator-monitor-item">
+              <div class="operator-card__header">
+                <div><strong>{{ item.label }}</strong></div>
+                <span class="operator-tag" [class.operator-tag--high]="item.priority === 'alta'">
+                  {{ item.priority === 'alta' ? 'Atención alta' : item.priority === 'revision' ? 'Por revisar' : 'Informativa' }}
+                </span>
+              </div>
+              <div class="operator-monitor-count" aria-label="Cantidad de señales">{{ item.count }}</div>
+            </li>
+          }
+        </ol>
+      } @else {
+        <div class="operator-empty"><h3>Sin señales para este filtro</h3><p>No hay señales para el filtro seleccionado.</p></div>
+      }
+    </section>
+  } @else {
+    <div class="operator-empty"><h3>Monitor aún no consultado</h3><p>Consulta los contadores de las últimas 24 horas.</p></div>
+  }
+</section>

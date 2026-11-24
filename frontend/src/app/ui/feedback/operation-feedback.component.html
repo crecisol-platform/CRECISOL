@@ -1,0 +1,35 @@
+<section class="cs-operation-feedback" [attr.data-feedback-kind]="kind()"
+  [attr.role]="kind() === 'error' ? 'alert' : 'status'"
+  [attr.aria-live]="kind() === 'error' ? 'assertive' : 'polite'"
+  [attr.aria-busy]="kind() === 'pending' ? 'true' : null"
+  aria-atomic="true">
+  <span class="cs-operation-feedback__mark" aria-hidden="true">
+    @switch (kind()) {
+      @case ('success') { ✓ }
+      @case ('error') { ! }
+      @case ('pending') { <span class="cs-operation-feedback__pulse"></span> }
+      @default { i }
+    }
+  </span>
+  <div class="cs-operation-feedback__body">
+    <span class="cs-operation-feedback__context">{{ context() }}</span>
+    <strong class="cs-operation-feedback__title">
+      @switch (kind()) {
+        @case ('success') { Operación completada }
+        @case ('error') { Revisa esta operación }
+        @case ('pending') { Operación en curso }
+        @default { Información }
+      }
+    </strong>
+    <p class="cs-operation-feedback__message">{{ text() }}</p>
+    @if (kind() === 'error') {
+      <p class="cs-operation-feedback__next">
+        {{ context() === 'Identidad de plataforma' ?
+          'Comprueba la referencia y tu autorización. Si persiste, contacta al responsable de seguridad.' :
+          context() === 'Operación protegida' ?
+          'Comprueba los datos y el estado de esta solicitud antes de intentarlo de nuevo.' :
+          'Si la dificultad continúa, inténtalo más tarde o utiliza una opción de recuperación disponible.' }}
+      </p>
+    }
+  </div>
+</section>

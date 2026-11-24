@@ -57,18 +57,33 @@ public sealed partial class MySqlOperationalIdentityFlow
         var identity = await u.One("SELECT operator_id FROM c05_platform_session WHERE token_hmac=@h", ("h", tokenHash));
         if (identity is null) return new(false);
         var principal = await u.One("SELECT * FROM c05_platform_operator WHERE operator_id=@a AND active=1 AND recovery_pending=0 FOR UPDATE", ("a", Bytes(identity, "operator_id")));
-        var session = await u.One("SELECT * FROM c05_platform_session WHERE token_hmac=@h AND revoked_at_utc IS NULL AND expires_at_utc>UTC_TIMESTAMP(6) AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL 5 MINUTE FOR UPDATE", ("h", tokenHash));
-        if (principal is null || session is null || Number(principal, "security_revision") != Number(session, "security_revision")) return new(false);
+        var idle = await SessionIdleMinutes(u, r.Operation == "platform/session-policy/update");
+        var session = await u.One("SELECT * FROM c05_platform_session WHERE token_hmac=@h AND revoked_at_utc IS NULL AND expires_at_utc>UTC_TIMESTAMP(6) AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE FOR UPDATE", ("h", tokenHash), ("idle", idle));
+        if (session is null)
+        {
+            await u.Run("""
+                UPDATE c05_platform_session SET revoked_at_utc=UTC_TIMESTAMP(6)
+                WHERE token_hmac=@h AND revoked_at_utc IS NULL
+                  AND (expires_at_utc<=UTC_TIMESTAMP(6)
+                       OR last_seen_at_utc<=UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE)
+                """, ("h", tokenHash), ("idle", idle));
+            return new(false);
+        }
+        if (principal is null || Number(principal, "security_revision") != Number(session, "security_revision")) return new(false);
         u.Actor = Bytes(principal, "operator_id");
         u.VerifiedActor = true;
-        await u.Run("UPDATE c05_platform_session SET last_seen_at_utc=UTC_TIMESTAMP(6) WHERE token_hmac=@h", ("h", tokenHash));
+        await SlidePlatformSession(u, tokenHash, idle);
+        if (r.Operation == "platform/sessions/keepalive")
+            return new(true, new { expiresAtUtc = u.SessionExpiresAtUtc, idleMinutes = idle });
+        if (r.Operation is "platform/session-policy" or "platform/session-policy/update")
+            return await PlatformSessionPolicy(u, principal, tokenHash, r, ct);
         if (r.Operation.StartsWith("platform/profile/", StringComparison.Ordinal))
             return await Profile(u, [], u.Actor, r with { Operation = r.Operation[9..] }, platformRealm: true);
-        if (r.Operation is "platform/session" or "platform/restore") return new(true, new OperationalPlatformValidation(Utc(session, "expires_at_utc")));
+        if (r.Operation is "platform/session" or "platform/restore") return new(true, new OperationalPlatformValidation(u.SessionExpiresAtUtc!.Value));
         if (r.Operation == "platform/sessions")
         {
-            var rows = await u.All("SELECT session_id,created_at_utc,expires_at_utc,last_seen_at_utc,device_label FROM c05_platform_session WHERE operator_id=@a AND security_revision=@v AND revoked_at_utc IS NULL AND expires_at_utc>UTC_TIMESTAMP(6) AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL 5 MINUTE ORDER BY last_seen_at_utc DESC",
-                ("a", u.Actor), ("v", Number(principal, "security_revision")));
+            var rows = await u.All("SELECT session_id,created_at_utc,expires_at_utc,last_seen_at_utc,device_label FROM c05_platform_session WHERE operator_id=@a AND security_revision=@v AND revoked_at_utc IS NULL AND expires_at_utc>UTC_TIMESTAMP(6) AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE ORDER BY last_seen_at_utc DESC",
+                ("a", u.Actor), ("v", Number(principal, "security_revision")), ("idle", idle));
             return new(true, new { sessions = rows.Select(row => new { id = new Guid(Bytes(row, "session_id"), true), issuedAtUtc = row["created_at_utc"],
                 expiresAtUtc = row["expires_at_utc"], lastSeenAtUtc = row["last_seen_at_utc"], device = row["device_label"] }) });
         }
@@ -76,7 +91,7 @@ public sealed partial class MySqlOperationalIdentityFlow
         {
             u.SessionMethod = Text(session, "auth_method");
             await u.Run("UPDATE c05_platform_session SET revoked_at_utc=UTC_TIMESTAMP(6) WHERE token_hmac=@h", ("h", tokenHash));
-            return await IssuePlatformSession(u, principal, (DateTime)session["expires_at_utc"], (DateTime)session["mfa_at_utc"]);
+            return await IssuePlatformSession(u, principal, (DateTime)session["mfa_at_utc"]);
         }
         if (r.Operation == "platform/sessions/revoke")
             return new(await u.Run("UPDATE c05_platform_session SET revoked_at_utc=UTC_TIMESTAMP(6) WHERE operator_id=@a AND session_id=@id AND revoked_at_utc IS NULL",
@@ -178,9 +193,11 @@ public sealed partial class MySqlOperationalIdentityFlow
         finally { CryptographicOperations.ZeroMemory(seed); }
     }
 
-    private async Task<OperationalIdentityResult> IssuePlatformSession(Unit u, Dictionary<string, object> person, DateTime? deadline = null, DateTime? mfa = null)
+    private async Task<OperationalIdentityResult> IssuePlatformSession(Unit u, Dictionary<string, object> person, DateTime? mfa = null)
     {
-        var token = Token(); var expiry = deadline is null ? DateTimeOffset.UtcNow.AddMinutes(15) : new DateTimeOffset(DateTime.SpecifyKind(deadline.Value, DateTimeKind.Utc));
+        var token = Token();
+        var expiry = DateTimeOffset.UtcNow.AddMinutes(await SessionIdleMinutes(u));
+        u.SessionExpiresAtUtc = expiry;
         await u.Run("""
             INSERT INTO c05_platform_session(token_hmac,operator_id,security_revision,mfa_at_utc,expires_at_utc,last_seen_at_utc,revoked_at_utc,session_id,created_at_utc,device_label,peer_hmac,auth_method)
             VALUES(@h,@a,@v,@mfa,@expiry,UTC_TIMESTAMP(6),NULL,@id,UTC_TIMESTAMP(6),@device,@peer,@method)

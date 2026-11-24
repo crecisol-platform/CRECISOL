@@ -1,12 +1,12 @@
 <section aria-labelledby="recovery-heading"><h2 id="recovery-heading">Recuperar contraseña</h2>
-          <p>La recuperación requiere el correo verificado y tu segundo factor. No inicia una sesión.</p>
-          <form (submit)="securityActionRequested.emit({ event: $event, action: 'recovery-request' })">
+          <p>Solicita un código a tu correo verificado. Para crear otra contraseña también necesitarás tu segundo factor; no iniciaremos sesión automáticamente.</p>
+          <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'recovery-request' })">
             <label for="recovery-mailbox">Correo para recuperación</label><input id="recovery-mailbox" name="mailbox" type="email" autocomplete="email" required maxlength="254">
             <button [disabled]="busy() || identity.restoring()">Solicitar recuperación</button>
           </form>
           <details class="recovery-step"><summary>Ya tengo mi código de recuperación</summary>
-            <p>Escribe el código recibido y confirma con tu segundo factor para crear una nueva contraseña.</p>
-          <form (submit)="securityActionRequested.emit({ event: $event, action: 'recovery-complete' })">
+            <p>Introduce el código recibido y tu segundo factor. El enlace no abre una sesión por sí solo.</p>
+          <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'recovery-complete' })">
             <label for="recovery-token">Token de recuperación</label><input id="recovery-token" name="token" autocomplete="off" required pattern="[0-9a-fA-F]{64}">
             <label for="recovery-code">Código MFA para recuperación</label><input id="recovery-code" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
             <label for="recovery-password">Contraseña recuperada</label><input id="recovery-password" name="newPassword" type="password" autocomplete="new-password" required minlength="15" maxlength="128">
@@ -14,28 +14,28 @@
           </form>
           </details>
           <details><summary>Reportar un cambio que no reconozco</summary>
-            <p>Usa el código del aviso de seguridad enviado a tu correo verificado. La denuncia revoca las sesiones; no concede acceso ni cambia contraseñas.</p>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'incident' })">
+            <p>Si no reconoces un cambio, utiliza el código del aviso enviado a tu correo. El reporte revoca sesiones sin conceder acceso.</p>
+            <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'incident' })">
               <label for="incident-token">Código del aviso de seguridad</label><input id="incident-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
               <button [disabled]="busy()">Reportar actividad no reconocida</button>
             </form>
           </details>
           <details><summary>Perdí todos mis métodos de acceso</summary>
-            <p>Prueba primero una llave alternativa o tus códigos de respaldo. Si no están disponibles, solicita revisión de identidad. Requiere dos operadores de plataforma distintos, verificación independiente y al menos 24 horas de espera. Nunca se usan preguntas personales.</p>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'assisted-request' })">
+            <p>Si no conservas llaves ni códigos de respaldo, solicita una revisión independiente. Participan dos operadores diferentes y se respetan al menos 24 horas de espera.</p>
+            <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'assisted-request' })">
               <label for="assisted-mailbox">Correo de la cuenta que necesita asistencia</label><input id="assisted-mailbox" name="mailbox" type="email" required maxlength="254" autocomplete="email">
               <label><input name="unavailable" type="checkbox" required> Mis métodos automáticos seguros no están disponibles</label>
               <button [disabled]="busy()">Solicitar recuperación asistida</button>
             </form>
             @if (identity.assistedReference()) { <p>Referencia de tu solicitud: <output aria-label="Referencia de recuperación asistida">{{ identity.assistedReference() }}</output>. Esta respuesta no confirma la existencia de una cuenta.</p> }
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'assisted-complete' })">
+            <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'assisted-complete' })">
               <label for="assisted-case">Referencia del caso aprobado</label><input id="assisted-case" name="caseId" required maxlength="36">
               <label for="assisted-token">Token del canal previo verificado</label><input id="assisted-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
               <label for="assisted-password">Nueva contraseña para la recuperación asistida</label><input id="assisted-password" name="newPassword" type="password" required minlength="15" maxlength="128" autocomplete="new-password">
               <button [disabled]="busy()">Completar caso con el canal previo</button>
             </form>
-            <p>Si tampoco tienes el correo, cada operador que verificó tu identidad puede entregarte su parte por separado después del plazo de seguridad. Necesitas las dos.</p>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'assisted-handoff' })">
+            <p>¿Tampoco tienes el correo? Tras la espera de seguridad, necesitarás las partes de ambos revisores, obtenidas por separado.</p>
+            <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'assisted-handoff' })">
               <label for="handoff-case">Referencia para entrega por dos operadores</label><input id="handoff-case" name="caseId" required maxlength="36">
               <label for="handoff-a">Parte del primer operador</label><input id="handoff-a" name="shareA" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
               <label for="handoff-b">Parte del segundo operador</label><input id="handoff-b" name="shareB" required pattern="[0-9a-fA-F]{64}" autocomplete="off">

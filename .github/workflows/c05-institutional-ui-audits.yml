@@ -71,11 +71,11 @@ jobs:
           python3 qa/c05_institutional_modal_audits.py C
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE="origin/${{ github.base_ref }}"
-            git diff --name-only "$BASE"...HEAD | while IFS= read -r file; do
-              case "$file" in
-                backend/*|database/*) echo "NO-GO product security/data scope changed: $file"; exit 1 ;;
-              esac
-            done
+            # Check all changed protected files, never trust a branch name.
+            # SHA1 C validates exact C05 backend/database paths and invariants.
+            if ! git diff --quiet "$BASE"...HEAD -- backend/ database/; then
+              python3 qa/c05_sha1_exclusive_audits.py C
+            fi
           fi
       - name: TypeScript, Angular production and public visual regressions
         shell: bash
@@ -86,7 +86,7 @@ jobs:
           npm run build --prefix frontend
           cd frontend
           npx playwright install --with-deps chromium
-          npx playwright test tests/c05-institutional-modals.spec.ts tests/c05-identity-responsive.spec.ts --reporter=line
+          npx playwright test tests/c05-institutional-modals.spec.ts tests/c05-identity-responsive.spec.ts tests/c05-totp-async-privacy.spec.ts --reporter=line
 
   accessibility-d:
     name: "D | Accesibilidad profunda, reflow, foco y preferencias"

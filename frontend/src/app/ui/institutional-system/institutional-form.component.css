@@ -1,0 +1,30 @@
+:host { display: block; min-width: 0; }
+.cs-form {
+  box-sizing: border-box;
+  min-width: 0;
+}
+.cs-form__header { margin: 0 0 1rem; }
+.cs-form h3 {
+  margin: 0 0 .4rem;
+  color: var(--cs-color-text-strong, #102e4c);
+  font-size: 1.1rem;
+  line-height: 1.35;
+  font-weight: 785;
+}
+.cs-form__header p {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--cs-color-muted, #455f79);
+  font-size: var(--cs-text-sm, .875rem);
+  line-height: var(--cs-line-body, 1.6);
+}
+.cs-form form {
+  display: grid;
+  gap: 1.1rem;
+  min-width: 0;
+  margin: 0;
+}
+.cs-form form[aria-busy="true"] { cursor: progress; }
+@media (forced-colors: active) {
+  .cs-form h3 { color: CanvasText; }
+}

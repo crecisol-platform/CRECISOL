@@ -1,0 +1,15 @@
+@if (validItems().length) {
+  <nav class="cs-nav" [attr.aria-label]="ariaLabel()">
+    <div class="cs-nav__scroll">
+      @for (item of validItems(); track item.id) {
+        <button type="button" [disabled]="item.disabled"
+          [attr.aria-current]="item.id === activeId() ? 'page' : null"
+          (click)="choose(item)">
+          <span>{{ item.label }}</span>
+        </button>
+      }
+    </div>
+  </nav>
+} @else {
+  <p class="cs-nav__invalid" role="alert">Navegación temporalmente no disponible.</p>
+}

@@ -1,23 +1,69 @@
-<dialog #surface class="cs-modal" [class.cs-modal--wide]="wide()"
-  [attr.aria-labelledby]="titleId"
+<dialog #surface class="cs-modal" [class.cs-modal--wide]="wide() || kind() === 'wizard'"
+  [attr.data-kind]="kind()" [attr.aria-labelledby]="titleId"
   [attr.aria-describedby]="description() ? descriptionId : null"
-  (cancel)="onCancel($event)" (close)="onClosed()">
+  (cancel)="onCancel($event)" (close)="onClosed()" (click)="onDialogClick($event)" (submit)="onDialogSubmit()">
   <header class="cs-modal__header">
     <div class="cs-modal__heading">
-      <p class="cs-modal__eyebrow">CRECISOL · ACCIÓN SEGURA</p>
-      <h2 [id]="titleId">{{ title() }}</h2>
+      <p class="cs-modal__eyebrow">
+        @switch (kind()) {
+          @case ('simple') { Información y acción }
+          @case ('destructive') { Confirmación de seguridad }
+          @case ('wizard') { Asistente protegido }
+          @default { Formulario verificado }
+        }
+      </p>
+      <h2 #heading tabindex="-1" [id]="titleId">{{ title() }}</h2>
       @if (description()) { <p class="cs-modal__description" [id]="descriptionId">{{ description() }}</p> }
     </div>
     <button type="button" class="cs-modal__dismiss" aria-label="Cerrar ventana"
       [disabled]="busy()" (click)="close()">×</button>
   </header>
-  <div class="cs-modal__content">
-    @if (error()) { <p class="cs-modal__feedback cs-modal__feedback--error" role="alert">{{ error() }}</p> }
-    @if (feedback()) { <p class="cs-modal__feedback" role="status" aria-live="polite">{{ feedback() }}</p> }
+  <div #scrollBody class="cs-modal__content" role="region" aria-label="Contenido de la operación" tabindex="0" (scroll)="updateScrollCue()">
+    @if (kind() === 'destructive') {
+      <div class="cs-modal__warning" role="note" aria-label="Advertencia de seguridad">
+        <span>{{ warning() || 'Esta acción puede retirar acceso o invalidar credenciales. Verifica el elemento y la cuenta antes de continuar.' }}</span>
+      </div>
+    }
+    @if (kind() === 'wizard' && steps().length > 1) {
+      <nav aria-label="Etapas del proceso" class="cs-modal__stepper">
+        <ol class="cs-modal__steps">
+          @for (label of steps(); track $index) {
+            <li [class.cs-modal__step--current]="$index + 1 === activeStep()"
+                [class.cs-modal__step--complete]="$index + 1 < activeStep()"
+                [attr.aria-current]="$index + 1 === activeStep() ? 'step' : null">
+              <span class="cs-modal__step-number" aria-hidden="true">{{ $index + 1 }}</span>
+              <span>{{ label }}</span>
+            </li>
+          }
+        </ol>
+      </nav>
+      <p class="cs-modal__step-announcement" aria-live="polite" aria-atomic="true">
+        Paso {{ activeStep() }} de {{ steps().length }}: {{ steps()[activeStep() - 1] }}
+      </p>
+    }
+    @if (busy() && actionStartedHere()) {
+      <cs-operation-feedback kind="pending" text="Verificando la solicitud en el servidor…" context="Operación protegida" />
+    }
+    @if (localError()) {
+      <cs-operation-feedback kind="error" [text]="localError()" context="Operación protegida" />
+    }
+    @if (localFeedback()) {
+      <cs-operation-feedback kind="success" [text]="localFeedback()" context="Operación protegida" />
+    }
     <ng-content></ng-content>
   </div>
   <footer class="cs-modal__footer">
-    <span>Acción protegida · Nunca compartas tus códigos.</span>
+    <span>
+      @switch (kind()) {
+        @case ('simple') { Abrir esta ventana no modifica tus datos. }
+        @case ('destructive') { El servidor verifica permisos y MFA cuando corresponda. }
+        @case ('wizard') { Paso {{ activeStep() }} de {{ steps().length || 1 }} · No compartas códigos ni partes. }
+        @default { Acción protegida · No compartas tus códigos. }
+      }
+      @if (hasMoreContent()) {
+        <strong class="cs-modal__scroll-cue" aria-label="Desplaza el contenido para continuar">↓ Desplaza el contenido</strong>
+      }
+    </span>
     <button type="button" class="cs-modal__cancel" [disabled]="busy()" (click)="close()">Cerrar</button>
   </footer>
 </dialog>

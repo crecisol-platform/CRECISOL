@@ -1,63 +1,116 @@
-<section class="operator-panel"><p class="eyebrow">Personal autorizado de identidad CRECISOL</p>
-      <h2>Identidad de plataforma</h2>
-      <p>Acceso exclusivo de operadores previamente provisionados. Una cuenta de negocio no concede acceso a esta consola ni permite recuperar identidades globales.</p>
-      @if (message()) { <p class="operator-feedback" role="status" aria-live="polite">{{ message() }}</p> }
-      @if (error()) { <p class="operator-feedback operator-feedback--error" role="alert">{{ error() }}</p> }
+<section class="operator-panel">
+      @if (platform.state() !== 'authenticated') {
+        <!-- La cabecera H1 ya identifica el ámbito de plataforma. Evitar duplicarla
+             para mantener una sola jerarquía de pantalla en móvil y lectores. -->
+        <p>El acceso global exige una identidad de operador verificada y permisos propios. Una cuenta de negocio no concede ese acceso.</p>
+      }
+      <!-- Session validation overrides old async results until authority is known. -->
+      @if (platform.restoring()) {
+        <cs-operation-feedback kind="pending" text="Verificando tu sesión de operador con el servidor…" context="Identidad de plataforma" />
+      } @else if (platform.state() === 'anonymous' && platform.sessionEndedNotice()) {
+        <cs-operation-feedback kind="info" text="La sesión de operador terminó o fue revocada. Accede de nuevo con tus credenciales y MFA." context="Identidad de plataforma" />
+      } @else {
+        @if (visibleFeedback(); as feedback) {
+          <cs-operation-feedback [kind]="feedback.kind" [text]="feedback.text" context="Identidad de plataforma" />
+        }
+      }
       @if (platform.state() === 'anonymous') {
-        <form (submit)="action($event, 'login')">
+        <form csFieldFeedback (submit)="action($event, 'login')">
           <label for="platform-mailbox">Correo del operador de identidad</label><input id="platform-mailbox" name="mailbox" type="email" autocomplete="username" required maxlength="254">
           <label for="platform-password">Contraseña del operador</label><input id="platform-password" name="password" type="password" autocomplete="current-password" required maxlength="128">
           <button [disabled]="busy() || platform.restoring()">Acceder a identidad de plataforma</button>
         </form>
         <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="operatorRecoveryModal.open()">Recuperar acceso de operador de plataforma</button>
-        <cs-institutional-modal #operatorRecoveryModal title="Recuperación segura de operador"
-          description="Acceso excepcional. Dos revisores independientes, verificación de identidad y un mínimo de 24 horas."
-          [busy]="busy()" [feedback]="message()" [error]="error()" [wide]="true">
+        <cs-institutional-modal #operatorRecoveryModal kind="wizard"
+          [steps]="['Solicitar revisión', 'Aportar dos revisiones', 'Activar nuevo MFA']"
+          [step]="platform.operatorRecoverySeed() ? 3 : recoveryStep()"
+          title="Recuperación segura de operador"
+          description="Acceso excepcional: dos revisores independientes y 24 horas de espera. Una aprobación de negocio no sustituye esta revisión."
+          [busy]="busy()" [feedback]="message()" [error]="error()" [wide]="true" (dismissed)="platform.discardRecoverySetup(); recoveryStep.set(1)">
           
-          <p>Se necesitan otros dos operadores de identidad, verificación independiente y al menos 24 horas. Ninguna aprobación de un negocio sirve para este ámbito.</p>
-          <form (submit)="action($event, 'operator-recovery-request')">
+          @if (recoveryStep() === 1 && !platform.operatorRecoverySeed()) {
+          <form csFieldFeedback (submit)="action($event, 'operator-recovery-request')">
             <label for="operator-recovery-mail">Correo del operador sin acceso</label><input id="operator-recovery-mail" name="mailbox" type="email" required maxlength="254" autocomplete="email">
             <label><input name="unavailable" type="checkbox" required> No tengo disponibles mis métodos seguros de operador</label>
             <button [disabled]="busy()">Solicitar recuperación de operador</button>
           </form>
-          @if (platform.recoveryReference()) { <output aria-label="Referencia de recuperación de operador">{{ platform.recoveryReference() }}</output> }
-          <form (submit)="action($event, 'operator-recovery-complete')">
+          <button type="button" [disabled]="busy()" (click)="recoveryStep.set(2)">Ya tengo las dos partes verificadas</button>
+          }
+          @if (recoveryStep() === 2 && !platform.operatorRecoverySeed()) {
+            @if (platform.recoveryReference()) {
+              <p>Referencia de tu solicitud para entregar a los dos operadores independientes:</p>
+              <output aria-label="Referencia de recuperación de operador">{{ platform.recoveryReference() }}</output>
+            }
+          <form csFieldFeedback (submit)="action($event, 'operator-recovery-complete')">
             <label for="operator-recovery-case">Caso aprobado de operador</label><input id="operator-recovery-case" name="caseId" required maxlength="36">
             <label for="operator-share-a">Parte del primer revisor de operador</label><input id="operator-share-a" name="shareA" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
             <label for="operator-share-b">Parte del segundo revisor de operador</label><input id="operator-share-b" name="shareB" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
             <label for="operator-recovery-password">Nueva contraseña del operador recuperado</label><input id="operator-recovery-password" name="newPassword" type="password" required minlength="15" maxlength="128" autocomplete="new-password">
             <button [disabled]="busy()">Iniciar reenrolamiento de operador</button>
           </form>
+          <button type="button" [disabled]="busy()" (click)="recoveryStep.set(1)">Volver a solicitar revisión</button>
+          }
           @if (platform.operatorRecoverySeed()) {
-            <p>Configura TOTP SHA256, seis dígitos y 30 segundos. Esta autorización vence en cinco minutos.</p>
-            <output aria-label="Semilla MFA del operador recuperado">{{ platform.operatorRecoverySeed() }}</output>
-            <form (submit)="action($event, 'operator-recovery-enroll')">
+            <p>Configura TOTP SHA1 con Google Authenticator, Microsoft Authenticator o Aegis. Esta autorización vence en cinco minutos.</p>
+            <div class="totp-setup" role="group" aria-label="Vincular MFA del operador recuperado">
+              <div class="totp-setup__visual">
+                <img [src]="platform.operatorRecoveryQr()" width="256" height="256" alt="QR privado del nuevo autenticador de operador">
+              </div>
+              <details><summary>No puedo escanear: mostrar clave manual</summary>
+                <output aria-label="Semilla MFA del operador recuperado">{{ platform.operatorRecoverySeed() }}</output>
+              </details>
+            </div>
+            <form csFieldFeedback (submit)="action($event, 'operator-recovery-enroll')">
               <label for="operator-recovery-code">Código del nuevo MFA de operador</label><input id="operator-recovery-code" name="code" required pattern="[0-9]{6}" autocomplete="one-time-code">
               <button [disabled]="busy()">Confirmar nuevo MFA de operador</button>
             </form>
           }
-          <form (submit)="action($event, 'operator-incident')">
+          <details class="identity-security-step">
+            <summary>Reportar actividad de operador no reconocida</summary>
+            <p>La denuncia revoca sesiones e impide usar cambios sospechosos. No recupera una cuenta ni concede acceso.</p>
+          <form csFieldFeedback (submit)="action($event, 'operator-incident')">
             <label for="operator-incident-token">Código del aviso de seguridad de operador</label><input id="operator-incident-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
             <button [disabled]="busy()">Reportar incidente de operador</button>
           </form>
-        
+          </details>
+
         </cs-institutional-modal>
       }
       @if (platform.state() === 'challenge') {
-        <form (submit)="action($event, 'mfa')">
+        <form csFieldFeedback (submit)="action($event, 'mfa')">
           <label for="platform-mfa">Código MFA del operador</label><input id="platform-mfa" name="code" inputmode="numeric" autocomplete="one-time-code" required pattern="([0-9]{6}|[0-9a-fA-F]{32})">
           <button [disabled]="busy()">Verificar operador</button>
         </form>
       }
+      <!-- Newly issued one-use backup codes are the primary task.
+           Place them before the account console rather than after every
+           panel and sign-out; do not persist or echo them elsewhere. -->
+      @if (platform.recoveryCodes().length) {
+        <aside aria-label="Códigos de respaldo del operador"><p>Guarda estos códigos fuera del navegador. Cada uno sirve una sola vez.</p>
+          <ul class="cs-one-time-codes">
+            @for (code of platform.recoveryCodes(); track code; let index = $index) {
+              <li class="cs-one-time-codes__item">
+                <span class="cs-one-time-codes__label">Código {{ index + 1 }}</span>
+                <code class="cs-one-time-codes__value" tabindex="0">{{ code }}</code>
+              </li>
+            }
+          </ul>
+          <button type="button" (click)="platform.recoveryCodes.set([])">Ocultar respaldos de operador</button>
+        </aside>
+      }
       @if (platform.state() === 'authenticated') {
-        <p role="status">Operador de identidad verificado. Esta sesión pertenece al ámbito de plataforma.</p>
-        <nav class="operator-nav" aria-label="Áreas de la consola de identidad">
-          <button type="button" [attr.aria-current]="panel() === 'casos' ? 'page' : null" (click)="panel.set('casos')">Casos</button>
-          <button type="button" [attr.aria-current]="panel() === 'sesiones' ? 'page' : null" (click)="panel.set('sesiones')">Sesiones</button>
-          <button type="button" [attr.aria-current]="panel() === 'perfil' ? 'page' : null" (click)="panel.set('perfil')">Perfil</button>
-          <button type="button" [attr.aria-current]="panel() === 'seguridad' ? 'page' : null" (click)="panel.set('seguridad')">Seguridad</button>
-          <button type="button" [attr.aria-current]="panel() === 'monitor' ? 'page' : null" (click)="panel.set('monitor')">Monitor</button>
-        </nav>
+        <div class="operator-context">
+          <p class="operator-context__eyebrow">CONSOLA INSTITUCIONAL / ÁMBITO AISLADO</p>
+          <p class="operator-context__section" role="status" aria-live="polite" aria-atomic="true">
+            <strong>{{ activeSection().label }}</strong>
+            <span>{{ activeSection().description }}</span>
+          </p>
+        </div>
+        <p class="operator-nav-hint">Más áreas: desliza o usa Tab.</p>
+        <cs-ui-navigation class="operator-navigation"
+          [items]="navigationItems()" [activeId]="panel()"
+          ariaLabel="Áreas de la consola de identidad"
+          (selected)="selectPanel($event)"/>
         <div class="operator-content">
           @switch (panel()) {
             @case ('sesiones') {
@@ -82,13 +135,14 @@
             }
           }
         </div>
-                <button type="button" [disabled]="busy()" (click)="logout()">Cerrar sesión de plataforma</button>
-      }
-      @if (platform.recoveryCodes().length) {
-        <aside aria-label="Códigos de respaldo del operador"><p>Guarda estos códigos fuera del navegador. Cada uno sirve una sola vez.</p>
-          <ul>@for (code of platform.recoveryCodes(); track code) { <li><code>{{ code }}</code></li> }</ul>
-          <button type="button" (click)="platform.recoveryCodes.set([])">Ocultar respaldos de operador</button>
-        </aside>
+        <!-- Disclosure is accessible after the active task; the identity realm
+             remains explicit in the heading, and each sensitive task has
+             its own focused privacy and authorization explanation. -->
+        <details class="operator-scope-banner operator-scope-disclosure">
+          <summary>Privacidad y permisos</summary>
+          <p>El acceso de plataforma utiliza una identidad, sesión y permisos distintos de las cuentas empresariales. Ninguna pestaña concede autorización por sí misma.</p>
+        </details>
+        <div class="operator-exit"><button type="button" [disabled]="busy()" (click)="logout()">Cerrar sesión de plataforma</button></div>
       }
 
     </section>

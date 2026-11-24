@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/out-tsc/institutional",
+    "types": []
+  },
+  "files": ["tests/institutional-harness/main.ts"],
+  "include": ["src/**/*.d.ts"]
+}

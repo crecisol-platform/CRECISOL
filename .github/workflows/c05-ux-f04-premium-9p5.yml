@@ -1,0 +1,163 @@
+name: CRECISOL C05 F04 premium five platform operator views 9p5 gates
+on:
+  push:
+    branches: [feature/c05-ux-f04-premium-9p5-20261123]
+    paths:
+      - 'frontend/src/app/pages/platform-operator-cases.component.html'
+      - 'frontend/src/app/pages/platform-operator-sessions.component.html'
+      - 'frontend/src/app/pages/platform-operator-profile.component.html'
+      - 'frontend/src/app/pages/platform-operator-security.component.html'
+      - 'frontend/src/app/pages/platform-operator-monitor.component.html'
+      - 'frontend/src/app/pages/platform-operator-f04.component.css'
+      - 'frontend/src/app/pages/platform-operator-f04-premium.component.css'
+      - 'frontend/src/app/pages/platform-operator-views.component.ts'
+      - 'frontend/tests/c05-f04-operators.spec.ts'
+      - 'qa/c05_ux_f04_premium_audits.py'
+      - 'docs/c05/ux/F04_PREMIUM_95_AUDITORIAS_2026_11_23.md'
+      - '.github/workflows/c05-ux-f04-premium-9p5.yml'
+  pull_request:
+    branches: [feature/c05-ux-f06-mensajeria-estados-20261120]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: c05-f04-premium-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  five-operator-browser:
+    name: F04 premium five-view Angular Chromium 65-regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    steps:
+      - name: Checkout exact isolated F04 SHA without saved credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Three fail-closed F04 audits A B C
+        shell: bash
+        run: |
+          set -euo pipefail
+          for gate in A B C; do
+            python3 qa/c05_ux_f04_premium_audits.py "$gate"
+            python3 qa/c05_ux_f04_operator_audits.py "$gate"
+          done
+      - name: Node 24.15.0
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Locked Angular 22 dependencies, TypeScript and production build
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+          cd frontend
+          npx ng build --configuration institutional-harness
+      - name: Chromium browser install (bounded)
+        shell: bash
+        timeout-minutes: 6
+        run: |
+          set -euo pipefail
+          cd frontend
+          timeout 300s npx playwright install chromium
+      - name: F04 five areas, 25 PNG JSON, 25 premium tactile tests, MFA/privacy
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f04-operators.config.ts --reporter=line
+      - name: Verify F04 5 views x 5 widths manifest SHA and original PNG
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_ux_f04_operator_evidence.py frontend/test-results-f04-operators
+      - name: F03 premium account, navigation and F02 institutional regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f03-account.config.ts --reporter=line
+          npx playwright test --config=playwright.c05-f03.config.ts --reporter=line
+          npx playwright test --config=playwright.institutional.config.ts --reporter=line
+      - name: F05 secure modal regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f05-modals.config.ts --reporter=line
+      - name: F06 feedback computed style and accessible outcomes regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f06-feedback.config.ts --reporter=line
+      - name: Cross-surface inventory 65 IDs times five sizes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f06-inventory65.config.ts --reporter=line
+          cd ..
+          python3 qa/c05_ux_f06_65_coverage.py \
+            frontend/test-results-f06-inventory65 \
+            docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv
+      - name: Preserve individual visual evidence and failed traces
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: c05-f04-premium-account-${{ github.sha }}
+          path: |
+            frontend/test-results-f04-operators/
+            frontend/test-results-f03-account/
+            frontend/test-results-f03/
+            frontend/test-results-f04-operators/
+            frontend/test-results-f05-modals/
+            frontend/test-results-f06-feedback/
+            frontend/test-results-f06-inventory65/
+            frontend/test-results-institutional/
+          retention-days: 21
+          if-no-files-found: warn
+  real-identity-backend:
+    name: F04 real Angular NET10 MySQL8.4 operator privacy and MFA
+    needs: five-operator-browser
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout exact premium F04 SHA
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Node 24.15.0
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: NET 10 official SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile API, provisioner, local SMTP fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tools/Crecisol.LocalIdentityProvisioner/Crecisol.LocalIdentityProvisioner.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.LoopbackSmtpReceiver/Crecisol.LoopbackSmtpReceiver.csproj -c Release --nologo -warnaserror
+      - name: Locked Angular dependencies and Chromium
+        shell: bash
+        timeout-minutes: 8
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          cd frontend
+          timeout 420s npx playwright install chromium
+      - name: Disposable MySQL 8.4 plus real NET10 API and cross-tenant negative E2E
+        shell: bash
+        timeout-minutes: 35
+        run: |
+          set -euo pipefail
+          node qa/c05_operational_flow_e2e.mjs

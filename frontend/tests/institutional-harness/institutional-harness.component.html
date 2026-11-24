@@ -1,0 +1,150 @@
+<main [csInstitutionalTheme]="brand()" class="laboratory" data-testid="institutional-theme">
+  <a class="skip" href="#laboratory-content">Ir al contenido</a>
+  <header class="laboratory__hero">
+    <div class="laboratory__hero-copy">
+      <p class="laboratory__eyebrow">CRECISOL · F02 · LABORATORIO LOCAL</p>
+      <h1>Sistema institucional de interfaces</h1>
+      <p>Primitivas visuales y accesibles para identidad, cuentas y operadores. Datos sintéticos, sin autenticación ni operaciones reales.</p>
+      <div class="laboratory__brand-modes">
+        <cs-ui-action data-testid="theme-default" label="Identidad estándar" variant="secondary"
+          (activated)="brandMode.set('default')"/>
+        <cs-ui-action data-testid="theme-humanist" label="Tipografía autorizada" variant="secondary"
+          (activated)="brandMode.set('humanist')"/>
+        <cs-ui-action data-testid="theme-invalid" label="Probar color no válido" variant="quiet"
+          (activated)="brandMode.set('invalid')"/>
+      </div>
+    </div>
+    <div class="laboratory__mark" aria-hidden="true">
+      <span class="laboratory__mark-orb"></span>
+      <span class="laboratory__mark-name">CRECISOL</span>
+      <span class="laboratory__mark-caption">Tu negocio, a tu manera.</span>
+    </div>
+  </header>
+  <div id="laboratory-content" tabindex="-1" class="laboratory__content">
+    <section class="laboratory__section" aria-labelledby="nav-title">
+      <div class="laboratory__heading">
+        <p class="laboratory__eyebrow">01 / NAVEGACIÓN</p>
+        <h2 id="nav-title">Áreas de la cuenta</h2>
+        <p>La navegación cambia únicamente la presentación local.</p>
+      </div>
+      <cs-ui-navigation [items]="navigation" [activeId]="current()"
+        ariaLabel="Áreas de ejemplo" (selected)="current.set($event)"/>
+      <p class="laboratory__selection" role="status">Área seleccionada: <strong>{{ current() }}</strong></p>
+    </section>
+
+    <div class="laboratory__grid">
+      <cs-ui-card headingId="card-profile-title" heading="Identidad de la cuenta"
+        eyebrow="02 / TARJETAS" description="Información presentada en el ámbito autorizado."
+        tone="accent">
+        <div cs-card-actions>
+          <cs-ui-action label="Ver detalles" icon="arrow-right" variant="quiet" (activated)="showAction()"/>
+        </div>
+        <dl class="laboratory__profile">
+          <div><dt>Identidad</dt><dd>Cuenta ficticia</dd></div>
+          <div><dt>Idioma</dt><dd>Español de Honduras</dd></div>
+          <div><dt>Sesión</dt><dd>Verificada · Ejemplo</dd></div>
+        </dl>
+      </cs-ui-card>
+      <cs-ui-card headingId="card-form-title" heading="Formulario protegido"
+        eyebrow="03 / FORMULARIOS" description="Campos asociados con ayuda y validación local."
+        tone="base">
+        <cs-ui-form formId="demo-form" heading="Verificación de datos" validationMode="host"
+          description="Revisa el formato sin enviar información." (submitIntent)="submitLocal($event)"
+          class="laboratory__form">
+          <cs-ui-field controlId="demo-email" label="Correo de prueba"
+            hint="Utiliza únicamente una dirección ficticia." [error]="emailError()" [required]="true">
+            <input class="cs-ui-control" id="demo-email" name="demo-email" type="email"
+              autocomplete="off" [value]="email()" (input)="setEmail($event)"
+              [attr.aria-describedby]="emailError() ? 'demo-email-hint demo-email-error' : 'demo-email-hint'"
+              [attr.aria-invalid]="emailError() ? 'true' : null" required>
+          </cs-ui-field>
+          <cs-ui-action label="Revisar formato" icon="check" type="submit"/>
+        </cs-ui-form>
+      </cs-ui-card>
+    </div>
+
+    <section class="laboratory__section" aria-labelledby="table-title">
+      <div class="laboratory__heading">
+        <p class="laboratory__eyebrow">04 / TABLAS</p>
+        <h2 id="table-title">Sesiones de ejemplo</h2>
+        <p>Texto escapado, desplazamiento horizontal contenido y datos ligados al ámbito.</p>
+      </div>
+      <div class="laboratory__controls">
+        <cs-ui-action label="Cambiar empresa ficticia" variant="secondary"
+          (activated)="changeScope()" data-testid="change-scope"/>
+        <cs-ui-action label="Cargar datos ficticios del ámbito" variant="quiet"
+          (activated)="resetScope()" data-testid="reload-scope"/>
+      </div>
+      <cs-ui-table caption="Dispositivos ficticios" [columns]="columns" [rows]="records"
+        [scopeKey]="scope()" [rowsScopeKey]="authorizedRowsScope()"
+        emptyMessage="No se han registrado dispositivos en el ejemplo."/>
+    </section>
+
+    <section class="laboratory__section" aria-labelledby="notice-title">
+      <div class="laboratory__heading">
+        <p class="laboratory__eyebrow">05 / MENSAJES</p>
+        <h2 id="notice-title">Avisos institucionales</h2>
+      </div>
+      <div class="laboratory__notices">
+        <cs-ui-notice kind="info" heading="Información verificada"
+          message="Cada operación debe describir claramente qué puede hacer la persona."/>
+        <cs-ui-notice kind="success" heading="Verificación de ejemplo"
+          message="El resultado solo es una simulación; no se guardaron credenciales."/>
+        <cs-ui-notice kind="warning" heading="Atención necesaria"
+          message="Una sesión vencida requiere volver a acreditar la identidad."/>
+        <cs-ui-notice kind="error" heading="No se completó la solicitud"
+          message="Revisa la información e inténtalo de nuevo, sin revelar datos privados."/>
+      </div>
+      <p class="laboratory__feedback" role="status" data-testid="action-feedback">{{ feedback() }}</p>
+    </section>
+
+    <section class="laboratory__section" aria-labelledby="states-title">
+      <div class="laboratory__heading">
+        <p class="laboratory__eyebrow">06 / ESTADOS</p>
+        <h2 id="states-title">Sin datos, carga, error y confirmación</h2>
+      </div>
+      <div class="laboratory__controls">
+        <cs-ui-action label="Sin datos" variant="secondary" (activated)="state.set('empty')"/>
+        <cs-ui-action label="Cargando" variant="secondary" (activated)="state.set('loading')"/>
+        <cs-ui-action label="Error" variant="secondary" (activated)="state.set('error')"/>
+        <cs-ui-action label="Completado" variant="secondary" (activated)="state.set('success')"/>
+      </div>
+      @switch (state()) {
+        @case ('empty') {
+          <cs-ui-state kind="empty" heading="Todavía no hay datos"
+            message="Los resultados aparecerán aquí al consultarlos."
+            actionLabel="Actualizar ejemplo" (action)="showAction()"/>
+        }
+        @case ('loading') {
+          <cs-ui-state kind="loading" heading="Consultando"
+            message="El resultado todavía no está disponible."/>
+        }
+        @case ('error') {
+          <cs-ui-state kind="error" heading="No se pudo consultar"
+            message="Puedes volver a intentarlo sin perder tu contexto."
+            actionLabel="Reintentar ejemplo" (action)="showAction()"/>
+        }
+        @case ('success') {
+          <cs-ui-state kind="success" heading="Resultado de ejemplo listo"
+            message="Este mensaje no representa una operación del servidor."/>
+        }
+      }
+    </section>
+
+    <section class="laboratory__section" aria-labelledby="actions-title">
+      <div class="laboratory__heading">
+        <p class="laboratory__eyebrow">07 / ACCIONES</p>
+        <h2 id="actions-title">Jerarquía de decisiones</h2>
+      </div>
+      <div class="laboratory__controls">
+        <cs-ui-action label="Acción principal" icon="shield" (activated)="showAction()"/>
+        <cs-ui-action label="Acción secundaria" variant="secondary" icon="key" (activated)="showAction()"/>
+        <cs-ui-action label="Acción discreta" variant="quiet" icon="search" (activated)="showAction()"/>
+        <cs-ui-action label="Acción irreversible" variant="danger" icon="lock" (activated)="showAction()"/>
+        <cs-ui-action label="Acción no disponible" [disabled]="true"/>
+        <cs-ui-action label="Procesar ejemplo" [busy]="true" busyLabel="Procesando"/>
+      </div>
+    </section>
+  </div>
+  <footer>F02 · Base visual institucional. No contiene permisos, datos ni servicios productivos.</footer>
+</main>

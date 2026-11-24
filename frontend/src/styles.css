@@ -39,3 +39,757 @@ a { color: inherit; }
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* C05 UX F06 — native per-field validation messages, never a duplicated toast. */
+form[csFieldFeedback] .cs-field-feedback {
+  display: block;
+  width: 100%;
+  margin: -.12rem 0 .38rem;
+  padding: .45rem .7rem;
+  font: inherit;
+  font-size: .81rem;
+  font-weight: 650;
+  line-height: 1.5;
+  color: var(--cs-color-danger, #8b272e);
+  background: var(--cs-color-danger-bg, #fff2f2);
+  border: 1px solid var(--cs-color-danger-border, #eac3c4);
+  border-radius: var(--cs-radius-sm, .65rem);
+  overflow-wrap: anywhere;
+}
+form[csFieldFeedback] [aria-invalid="true"] {
+  border-color: var(--cs-color-danger, #8b272e) !important;
+  outline-offset: 3px;
+}
+@media (forced-colors: active) {
+  form[csFieldFeedback] .cs-field-feedback { background: Canvas; color: CanvasText; border-color: CanvasText; }
+  form[csFieldFeedback] [aria-invalid="true"] { border: 2px solid CanvasText; }
+}
+
+/* CRECISOL C05: platform-specific account-view primitives shared across identity screens.
+ * Extracted into one scoped design layer without increasing Angular per-component budgets. */
+/* C05 PREMIUM ACCOUNT SURFACES — information first; no fabricated status. */
+cs-identity-workspace {
+  --identity-ink: #173650;
+  --identity-muted: #49647e;
+  --identity-border: #d8e4ed;
+  --identity-surface: #f6f9fc;
+  --identity-accent: #15588c;
+}
+cs-identity-workspace .identity-panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: .85rem 1.25rem;
+  margin-bottom: 1.3rem;
+}
+cs-identity-workspace .identity-panel-heading h3 {
+  margin: 0 0 .35rem;
+  font-size: 1.12rem;
+  line-height: 1.35;
+  letter-spacing: -.015em;
+  color: var(--identity-ink);
+}
+cs-identity-workspace .identity-panel-heading p { max-width: 53ch; margin: 0; font-size: .88rem; color: var(--identity-muted); }
+cs-identity-workspace .identity-panel-heading > button {
+  flex: 0 0 auto;
+  min-height: 2.6rem;
+  padding: .55rem .85rem;
+  background: #fff;
+  border: 1px solid var(--identity-border);
+  color: var(--identity-accent);
+  font-size: .86rem;
+}
+cs-identity-workspace .identity-profile-body { display: flex; gap: 1.2rem; align-items: flex-start; }
+cs-identity-workspace .identity-profile-avatar {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border: 1px solid #cbdeee;
+  border-radius: 1rem;
+  background: #e9f3fc;
+  object-fit: cover;
+}
+cs-identity-workspace .identity-profile-avatar--empty { color: #246496; font-weight: 800; font-size: 1.55rem; }
+cs-identity-workspace .identity-profile-details { flex: 1; min-width: 0; }
+cs-identity-workspace .identity-profile-name {
+  margin: 0 0 .65rem;
+  font-size: 1.22rem;
+  color: var(--identity-ink);
+  font-weight: 740;
+  line-height: 1.35;
+}
+cs-identity-workspace .identity-meta { display: grid; gap: .4rem; margin: .5rem 0 0; }
+cs-identity-workspace .identity-meta > div { display: grid; grid-template-columns: minmax(6rem, 9rem) minmax(0, 1fr); gap: .5rem; }
+cs-identity-workspace .identity-meta dt { font-size: .82rem; color: var(--identity-muted); }
+cs-identity-workspace .identity-meta dd { margin: 0; font-size: .87rem; font-weight: 650; color: var(--identity-ink); overflow-wrap: anywhere; }
+cs-identity-workspace .identity-empty-copy {
+  border: 1px dashed #c9d9e7;
+  border-radius: .85rem;
+  padding: 1.15rem;
+  background: #fff;
+  color: var(--identity-muted);
+  margin: .25rem 0;
+  font-size: .92rem;
+}
+cs-identity-workspace .identity-activity-list, cs-identity-workspace .identity-key-list, cs-identity-workspace .identity-device-list {
+  display: grid;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+cs-identity-workspace .identity-activity-list { gap: 0; }
+cs-identity-workspace .identity-activity-item {
+  display: grid;
+  grid-template-columns: .8rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .75rem;
+  padding: .85rem .2rem;
+  border-bottom: 1px solid #e3edf4;
+}
+cs-identity-workspace .identity-activity-item:last-child { border-bottom: 0; }
+cs-identity-workspace .identity-activity-mark { width: .65rem; height: .65rem; background: #21806d; border-radius: 50%; }
+cs-identity-workspace .identity-activity-mark--pending { background: #a16e21; }
+cs-identity-workspace .identity-activity-copy { display: grid; gap: .15rem; min-width: 0; }
+cs-identity-workspace .identity-activity-copy strong { color: var(--identity-ink); font-size: .92rem; font-weight: 690; }
+cs-identity-workspace .identity-activity-copy time { font-size: .8rem; color: var(--identity-muted); font-variant-numeric: tabular-nums; }
+cs-identity-workspace .identity-activity-status { color: #176d58; font-size: .79rem; font-weight: 700; text-align: right; }
+cs-identity-workspace .identity-activity-status--warning { color: #845618; }
+cs-identity-workspace .identity-more-action {
+  width: 100%;
+  margin-top: .75rem;
+  background: #fff;
+  color: var(--identity-accent);
+  border: 1px solid var(--identity-border);
+  font-size: .86rem;
+}
+cs-identity-workspace .identity-key-list { gap: .6rem; }
+cs-identity-workspace .identity-key-item {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  min-width: 0;
+  padding: .95rem 1rem;
+  border: 1px solid var(--identity-border);
+  border-radius: .9rem;
+  background: #fff;
+}
+cs-identity-workspace .identity-key-item strong { color: var(--identity-ink); font-size: .94rem; }
+cs-identity-workspace .identity-key-item p { margin: .2rem 0 0; font-size: .83rem; color: var(--identity-muted); }
+cs-identity-workspace .identity-key-symbol {
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: .7rem;
+  border: 1px solid #cfe0ee;
+  background: #ecf4fc;
+  position: relative;
+}
+cs-identity-workspace .identity-key-symbol::before {
+  content: '';
+  position: absolute;
+  left: .64rem;
+  top: .65rem;
+  width: .55rem;
+  height: .55rem;
+  border: 2px solid #225d8b;
+  border-radius: 50%;
+}
+cs-identity-workspace .identity-key-symbol::after {
+  content: '';
+  position: absolute;
+  left: 1.22rem;
+  top: 1.05rem;
+  width: .45rem;
+  height: .12rem;
+  background: #225d8b;
+  box-shadow: .2rem .2rem 0 -.015rem #225d8b;
+}
+cs-identity-workspace .identity-device-region { margin: 1.4rem 0; }
+cs-identity-workspace .identity-device-list { gap: .8rem; }
+cs-identity-workspace .identity-device-card {
+  min-width: 0;
+  padding: 1.15rem;
+  border: 1px solid var(--identity-border);
+  border-radius: 1rem;
+  background: #fff;
+}
+cs-identity-workspace .identity-device-top { display: flex; align-items: flex-start; gap: .85rem; }
+cs-identity-workspace .identity-device-title { display: grid; min-width: 0; gap: .2rem; }
+cs-identity-workspace .identity-device-title strong { color: var(--identity-ink); font-size: 1rem; overflow-wrap: anywhere; }
+cs-identity-workspace .identity-device-title span { color: var(--identity-muted); font-size: .82rem; overflow-wrap: anywhere; }
+cs-identity-workspace .identity-device-icon { flex: 0 0 auto; display: block; position: relative; width: 2.2rem; height: 2.1rem; border: 1px solid #cedfec; border-radius: .5rem; background: #edf5fb; }
+cs-identity-workspace .identity-device-icon::before { content: ''; position: absolute; inset: .43rem .4rem .67rem; border: 1.5px solid #32688d; border-radius: .12rem; }
+cs-identity-workspace .identity-device-icon::after { content: ''; position: absolute; left: .78rem; right: .78rem; bottom: .35rem; height: 2px; background: #32688d; }
+cs-identity-workspace .identity-device-meta { margin: 1rem 0; border-top: 1px solid #e5ecf3; padding-top: .85rem; }
+cs-identity-workspace .identity-device-card > .identity-revoke {
+  min-height: 2.5rem;
+  padding: .5rem .8rem;
+  background: #fff;
+  color: #8b3136;
+  border: 1px solid #e7c7c9;
+  font-size: .85rem;
+}
+cs-identity-workspace .identity-device-card > .identity-revoke:hover:not(:disabled) { background: #fff4f4; }
+cs-identity-workspace .identity-danger-confirm { background: #90333a; border-color: #90333a; color: white; }
+cs-identity-workspace .identity-danger-confirm:hover:not(:disabled) { background: #72272e; }
+cs-identity-workspace .identity-field-help { font-size: .82rem; color: var(--identity-muted); margin: .3rem 0 .6rem; }
+@media (max-width: 620px) {
+  cs-identity-workspace .identity-profile-body { gap: .85rem; }
+  cs-identity-workspace .identity-profile-avatar { width: 3.6rem; height: 3.6rem; }
+  cs-identity-workspace .identity-meta > div { grid-template-columns: minmax(0, 1fr); gap: .12rem; }
+  cs-identity-workspace .identity-activity-item { grid-template-columns: .8rem minmax(0, 1fr); }
+  cs-identity-workspace .identity-activity-status { grid-column: 2; justify-self: start; }
+  cs-identity-workspace .identity-panel-heading > button { width: 100%; }
+  cs-identity-workspace .identity-device-card { padding: .95rem; }
+}
+@media (forced-colors: active) {
+  cs-identity-workspace .identity-activity-mark, cs-identity-workspace .identity-key-symbol, cs-identity-workspace .identity-device-icon { forced-color-adjust: none; border-color: CanvasText; }
+}
+
+
+/* F03 approvals inbox: permission-gated server records, no hand-entered UUIDs. */
+cs-identity-workspace .identity-workspace > .identity-approval-queue {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin: 0;
+  padding: clamp(1rem, 2.3vw, 1.45rem);
+  border: 1px solid var(--cs-color-border, #d3e1ee);
+  border-radius: var(--cs-radius-lg, 1.15rem);
+  background: var(--cs-color-surface-soft, #f5f9fd);
+}
+cs-identity-workspace .identity-approval-queue .identity-panel-heading { margin-bottom: 1rem; }
+cs-identity-workspace .identity-pending-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: .8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+cs-identity-workspace .identity-pending-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem;
+  min-width: 0;
+  background: var(--cs-color-surface, #fff);
+  border: 1px solid var(--cs-color-border, #d3e1ee);
+  border-radius: var(--cs-radius-md, .85rem);
+}
+cs-identity-workspace .identity-pending-main { min-width: 0; display: grid; gap: .3rem; }
+cs-identity-workspace .identity-pending-state {
+  color: #775219;
+  font-weight: 750;
+  font-size: .72rem;
+  letter-spacing: .025em;
+}
+cs-identity-workspace .identity-pending-card strong {
+  display: block;
+  font-size: 1rem;
+  color: var(--cs-color-text-strong, #102e4c);
+  font-weight: 760;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+cs-identity-workspace .identity-pending-card p {
+  margin: 0;
+  font-size: .83rem;
+  line-height: 1.6;
+  color: var(--cs-color-muted, #455f79);
+  overflow-wrap: anywhere;
+}
+cs-identity-workspace .identity-pending-card button {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--cs-hit-target, 2.75rem);
+  margin: 0;
+  color: var(--cs-color-accent-text, #174b77);
+  background: #eff6fc;
+  border: 1px solid #b9d3e6;
+}
+cs-identity-workspace .identity-pending-card button:hover:not(:disabled) { background: #e1f0fa; }
+cs-identity-workspace .identity-approval-queue > .identity-more-action {
+  margin-top: .9rem;
+  min-height: var(--cs-hit-target, 2.75rem);
+}
+cs-identity-workspace .identity-workspace .identity-approval-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  font-size: .85rem;
+  line-height: 1.5;
+  max-width: 70ch;
+  min-width: 0;
+}
+cs-identity-workspace .identity-workspace .identity-approval-confirm input[type='checkbox'] {
+  width: 1.25rem;
+  height: 1.25rem;
+  min-width: 1.25rem;
+  min-height: 1.25rem;
+  flex: 0 0 auto;
+  margin: .15rem 0 0;
+  accent-color: var(--cs-color-action, #103f75);
+}
+@media (max-width: 920px) {
+  cs-identity-workspace .identity-pending-list { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) {
+  cs-identity-workspace .identity-workspace > .identity-approval-queue { padding: .9rem; }
+  cs-identity-workspace .identity-pending-card { padding: .95rem; }
+}
+@media (forced-colors: active) {
+  cs-identity-workspace .identity-approval-queue,
+  cs-identity-workspace .identity-pending-card,
+  cs-identity-workspace .identity-pending-card button { border: 1px solid CanvasText; }
+}
+
+
+/* C05 F06 responsive portal styles, scoped to the identity-portal custom element. */
+/* F06 premium | Mobile entry: the sign-in task leads, not the illustration. */
+@media (max-width: 850px) {
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest { gap: .65rem; padding-top: 0; }
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-aside { min-height: 0; gap: .35rem; padding: 1rem 1.25rem; border-radius: 1rem; background: #edf5fd; box-shadow: none; }
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-aside::before { opacity: .26; }
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .aside-top .eyebrow { display: none; }
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-aside h1 { margin: 0 0 .15rem; max-width: none; font-size: clamp(1.34rem, 4vw, 1.75rem); letter-spacing: -.03em; line-height: 1.2; }
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-aside .aside-top > p:last-child { max-width: 52ch; margin: 0; font-size: .875rem; line-height: 1.5; }
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-main { padding-block: 1rem 1.2rem; }
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-breadcrumb { margin-bottom: .85rem; padding-bottom: .6rem; }
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-navigation-group { margin-bottom: .95rem; }
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-navigation-label { display: none; }
+}
+@media (max-width: 480px) {
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-aside { padding: .88rem 1rem; }
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-main { padding: 1rem; }
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-nav a { min-height: 2.6rem; padding-block: .5rem; }
+}
+@media (forced-colors: active) {
+ cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-aside { background: Canvas; border-color: CanvasText; }
+}
+
+
+/* F06 premium / authenticated account: shorten the distance to the active task on mobile. */
+@media (max-width: 720px) {
+  cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro {
+    padding: .95rem 1.05rem; margin-bottom: .8rem; border-radius: .9rem;
+    border-top-width: 2px; gap: .35rem;
+  }
+  cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro .eyebrow { display: none; }
+  cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro h1 { font-size: clamp(1.34rem, 4.7vw, 1.65rem); line-height: 1.18; }
+  cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro p:last-child { margin-top: .35rem; font-size: .875rem; line-height: 1.5; }
+  cs-identity-portal .account-workspace-shell.account-workspace-shell.account-workspace-shell { gap: .65rem; }
+  cs-identity-portal .account-nav-mobile-help.account-nav-mobile-help.account-nav-mobile-help { margin-bottom: .32rem; font-size: .875rem; }
+  cs-identity-portal .account-nav--workspace.account-nav--workspace.account-nav--workspace { padding: .24rem; margin-bottom: .55rem; gap: .2rem; }
+  cs-identity-portal .account-nav--workspace.account-nav--workspace.account-nav--workspace a { padding: .5rem .84rem; min-height: 2.6rem; }
+}
+@media (max-width: 480px) {
+  cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro { padding: .88rem .95rem; }
+  cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro h1 { font-size: 1.37rem; }
+}
+
+
+/* F06 premium: at 200% text zoom, fixed pixel padding keeps the actual task
+   readable without suppressing page overflow or scaling text down. */
+@media (max-width: 480px) {
+  cs-identity-portal .account-layout--single.account-layout--single.account-layout--single { padding-inline: 10px; }
+  cs-identity-portal .account-layout--single.account-layout--single.account-layout--single .account-main { padding-inline: 12px; }
+  cs-identity-portal .page-heading--operator.page-heading--operator.page-heading--operator { padding: 12px; }
+  cs-identity-portal .page-heading--operator h1,
+  cs-identity-portal .page-heading--operator.page-heading--operator.page-heading--operator p { overflow-wrap: anywhere; min-width: 0; }
+}
+
+
+/* C05 UX F06 premium: operator access header is concise on small screens;
+   policy context and full actions remain available inside the console. */
+@media (max-width: 720px) {
+  cs-identity-portal .page-heading--operator.page-heading--operator.page-heading--operator {
+    margin-bottom: .45rem;
+    padding: .82rem 1rem;
+    border-radius: .85rem;
+  }
+  cs-identity-portal .page-heading--operator.page-heading--operator.page-heading--operator .eyebrow { display: none; }
+  cs-identity-portal .page-heading--operator.page-heading--operator.page-heading--operator h1 {
+    font-size: clamp(1.28rem, 4.5vw, 1.62rem);
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+  }
+  cs-identity-portal .page-heading--operator.page-heading--operator.page-heading--operator p:last-child {
+    margin-top: .3rem;
+    font-size: .875rem;
+    line-height: 1.5;
+  }
+}
+
+
+/* F06 premium polish · Recovery keeps its F03-expanded deep-link navigation
+   but presents the optional links in a compact two-column layout on phones. */
+@media (max-width: 720px) {
+  cs-identity-portal .account-layout--recovery.account-layout--recovery.account-layout--recovery .account-navigation-group { margin-bottom: .7rem; }
+  cs-identity-portal .account-layout--recovery.account-layout--recovery.account-layout--recovery .account-more { margin-top: .7rem; padding-top: .45rem; }
+  cs-identity-portal .account-layout--recovery.account-layout--recovery.account-layout--recovery .account-subnav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .4rem;
+    padding-top: .25rem;
+  }
+  cs-identity-portal .account-layout--recovery.account-layout--recovery.account-layout--recovery .account-subnav a {
+    padding: .65rem .6rem; min-height: 2.75rem;
+    font-size: .875rem; line-height: 1.45; text-align: left;
+  }
+  cs-identity-portal .account-layout--recovery.account-layout--recovery.account-layout--recovery .account-more summary {
+    font-size: .875rem; min-height: 2.75rem;
+  }
+  cs-identity-portal .account-layout--recovery.account-layout--recovery.account-layout--recovery .account-more__hint { display: none; }
+  cs-identity-portal .account-layout--recovery.account-layout--recovery.account-layout--recovery .account-main { padding-bottom: .9rem; }
+}
+@media (forced-colors: active) {
+  cs-identity-portal .account-layout--recovery.account-layout--recovery.account-layout--recovery .account-subnav a { border-color: CanvasText; }
+}
+
+
+/* F06 buyer refinement: task-first compact empty states, strictly scoped
+   to C05 account workspace. The semantic status role, headings and actions
+   remain in the original accessible component; no backend data is inferred. */
+cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  justify-items: stretch;
+  align-content: center;
+  align-items: center;
+  gap: .15rem .7rem;
+  min-height: 0;
+  padding: .65rem .25rem;
+  border: 0;
+  background: transparent;
+  border-radius: .25rem;
+}
+cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] .cs-state__symbol {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: 1.9rem;
+  height: 1.9rem;
+  margin: 0;
+  border-radius: .55rem;
+}
+cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] h3 {
+  grid-column: 2;
+  font-size: .98rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] p {
+  grid-column: 2;
+  margin: .1rem 0 0;
+  font-size: .875rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] cs-ui-action {
+  grid-column: 2;
+}
+@media (max-width: 480px) {
+  cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] {
+    padding: .65rem .35rem;
+    gap: .1rem .55rem;
+  }
+}
+@media (forced-colors: active) {
+  cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] .cs-state__symbol {
+    border: 1px solid CanvasText;
+  }
+}
+
+/* Flat empty panels retain visible boundaries in forced-color mode. */
+@media (forced-colors: active) {
+  cs-identity-workspace cs-ui-state .cs-state[data-kind='empty'] {
+    border: 1px solid CanvasText;
+    background: Canvas;
+  }
+}
+
+/* F06 buyer review: mobile recovery begins with its actual request, not a
+   second marketing hero. The signed-out navigation and privacy copy remain. */
+@media (max-width: 720px) {
+  cs-identity-portal .account-layout--recovery.account-layout--recovery.account-layout--recovery .account-aside {
+    display: none;
+  }
+  /* Keep platform identity visible as a heading, but stop nesting a full card
+     inside another card before the actual secured operator task. */
+  cs-identity-portal .page-heading--operator.page-heading--operator.page-heading--operator {
+    padding: .3rem .15rem;
+    margin-bottom: .3rem;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  cs-identity-portal .page-heading--operator.page-heading--operator.page-heading--operator h1 {
+    font-size: 1.25rem;
+  }
+  cs-identity-portal .page-heading--operator.page-heading--operator.page-heading--operator p:last-child {
+    margin-top: .1rem;
+    line-height: 1.42;
+  }
+}
+
+/* F06 buyer review: one clean plane for six authenticated mobile views.
+   This removes only nested decorative chrome, not the H1 or task description. */
+@media (max-width: 720px) {
+  cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro {
+    padding: .25rem .15rem .65rem;
+    margin-bottom: .55rem;
+    border: 0;
+    border-bottom: 1px solid #d5e4f0;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    gap: .22rem;
+  }
+  cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro p:last-child {
+    margin: .2rem 0 0;
+  }
+  cs-identity-portal .account-workspace-shell.account-workspace-shell.account-workspace-shell {
+    gap: .55rem;
+  }
+}
+@media (forced-colors: active) and (max-width: 720px) {
+  cs-identity-portal .account-workspace-intro.account-workspace-intro.account-workspace-intro {
+    border-bottom: 1px solid CanvasText;
+  }
+}
+
+/* Mobile public access: the task itself replaces the repeated marketing hero.
+   Branding remains in the header and the full institutional aside on desktop. */
+@media (max-width: 720px) {
+  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-aside {
+    display: none;
+  }
+  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest .account-main {
+    padding-top: .8rem;
+  }
+}
+
+/* F03 regression: mobile guest pages must retain their accessible H1.
+   Keep a single compact institutional heading but no bulky marketing card.
+   Recovery continues to suppress this aside while presenting its own task. */
+@media (max-width: 720px) {
+  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest:not(.account-layout--recovery) .account-aside {
+    display: block;
+    min-height: 0;
+    margin: 0;
+    padding: .2rem .35rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest:not(.account-layout--recovery) .account-aside::before,
+  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest:not(.account-layout--recovery) .aside-bottom,
+  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest:not(.account-layout--recovery) .account-aside .aside-top > p:last-child {
+    display: none;
+  }
+  cs-identity-portal .account-layout--guest.account-layout--guest.account-layout--guest:not(.account-layout--recovery) .account-aside h1 {
+    max-width: none;
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.28;
+    letter-spacing: -.012em;
+  }
+}
+
+/* F06 buyer/accessibility: fully Spanish, keyboard-usable native file chooser.
+   The actual input remains focusable and validates with the backend unchanged. */
+dialog.cs-modal .cs-photo-picker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 3rem;
+  padding: .75rem 1rem;
+  border: 1px solid #b7cfdf;
+  border-radius: .75rem;
+  background: #f1f7fc;
+  color: #164874;
+  font-weight: 750;
+  text-align: center;
+  line-height: 1.35;
+  cursor: pointer;
+}
+dialog.cs-modal .cs-photo-picker:hover { background: #e7f2fa; }
+dialog.cs-modal .cs-photo-picker:focus-within {
+  outline: 3px solid #126aaf;
+  outline-offset: 3px;
+}
+dialog.cs-modal .cs-photo-picker__input {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+dialog.cs-modal .cs-photo-picker__filename {
+  display: block;
+  max-width: 100%;
+  margin: -.2rem 0 .35rem;
+  color: #355673;
+  font-size: .86rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+dialog.cs-modal .cs-photo-picker__error {
+  margin: 0 0 .6rem;
+  padding: .6rem .75rem;
+  border: 1px solid #e7c2bc;
+  border-radius: .6rem;
+  background: #fff3f1;
+  color: #842e27;
+  font-size: .85rem;
+}
+cs-identity-guest .cs-choice-line {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  padding: .65rem .7rem;
+  border: 1px solid #ccdeeb;
+  border-radius: .7rem;
+  background: #f6fafd;
+  line-height: 1.5;
+}
+cs-identity-guest .cs-choice-line input {
+  flex: 0 0 auto;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: .12rem;
+}
+@media (forced-colors: active) {
+  dialog.cs-modal .cs-photo-picker,
+  cs-identity-guest .cs-choice-line {
+    background: Canvas; color: CanvasText; border-color: CanvasText;
+  }
+  dialog.cs-modal .cs-photo-picker__error {
+    background: Canvas; color: CanvasText; border-color: CanvasText;
+  }
+}
+
+/* Direct, contextual terms loading for invitation and existing-member access.
+   Terms always originate from the server; no client-only acceptance decision. */
+cs-identity-guest .cs-guest-terms {
+  display: block;
+  min-width: 0;
+  margin: .75rem 0;
+  padding: .75rem .85rem;
+  border: 1px solid #cddfec;
+  border-radius: .75rem;
+  background: #f5f9fd;
+  color: #284d6c;
+}
+cs-identity-guest .cs-guest-terms > p {
+  margin: 0 0 .6rem;
+  font-size: .86rem;
+  line-height: 1.55;
+}
+cs-identity-guest .cs-guest-terms > button {
+  margin: 0;
+  min-height: 2.75rem;
+  width: 100%;
+  background: #e3effa;
+  color: #124776;
+  border: 1px solid #c1d6e8;
+  border-radius: .6rem;
+  font-weight: 740;
+}
+cs-identity-guest details.cs-guest-terms > summary {
+  cursor: pointer;
+  font-size: .875rem;
+  font-weight: 760;
+  color: #174b77;
+  line-height: 1.45;
+}
+cs-identity-guest details.cs-guest-terms > .terms-content {
+  margin-top: .65rem;
+  margin-bottom: 0;
+  overflow-wrap: anywhere;
+}
+cs-identity-guest .cs-guest-terms :is(summary, button):focus-visible {
+  outline: 3px solid #126aaf;
+  outline-offset: 3px;
+}
+@media (forced-colors: active) {
+  cs-identity-guest .cs-guest-terms,
+  cs-identity-guest .cs-guest-terms > button {
+    background: Canvas; color: CanvasText; border-color: CanvasText;
+  }
+}
+
+
+/* C05 UX F06: one-use recovery values remain intact, individually named and
+   keyboard scrollable at 320 px. Never split a secret into apparent tokens. */
+cs-identity-workspace .cs-one-time-codes,
+cs-platform-identity-panel .cs-one-time-codes {
+  display: grid;
+  gap: .65rem;
+  list-style: none;
+  margin: .8rem 0 1rem;
+  padding: 0;
+  min-width: 0;
+}
+cs-identity-workspace .cs-one-time-codes__item,
+cs-platform-identity-panel .cs-one-time-codes__item {
+  display: grid;
+  min-width: 0;
+  gap: .3rem;
+  padding: .6rem;
+  border: 1px solid #ccdeea;
+  border-radius: .6rem;
+  background: #fff;
+}
+cs-identity-workspace .cs-one-time-codes__label,
+cs-platform-identity-panel .cs-one-time-codes__label {
+  color: #365a75;
+  font-size: .8rem;
+  font-weight: 750;
+}
+cs-identity-workspace .cs-one-time-codes__value,
+cs-platform-identity-panel .cs-one-time-codes__value {
+  box-sizing: border-box;
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  padding: .45rem .55rem;
+  overflow-x: auto;
+  white-space: nowrap;
+  overscroll-behavior-inline: contain;
+  border: 1px solid #d4e2ec;
+  border-radius: .45rem;
+  background: #f5f8fc;
+  color: #163a58;
+  font: 650 .83rem/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: .015em;
+}
+cs-identity-workspace .cs-one-time-codes__value:focus-visible,
+cs-platform-identity-panel .cs-one-time-codes__value:focus-visible {
+  outline: 3px solid #126aaf;
+  outline-offset: 2px;
+}
+@media (forced-colors: active) {
+  cs-identity-workspace .cs-one-time-codes__item,
+  cs-platform-identity-panel .cs-one-time-codes__item,
+  cs-identity-workspace .cs-one-time-codes__value,
+  cs-platform-identity-panel .cs-one-time-codes__value {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+}

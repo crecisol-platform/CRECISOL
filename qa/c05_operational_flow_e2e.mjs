@@ -17,6 +17,7 @@ import { verifyAssisted } from './c05_assisted_browser_checks.mjs';
 import { verifyProfile } from './c05_profile_browser_checks.mjs';
 import { verifyTenantAuditBoundary } from './c05_tenant_audit_checks.mjs';
 import { verifyOperatorRecovery } from './c05_operator_recovery_checks.mjs';
+import { verifySha1EnrollmentQr } from './c05_totp_qr_checks.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 mkdirSync(path.join(root, '.cache'), { recursive: true });
@@ -62,8 +63,9 @@ function child(command, args, env = process.env, cwd = root) {
   return p;
 }
 function sql(text, app = false) {
-  return run('docker', ['exec', '-i', '-e', `MYSQL_PWD=${app ? appPassword : rootPassword}`, name,
-    'mysql', app ? '-uc05_flow' : '-uroot', '-N', '-B', 'crecisol_c05'], { input: text });
+  return run('docker', ['exec', '-i', '-e', 'MYSQL_PWD', name,
+    'mysql', app ? '-uc05_flow' : '-uroot', '-N', '-B', 'crecisol_c05'],
+    { input: text, env: { ...process.env, MYSQL_PWD: app ? appPassword : rootPassword } });
 }
 function check(condition, label) {
   assert.ok(condition, label); assertions++; console.log(`PASS ${label}`);
@@ -98,7 +100,7 @@ function provisionPlatformOperator(mailbox) {
   const bundle = JSON.parse(run('dotnet', ['backend/tools/Crecisol.LocalIdentityProvisioner/bin/Release/net10.0/Crecisol.LocalIdentityProvisioner.dll', '--isolated-test-bundle'],
     { input: JSON.stringify({ Mailbox: mailbox, Password: operatorPassword }), env: { ...process.env, ...keys } }));
   confidential.push(operatorPassword, bundle.seed, bundle.phc, bundle.envelope, ...bundle.backups);
-  sql(`INSERT INTO c05_platform_operator(operator_id,login_hmac,conflict_login_hmac,password_phc,protected_seed,active,security_revision,last_totp_step,protected_contact) VALUES(UNHEX('${bundle.id}'),UNHEX('${bundle.hash}'),UNHEX('${bundle.conflict}'),'${bundle.phc}',UNHEX('${bundle.envelope}'),TRUE,1,NULL,UNHEX('${bundle.contact}'))`);
+  sql(`INSERT INTO c05_platform_operator(operator_id,login_hmac,conflict_login_hmac,password_phc,protected_seed,active,security_revision,last_totp_step,protected_contact,can_manage_session_policy) VALUES(UNHEX('${bundle.id}'),UNHEX('${bundle.hash}'),UNHEX('${bundle.conflict}'),'${bundle.phc}',UNHEX('${bundle.envelope}'),TRUE,1,NULL,UNHEX('${bundle.contact}'),${mailbox === 'identity.one@example.test' ? 'TRUE' : 'FALSE'})`);
   for (const hash of bundle.backupHashes) sql(`INSERT INTO c05_platform_mfa_backup VALUES(UNHEX('${bundle.id}'),UNHEX('${hash}'),NULL)`);
   return { mailbox, password: operatorPassword, seed: bundle.seed, id: bundle.id, backups: bundle.backups };
 }
@@ -116,7 +118,7 @@ function totp(seed, previous = false) {
   let bits = 0, value = 0; const out = [];
   for (const c of seed) { value = (value << 5) | alphabet.indexOf(c); bits += 5; if (bits >= 8) { out.push((value >>> (bits - 8)) & 255); bits -= 8; } }
   const counter = Buffer.alloc(8); counter.writeBigInt64BE(BigInt(Math.floor(Date.now() / 30000) - (previous ? 1 : 0)));
-  const hash = createHmac('sha256', Buffer.from(out)).update(counter).digest();
+  const hash = createHmac('sha1', Buffer.from(out)).update(counter).digest();
   const offset = hash.at(-1) & 15;
   return String((hash.readUInt32BE(offset) & 0x7fffffff) % 1000000).padStart(6, '0');
 }
@@ -164,6 +166,13 @@ async function enrollLogin(mailbox) {
   confidential.push(login.data.challenge);
   const enrollment = await api('mfa/enroll', { challenge: login.data.challenge }); check(enrollment.status === 200, 'MFA enrollment uses password-bound challenge');
   const seed = enrollment.data.secret; confidential.push(seed);
+  check(/^[A-Z2-7]{32}$/.test(seed) &&
+    enrollment.data.uri.startsWith('otpauth://totp/') &&
+    new URL(enrollment.data.uri).searchParams.get('algorithm') === 'SHA1' &&
+    new URL(enrollment.data.uri).searchParams.get('secret') === seed &&
+    new URL(enrollment.data.uri).searchParams.get('digits') === '6' &&
+    new URL(enrollment.data.uri).searchParams.get('period') === '30',
+    'real enrollment offers only RFC6238 SHA1 via otpauth URI');
   const code = totp(seed, true); confidential.push(code);
   const verified = await api('mfa/verify', { challenge: login.data.challenge, code });
   check(verified.status === 200, 'real TOTP verification issues session');
@@ -180,7 +189,7 @@ async function browserSession(page) {
   await page.getByRole('link', { name: 'Resumen', exact: true }).click();
   const request = page.waitForRequest(r => r.url().endsWith('/sessions') && r.method() === 'POST');
   const response = page.waitForResponse(r => r.url().endsWith('/sessions'));
-  await page.getByRole('button', { name: 'Consultar sesiones', exact: true }).click();
+  await page.getByRole('button', { name: 'Actualizar dispositivos', exact: true }).click();
   await request;
   const token = (await page.context().cookies()).find(c => c.name === '__Host-crecisol-c05')?.value;
   check((await response).status() === 200, 'Angular validates its HttpOnly session cookie against the persistent session endpoint');
@@ -189,17 +198,19 @@ async function browserSession(page) {
 
 try {
   console.log('C05 isolated operational flow: starting');
-  run('docker', ['run', '--rm', '-d', '--name', name, '-p', '127.0.0.1::3306', '-e', `MYSQL_ROOT_PASSWORD=${rootPassword}`,
-    '-e', 'MYSQL_DATABASE=crecisol_c05', 'mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902']);
+  run('docker', ['run', '--rm', '-d', '--name', name, '-p', '127.0.0.1::3306', '-e', 'MYSQL_ROOT_PASSWORD',
+    '-e', 'MYSQL_DATABASE=crecisol_c05', 'mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902'],
+    { env: { ...process.env, MYSQL_ROOT_PASSWORD: rootPassword } });
   await until(() => {
-    const p = spawnSync('docker', ['exec', '-e', `MYSQL_PWD=${rootPassword}`, name, 'mysql', '-uroot', '-Nse', 'SELECT 1'], { encoding: 'utf8', windowsHide: true });
+    const p = spawnSync('docker', ['exec', '-e', 'MYSQL_PWD', name, 'mysql', '-uroot', '-Nse', 'SELECT 1'],
+      { encoding: 'utf8', windowsHide: true, env: { ...process.env, MYSQL_PWD: rootPassword } });
     return p.status === 0 && run('docker', ['logs', name]).includes('MySQL init process done');
   }, 'MySQL 8.4 readiness', 120000);
   const port = run('docker', ['port', name, '3306/tcp']).split(':').at(-1);
   for (const migration of ['001_c05_identity_operational', '002_c05_registration_proof_outbox', '003_c05_pending_account_completion',
-    '004_c05_local_proof_delivery', '005_c05_operational_login_directory', '006_c05_operational_identity_flow', '007_c05_passkeys', '008_c05_terms_invitations', '009_c05_pairing', '010_c05_security_notices', '011_c05_platform_recovery', '012_c05_scoped_profile', '013_c05_abuse_signals', '014_c05_operator_recovery', '015_c05_session_devices', '016_c05_existing_identity_join'])
+    '004_c05_local_proof_delivery', '005_c05_operational_login_directory', '006_c05_operational_identity_flow', '007_c05_passkeys', '008_c05_terms_invitations', '009_c05_pairing', '010_c05_security_notices', '011_c05_platform_recovery', '012_c05_scoped_profile', '013_c05_abuse_signals', '014_c05_operator_recovery', '015_c05_session_devices', '016_c05_existing_identity_join', '017_c05_totp_sha1_exclusive', '018_c05_session_idle_policy'])
     sql(readFileSync(path.join(root, 'database/migrations', migration + '.sql'), 'utf8'));
-  check(sql('SELECT VERSION()').startsWith('8.4.'), 'sixteen forward migrations on real MySQL 8.4');
+  check(sql('SELECT VERSION()').startsWith('8.4.'), 'eighteen forward migrations on real MySQL 8.4');
   sql(`INSERT INTO c04_tenant_catalog VALUES
     (UNHEX('${A}'),'tenant-a','Tenant A',3,2,1,UTC_TIMESTAMP(6)),
     (UNHEX('${B}'),'tenant-b','Tenant B',3,2,1,UTC_TIMESTAMP(6));
@@ -266,7 +277,7 @@ try {
     const previewKey = secret(); confidential.push(previewKey);
     const folder = path.join(root, '.cache/c05-preview'); mkdirSync(folder, { recursive: true });
     writeFileSync(path.join(folder, 'access.md'), `# CRECISOL — prueba local\n\nFrontend: http://127.0.0.1:4200/cuenta\nBackend: http://127.0.0.1:5187 (Host interno tenant-a.example.test)\nBuzón local: http://127.0.0.1:8025\n\nCuenta ficticia de revisión: reviewer@example.test\nContraseña: ${password}\nConfigura MFA al iniciar por primera vez. La cuenta tiene autoridad local temporal de ocho horas.\n\nUsuario del buzón: preview\nContraseña del buzón: ${previewKey}\n\nSolo @example.test. No uses datos personales. El buzón permite revisar las pruebas de correo e IDs de membresías del entorno ficticio; no es un endpoint del producto. Para detener todo, utiliza su botón Detener.\n`, { mode: 0o600 });
-    writeFileSync(path.join(folder, 'access.md'), '\n## Operadores ficticios de identidad de plataforma\n\nLa consola está en la sección Personal autorizado de identidad CRECISOL. No son administradores productivos. TOTP: SHA256, seis dígitos, 30 segundos. Cada operador conserva su propia contraseña y semilla. Nunca uses estos datos fuera de este entorno.\n\n' + operators.map(o => `Correo: ${o.mailbox}\nContraseña: ${o.password}\nSemilla TOTP: ${o.seed}\nRespaldos de un uso: ${o.backups.join(' / ')}\n`).join('\n'), { flag: 'a', mode: 0o600 });
+    writeFileSync(path.join(folder, 'access.md'), '\n## Operadores ficticios de identidad de plataforma\n\nLa consola está en la sección Personal autorizado de identidad CRECISOL. No son administradores productivos. TOTP: SHA1, seis dígitos, 30 segundos. Cada operador conserva su propia contraseña y semilla. Nunca uses estos datos fuera de este entorno.\n\n' + operators.map(o => `Correo: ${o.mailbox}\nContraseña: ${o.password}\nSemilla TOTP: ${o.seed}\nRespaldos de un uso: ${o.backups.join(' / ')}\n`).join('\n'), { flag: 'a', mode: 0o600 });
     writeFileSync(path.join(folder, 'access.md'), `\n## Recurso privado ficticio de reviewer\n\nAcepta primero las condiciones de prueba desde el portal.\nSucursal: ${branch}\nRecurso: ${resource}\nResultado autorizado: LOCAL-DEMO-PRIVATE-001\nLa autorización vence junto con la autoridad de prueba; no concede acceso a otro tenant o propietario.\n`, { flag: 'a', mode: 0o600 });
     writeFileSync(path.join(folder, 'access.md'), '\nLa membresía y los hosts ficticios duran siete días para permitir pruebas manuales del enfriamiento de 24 horas. Los permisos administrativos y del recurso privado duran solo ocho horas. El entorno termina al detenerlo, cerrar Docker o apagar el equipo.\n', { flag: 'a', mode: 0o600 });
     const escape = value => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
@@ -318,6 +329,80 @@ try {
   } else {
   const browserContext = await browser.newContext();
   const page = await browserContext.newPage();
+
+  // REAL MySQL+HTTP session-policy matrix: only the platform security admin
+  // may modify the global inactivity window; no tenant or reviewer can.
+  check((await platform('session-policy')).status === 401,
+    'anonymous caller cannot inspect protected session policy');
+  check([400, 401].includes((await api('platform/session-policy', {}, undefined, 'tenant-a.example.test')).status),
+    'tenant identity host cannot impersonate platform session policy');
+  const reviewerLogin = await platform('login', { mailbox: operators[1].mailbox, password: operators[1].password });
+  check(reviewerLogin.status === 200, 'independent nonadministrator can request their own MFA');
+  const reviewerProof = await platform('mfa', {
+    challenge: reviewerLogin.data.challenge, code: operators[1].backups.pop()
+  });
+  check(reviewerProof.status === 200, 'nonadministrator operator MFA establishes only a normal session');
+  const reviewerToken = reviewerProof.data.sessionToken; confidential.push(reviewerToken);
+  const reviewerPolicy = await platform('session-policy', {}, reviewerToken);
+  check(reviewerPolicy.status === 200 && reviewerPolicy.data.idleMinutes === 30 && reviewerPolicy.data.canManage === false,
+    'read-only operator sees default 30-minute policy without change privileges');
+  check((await platform('session-policy/update', {
+    minutes: '120', expectedRevision: '1', code: operators[1].backups.at(-1)
+  }, reviewerToken)).status === 401, 'operator without policy grant cannot modify global idle timeout');
+  const adminLogin = await platform('login', { mailbox: operators[0].mailbox, password: operators[0].password });
+  check(adminLogin.status === 200, 'synthetic security-policy administrator requires password challenge');
+  const adminProof = await platform('mfa', { challenge: adminLogin.data.challenge, code: operators[0].backups.pop() });
+  check(adminProof.status === 200,
+    'policy administrator authenticates by independent MFA; browser-only idle receipt is not required for bearer clients');
+  const adminToken = adminProof.data.sessionToken; confidential.push(adminToken);
+  const initialPolicy = await platform('session-policy', {}, adminToken);
+  check(initialPolicy.status === 200 && initialPolicy.data.canManage === true &&
+    initialPolicy.data.idleMinutes === 30 && initialPolicy.data.revision === 1,
+    'administrator reads server version and initial 30-minute inactivity');
+  for (const [minutes, expectedRevision] of [['4', '1'], ['121', '1'], ['30', '0']]) {
+    check((await platform('session-policy/update', {
+      minutes, expectedRevision, code: operators[0].backups.at(-1)
+    }, adminToken)).status === 401, 'invalid timeout or stale policy revision denied');
+  }
+  const shorter = await platform('session-policy/update', {
+    minutes: '5', expectedRevision: '1', code: operators[0].backups.pop()
+  }, adminToken);
+  check(shorter.status === 200 && shorter.data.idleMinutes === 5 && shorter.data.revision === 2,
+    'authorized MFA revision changes global inactivity from 30 to 5 minutes');
+  const reviewerHash = createHmac('sha256', Buffer.from(keys.CRECISOL_C05_TOKEN_HMAC_KEY, 'hex'))
+    .update('C05/platform-session:' + reviewerToken).digest('hex');
+  const reviewerWindow = () => Number(sql(
+    "SELECT TIMESTAMPDIFF(SECOND,last_seen_at_utc,expires_at_utc) FROM c05_platform_session " +
+    "WHERE token_hmac=UNHEX('" + reviewerHash + "') AND revoked_at_utc IS NULL"));
+  check(reviewerWindow() === 300,
+    'reducing global policy immediately narrows another active operator session to five minutes');
+  check((await api('sessions', {}, adminToken)).status === 401,
+    'platform-only admin credential cannot enter a business tenant realm');
+  const restoredPolicy = await platform('session-policy/update', {
+    minutes: '30', expectedRevision: '2', code: operators[0].backups.pop()
+  }, adminToken);
+  check(restoredPolicy.status === 200 && restoredPolicy.data.idleMinutes === 30 &&
+    restoredPolicy.data.revision === 3, 'MFA administrator restores configured 30-minute idle window');
+  check(sql('SELECT idle_minutes FROM c05_session_idle_policy WHERE policy_id=1') === '30',
+    'inactivity policy is persisted globally in MySQL rather than browser storage');
+  check(reviewerWindow() === 1800,
+    'increasing global policy immediately extends a previously valid existing session to 30 minutes');
+  const live = await platform('sessions', {}, reviewerToken);
+  check(live.status === 200 && live.data.sessions.length > 0, 'another operator session is unaffected by permitted configuration');
+  // Simulate old last activity with SQL ONLY in the disposable database; do
+  // not wait 30 actual minutes or forge the API clock.
+  const adminDigest = createHmac('sha256', Buffer.from(keys.CRECISOL_C05_TOKEN_HMAC_KEY, 'hex'))
+    .update('C05/platform-session:' + adminToken).digest('hex');
+  sql("UPDATE c05_platform_session SET last_seen_at_utc=UTC_TIMESTAMP(6)-INTERVAL 31 MINUTE, " +
+    "expires_at_utc=UTC_TIMESTAMP(6)+INTERVAL 30 MINUTE WHERE token_hmac=UNHEX('" + adminDigest + "')");
+  check((await platform('sessions', {}, adminToken)).status === 401,
+    'server rejects inactivity of 31 minutes even when token has a later absolute expiry');
+  check(sql("SELECT COUNT(*) FROM c05_platform_session WHERE token_hmac=UNHEX('" +
+    adminDigest + "') AND revoked_at_utc IS NOT NULL") === '1',
+    'server permanently revokes expired operator session, preventing later policy increase from reviving it');
+  check((await platform('sessions', {}, reviewerToken)).status === 200,
+    'unrelated authorized operator remains active after stale-session rejection');
+
   await register('approver@example.test', page);
   check((await api('login', { mailbox: 'approver@example.test', password })).status === 401, 'pending account cannot log in');
   // Privileged setup is offline, explicit, audited and one-time. It creates no
@@ -339,9 +424,28 @@ try {
   await register('member@example.test', page);
   const memberId = membershipId('member@example.test');
   sql(`UPDATE c05_identity_resource_grant SET branch_id=UUID_TO_BIN('${otherBranch}',0) WHERE permission_code='MEMBERSHIP_APPROVE'`);
+  check((await api('memberships/pending', { cursor: 'start' }, approver.token)).status === 401,
+    'branch-scoped grant cannot list pending enterprise memberships');
   check((await api('memberships/decide', { membershipId: memberId, decision: 'approve', reason: 'Wrong authority scope', code: approver.backups.pop() }, approver.token)).status === 401,
     'branch-scoped approval permission cannot become tenant-wide administrative authority');
   sql(`UPDATE c05_identity_resource_grant SET branch_id=tenant_id WHERE permission_code='MEMBERSHIP_APPROVE'`);
+  check((await api('memberships/decide', { membershipId: memberId, decision: 'approve',
+    reason: '   ', code: '000000' }, approver.token)).status === 400,
+    'blank administrative justification is rejected at the HTTP boundary before step-up');
+  check((await api('memberships/decide', { membershipId: memberId, decision: 'approve',
+    reason: 'X'.repeat(241), code: '000000' }, approver.token)).status === 400,
+    'oversize administrative justification is rejected at the HTTP boundary');
+  const pendingInventory = await api('memberships/pending', { cursor: 'start' }, approver.token);
+  check(pendingInventory.status === 200 &&
+    Array.isArray(pendingInventory.data?.requests) &&
+    pendingInventory.data.requests.some(entry => entry.id === memberId) &&
+    pendingInventory.data.requests.every(entry => entry.mailboxHint !== 'member@example.test'),
+    'authorized tenant-scoped approval inbox returns pending verified records with redacted contact');
+  check((await api('memberships/pending', { cursor: 'start' }, approver.token,
+    'tenant-b.example.test')).status === 401,
+    'token from tenant A cannot enumerate tenant B approval inbox');
+  check((await api('memberships/pending', { cursor: 'malformed' }, approver.token)).status === 401,
+    'malformed keyset cursor fails closed without applicant details');
   // Registration completion is now an independent screen; return to the login view.
   await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
   await page.getByRole('region', { name: 'Iniciar sesión', exact: true }).getByLabel('Correo electrónico', { exact: true }).fill('approver@example.test');
@@ -350,10 +454,15 @@ try {
   await page.getByLabel('Código de tu aplicación de autenticación').fill(approver.backups.pop());
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   await page.getByRole('link', { name: 'Aprobaciones', exact: true }).click();
-  await page.getByRole('button', { name: 'Revisar membresía con permiso administrativo', exact: true }).click();
-  await page.getByLabel('Membresía pendiente', { exact: true }).fill(memberId);
-  await page.getByLabel('Motivo', { exact: true }).fill('Synthetic local approval');
+  const queueResponse = page.waitForResponse(response => response.url().endsWith('/memberships/pending'));
+  await page.getByRole('button', { name: 'Consultar solicitudes', exact: true }).click();
+  check((await queueResponse).status() === 200, 'Angular obtains allowed pending memberships through real tenant-authorized API');
+  await page.getByRole('button', { name: 'Revisar solicitud', exact: true }).first().click();
+  await page.getByLabel('Solicitud pendiente seleccionada', { exact: true }).selectOption(memberId);
+  await page.getByLabel('Decisión', { exact: true }).selectOption('approve');
+  await page.getByLabel('Motivo de la decisión', { exact: true }).fill('Synthetic local approval');
   await page.getByLabel('Código MFA del aprobador', { exact: true }).fill(approver.backups.pop());
+  await page.getByLabel('Revisé la solicitud y confirmo que esta es la decisión que deseo registrar.').check();
   const approvalResponse = page.waitForResponse(r => r.url().endsWith('/memberships/decide'));
   await page.getByRole('button', { name: 'Registrar decisión', exact: true }).click();
   check((await approvalResponse).status() === 200, 'Angular real MFA approver activates pending membership through API');
@@ -387,16 +496,48 @@ try {
   await page.getByLabel('Contraseña', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await page.getByRole('button', { name: 'Configurar segundo factor' }).click();
+  await page.getByText('No puedo escanear: mostrar clave manual', { exact: true }).click();
   const seed = await page.getByLabel('Clave de configuración MFA').innerText(); confidential.push(seed);
+  await verifySha1EnrollmentQr(page, 'Código QR privado para vincular CRECISOL con tu aplicación de autenticación', seed, check);
   await page.getByLabel('Código de tu aplicación de autenticación').fill(totp(seed, true));
   const verified = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   check((await verified).status() === 200, 'Angular MFA request accepted by the real backend');
-  await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  await page.getByRole('heading', { name: 'Tu sesión actual', exact: true }).waitFor();
   const backupCodes = await page.getByLabel('Códigos de respaldo MFA').locator('code').allTextContents(); confidential.push(...backupCodes);
   check(backupCodes.length === 10, 'MFA enrollment returns ten one-use backup codes once');
   let token = await browserSession(page);
   check(Boolean(token), 'Angular password -> enrollment -> TOTP -> authenticated session');
+  // The tenant actor cannot extend an expired credential. Simulate elapsed
+  // database time on an independently cloned disposable test session only.
+  const tokenDigest = createHmac('sha256', Buffer.from(keys.CRECISOL_C05_TOKEN_HMAC_KEY, 'hex'))
+    .update('C05/session:' + token).digest('hex');
+  const staleTenantToken = secret(); confidential.push(staleTenantToken);
+  const staleTenantHash = createHmac('sha256', Buffer.from(keys.CRECISOL_C05_TOKEN_HMAC_KEY, 'hex'))
+    .update('C05/session:' + staleTenantToken).digest('hex');
+  sql("INSERT INTO c05_identity_session " +
+    "(tenant_id,session_id,account_id,membership_id,token_hmac,session_family,mfa_factor_id,mfa_verified_at_utc," +
+    "issued_at_utc,expires_at_utc,account_revision,membership_revision,last_seen_at_utc,device_label,peer_hmac,auth_method) " +
+    "SELECT tenant_id,UUID_TO_BIN(UUID(),0),account_id,membership_id,UNHEX('" + staleTenantHash + "'),UUID_TO_BIN(UUID(),0)," +
+    "mfa_factor_id,mfa_verified_at_utc,UTC_TIMESTAMP(6)-INTERVAL 31 MINUTE," +
+    "UTC_TIMESTAMP(6)+INTERVAL 30 MINUTE,account_revision,membership_revision," +
+    "UTC_TIMESTAMP(6)-INTERVAL 31 MINUTE,'idle-expired',peer_hmac,auth_method " +
+    "FROM c05_identity_session WHERE token_hmac=UNHEX('" + tokenDigest + "') LIMIT 1");
+  check((await api('sessions', {}, staleTenantToken)).status === 401,
+    'tenant session idle for 31 minutes is denied despite a future token expiry');
+  check(sql("SELECT COUNT(*) FROM c05_identity_session WHERE token_hmac=UNHEX('" +
+    staleTenantHash + "') AND revoked_at_utc IS NOT NULL") === '1',
+    'expired tenant token is irrevocably marked revoked and cannot revive');
+  // DB clock controls sliding: narrow an ACTIVE fixture expiry to 1 minute
+  // while keeping the last activity recent, then refresh via real HTTP.
+  sql("UPDATE c05_identity_session SET expires_at_utc=UTC_TIMESTAMP(6)+INTERVAL 1 MINUTE " +
+    "WHERE token_hmac=UNHEX('" + tokenDigest + "')");
+  check((await api('sessions', {}, token)).status === 200,
+    'validated API activity refreshes an active tenant session');
+  const remaining = Number(sql("SELECT TIMESTAMPDIFF(SECOND,UTC_TIMESTAMP(6),expires_at_utc) " +
+    "FROM c05_identity_session WHERE token_hmac=UNHEX('" + tokenDigest + "')"));
+  check(remaining >= 29 * 60 && remaining <= 30 * 60 + 2,
+    'server slides the effective tenant session expiry to 30 minutes after activity');
   const sessionCookie = (await browserContext.cookies()).find(c => c.name === '__Host-crecisol-c05');
   check(sessionCookie.secure && sessionCookie.httpOnly && sessionCookie.sameSite === 'Strict' && sessionCookie.path === '/',
     'browser session uses Secure HttpOnly SameSite Strict host-only cookie');
@@ -407,7 +548,7 @@ try {
   const restoredRequest = page.waitForResponse(r => r.url().endsWith('/browser/restore'));
   await page.reload();
   check((await restoredRequest).status() === 200, 'reload restores only a server-validated cookie session and CSRF material');
-  await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  await page.getByRole('heading', { name: 'Tu sesión actual', exact: true }).waitFor();
   await page.getByText('Condiciones de la cuenta', { exact: true }).click();
   await page.getByRole('button', { name: 'Leer condiciones vigentes', exact: true }).click();
   await page.getByLabel('Acepto esta versión de las condiciones', { exact: true }).check();
@@ -420,6 +561,21 @@ try {
     // Expose only rule IDs and node counts; never log form values, MFA or secrets.
     console.error('C05 accessibility rule diagnostics: ' +
       severeAxe.map(v => v.id + ':nodes=' + v.nodes.length).join(', '));
+    // Safe diagnostic metadata only: static selector, contrast colors and ratio.
+    // Do not log HTML, visible text, form values, tokens or user data.
+    for (const violation of severeAxe) for (const node of violation.nodes) {
+      const selector = (node.target || []).map(value => String(value)
+        .replace(/\\[[^\\]]*\\]/g, '[attribute]')
+        .replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, 'id'))
+        .join(' > ').slice(0, 180);
+      const data = [...node.any, ...node.all, ...node.none]
+        .find(item => item.id === 'color-contrast')?.data;
+      console.error('C05 a11y safe selector=' + selector +
+        ' contrast=' + JSON.stringify({
+          fg: data?.fgColor, bg: data?.bgColor,
+          ratio: data?.contrastRatio, required: data?.expectedContrastRatio
+        }));
+    }
   }
   check(severeAxe.length === 0, 'authenticated Angular accessibility has no serious/critical axe findings');
   check(await page.evaluate(() => localStorage.length === 0 && sessionStorage.length === 0), 'no bearer stored in browser storage');
@@ -427,6 +583,9 @@ try {
   sql(`INSERT INTO c05_identity_branch VALUES(UNHEX('${A}'),UUID_TO_BIN('${branch}',0),TRUE),(UNHEX('${A}'),UUID_TO_BIN('${otherBranch}',0),TRUE);
     INSERT INTO c05_identity_private_resource VALUES(UNHEX('${A}'),UUID_TO_BIN('${branch}',0),UUID_TO_BIN('${resource}',0),UNHEX('${actor}'),1,'LOCAL-PRIVATE-REFERENCE');
     INSERT INTO c05_identity_resource_grant VALUES(UNHEX('${A}'),UUID_TO_BIN(UUID(),0),UNHEX('${actor}'),UUID_TO_BIN('${branch}',0),UUID_TO_BIN('${resource}',0),1,'RESOURCE_READ',UNHEX('${accountId('approver@example.test')}'),UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)+INTERVAL 1 HOUR,NULL,1);`);
+  // Rare/advanced operations are intentionally collapsed in the redesigned
+  // account summary; E2E must follow the same contextual journey as a user.
+  await page.locator('details.identity-summary-extras > summary').click();
   await page.getByRole('button', { name: 'Comprobar un acceso privado', exact: true }).click();
   await page.getByLabel('Sucursal del recurso').fill(branch); await page.getByLabel('Identificador del recurso').fill(resource);
   await page.getByRole('button', { name: 'Consultar recurso autorizado' }).click();
@@ -455,6 +614,12 @@ try {
   sql(`UPDATE c05_identity_account SET account_state=2 WHERE account_id=UNHEX('${actor}')`);
   check((await api('sessions', {}, token)).status === 401, 'suspended account invalidates existing session');
   sql(`UPDATE c05_identity_account SET account_state=1 WHERE account_id=UNHEX('${actor}')`);
+  // The rotation cohort requires a full live peer-quota budget. Prior real
+  // negative-security calls can consume the 80-request/minute allowance and
+  // would otherwise deny the *winner verification* at attempt 81. Wait for a
+  // fresh real quota window without modifying quota rows, server clocks,
+  // concurrency, expected 401/200 outcomes or any product security policy.
+  await reserveTestWindow(30);
   const rotations = await Promise.all(Array.from({ length: 8 }, () => api('sessions/rotate', {}, token)));
   check(rotations.filter(r => r.status === 200).length === 1, '8 concurrent rotations have one winner');
   const oldToken = token; token = rotations.find(r => r.status === 200).data.sessionToken; confidential.push(token);
@@ -468,7 +633,7 @@ try {
   const mfaRace = await Promise.all(Array.from({ length: 6 }, () => api('mfa/verify', { challenge: login.data.challenge, code: mfaCode })));
   check(mfaRace.filter(r => r.status === 200).length === 1, 'concurrent TOTP/challenge consumption has one winner');
   check((await api('mfa/verify', { challenge: login.data.challenge, code: mfaCode })).status === 401, 'MFA replay denied');
-  await page.getByRole('button', { name: 'Consultar sesiones' }).click();
+  await page.getByRole('button', { name: 'Actualizar dispositivos', exact: true }).click();
   await page.getByRole('heading', { name: 'Iniciar sesión', exact: true }).waitFor();
   check(true, 'Angular clears revoked session on server validation');
   await reserveTestWindow(35);
@@ -508,7 +673,7 @@ try {
     const response = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
     await page.getByRole('button', { name: 'Verificar', exact: true }).click();
     const result = await response; check(result.status() === 200, 'Angular persistent login with one-use backup factor');
-    await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+    await page.getByRole('heading', { name: 'Tu sesión actual', exact: true }).waitFor();
     return await browserSession(page);
   }
   token = await uiLogin('member@example.test', newPassword);
@@ -521,6 +686,7 @@ try {
   await page.getByRole('button', { name: 'Solicitar cambio de correo', exact: true }).click();
   check((await mailboxRequest).status() === 200, 'Angular mailbox change requires authenticated fresh second factor');
   const mailboxProof = await mailFor('member.changed@example.test'); confidential.push(mailboxProof);
+  await page.getByText('Ya tengo el token del nuevo correo', { exact: true }).click();
   await page.getByLabel('Token del nuevo correo').fill(mailboxProof);
   await page.getByLabel('Código MFA para confirmar correo').fill(backupCodes.pop());
   const mailboxConfirmation = page.waitForResponse(r => r.url().endsWith('/mailbox/complete'));
@@ -540,7 +706,7 @@ try {
   check((await api('sessions', {}, token)).status === 401, 'password change revokes prior session');
   token = await uiLogin('member.changed@example.test', password);
   const rotatedUi = page.waitForResponse(r => r.url().endsWith('/sessions/rotate'));
-  await page.getByRole('button', { name: 'Rotar sesión', exact: true }).click();
+  await page.getByRole('button', { name: 'Renovar sesión', exact: true }).click();
   const rotationResponse = await rotatedUi;
   check(rotationResponse.status() === 200, 'Angular rotates persistent session');
   const logoutUi = page.waitForResponse(r => r.url().endsWith('/logout'));
@@ -559,13 +725,18 @@ try {
   check((await factorReplacement).status() === 200, 'Angular factor replacement requires password plus a current one-use factor');
   check((await api('sessions', {}, token)).status === 401, 'factor replacement revokes existing sessions');
   await page.getByRole('button', { name: 'Configurar segundo factor' }).click();
+  await page.getByText('No puedo escanear: mostrar clave manual', { exact: true }).click();
   const replacedSeed = await page.getByLabel('Clave de configuración MFA').innerText(); confidential.push(replacedSeed);
+  await verifySha1EnrollmentQr(page, 'Código QR privado para vincular CRECISOL con tu aplicación de autenticación', replacedSeed, check);
   await page.getByLabel('Código de tu aplicación de autenticación').fill(totp(replacedSeed, true));
   const reverified = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
   const replacedReceipt = await reverified;
   check(replacedReceipt.status() === 200, 'replacement TOTP enrollment issues a fresh MFA-bound session');
-  await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  // The restored account keeps its Seguridad deep link. Open Resumen
+  // before asserting a heading that exists only on the summary screen.
+  await page.getByRole('link', { name: 'Resumen', exact: true }).click();
+  await page.getByRole('heading', { name: 'Tu sesión actual', exact: true }).waitFor();
   const replacementData = { sessionToken: await browserSession(page), recoveryCodes: await page.getByLabel('Códigos de respaldo MFA').locator('code').allTextContents() };
   confidential.push(...replacementData.recoveryCodes);
   check(sql(`SELECT COUNT(*) FROM c05_identity_mfa_factor WHERE account_id=UNHEX('${actor}') AND factor_state=1`) === '1', 'replacement leaves exactly one active TOTP factor');
@@ -574,7 +745,8 @@ try {
   const expiredLogin = await api('login', { mailbox: 'member.changed@example.test', password });
   check(expiredLogin.status === 200, 'login prepares an expirable challenge');
   sql(`UPDATE c05_identity_challenge SET expires_at_utc=UTC_TIMESTAMP(6)-INTERVAL 1 SECOND WHERE account_id=UNHEX('${actor}') AND consumed_at_utc IS NULL`);
-  check((await api('mfa/verify', { challenge: expiredLogin.data.challenge, code: replacementData.recoveryCodes[0] })).status === 401, 'expired MFA challenge denied');
+  const expiredStatus = (await api('mfa/verify', { challenge: expiredLogin.data.challenge, code: replacementData.recoveryCodes[0] })).status;
+  check(expiredStatus === 401, 'expired MFA challenge denied (HTTP ' + expiredStatus + ')');
   check((await api('mfa/verify', { challenge: expiredLogin.data.challenge, code: replacementData.recoveryCodes[0] }, undefined, 'tenant-b.example.test')).status === 401, 'challenge bound to tenant A cannot authorize B');
   check((await api('recovery/request', { mailbox: 'member.changed@example.test' })).status === 202, 'prepare expirable recovery proof');
   const expiredRecovery = await mailFor('member.changed@example.test'); confidential.push(expiredRecovery);
@@ -625,10 +797,10 @@ try {
   for (const p of children.reverse()) { p.kill(); }
   await delay(1500);
   // Reversible migrations are exercised on the actual populated schema.
-  for (const migration of ['016_c05_existing_identity_join', '015_c05_session_devices', '014_c05_operator_recovery', '013_c05_abuse_signals', '012_c05_scoped_profile', '011_c05_platform_recovery', '010_c05_security_notices', '009_c05_pairing', '008_c05_terms_invitations', '007_c05_passkeys', '006_c05_operational_identity_flow', '005_c05_operational_login_directory', '004_c05_local_proof_delivery',
+  for (const migration of ['018_c05_session_idle_policy', '017_c05_totp_sha1_exclusive', '016_c05_existing_identity_join', '015_c05_session_devices', '014_c05_operator_recovery', '013_c05_abuse_signals', '012_c05_scoped_profile', '011_c05_platform_recovery', '010_c05_security_notices', '009_c05_pairing', '008_c05_terms_invitations', '007_c05_passkeys', '006_c05_operational_identity_flow', '005_c05_operational_login_directory', '004_c05_local_proof_delivery',
     '003_c05_pending_account_completion', '002_c05_registration_proof_outbox', '001_c05_identity_operational'])
     sql(readFileSync(path.join(root, 'database/migrations', migration + '.down.sql'), 'utf8'));
-  check(sql('SHOW TABLES') === '', 'sixteen reverse migrations leave no schema tables');
+  check(sql('SHOW TABLES') === '', 'eighteen reverse migrations leave no schema tables; SHA256 credentials not restored by down');
   console.log(`PASS C05 ${focus ? focus + ' focused' : 'operational integrated'} assertions=${assertions}; A/B/C evidence is limited to executed cases; no production certification`);
   }
 } catch (error) {

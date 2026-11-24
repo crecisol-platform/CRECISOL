@@ -71,6 +71,9 @@ public sealed partial class MySqlOperationalIdentityFlow : IOperationalIdentityF
         await using var tx = await db.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct);
         var unit = new Unit(db, tx, ct) { DeviceLabel = request.DeviceLabel is "Chromium" or "Firefox" or "Safari" ? request.DeviceLabel : "API",
             PeerHash = Digest("session-peer:" + request.Host, request.Peer) };
+        // Fail closed until C05-017 retired all TOTP-SHA256 factors.
+        if (await unit.One("SELECT policy_id FROM c05_totp_sha1_policy WHERE policy_id=1 AND status=1") is null)
+            return new(false);
         if (request.Operation.StartsWith("platform/", StringComparison.Ordinal))
         {
             if (request.Host != "platform-admin.example.test") return new(false);
@@ -79,7 +82,7 @@ public sealed partial class MySqlOperationalIdentityFlow : IOperationalIdentityF
                 ("id", Id()), ("a", unit.VerifiedActor ? (object?)unit.Actor ?? DBNull.Value : DBNull.Value), ("case", (object?)unit.Subject ?? DBNull.Value),
                 ("op", request.Operation), ("ok", platformResult.Allowed), ("purpose", (object?)unit.PurposeHash ?? DBNull.Value));
             await tx.CommitAsync(ct);
-            return platformResult;
+            return platformResult with { SessionExpiresAtUtc = unit.SessionExpiresAtUtc, SessionIdleMinutes = unit.IdleMinutes };
         }
         var host = await unit.One("""
             SELECT h.tenant_id FROM c04_verified_tenant_host h
@@ -113,7 +116,7 @@ public sealed partial class MySqlOperationalIdentityFlow : IOperationalIdentityF
         else result = await Authenticated(unit, tenant, request, ct);
         await Audit(unit, tenant, request.Operation, result.Allowed);
         await tx.CommitAsync(ct);
-        return result;
+        return result with { SessionExpiresAtUtc = unit.SessionExpiresAtUtc, SessionIdleMinutes = unit.IdleMinutes };
     }
 
     private async Task<bool> Reserve(byte[] tenant, string bucket, int maximum, CancellationToken ct)
@@ -204,6 +207,13 @@ public sealed partial class MySqlOperationalIdentityFlow : IOperationalIdentityF
         if (bits > 0) result.Append(alphabet[(value << (5 - bits)) & 31]);
         return result.ToString();
     }
+    // The URI is temporary enrollment material: never persist or log it.
+    // A non-identifying stable label distinguishes multiple CRECISOL accounts
+    // in free authenticators without exposing an email or tenant identifier.
+    private static string TotpUri(byte[] actor, byte[] seed, string realm) =>
+        "otpauth://totp/" + Uri.EscapeDataString("CRECISOL:" + realm + "-" + Hex(actor)[..8]) +
+        "?secret=" + Base32(seed) + "&issuer=CRECISOL&algorithm=SHA1&digits=6&period=30";
+
     public void Dispose()
     {
         CryptographicOperations.ZeroMemory(tokenKey);
@@ -220,6 +230,9 @@ public sealed partial class MySqlOperationalIdentityFlow : IOperationalIdentityF
         public byte[]? Actor { get; set; }
         public byte[]? Subject { get; set; }
         public bool VerifiedActor { get; set; }
+        public int? IdleMinutes { get; set; }
+        public long? PolicyRevision { get; set; }
+        public DateTimeOffset? SessionExpiresAtUtc { get; set; }
         public byte[]? PurposeHash { get; set; }
         public string DeviceLabel { get; set; } = "API";
         public byte[] PeerHash { get; set; } = [];

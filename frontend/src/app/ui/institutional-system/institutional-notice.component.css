@@ -1,0 +1,36 @@
+:host { display: block; min-width: 0; }
+.cs-notice {
+  --note-text: var(--cs-color-info, #184e7e);
+  --note-bg: var(--cs-color-info-bg, #eef6fd);
+  --note-border: var(--cs-color-info-border, #b9d6ec);
+  box-sizing: border-box;
+  display: flex;
+  gap: .75rem;
+  align-items: flex-start;
+  padding: 1rem 1.15rem;
+  min-width: 0;
+  border: 1px solid var(--note-border);
+  border-left-width: 3px;
+  border-radius: var(--cs-radius-md, .85rem);
+  color: var(--note-text);
+  background: var(--note-bg);
+}
+.cs-notice[data-kind="success"] {
+  --note-text: var(--cs-color-success, #1d6048);
+  --note-bg: var(--cs-color-success-bg, #ecf8f2);
+  --note-border: var(--cs-color-success-border, #a4d3bd);
+}
+.cs-notice[data-kind="warning"] {
+  --note-text: var(--cs-color-warning, #724513);
+  --note-bg: var(--cs-color-warning-bg, #fff7e9);
+  --note-border: var(--cs-color-warning-border, #e3c99d);
+}
+.cs-notice[data-kind="error"] {
+  --note-text: var(--cs-color-danger, #8b272e);
+  --note-bg: var(--cs-color-danger-bg, #fff2f2);
+  --note-border: var(--cs-color-danger-border, #eac3c4);
+}
+.cs-notice__content { min-width: 0; flex: 1; }
+.cs-notice strong { display: block; font-size: var(--cs-text-sm, .875rem); font-weight: 785; line-height: 1.45; }
+.cs-notice p { margin: .3rem 0 0; font-size: var(--cs-text-sm, .875rem); line-height: 1.6; overflow-wrap: anywhere; }
+@media (forced-colors: active) { .cs-notice { border: 2px solid CanvasText; } }

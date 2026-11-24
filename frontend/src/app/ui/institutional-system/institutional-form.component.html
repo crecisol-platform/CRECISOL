@@ -1,0 +1,14 @@
+<section class="cs-form" [attr.aria-labelledby]="formId() + '-heading'">
+  <div class="cs-form__header">
+    <h3 [id]="formId() + '-heading'">{{ heading() }}</h3>
+    @if (description()) {
+      <p [id]="formId() + '-description'">{{ description() }}</p>
+    }
+  </div>
+  <form [id]="formId()" [attr.aria-busy]="busy() ? 'true' : null"
+    [attr.novalidate]="validationMode() === 'host' ? '' : null"
+    [attr.aria-describedby]="description() ? formId() + '-description' : null"
+    (submit)="submit($event)">
+    <ng-content/>
+  </form>
+</section>

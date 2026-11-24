@@ -8,9 +8,9 @@ export async function verifyProfile({ browser, api, check, confidential, owner, 
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await page.getByLabel('Código de tu aplicación de autenticación').fill(owner.backups.pop());
   await page.getByRole('button', { name: 'Verificar', exact: true }).click();
-  await page.getByRole('heading', { name: 'Sesión verificada' }).waitFor();
+  await page.getByRole('heading', { name: 'Tu sesión actual', exact: true }).waitFor();
   const token = (await context.cookies()).find(c => c.name === '__Host-crecisol-c05').value; confidential.push(token);
-  await page.getByRole('link', { name: 'Mi perfil en esta empresa', exact: true }).click();
+  await page.getByRole('link', { name: 'Mi perfil', exact: true }).click();
   await page.getByRole('button', { name: 'Editar perfil de mi empresa', exact: true }).click();
   const hostileName = '<img src=x onerror=alert("profile-xss")>';
   await page.getByLabel('Nombre visible en esta empresa', { exact: true }).fill(hostileName);
@@ -24,7 +24,7 @@ export async function verifyProfile({ browser, api, check, confidential, owner, 
   await page.getByRole('dialog', { name: 'Editar perfil de mi empresa', exact: true })
     .getByRole('button', { name: 'Cerrar ventana', exact: true }).click();
   await page.locator('dialog.cs-modal:modal').waitFor({ state: 'hidden' });
-  await page.getByRole('button', { name: 'Actualizar foto de perfil', exact: true }).click();
+  await page.getByRole('button', { name: 'Añadir foto de perfil', exact: true }).click();
   const pngBase64 = await page.evaluate(() => {
     const canvas = document.createElement('canvas'); canvas.width = 8; canvas.height = 8;
     const ctx = canvas.getContext('2d'); ctx.fillStyle = '#3366aa'; ctx.fillRect(0, 0, 8, 8);

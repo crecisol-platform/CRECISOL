@@ -27,7 +27,8 @@ export async function verifyAssisted({ browser, api, platform, check, confidenti
   for (const operator of operators) {
     const context = await browser.newContext(); const operatorPage = await context.newPage(); contexts.push(context); pages.push(operatorPage);
     await operatorPage.goto(`http://127.0.0.1:${uiPort}/cuenta?vista=operadores`);
-    await operatorPage.getByText('Personal autorizado de identidad CRECISOL', { exact: true }).click();
+    // The operator deep link now lands directly in the independent platform realm.
+    await operatorPage.getByRole('heading', { name: 'Identidad de plataforma', level: 1, exact: true }).waitFor();
     await operatorPage.getByLabel('Correo del operador de identidad').fill(operator.mailbox);
     await operatorPage.getByLabel('Contraseña del operador', { exact: true }).fill(operator.password);
     await operatorPage.getByRole('button', { name: 'Acceder a identidad de plataforma', exact: true }).click();
@@ -44,10 +45,12 @@ export async function verifyAssisted({ browser, api, platform, check, confidenti
     const operatorPage = pages[index], operator = operators[index];
     await operatorPage.getByRole('button', { name: 'Revisar identidad del titular', exact: true }).click();
     await operatorPage.getByLabel('Caso a revisar', { exact: true }).fill(caseId);
+    await operatorPage.getByLabel('Decisión de identidad', { exact: true }).selectOption('approve');
     await operatorPage.getByLabel('SHA-256 del expediente de verificación').fill(createHash('sha256').update(`FICTIONAL independent identity evidence ${index}`).digest('hex'));
     await operatorPage.getByLabel('Motivo de la revisión de identidad').fill('Independent fictional verification, no real personal documents');
     await operatorPage.getByLabel('Código MFA fresco para revisar').fill(await nextCode(operator.seed));
     await operatorPage.getByLabel('Verifiqué la identidad de forma independiente; no usé preguntas personales ni solo un correo nuevo', { exact: true }).check();
+    await operatorPage.getByLabel('Confirmo la decisión administrativa y que mi revisión quedará registrada de forma permanente', { exact: true }).check();
     const reviewed = operatorPage.waitForResponse(r => r.url().endsWith('/platform-identity/review'));
     await operatorPage.getByRole('button', { name: 'Registrar revisión de identidad', exact: true }).click();
     check((await reviewed).status() === 200, 'platform reviewer commits a fresh-MFA identity attestation and evidence digest');

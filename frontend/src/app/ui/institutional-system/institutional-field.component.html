@@ -1,0 +1,9 @@
+<div class="cs-field" [class.cs-field--invalid]="!!error()">
+  <label [for]="controlId()">
+    <span>{{ label() }}</span>
+    @if (required()) { <span class="cs-field__required">(obligatorio)</span> }
+  </label>
+  @if (hint()) { <p [id]="controlId() + '-hint'" class="cs-field__hint">{{ hint() }}</p> }
+  <div class="cs-field__control"><ng-content/></div>
+  @if (error()) { <p [id]="controlId() + '-error'" class="cs-field__error" role="alert">{{ error() }}</p> }
+</div>

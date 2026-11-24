@@ -1,0 +1,135 @@
+/* CRECISOL C05 / F02: presentation-only design tokens.
+ * No fonts, icons, styles or imagery fetched from external origins.
+ * Platform branding may influence DECORATION only; permission and CTA contrast
+ * never depend on a user-supplied or tenant-supplied color.
+ */
+:root {
+  --cs-font-system: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --cs-font-humanist: "Trebuchet MS", "Segoe UI", sans-serif;
+  --cs-font-editorial: Georgia, Cambria, "Times New Roman", serif;
+  --cs-font-body: var(--cs-font-system);
+  --cs-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --cs-text-xs: .76rem;
+  --cs-text-sm: .875rem;
+  --cs-text-base: 1rem;
+  --cs-text-lg: 1.15rem;
+  --cs-text-heading: clamp(1.5rem, 2.5vw, 2.15rem);
+  --cs-line-tight: 1.24;
+  --cs-line-body: 1.6;
+  --cs-letter-heading: -.035em;
+  --cs-space-1: .25rem;
+  --cs-space-2: .5rem;
+  --cs-space-3: .75rem;
+  --cs-space-4: 1rem;
+  --cs-space-5: 1.25rem;
+  --cs-space-6: 1.5rem;
+  --cs-space-8: 2rem;
+  --cs-space-10: 2.5rem;
+  --cs-space-12: 3rem;
+  --cs-radius-xs: .45rem;
+  --cs-radius-sm: .65rem;
+  --cs-radius-md: .85rem;
+  --cs-radius-lg: 1.15rem;
+  --cs-radius-xl: 1.5rem;
+  --cs-radius-pill: 999px;
+  --cs-border-width: 1px;
+  --cs-hit-target: 2.75rem;
+  --cs-color-canvas: #f2f6fb;
+  --cs-color-surface: #ffffff;
+  --cs-color-surface-soft: #f5f9fd;
+  --cs-color-surface-raised: #fff;
+  --cs-color-text: #172d46;
+  --cs-color-text-strong: #102e4c;
+  --cs-color-muted: #455f79;
+  --cs-color-subtle: #597189;
+  --cs-color-border: #d3e1ee;
+  --cs-color-border-strong: #9bb5cb;
+  --cs-color-accent-soft: #eaf3fb;
+  --cs-color-accent-text: #174b77;
+  --cs-color-action: #103f75;
+  --cs-color-action-hover: #0b315c;
+  --cs-color-action-text: #ffffff;
+  --cs-color-focus: #126aaf;
+  --cs-color-success: #1d6048;
+  --cs-color-success-bg: #ecf8f2;
+  --cs-color-success-border: #a4d3bd;
+  --cs-color-warning: #724513;
+  --cs-color-warning-bg: #fff7e9;
+  --cs-color-warning-border: #e3c99d;
+  --cs-color-danger: #8b272e;
+  --cs-color-danger-bg: #fff2f2;
+  --cs-color-danger-border: #eac3c4;
+  --cs-color-info: #184e7e;
+  --cs-color-info-bg: #eef6fd;
+  --cs-color-info-border: #b9d6ec;
+  --cs-brand-primary: #0d468b; /* decoration only */
+  --cs-brand-accent: #1878c8;  /* decoration only */
+  --cs-shadow-card: 0 12px 38px rgb(15 47 87 / .075);
+  --cs-shadow-raised: 0 22px 55px rgb(12 37 68 / .13);
+  --cs-shadow-overlay: 0 28px 92px rgb(10 30 55 / .24);
+  --cs-motion-fast: 140ms;
+  --cs-motion-standard: 220ms;
+  --cs-motion-ease: cubic-bezier(.2, .75, .2, 1);
+}
+[data-cs-theme="institutional"] {
+  font-family: var(--cs-font-body);
+  color: var(--cs-color-text);
+  min-width: 0;
+}
+[data-cs-theme="institutional"][data-cs-font="humanist"] {
+  --cs-font-body: var(--cs-font-humanist);
+}
+[data-cs-theme="institutional"][data-cs-font="editorial"] {
+  --cs-font-body: var(--cs-font-editorial);
+}
+[data-cs-theme="institutional"][data-cs-icon="solid"] {
+  --cs-icon-stroke: 2.5;
+}
+[data-cs-theme="institutional"] :where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid var(--cs-color-focus);
+  outline-offset: 3px;
+}
+[data-cs-theme="institutional"] :where(.cs-ui-control) {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  padding: .7rem .85rem;
+  color: var(--cs-color-text);
+  background: var(--cs-color-surface);
+  border: 1px solid var(--cs-color-border-strong);
+  border-radius: var(--cs-radius-sm);
+  font: inherit;
+  font-size: var(--cs-text-base);
+  line-height: 1.45;
+  transition: border-color var(--cs-motion-fast) var(--cs-motion-ease),
+    box-shadow var(--cs-motion-fast) var(--cs-motion-ease);
+}
+[data-cs-theme="institutional"] :where(textarea.cs-ui-control) {
+  min-height: 6.75rem;
+  resize: vertical;
+}
+[data-cs-theme="institutional"] :where(.cs-ui-control:hover:not(:disabled)) {
+  border-color: #477ea7;
+}
+[data-cs-theme="institutional"] :where(.cs-ui-control[aria-invalid="true"]) {
+  border-color: var(--cs-color-danger);
+}
+[data-cs-theme="institutional"] :where(.cs-ui-control:disabled) {
+  opacity: .62;
+  background: #eef2f6;
+  cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --cs-motion-fast: 0ms; --cs-motion-standard: 0ms; }
+}
+@media (forced-colors: active) {
+  [data-cs-theme="institutional"] :where(button, a, input, select, textarea):focus-visible {
+    outline: 3px solid Highlight;
+  }
+  [data-cs-theme="institutional"] :where(.cs-ui-control) {
+    border: 1px solid FieldText;
+    forced-color-adjust: auto;
+  }
+}

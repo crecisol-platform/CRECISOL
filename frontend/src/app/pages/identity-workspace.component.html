@@ -1,109 +1,240 @@
-<section aria-labelledby="session-heading">
-          <h2 id="session-heading">Sesión verificada</h2>
+<section class="identity-workspace" [attr.data-view]="view()">
+          <h2 id="session-heading">
+            @switch (view()) {
+              @case ('perfil') { Datos verificados }
+              @case ('llaves') { Tus dispositivos de acceso }
+              @case ('seguridad') { Cambios protegidos }
+              @case ('historial') { Cronología de seguridad }
+              @case ('administracion') { Solicitudes por revisar }
+              @default { Tu sesión actual }
+            }
+          </h2>
           @if (identity.recoveryCodes().length) {
             <aside aria-label="Códigos de respaldo MFA">
               <p>Guarda estos códigos fuera del navegador. Cada código sirve una sola vez y no volverá a mostrarse.</p>
-              <ul>@for (code of identity.recoveryCodes(); track code) { <li><code>{{ code }}</code></li> }</ul>
-              <button type="button" (click)="identity.recoveryCodes.set([])">Ya guardé mis códigos</button>
+              <ul class="cs-one-time-codes" aria-label="Códigos de respaldo de la cuenta">
+                @for (code of identity.recoveryCodes(); track code; let index = $index) {
+                  <li class="cs-one-time-codes__item">
+                    <span class="cs-one-time-codes__label">Código {{ index + 1 }}</span>
+                    <code class="cs-one-time-codes__value" tabindex="0">{{ code }}</code>
+                  </li>
+                }
+              </ul>
+              <button type="button" (click)="identity.hideRecoveryCodes()">Ya guardé mis códigos</button>
             </aside>
           }
-          <p>La autenticación no concede por sí sola autorización a recursos privados.</p>
-          @if (view() === 'perfil') {
-<section class="operator-readonly-panel" aria-label="Perfil de mi empresa"><h3>Mi perfil en esta empresa</h3>
-            <button type="button" [disabled]="busy()" (click)="loadProfileRequested.emit()">Consultar mi perfil</button>
-            @if (identity.profile(); as profile) {
-              <p aria-label="Nombre de mi perfil">{{ profile.displayName }}</p>
-              <p>{{ profile.language }} · {{ profile.timeZone }}</p>
+          <p class="identity-workspace__lead">
+            @switch (view()) {
+              @case ('perfil') { Tu perfil y preferencias pertenecen al contexto de esta empresa. }
+              @case ('llaves') { Revisa tus llaves antes de registrar o revocar un acceso. }
+              @case ('seguridad') { Elige una operación: cada cambio exige una verificación propia. }
+              @case ('historial') { Actividad reciente con resultados legibles y datos protegidos. }
+              @case ('administracion') { Consulta solicitudes solo dentro de tus permisos administrativos. }
+              @default { Revisa tus sesiones, caducidad y dispositivos autorizados. }
             }
-            @if (identity.photo()) { <img [src]="identity.photo()" width="64" height="64" alt="Mi foto de perfil en esta empresa"> }
-            
-            
-            
-          </section>
+          </p>
+          @if (view() === 'perfil') {
+<section class="operator-readonly-panel identity-profile" aria-label="Perfil de mi empresa">
+  <div class="identity-panel-heading">
+    <div>
+      <h3>Perfil de esta empresa</h3>
+      <p>Nombre y preferencias que puedes actualizar aquí.</p>
+    </div>
+    <button type="button" [disabled]="busy()" (click)="loadProfileRequested.emit()">Actualizar datos</button>
+  </div>
+  <div class="identity-profile-body">
+    @if (identity.photo()) {
+      <img class="identity-profile-avatar" [src]="identity.photo()" width="64" height="64" alt="Mi foto de perfil en esta empresa">
+    } @else if (identity.profile()) {
+      <span class="identity-profile-avatar identity-profile-avatar--empty" aria-hidden="true">{{ profileInitials() }}</span>
+    }
+    <div class="identity-profile-details">
+      @if (identity.profile(); as profile) {
+        <p class="identity-profile-name" aria-label="Nombre de mi perfil">{{ profile.displayName }}</p>
+        <dl class="identity-meta">
+          <div><dt>Idioma</dt><dd>{{ profileLanguage() }}</dd></div>
+          <div><dt>Zona horaria</dt><dd>{{ profileTimeZone() }}</dd></div>
+        </dl>
+      } @else {
+        <cs-ui-state kind="empty" heading="Perfil aún no consultado"
+          message="Consulta tu perfil para mostrar la información verificada."/>
+      }
+    </div>
+  </div>
+</section>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal11.open()">
     <span>Editar perfil de mi empresa</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal11 title="Editar perfil de mi empresa" description="Solo se actualiza el perfil del contexto empresarial autenticado."
+  <cs-institutional-modal #workspaceModal11 kind="form" title="Editar perfil de mi empresa" description="Solo se actualiza el perfil del contexto empresarial autenticado."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="securityActionRequested.emit({ event: $event, action: 'profile' })">
-              <label for="profile-name">Nombre visible en esta empresa</label><input id="profile-name" name="displayName" required maxlength="80" autocomplete="nickname">
-              <label for="profile-language">Idioma preferido</label><select id="profile-language" name="language"><option value="es-HN">Español de Honduras</option><option value="es">Español</option><option value="en">English</option></select>
-              <label for="profile-zone">Zona horaria de tu perfil</label><input id="profile-zone" name="timeZone" value="America/Tegucigalpa" required maxlength="64" autocomplete="off">
+    <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'profile' })">
+              <label for="profile-name">Nombre visible en esta empresa</label><input id="profile-name" name="displayName" [attr.value]="identity.profile()?.displayName ?? ''" required maxlength="80" autocomplete="nickname">
+              <label for="profile-language">Idioma preferido</label><select id="profile-language" name="language">
+                <option value="es-HN" [attr.selected]="(identity.profile()?.language ?? 'es-HN') === 'es-HN' ? '' : null">Español de Honduras</option>
+                <option value="es" [attr.selected]="identity.profile()?.language === 'es' ? '' : null">Español</option>
+                <option value="en" [attr.selected]="identity.profile()?.language === 'en' ? '' : null">English</option>
+              </select>
+              <label for="profile-zone">Zona horaria de tu perfil</label><input id="profile-zone" name="timeZone" [attr.value]="identity.profile()?.timeZone ?? 'America/Tegucigalpa'" required maxlength="64" autocomplete="off">
               <button [disabled]="busy()">Guardar mi perfil</button>
             </form>
   </cs-institutional-modal>
 </div>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal12.open()">
-    <span>Actualizar foto de perfil</span><span aria-hidden="true">›</span>
+    <span>{{ identity.photo() ? 'Actualizar foto de perfil' : 'Añadir foto de perfil' }}</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal12 title="Actualizar foto de perfil" description="Foto cuadrada de hasta 2 MB; sin metadatos del archivo original."
-    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="uploadPhotoRequested.emit($event)">
-              <label for="profile-photo">Foto de perfil (PNG, JPEG o WebP, hasta 2 MB)</label><input id="profile-photo" name="photo" type="file" accept="image/png,image/jpeg,image/webp" required>
-              <p>Se guarda una miniatura cuadrada sin los metadatos del original.</p>
-              <button [disabled]="busy()">Guardar mi foto de perfil</button>
-            </form>
+  <cs-institutional-modal #workspaceModal12 kind="form" title="Actualizar foto de perfil" description="Foto cuadrada de hasta 2 MB; sin metadatos del archivo original."
+    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true"
+    (dismissed)="photoFileName.set(''); photoFileError.set('')">
+    <form csFieldFeedback (reset)="photoFileName.set(''); photoFileError.set('')"
+      (submit)="uploadPhotoRequested.emit($event)">
+      <label for="profile-photo">Foto de perfil (PNG, JPEG o WebP, hasta 2 MB)</label>
+      <div class="cs-photo-picker">
+        <span aria-hidden="true">Seleccionar imagen del dispositivo</span>
+        <input class="cs-photo-picker__input" id="profile-photo" name="photo" type="file"
+          accept="image/png,image/jpeg,image/webp" required (change)="onPhotoFileChange($event)">
+      </div>
+      <output class="cs-photo-picker__filename" for="profile-photo" aria-live="polite">{{ photoFileName() || 'Ninguna imagen seleccionada' }}</output>
+      @if (photoFileError()) { <p class="cs-photo-picker__error" role="alert">{{ photoFileError() }}</p> }
+      <p>Se guarda una miniatura cuadrada sin los metadatos del original.</p>
+      <button [disabled]="busy() || !photoFileName() || !!photoFileError()">Guardar mi foto de perfil</button>
+    </form>
   </cs-institutional-modal>
 </div>
+@if (identity.photo()) {
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal13.open()">
     <span>Eliminar foto de perfil</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal13 title="Eliminar foto de perfil"
+  <cs-institutional-modal #workspaceModal13 kind="destructive" warning="El archivo de imagen dejará de estar asociado a tu perfil. Comprueba que quieres eliminarlo." title="Eliminar foto de perfil"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <p>Esta acción elimina únicamente la foto visible de tu perfil en este contexto.</p>
-<button type="button" [disabled]="busy()" (click)="removePhotoRequested.emit()">Confirmar eliminación de mi foto</button>
+<button type="button" data-modal-action [disabled]="busy()" (click)="removePhotoRequested.emit()">Confirmar eliminación de mi foto</button>
   </cs-institutional-modal>
 </div>
-          <section class="operator-readonly-panel" aria-label="Historial de seguridad"><h3>Mi historial de seguridad</h3>
-            <button type="button" [disabled]="busy()" (click)="securityEventsRequested.emit()">Consultar mis eventos</button>
-            <ul>@for (event of identity.securityEvents(); track $index) { <li>{{ event.atUtc }} · {{ event.action }} · resultado {{ event.outcome }}</li> }</ul>
-          </section>
+}
+
+          
+} @else if (view() === 'historial') {
+<section class="identity-history-shell" aria-label="Actividad de la cuenta">
+  <section class="operator-readonly-panel identity-activity" aria-label="Historial de seguridad">
+  <div class="identity-panel-heading">
+    <div>
+      <h3>Eventos recientes</h3>
+      <p>Resultados de las operaciones registradas en tu cuenta.</p>
+    </div>
+    <button type="button" [disabled]="busy()" (click)="requestHistory()">Actualizar historial</button>
+  </div>
+  <div class="identity-history-filters">
+    <label for="security-history-filter">Mostrar eventos</label>
+    <select id="security-history-filter" [value]="historyFilter()"
+      (change)="setHistoryFilter($any($event.target).value)">
+      <option value="all">Toda la actividad</option>
+      <option value="success">Acciones completadas</option>
+      <option value="attention">Actividad por revisar</option>
+    </select>
+  </div>
+  @if (securityEventRows().length) {
+    <ol class="identity-activity-list">
+      @for (event of securityEventRows(); track $index) {
+        <li class="identity-activity-item">
+          <span class="identity-activity-mark" [class.identity-activity-mark--pending]="event.outcome !== 1" aria-hidden="true"></span>
+          <div class="identity-activity-copy">
+            <strong>{{ event.actionLabel }}</strong>
+            <time [attr.datetime]="event.atUtc">{{ event.dateLabel }}</time>
+          </div>
+          <span class="identity-activity-status" [class.identity-activity-status--warning]="event.outcome !== 1">{{ event.outcomeLabel }}</span>
+        </li>
+      }
+    </ol>
+    @if (identity.securityEvents().length > 8) {
+      <button type="button" class="identity-more-action" [attr.aria-expanded]="showAllEvents()"
+        (click)="showAllEvents.set(!showAllEvents())">
+        {{ showAllEvents() ? 'Mostrar solo los recientes' : 'Mostrar hasta 50 eventos' }}
+      </button>
+    }
+  } @else {
+    <cs-ui-state kind="empty" heading="Sin actividad disponible"
+          message="No hay eventos para el filtro elegido. Actualiza el historial o selecciona otra categoría."/>
+  }
+</section>
+</section>
           
 } @else if (view() === 'llaves') {
-<section class="operator-readonly-panel" aria-label="Llaves de acceso"><h3>Mis llaves registradas</h3>
-            <p>Registra una llave con verificación de usuario. Se necesita un código MFA o de respaldo para agregarla o revocarla.</p>
-            
-            <button type="button" [disabled]="busy() || identity.restoring()" (click)="passkeyListRequested.emit()">Consultar llaves</button>
-            @for (key of identity.passkeys(); track key.id) { <p>Llave {{ key.id }} · registrada {{ key.createdAtUtc }}</p> }
-            
-          </section>
+<section class="operator-readonly-panel identity-key-panel" aria-label="Llaves de acceso">
+  <div class="identity-panel-heading">
+    <div>
+      <h3>Llaves disponibles</h3>
+      <p>Consulta métodos activos y revócalos con verificación.</p>
+    </div>
+    <button type="button" [disabled]="busy() || identity.restoring()" (click)="passkeyListRequested.emit()">Actualizar llaves</button>
+  </div>
+  @if (passkeyRows().length) {
+    <ul class="identity-key-list">
+      @for (key of passkeyRows(); track key.id) {
+        <li class="identity-key-item">
+          <span class="identity-key-symbol" aria-hidden="true"></span>
+          <div>
+            <strong>Llave de acceso</strong>
+            <p>{{ key.referenceLabel }} · Registrada {{ key.registrationLabel }}</p>
+          </div>
+          <button type="button" class="identity-key-revoke"
+            [disabled]="busy() || identity.restoring()"
+            (click)="selectedPasskeyId.set(key.id); workspaceModal22.open()">
+            Revocar esta llave
+          </button>
+        </li>
+      }
+    </ul>
+  } @else {
+    <cs-ui-state kind="empty" heading="Ninguna llave visible"
+          message="Actualiza para ver tus llaves o registra una nueva con verificación."/>
+  }
+</section>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal21.open()">
-    <span>Llaves de acceso</span><span aria-hidden="true">›</span>
+    <span>Registrar nueva llave de acceso</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal21 title="Registrar nueva llave de acceso" [closeOnSuccess]="true" description="Requiere MFA vigente y verificación de usuario en el navegador."
+  <cs-institutional-modal #workspaceModal21 kind="form" title="Registrar nueva llave de acceso" [closeOnSuccess]="true" description="Requiere MFA vigente y verificación de usuario en el navegador."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="securityActionRequested.emit({ event: $event, action: 'passkey-add' })">
+    <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'passkey-add' })">
               <label for="passkey-code">Código MFA para registrar llave</label><input id="passkey-code" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
               <button [disabled]="busy() || identity.restoring()">Registrar llave de acceso</button>
             </form>
   </cs-institutional-modal>
 </div>
-<div class="institutional-task">
-  <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal22.open()">
-    <span>Revocar llave de acceso</span><span aria-hidden="true">›</span>
-  </button>
-  <cs-institutional-modal #workspaceModal22 title="Revocar llave de acceso" description="Revocar una llave no debe afectar cuentas de otras empresas."
-    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="securityActionRequested.emit({ event: $event, action: 'passkey-revoke' })">
-              <label for="passkey-id">Identificador de llave a revocar</label><input id="passkey-id" name="factorId" required maxlength="36">
+<cs-institutional-modal #workspaceModal22 kind="destructive" warning="La llave de acceso seleccionada perderá validez. Verifica la referencia antes de confirmar." title="Revocar llave de acceso" description="Revocar una llave no debe afectar cuentas de otras empresas."
+    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true"
+    (dismissed)="selectedPasskeyId.set('')">
+    <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'passkey-revoke' })">
+              <label for="passkey-id">Llave de acceso a revocar</label>
+              <select id="passkey-id" name="factorId" required [value]="selectedPasskeyId()"
+                (change)="selectedPasskeyId.set($any($event.target).value)">
+                <option value="">Selecciona una llave registrada</option>
+                @for (key of passkeyRows(); track key.id) {
+                  <option [value]="key.id">{{ key.referenceLabel }}</option>
+                }
+              </select>
+              @if (!passkeyRows().length) { <p class="identity-field-help">Consulta primero las llaves registradas para seleccionar la correcta.</p> }
               <label for="passkey-revoke-code">Código MFA para revocar llave</label><input id="passkey-revoke-code" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
               <button [disabled]="busy() || identity.restoring()">Revocar llave de acceso</button>
             </form>
   </cs-institutional-modal>
-</div>
+
           
 } @else if (view() === 'seguridad') {
+<details class="identity-security-intro identity-policy-disclosure">
+  <summary>Protección de tu identidad</summary>
+  <p>Cada cambio exige su propia verificación. Abrir una opción nunca actualiza automáticamente tus credenciales.</p>
+</details>
 <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal31.open()">
-    <span>Cambiar contraseña</span><span aria-hidden="true">›</span>
+    <span>Cambiar contraseña<small class="identity-task-caption" aria-hidden="true">Protege tu acceso con una contraseña renovada</small></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal31 title="Cambiar contraseña"
+  <cs-institutional-modal #workspaceModal31 kind="form" title="Cambiar contraseña"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="securityActionRequested.emit({ event: $event, action: 'password' })">
+    <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'password' })">
               <label for="current-password">Contraseña actual</label><input id="current-password" name="currentPassword" type="password" autocomplete="current-password" required maxlength="128">
               <label for="new-password">Nueva contraseña</label><input id="new-password" name="newPassword" type="password" autocomplete="new-password" required minlength="15" maxlength="128">
               <label for="password-mfa">Código MFA para contraseña</label><input id="password-mfa" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
@@ -113,12 +244,12 @@
 </div>
           <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal32.open()">
-    <span>Reemplazar segundo factor</span><span aria-hidden="true">›</span>
+    <span>Reemplazar segundo factor<small class="identity-task-caption" aria-hidden="true">Necesitarás el método actual o un respaldo</small></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal32 title="Reemplazar segundo factor"
+  <cs-institutional-modal #workspaceModal32 kind="form" title="Reemplazar segundo factor"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <p>Requiere tu contraseña y el factor actual o un código de respaldo. Revoca los factores y sesiones anteriores.</p>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'factor' })">
+            <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'factor' })">
               <label for="factor-password">Contraseña para reemplazar MFA</label><input id="factor-password" name="currentPassword" type="password" autocomplete="current-password" required maxlength="128">
               <label for="factor-code">Código actual o respaldo MFA</label><input id="factor-code" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
               <button [disabled]="busy() || identity.restoring()">Reemplazar factor MFA</button>
@@ -127,66 +258,160 @@
 </div>
           <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal33.open()">
-    <span>Recuperar MFA con una llave de acceso</span><span aria-hidden="true">›</span>
+    <span>Recuperar MFA con una llave de acceso<small class="identity-task-caption" aria-hidden="true">Solo para recuperación con verificación adicional</small></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal33 title="Recuperación del segundo factor con llave"
+  <cs-institutional-modal #workspaceModal33 kind="form" title="Recuperación del segundo factor con llave"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <p>Requiere haber entrado con una llave de acceso en los últimos dos minutos y un token del correo verificado. Revoca todos los autenticadores y exige configurar MFA de nuevo.</p>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'recovery-request' })">
+            <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'recovery-request' })">
               <label for="passkey-recovery-mail">Correo verificado para recuperar MFA</label><input id="passkey-recovery-mail" name="mailbox" type="email" required maxlength="254" autocomplete="email">
               <button [disabled]="busy()">Pedir token para recuperar MFA</button>
             </form>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'passkey-recovery' })">
+            <details class="identity-security-step">
+              <summary>Ya tengo el token de recuperación</summary>
+              <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'passkey-recovery' })">
               <label for="passkey-recovery-token">Token de correo para recuperar MFA</label><input id="passkey-recovery-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
               <label for="passkey-recovery-password">Nueva contraseña tras recuperar MFA</label><input id="passkey-recovery-password" name="newPassword" type="password" required minlength="15" maxlength="128" autocomplete="new-password">
               <button [disabled]="busy()">Recuperar autenticadores con llave</button>
-            </form>
+              </form>
+            </details>
   </cs-institutional-modal>
 </div>
           <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal34.open()">
-    <span>Cambiar correo</span><span aria-hidden="true">›</span>
+    <span>Cambiar correo<small class="identity-task-caption" aria-hidden="true">Verifica tu dirección nueva antes de activarla</small></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal34 title="Cambiar correo"
+  <cs-institutional-modal #workspaceModal34 kind="form" title="Cambiar correo"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="securityActionRequested.emit({ event: $event, action: 'mailbox-request' })">
+    <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'mailbox-request' })">
               <label for="new-mailbox">Nuevo correo</label><input id="new-mailbox" name="mailbox" type="email" autocomplete="email" required maxlength="254">
               <label for="mailbox-mfa">Código MFA para solicitar correo</label><input id="mailbox-mfa" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
               <button [disabled]="busy() || identity.restoring()">Solicitar cambio de correo</button>
             </form>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'mailbox-complete' })">
+            <details class="identity-security-step">
+              <summary>Ya tengo el token del nuevo correo</summary>
+              <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'mailbox-complete' })">
               <label for="mailbox-token">Token del nuevo correo</label><input id="mailbox-token" name="token" autocomplete="off" required pattern="[0-9a-fA-F]{64}">
               <label for="mailbox-confirm-mfa">Código MFA para confirmar correo</label><input id="mailbox-confirm-mfa" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
               <button [disabled]="busy() || identity.restoring()">Confirmar cambio de correo</button>
-            </form>
+              </form>
+            </details>
   </cs-institutional-modal>
 </div>
           
 } @else if (view() === 'administracion') {
-<div class="institutional-task">
-  <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal35.open()">
-    <span>Revisar membresía con permiso administrativo</span><span aria-hidden="true">›</span>
-  </button>
-  <cs-institutional-modal #workspaceModal35 title="Revisar membresía con permiso administrativo"
-    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <p>Esta acción requiere autorización vigente del servidor. No concede permisos al solicitante.</p>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'membership' })">
-              <label for="membership-id">Membresía pendiente</label><input id="membership-id" name="membershipId" required maxlength="36">
-              <label for="membership-decision">Decisión</label><select id="membership-decision" name="decision"><option value="approve">Aprobar</option><option value="reject">Rechazar</option></select>
-              <label for="membership-reason">Motivo</label><input id="membership-reason" name="reason" required maxlength="240">
-              <label for="membership-code">Código MFA del aprobador</label><input id="membership-code" name="code" autocomplete="one-time-code" required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
-              <button [disabled]="busy() || identity.restoring()">Registrar decisión</button>
-            </form>
+  <cs-institutional-modal #workspaceModal35 kind="destructive" warning="La decisión es permanente, solo afecta esta membresía pendiente y no puede repetirse."
+    title="Revisar membresía con permiso administrativo"
+    description="Selecciona una solicitud y confirma con MFA. El servidor verifica negocio y permisos."
+    [busy]="busy()" [feedback]="feedback()" [error]="error()"
+    [wide]="true" (dismissed)="selectedMembershipId.set('')">
+     <form class="cs-membership-review" csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'membership' })">
+      <div class="cs-membership-field cs-membership-field--request">
+        <label for="membership-id">Solicitud pendiente seleccionada</label>
+        <select id="membership-id" name="membershipId" required [value]="selectedMembershipId()"
+          (change)="selectedMembershipId.set($any($event.target).value)">
+          <option value="" selected disabled>Selecciona una solicitud pendiente</option>
+          @for (request of pendingRows(); track request.id) {
+            <option [value]="request.id">{{ request.mailboxHint }}</option>
+          }
+        </select>
+        @for (request of pendingRows(); track request.id) {
+          @if (request.id === selectedMembershipId()) {
+            <p class="identity-field-help">Expediente seleccionado · {{ request.referenceLabel }}</p>
+          }
+        }
+        <p class="identity-field-help">La referencia se envía al servidor; no necesitas copiarla.</p>
+      </div>
+      <div class="cs-membership-field">
+        <label for="membership-decision">Decisión</label>
+        <select id="membership-decision" name="decision" required>
+          <option value="" selected disabled>Selecciona una decisión</option>
+          <option value="approve">Aprobar como miembro básico</option>
+          <option value="reject">Rechazar solicitud</option>
+        </select>
+      </div>
+      <div class="cs-membership-field">
+        <label for="membership-reason">Motivo de la decisión</label>
+        <input id="membership-reason" name="reason" required minlength="8" maxlength="240" autocomplete="off">
+      </div>
+      <div class="cs-membership-field">
+        <label for="membership-code">Código MFA del aprobador</label>
+        <input id="membership-code" name="code" autocomplete="one-time-code"
+          required maxlength="32" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
+      </div>
+      <label class="identity-approval-confirm">
+        <input type="checkbox" name="confirmed" required>
+        Revisé la solicitud y confirmo que esta es la decisión que deseo registrar.
+      </label>
+      <button [disabled]="busy() || identity.restoring()">Registrar decisión</button>
+    </form>
   </cs-institutional-modal>
-</div>
-          <div class="institutional-task">
+
+  <section class="identity-approval-queue" aria-label="Solicitudes de membresía pendientes">
+    <div class="identity-panel-heading">
+      <div>
+        <h3>Bandeja de solicitudes</h3>
+        <p>Verás solo las solicitudes autorizadas, con el correo protegido.</p>
+      </div>
+      <button type="button" [disabled]="busy() || identity.restoring()"
+        (click)="pendingRequested.emit(false)">
+        {{ identity.pendingLoaded() ? 'Actualizar solicitudes' : 'Consultar solicitudes' }}
+      </button>
+    </div>
+
+    @if (identity.pendingDenied()) {
+      <cs-ui-state kind="error" heading="Consulta administrativa no autorizada"
+        message="Esta sesión no tiene la autorización necesaria para ver solicitudes. No se han conservado datos de expedientes en la pantalla."/>
+    } @else if (busy() && !identity.pendingLoaded()) {
+      <cs-ui-state kind="loading" heading="Consultando expedientes"
+        message="Se verifica tu permiso administrativo antes de mostrar solicitudes."/>
+    } @else if (identity.pendingLoaded()) {
+      @if (pendingRows().length) {
+        <ol class="identity-pending-list">
+          @for (request of pendingRows(); track request.id) {
+            <li class="identity-pending-card">
+              <div class="identity-pending-main">
+                <span class="identity-pending-state">Pendiente de decisión</span>
+                <strong>{{ request.mailboxHint }}</strong>
+                <p>Solicitud · {{ request.referenceLabel }} ·
+                  <time [attr.datetime]="request.requestedAtUtc">{{ request.requestedLabel }}</time>
+                </p>
+              </div>
+              <button type="button" [disabled]="busy() || identity.restoring()"
+                (click)="selectedMembershipId.set(request.id); workspaceModal35.open()">
+                Revisar solicitud
+              </button>
+            </li>
+          }
+        </ol>
+        @if (identity.pendingNextCursor()) {
+          <button type="button" class="identity-more-action" [disabled]="busy()"
+            (click)="pendingRequested.emit(true)">Mostrar siguientes solicitudes pendientes</button>
+        }
+      } @else {
+        <cs-ui-state kind="empty" heading="Sin solicitudes pendientes"
+          message="La consulta autorizada no devolvió solicitudes por revisar en esta empresa."/>
+      }
+    } @else {
+      <cs-ui-state kind="empty" heading="Bandeja de aprobación protegida"
+        message="Pulsa «Consultar solicitudes» para ver si hay decisiones por revisar."/>
+    }
+  </section>
+  <!-- Permission details remain keyboard-accessible after the task-first queue. -->
+  <details class="identity-approval-context identity-policy-disclosure">
+    <summary>Solo el servidor puede autorizar la consulta y las decisiones.</summary>
+    <p>El servidor verifica tus permisos y el ámbito de cada solicitud. Ningún expediente se acepta automáticamente; confirma la identidad antes de decidir.</p>
+  </details>
+
+
+<div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal36.open()">
-    <span>Invitar a una cuenta</span><span aria-hidden="true">›</span>
+    <span>Invitar a una cuenta<small class="identity-task-caption" aria-hidden="true">Invitación segura con caducidad</small></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal36 title="Invitar a una cuenta"
+  <cs-institutional-modal #workspaceModal36 kind="form" title="Invitar a una cuenta"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
     <p>Requiere permiso administrativo. La invitación solo permite aceptar una membresía básica en esta empresa y vence en diez minutos.</p>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'invitation-issue' })">
+            <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'invitation-issue' })">
               <label for="invite-recipient">Correo a invitar</label><input id="invite-recipient" name="mailbox" type="email" required maxlength="254" autocomplete="email">
               <label for="invite-actor-code">Código MFA para invitar</label><input id="invite-actor-code" name="code" required maxlength="32" autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
               <button [disabled]="busy() || identity.restoring()">Enviar invitación</button>
@@ -195,15 +420,70 @@
 </div>
           
 } @else {
-<button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRequested.emit('list')">Consultar sesiones</button>
-          <button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRequested.emit('rotate')">Rotar sesión</button>
-          <div class="institutional-task">
+          <div class="identity-session-actions">
+            <button type="button" [disabled]="busy() || identity.restoring()" (click)="requestSessions()">Actualizar dispositivos</button>
+            <button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRequested.emit('rotate')">Renovar sesión</button>
+          </div>
+          <cs-ui-card headingId="identity-session-card-heading" heading="Acceso verificado"
+            headingLevel="h3" eyebrow="SESIÓN DE CUENTA" tone="accent"
+            description="Cada recurso conserva sus permisos propios.">
+            <div class="identity-session-overview">
+              <div>
+                <span class="identity-session-overview__eyebrow">POLÍTICA DE INACTIVIDAD</span>
+                <strong>{{ identity.idleMinutes() }} minutos</strong>
+                <p>La inactividad caduca la sesión; las acciones autorizadas pueden renovar el plazo.</p>
+              </div>
+              <span class="identity-session-overview__status">Sesión verificada</span>
+            </div>
+          </cs-ui-card>
+          <section class="identity-device-region" aria-label="Sesiones de cuenta">
+            <div class="identity-panel-heading">
+              <div><h3>Dispositivos con sesión</h3><p>Revisa cuándo se usó cada sesión antes de revocarla.</p></div>
+            </div>
+            @if (sessionRows().length) {
+              <ul class="identity-device-list">
+                @for (session of sessionRows(); track session.id) {
+                  <li class="identity-device-card">
+                    <div class="identity-device-top">
+                      <span class="identity-device-icon" aria-hidden="true"></span>
+                      <div class="identity-device-title">
+                        <strong>{{ session.device }}</strong>
+                        <span>{{ session.factorLabel }} · {{ session.referenceLabel }}</span>
+                      </div>
+                    </div>
+                    <dl class="identity-meta identity-device-meta">
+                      <div><dt>Última actividad</dt><dd><time [attr.datetime]="session.lastSeenAtUtc">{{ session.lastActivityLabel }}</time></dd></div>
+                      <div><dt>Caducidad informada</dt><dd><time [attr.datetime]="session.expiresAtUtc">{{ session.expiryLabel }}</time></dd></div>
+                    </dl>
+                    <button type="button" class="identity-revoke" [disabled]="busy() || identity.restoring()"
+                      (click)="sessionRevocation.open()">Revocar esta sesión</button>
+                    <cs-institutional-modal #sessionRevocation kind="destructive" warning="Este dispositivo perderá el acceso de esa sesión. Confirma que reconoces la referencia." title="Revocar sesión"
+                      description="Esta operación cierra únicamente la sesión seleccionada; las demás no se modifican."
+                      [busy]="busy()" [feedback]="feedback()" [error]="error()">
+                      <p><strong>{{ session.device }}</strong> · {{ session.referenceLabel }}</p>
+                      <p>Última actividad: {{ session.lastActivityLabel }}</p>
+                      <button type="button" data-modal-action class="identity-danger-confirm" [disabled]="busy()" (click)="revokeRequested.emit(session.id)">Confirmar revocación</button>
+                    </cs-institutional-modal>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <cs-ui-state kind="empty" heading="Sin dispositivos visibles"
+          message="Actualiza dispositivos para consultar las sesiones asociadas a tu cuenta y revocar las que no reconozcas."/>
+            }
+          </section>
+          <details class="identity-summary-extras">
+            <summary>Gestiones adicionales de sesión
+              <span>Vincular navegadores, cerrar sesiones y consultar recursos autorizados</span>
+            </summary>
+            <div class="identity-summary-extras__actions">
+              <div class="institutional-task">
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal37.open()">
     <span>Revocar todas mis sesiones</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal37 title="Revocar todas mis sesiones"
+  <cs-institutional-modal #workspaceModal37 kind="destructive" warning="Se cerrarán todas tus sesiones de cuenta. Necesitarás volver a autenticarte." title="Revocar todas mis sesiones"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="securityActionRequested.emit({ event: $event, action: 'sessions-all' })">
+    <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'sessions-all' })">
               <label for="sessions-all-code">Código MFA para cerrar todas las sesiones</label><input id="sessions-all-code" name="code" autocomplete="one-time-code" required maxlength="32">
               <button [disabled]="busy()">Cerrar todas mis sesiones</button>
             </form>
@@ -213,43 +493,44 @@
   <button type="button" class="institutional-task__trigger" [disabled]="busy() || identity.restoring()" (click)="workspaceModal38.open()">
     <span>Aprobar otro navegador</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #workspaceModal38 title="Aprobar otro navegador"
+  <cs-institutional-modal #workspaceModal38 kind="destructive" warning="Abrirás otra sesión: compara la huella en el navegador solicitante; nunca aceptes códigos enviados por terceros." title="Aprobar otro navegador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <p>Autoriza solo un navegador que tú controles. Compara la huella con la pantalla que inició la solicitud; no apruebes códigos que te envíe otra persona.</p>
-            <form (submit)="securityActionRequested.emit({ event: $event, action: 'pairing-approve' })">
-              <label for="pair-token">Solicitud del navegador nuevo</label><input id="pair-token" name="token" [value]="incomingPairToken()" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
-              <label for="pair-fingerprint">Huella del navegador nuevo</label><input id="pair-fingerprint" name="fingerprint" [value]="incomingPairFingerprint()" required pattern="[0-9A-F]{12}" autocomplete="off">
-              <label for="pair-code">Código MFA para aprobar navegador</label><input id="pair-code" name="code" required maxlength="32" autocomplete="one-time-code">
-              <label><input name="confirmed" type="checkbox" required> Comparé la huella y autorizo este navegador</label>
+             <form class="cs-browser-approval" csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'pairing-approve' })">
+              <div class="cs-browser-field cs-browser-field--token">
+                <label for="pair-token">Solicitud del navegador nuevo</label>
+                <input id="pair-token" name="token" [value]="incomingPairToken()" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
+              </div>
+              <div class="cs-browser-field">
+                <label for="pair-fingerprint">Huella del navegador nuevo</label>
+                <input id="pair-fingerprint" name="fingerprint" [value]="incomingPairFingerprint()" required pattern="[0-9A-F]{12}" autocomplete="off">
+              </div>
+              <div class="cs-browser-field">
+                <label for="pair-code">Código MFA para aprobar navegador</label>
+                <input id="pair-code" name="code" required maxlength="32" autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
+              </div>
+              <label class="cs-browser-confirm"><input name="confirmed" type="checkbox" required> Comparé la huella y autorizo este navegador</label>
               <button [disabled]="busy()">Aprobar vinculación</button>
             </form>
   </cs-institutional-modal>
 </div>
-          @for (session of identity.sessions(); track session.id) {
-            <p>Sesión {{ session.id }} · {{ session.device }} · {{ session.factor }} · última actividad UTC {{ session.lastSeenAtUtc }} · vence {{ session.expiresAtUtc }}</p>
-            <button type="button" [disabled]="busy() || identity.restoring()" (click)="sessionRevocation.open()">Revocar sesión {{ session.id }}</button>
-            <cs-institutional-modal #sessionRevocation title="Revocar sesión" description="Se revoca solo este dispositivo; los demás no se modifican."
-              [busy]="busy()" [feedback]="feedback()" [error]="error()">
-              <p>{{ session.device }} · {{ session.factor }} · última actividad UTC {{ session.lastSeenAtUtc }}</p>
-              <button type="button" [disabled]="busy()" (click)="revokeRequested.emit(session.id)">Confirmar revocación</button>
-            </cs-institutional-modal>
-          }
-          <div class="institutional-task">
+              <div class="institutional-task">
   <button type="button" class="institutional-task__trigger"
     [disabled]="busy() || identity.restoring()" (click)="privateAccessModal.open()">
     <span>Comprobar un acceso privado</span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #privateAccessModal title="Consulta segura de recurso"
+  <cs-institutional-modal #privateAccessModal kind="simple" title="Consulta segura de recurso"
     description="Esta comprobación solo devuelve recursos autorizados en la empresa y sucursal verificadas por el servidor."
     [busy]="busy()" [feedback]="feedback()" [error]="error()"
     [closeOnSuccess]="true" [wide]="true">
-    <form (submit)="securityActionRequested.emit({ event: $event, action: 'private' })">
+    <form csFieldFeedback (submit)="securityActionRequested.emit({ event: $event, action: 'private' })">
             <label for="private-branch">Sucursal del recurso</label><input id="private-branch" name="branchId" required maxlength="36">
             <label for="private-resource">Identificador del recurso</label><input id="private-resource" name="resourceId" required maxlength="36">
             <button [disabled]="busy() || identity.restoring()">Consultar recurso autorizado</button>
           </form>
   </cs-institutional-modal>
 </div>
+            </div>
+          </details>
           @if (identity.privateReference()) { <p aria-label="Referencia privada">{{ identity.privateReference() }}</p> }
           
 }

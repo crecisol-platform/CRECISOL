@@ -1,10 +1,31 @@
-<div class="institutional-task">
-  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog31.open()">
-    <span>Cambiar contraseña de operador</span><span aria-hidden="true">›</span>
+<section class="operator-workspace operator-workspace--seguridad" aria-label="Seguridad del operador">
+  <header class="operator-section-head">
+    <div><span class="operator-kicker">PROTECCIÓN / CREDENCIALES</span>
+      <h2>Seguridad de plataforma</h2>
+      <p>Controla credenciales, MFA y caducidad de las sesiones de plataforma.</p>
+    </div>
+  </header>
+  <details class="operator-scope-note operator-scope-details">
+    <summary>Ver controles de seguridad</summary>
+    <p>Los cambios de credenciales y sesiones exigen la comprobación del servidor y, cuando corresponde, segundo factor reciente. Nunca se transfieren permisos de una empresa al operador.</p>
+  </details>
+  <section class="operator-card operator-card--quiet operator-card--policy" aria-label="Política vigente de inactividad">
+    <div class="operator-card__header"><h3>Política de sesión</h3><span class="operator-tag">Control central</span></div>
+    @if (platform.sessionPolicy(); as policy) {
+      <p>Plazo vigente: <strong>{{ policy.idleMinutes }} minutos sin actividad</strong>.</p>
+      <p>{{ policy.canManage ? 'Puedes solicitar un ajuste autorizado con MFA.' : 'Solo el administrador habilitado puede modificar esta configuración.' }}</p>
+    } @else {
+      <p>Consulta Seguridad para recuperar el valor vigente de la API. No se supone una configuración local como verdadera.</p>
+    }
+  </section>
+  <div class="operator-grid operator-security-actions" aria-label="Acciones de protección">
+    <div class="institutional-task operator-task--credential">
+  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog31.open()" aria-label="Cambiar contraseña de operador" aria-describedby="operator-password-hint">
+    <span>Cambiar contraseña de operador<span id="operator-password-hint" class="operator-task-note">Requiere contraseña actual y MFA; revoca las sesiones previas.</span></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #opDialog31 title="Cambiar contraseña de operador"
+  <cs-institutional-modal #opDialog31 kind="form" title="Cambiar contraseña de operador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="actionRequested.emit({ event: $event, action: 'password' })">
+    <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'password' })">
             <label for="operator-current-password">Contraseña actual del operador</label><input id="operator-current-password" name="currentPassword" type="password" required maxlength="128" autocomplete="current-password">
             <label for="operator-new-password">Nueva contraseña de operador</label><input id="operator-new-password" name="newPassword" type="password" required minlength="15" maxlength="128" autocomplete="new-password">
             <label for="operator-password-code">Código MFA para cambiar contraseña de operador</label><input id="operator-password-code" name="code" required maxlength="32" autocomplete="one-time-code">
@@ -12,41 +33,93 @@
           </form>
   </cs-institutional-modal>
 </div>
-        <div class="institutional-task">
-  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog32.open()">
-    <span>Cambiar correo de operador</span><span aria-hidden="true">›</span>
+        <div class="institutional-task operator-task--credential">
+  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog32.open()" aria-label="Cambiar correo de operador" aria-describedby="operator-mailbox-hint">
+    <span>Cambiar correo de operador<span id="operator-mailbox-hint" class="operator-task-note">Confirma el nuevo correo y tu segundo factor.</span></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #opDialog32 title="Cambiar correo de operador"
+  <cs-institutional-modal #opDialog32 kind="form" title="Cambiar correo de operador"
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="actionRequested.emit({ event: $event, action: 'mailbox-request' })">
+    <div class="operator-mailbox-step" role="group" aria-labelledby="operator-mail-request-stage">
+      <h3 id="operator-mail-request-stage" class="operator-mailbox-step__title">1. Solicitar el nuevo correo</h3>
+    <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'mailbox-request' })">
             <label for="operator-new-mailbox">Nuevo correo del operador</label><input id="operator-new-mailbox" name="mailbox" type="email" required maxlength="254" autocomplete="email">
-            <label for="operator-mailbox-code">Código MFA para solicitar correo de operador</label><input id="operator-mailbox-code" name="code" required maxlength="32" autocomplete="one-time-code">
+            <label for="operator-mailbox-code">Código MFA para solicitar correo de operador</label><input id="operator-mailbox-code" name="code" required maxlength="32" autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
             <button [disabled]="busy()">Solicitar nuevo correo de operador</button>
           </form>
-          <form (submit)="actionRequested.emit({ event: $event, action: 'mailbox-complete' })">
+    </div>
+    <div class="operator-mailbox-step" role="group" aria-labelledby="operator-mail-confirm-stage">
+      <h3 id="operator-mail-confirm-stage" class="operator-mailbox-step__title">2. Confirmar el correo recibido</h3>
+          <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'mailbox-complete' })">
             <label for="operator-mailbox-token">Token del nuevo correo de operador</label><input id="operator-mailbox-token" name="token" required pattern="[0-9a-fA-F]{64}" autocomplete="off">
-            <label for="operator-mailbox-confirm-code">Código MFA para confirmar correo de operador</label><input id="operator-mailbox-confirm-code" name="code" required maxlength="32" autocomplete="one-time-code">
+            <label for="operator-mailbox-confirm-code">Código MFA para confirmar correo de operador</label><input id="operator-mailbox-confirm-code" name="code" required maxlength="32" autocomplete="one-time-code" pattern="([0-9]{6}|[0-9a-fA-F]{32})">
             <button [disabled]="busy()">Confirmar correo de operador</button>
           </form>
+    </div>
   </cs-institutional-modal>
 </div>
-        <div class="institutional-task">
-  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog33.open()">
-    <span>Reemplazar MFA de operador</span><span aria-hidden="true">›</span>
+        <div class="institutional-task operator-task--credential">
+  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog33.open()" aria-label="Reemplazar MFA de operador" aria-describedby="operator-mfa-hint">
+    <span>Reemplazar MFA de operador<span id="operator-mfa-hint" class="operator-task-note">No se activa el nuevo TOTP hasta verificar una prueba válida.</span></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #opDialog33 title="Reemplazar MFA de operador"
-    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="actionRequested.emit({ event: $event, action: 'factor' })">
+  <cs-institutional-modal #opDialog33 kind="wizard" [steps]="['Verificar credenciales', 'Configurar nuevo autenticador']" [step]="platform.factorSecret() ? 2 : 1" title="Reemplazar MFA de operador"
+    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true" (dismissed)="platform.discardFactorSetup()">
+    @if (!platform.factorSecret()) {
+    <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'factor' })">
             <label for="operator-factor-password">Contraseña para reemplazar MFA de operador</label><input id="operator-factor-password" name="currentPassword" type="password" required maxlength="128" autocomplete="current-password">
             <label for="operator-factor-code">Código MFA o respaldo para reemplazar factor de operador</label><input id="operator-factor-code" name="code" required maxlength="32" autocomplete="one-time-code">
             <button [disabled]="busy()">Preparar nuevo factor de operador</button>
           </form>
+    }
           @if (platform.factorSecret()) {
-            <output aria-label="Semilla del factor de operador a reemplazar">{{ platform.factorSecret() }}</output>
-            <form (submit)="actionRequested.emit({ event: $event, action: 'factor-confirm' })">
+            <div class="totp-setup" role="group" aria-label="Vincular el nuevo MFA de operador">
+              <div class="totp-setup__visual">
+                <img [src]="platform.factorQr()" width="256" height="256" alt="QR privado para vincular el nuevo autenticador de operador">
+                <p>Escanea con Google Authenticator, Microsoft Authenticator u otra aplicación TOTP SHA1 y confirma el código antes de cerrar.</p>
+              </div>
+              <details><summary>No puedo escanear: mostrar clave manual</summary>
+                <output aria-label="Semilla del factor de operador a reemplazar">{{ platform.factorSecret() }}</output>
+              </details>
+            </div>
+            <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'factor-confirm' })">
               <label for="operator-factor-confirm-code">Código del factor nuevo de operador</label><input id="operator-factor-confirm-code" name="code" required pattern="[0-9]{6}" autocomplete="one-time-code">
               <button [disabled]="busy()">Activar nuevo factor de operador</button>
             </form>
           }
   </cs-institutional-modal>
 </div>
+  </div>
+  <section class="operator-card operator-card--admin-policy" aria-label="Administración de caducidad">
+    <h3>Caducidad y administración</h3>
+    <p>Los cambios globales requieren autorización, control de versión y MFA.</p>
+    <div class="institutional-task operator-task--admin">
+  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="idlePolicyModal.open()">
+    <span>Caducidad por inactividad de sesiones</span><span aria-hidden="true">›</span>
+  </button>
+  <cs-institutional-modal #idlePolicyModal kind="form" title="Vencimiento de sesiones por inactividad"
+    description="Plazo global para cuentas y operadores. El servidor lo aplica a cada sesión autorizada."
+    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
+    @if (platform.sessionPolicy(); as policy) {
+      <p role="status">Vigencia actual: <strong>{{ policy.idleMinutes }} minutos sin actividad</strong>.</p>
+      <p>La actividad validada renueva el plazo. Si vence, será necesario iniciar sesión nuevamente.</p>
+      @if (policy.canManage) {
+        <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'session-policy' })">
+          <label for="operator-idle-minutes">Minutos de inactividad permitidos (5 a 120)</label>
+          <input id="operator-idle-minutes" name="minutes" type="number" min="5" max="120" step="1"
+            [value]="policy.idleMinutes" required inputmode="numeric">
+          <input type="hidden" name="expectedRevision" [value]="policy.revision">
+          <label for="operator-idle-code">Código MFA del administrador para guardar el cambio</label>
+          <input id="operator-idle-code" name="code" type="password" required autocomplete="one-time-code"
+            pattern="([0-9]{6}|[0-9a-fA-F]{32})" maxlength="32">
+          <button [disabled]="busy()">Guardar tiempo de inactividad</button>
+        </form>
+      } @else {
+        <p>Consulta habilitada. Solo el administrador de seguridad de plataforma puede modificar este parámetro con MFA.</p>
+      }
+    } @else {
+      <p>Consulta el valor vigente desde la pestaña Seguridad. No se modifica ninguna configuración sin confirmación MFA.</p>
+    }
+  </cs-institutional-modal>
+</div>
+
+  </section>
+</section>

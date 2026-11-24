@@ -1,0 +1,247 @@
+name: CRECISOL C05 UX F07 final SHA regression and visual certification
+on:
+  push:
+    branches:
+      - feature/c05-ux-f07-regresiones-integrales-20261123
+      - feature/c05-ux-f06-mensajeria-estados-20261120
+    paths:
+      - 'qa/c05_ux_f07_*'
+      - 'docs/c05/ux/F07_*'
+      - '.github/workflows/c05-ux-f07-regresiones-integrales.yml'
+  pull_request:
+    branches: [feature/c05-ux-f06-mensajeria-estados-20261120]
+    paths:
+      - 'qa/c05_ux_f07_*'
+      - 'docs/c05/ux/F07_*'
+      - '.github/workflows/c05-ux-f07-regresiones-integrales.yml'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: c05-ux-f07-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  visual-65:
+    name: F07 439 original PNG visual diffs and 65 individual 5-width scores
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: F07 A/B/C, nine negative tests, sixty-five buyer score controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_ux_f07_final_audit_tests.py -v
+          python3 qa/c05_ux_f06_commercial_rating_tests.py -v
+          for gate in A B C; do python3 qa/c05_ux_f07_final_audits.py "$gate"; done
+      - name: Node 24
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Angular 22 production and TS compile
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+      - name: Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          timeout 360s npx playwright install chromium
+      - name: Capture inventory 65x5 on F07 SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f06-inventory65.config.ts --reporter=line
+      - name: Reject missing, clipped, duplicated and wrong-SHA PNG
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_ux_f06_65_coverage.py frontend/test-results-f06-inventory65 docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv
+      - name: Download approved F06 original PNG SHA and artifact 14862391857
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/f07-approved"
+          curl -fLSs --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/crecisol-platform/CRECISOL/actions/artifacts/14862391857/zip" \
+            -o "$RUNNER_TEMP/f07-approved.zip"
+          test "$(stat -c%s "$RUNNER_TEMP/f07-approved.zip")" -gt 1000000
+          unzip -q "$RUNNER_TEMP/f07-approved.zip" -d "$RUNNER_TEMP/f07-approved"
+          test -f "$RUNNER_TEMP/f07-approved/F06_65_COVERAGE_SUMMARY.json"
+      - name: Compare 439 PNG pixels, scene semantics, SHA and 65 grade records
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/f07-image-venv"
+          "$RUNNER_TEMP/f07-image-venv/bin/python" -m pip install --disable-pip-version-check --no-cache-dir 'Pillow==11.3.0'
+          "$RUNNER_TEMP/f07-image-venv/bin/python" qa/c05_ux_f07_visual_comparison.py \
+            "$RUNNER_TEMP/f07-approved" frontend/test-results-f06-inventory65 \
+            docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv \
+            frontend/test-results-f06-inventory65/f07-final
+      - name: Preserve 439 PNG, matrix CSV and actual pixel diff report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: c05-f07-65-visual-${{ github.sha }}
+          path: frontend/test-results-f06-inventory65/
+          retention-days: 21
+          if-no-files-found: warn
+  full-chromium:
+    name: F07 Angular 22, 447 Chromium F02-F06, accessibility and A/B/C
+    runs-on: ubuntu-24.04
+    timeout-minutes: 85
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: F07 A/B/C, F05 modal security and F06 runtime regression controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_ux_f07_final_audit_tests.py -v
+          python3 qa/c05_ux_f06_feedback_scope_tests.py -v
+          python3 qa/c05_ux_f06_commercial_rating_tests.py -v
+          for gate in A B C; do
+            python3 qa/c05_ux_f07_final_audits.py "$gate"
+            python3 qa/c05_ux_f05_modal_audits.py "$gate"
+          done
+      - name: Node 24
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Angular 22 TS production and institutional harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+          cd frontend
+          npx ng build --configuration institutional-harness
+      - name: Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          timeout 360s npx playwright install chromium
+      - name: F06 async errors, pending, results, privacy and reduced motion
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f06-feedback.config.ts --reporter=line
+          cd ..
+          python3 qa/c05_ux_f06_feedback_evidence.py frontend/test-results-f06-feedback
+          python3 qa/c05_ux_f06_premium_evidence.py frontend/test-results-f06-feedback
+      - name: F05 secure modals 11 scenarios, top bottom pending error result
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f05-modals.config.ts --reporter=line
+          cd ..
+          python3 qa/c05_ux_f05_modal_evidence.py frontend/test-results-f05-modals
+          python3 qa/c05_ux_f05_modal_audits.py deep-evidence frontend/test-results-f05-modals
+      - name: F04 operator console regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f04-operators.config.ts --reporter=line
+      - name: F03 authenticated account and navigation
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f03.config.ts --reporter=line
+          npx playwright test --config=playwright.c05-f03-account.config.ts --reporter=line
+      - name: F02 design system accessibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.institutional.config.ts --reporter=line
+      - name: C05 original and deep modal accessibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test tests/c05-institutional-modals.spec.ts --config=playwright.config.ts --reporter=line
+          npx playwright test tests/c05-modal-accessibility-deep.spec.ts --config=playwright.config.ts --reporter=line
+      - name: Preserve 447 browser proofs, screenshots and negative traces
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: c05-f07-447-chromium-${{ github.sha }}
+          path: |
+            frontend/test-results-f06-feedback/
+            frontend/test-results-f05-modals/
+            frontend/test-results-f04-operators/
+            frontend/test-results-f03/
+            frontend/test-results-f03-account/
+            frontend/test-results-institutional/
+            frontend/test-results/
+          retention-days: 21
+          if-no-files-found: warn
+  real-net-mysql:
+    name: F07 real .NET 10 MySQL 8.4 340 checks + 18 migrations and denials
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify immutable UI and F07 A/B/C before backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          for gate in A B C; do python3 qa/c05_ux_f07_final_audits.py "$gate"; done
+      - name: Node 24
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile NET10 API, provisioner and loopback SMTP
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tools/Crecisol.LocalIdentityProvisioner/Crecisol.LocalIdentityProvisioner.csproj -c Release --nologo -warnaserror
+          dotnet build backend/tests/Crecisol.LoopbackSmtpReceiver/Crecisol.LoopbackSmtpReceiver.csproj -c Release --nologo -warnaserror
+      - name: Angular dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          cd frontend
+          timeout 420s npx playwright install chromium
+      - name: Real disposable MySQL and Angular NET10 negative security E2E
+        shell: bash
+        timeout-minutes: 40
+        run: |
+          set -euo pipefail
+          # 340 assertions; require 18 migraciones de ida and 18 reversiones.
+          node qa/c05_operational_flow_e2e.mjs | tee "$RUNNER_TEMP/f07-e2e-final.txt"
+          grep -F 'PASS C05 operational integrated assertions=340' "$RUNNER_TEMP/f07-e2e-final.txt"
+          grep -F 'PASS eighteen forward migrations on real MySQL 8.4' "$RUNNER_TEMP/f07-e2e-final.txt"
+          grep -F 'PASS eighteen reverse migrations leave no schema tables' "$RUNNER_TEMP/f07-e2e-final.txt"

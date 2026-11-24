@@ -1,33 +1,73 @@
-<section class="operator-readonly-panel" aria-label="Perfil de operador"><h3>Mi perfil de operador</h3>
-          <button type="button" [disabled]="busy()" (click)="loadProfileRequested.emit()">Consultar perfil de operador</button>
-          @if (platform.profile(); as profile) { <p aria-label="Nombre del perfil de operador">{{ profile.displayName }}</p> }
-          @if (platform.photo()) { <img [src]="platform.photo()" width="64" height="64" alt="Foto de mi perfil de operador"> }
-          
-          
-        </section>
-<div class="institutional-task">
-  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog51.open()">
-    <span>Editar perfil de operador</span><span aria-hidden="true">›</span>
+<section class="operator-workspace operator-workspace--perfil" aria-label="Perfil de operador">
+  <header class="operator-section-head">
+    <div><span class="operator-kicker">PERFIL / IDENTIDAD INSTITUCIONAL</span>
+      <h2>Mi perfil de operador</h2>
+      <p>Revisa tu nombre, idioma, zona horaria e imagen institucional.</p></div>
+    <button type="button" [disabled]="busy()" (click)="loadProfileRequested.emit()">Consultar perfil de operador</button>
+  </header>
+  <details class="operator-scope-note operator-scope-details">
+    <summary>Sobre el perfil institucional</summary>
+    <p>Cambiar esta presentación no concede ni modifica funciones administrativas ni acceso a negocios.</p>
+  </details>
+  @if (platform.profileLoaded()) {
+    <section class="operator-card operator-card--profile" aria-label="Datos del perfil institucional">
+      <div class="operator-profile-head">
+        @if (platform.photo()) {
+          <img [src]="platform.photo()" width="72" height="72" alt="Foto de mi perfil de operador">
+        } @else { <span class="operator-avatar" aria-hidden="true">{{ profileName().charAt(0).toUpperCase() }}</span> }
+        <div><span class="operator-kicker">OPERADOR VERIFICADO</span>
+          <h3>{{ profileName() }}</h3>
+
+        </div>
+      </div>
+      <dl class="operator-facts">
+        <div><dt>Idioma</dt><dd>{{ profileLanguage() }}</dd></div>
+        <div><dt>Zona horaria</dt><dd>{{ profileZone() }}</dd></div>
+        <div><dt>Imagen</dt><dd>{{ platform.photo() ? 'Foto registrada' : 'Sin fotografía' }}</dd></div>
+      </dl>
+    </section>
+  } @else {
+    <div class="operator-empty"><h3>Perfil aún no consultado</h3>
+      <p>Consulta tu perfil para mostrar sus datos verificados.</p></div>
+  }
+</section>
+<div class="institutional-task operator-task--profile">
+  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog51.open()" aria-label="Editar perfil de operador" aria-describedby="operator-profile-edit-hint">
+    <span>Editar perfil de operador<span id="operator-profile-edit-hint" class="operator-task-note">Actualiza nombre, idioma y zona horaria.</span></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #opDialog51 title="Editar perfil de operador" description="Actualiza únicamente los datos visibles de tu perfil institucional."
+  <cs-institutional-modal #opDialog51 kind="form" title="Editar perfil de operador" description="Actualiza únicamente los datos visibles de tu perfil institucional."
     [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="actionRequested.emit({ event: $event, action: 'profile' })">
-            <label for="operator-profile-name">Nombre visible del operador</label><input id="operator-profile-name" name="displayName" required maxlength="80" autocomplete="nickname">
-            <label for="operator-profile-language">Idioma del perfil de operador</label><select id="operator-profile-language" name="language"><option value="es-HN">Español de Honduras</option><option value="es">Español</option><option value="en">English</option></select>
-            <label for="operator-profile-zone">Zona horaria del operador</label><input id="operator-profile-zone" name="timeZone" required maxlength="64" value="America/Tegucigalpa">
-            <button [disabled]="busy()">Guardar perfil de operador</button>
-          </form>
+    <form csFieldFeedback (submit)="actionRequested.emit({ event: $event, action: 'profile' })">
+      <label for="operator-profile-name">Nombre visible del operador</label>
+      <input id="operator-profile-name" name="displayName" [value]="platform.profile()?.displayName ?? ''" required maxlength="80" autocomplete="nickname">
+      <label for="operator-profile-language">Idioma del perfil de operador</label>
+      <select id="operator-profile-language" name="language" [value]="platform.profile()?.language ?? 'es-HN'">
+        <option value="es-HN">Español de Honduras</option><option value="es">Español</option><option value="en">English</option>
+      </select>
+      <label for="operator-profile-zone">Zona horaria del operador</label>
+      <input id="operator-profile-zone" name="timeZone" [value]="platform.profile()?.timeZone ?? 'America/Tegucigalpa'" required maxlength="64">
+      <button [disabled]="busy()">Guardar perfil de operador</button>
+    </form>
   </cs-institutional-modal>
 </div>
-<div class="institutional-task">
-  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog52.open()">
-    <span>Actualizar foto de operador</span><span aria-hidden="true">›</span>
+<div class="institutional-task operator-task--profile-photo">
+  <button type="button" class="institutional-task__trigger" [disabled]="busy()" (click)="opDialog52.open()" aria-label="Actualizar foto de operador" aria-describedby="operator-profile-photo-hint">
+    <span>Actualizar foto de operador<span id="operator-profile-photo-hint" class="operator-task-note">La foto se procesa sin conservar metadatos.</span></span><span aria-hidden="true">›</span>
   </button>
-  <cs-institutional-modal #opDialog52 title="Actualizar foto de operador" description="Archivo PNG, JPEG o WebP. Se conserva únicamente una miniatura."
-    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true">
-    <form (submit)="photoRequested.emit($event)">
-            <label for="operator-photo">Foto del operador (PNG, JPEG o WebP, hasta 2 MB)</label><input id="operator-photo" name="photo" type="file" accept="image/png,image/jpeg,image/webp" required>
-            <button [disabled]="busy()">Guardar foto de operador</button>
-          </form>
+  <cs-institutional-modal #opDialog52 kind="form" title="Actualizar foto de operador" description="Archivo PNG, JPEG o WebP. Se conserva únicamente una miniatura."
+    [busy]="busy()" [feedback]="feedback()" [error]="error()" [wide]="true"
+    (dismissed)="photoFileName.set(''); photoFileError.set('')">
+    <form csFieldFeedback (reset)="photoFileName.set(''); photoFileError.set('')"
+      (submit)="photoRequested.emit($event)">
+      <label for="operator-photo">Foto del operador (PNG, JPEG o WebP, hasta 2 MB)</label>
+      <div class="cs-photo-picker">
+        <span aria-hidden="true">Seleccionar imagen del dispositivo</span>
+        <input class="cs-photo-picker__input" id="operator-photo" name="photo" type="file"
+          accept="image/png,image/jpeg,image/webp" required (change)="onPhotoFileChange($event)">
+      </div>
+      <output class="cs-photo-picker__filename" for="operator-photo" aria-live="polite">{{ photoFileName() || 'Ninguna imagen seleccionada' }}</output>
+      @if (photoFileError()) { <p class="cs-photo-picker__error" role="alert">{{ photoFileError() }}</p> }
+      <button [disabled]="busy() || !photoFileName() || !!photoFileError()">Guardar foto de operador</button>
+    </form>
   </cs-institutional-modal>
 </div>

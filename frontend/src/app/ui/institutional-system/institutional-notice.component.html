@@ -1,0 +1,7 @@
+<div class="cs-notice" [attr.data-kind]="kind()" [attr.role]="kind() === 'error' ? 'alert' : 'status'">
+  <cs-ui-icon [name]="icon()"/>
+  <div class="cs-notice__content">
+    <strong>{{ heading() }}</strong>
+    <p>{{ message() }}</p>
+  </div>
+</div>

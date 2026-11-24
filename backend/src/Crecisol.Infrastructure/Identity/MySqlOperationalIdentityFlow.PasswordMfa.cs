@@ -86,7 +86,7 @@ public sealed partial class MySqlOperationalIdentityFlow
                 (replacement && (activeFactor is null || !Bytes(activeFactor, "factor_id").SequenceEqual(Bytes(challenge, "replace_factor_id")))))
                 return new(false);
             var factorId = Id();
-            var seed = RandomNumberGenerator.GetBytes(32);
+            var seed = RandomNumberGenerator.GetBytes(20);
             try
             {
                 var envelope = Protect(seed, "factor:" + Hex(actor) + Hex(factorId));
@@ -97,7 +97,7 @@ public sealed partial class MySqlOperationalIdentityFlow
                     """, ("a", actor), ("f", factorId), ("c", envelope[28..]), ("n", envelope[..12]), ("tag", envelope[12..28]));
                 await u.Run("UPDATE c05_identity_challenge SET factor_id=@f WHERE tenant_id=@t AND token_hmac=@h", ("f", factorId), ("t", tenant), ("h", hash));
                 var secret = Base32(seed);
-                return new(true, new { secret, uri = "otpauth://totp/CRECISOL:cuenta?secret=" + secret + "&issuer=CRECISOL&algorithm=SHA256&digits=6&period=30" });
+                return new(true, new { secret, uri = TotpUri(actor, seed, "cuenta") });
             }
             finally { CryptographicOperations.ZeroMemory(seed); }
         }
@@ -172,12 +172,13 @@ public sealed partial class MySqlOperationalIdentityFlow
 
     private async Task<OperationalIdentityResult> IssueSession(Unit u, byte[] tenant,
         Dictionary<string, object> account, Dictionary<string, object> member, byte[] factor, byte[]? family,
-        DateTime? absoluteExpiry = null, DateTime? originalMfa = null)
+        DateTime? originalMfa = null)
     {
         var token = Token();
         var id = Id();
-        var expiry = absoluteExpiry is null ? DateTimeOffset.UtcNow.AddMinutes(30) :
-            new DateTimeOffset(DateTime.SpecifyKind(absoluteExpiry.Value, DateTimeKind.Utc));
+        // Session expiration slides after genuine validated activity; MFA challenge TTLs do not.
+        var expiry = DateTimeOffset.UtcNow.AddMinutes(await SessionIdleMinutes(u));
+        u.SessionExpiresAtUtc = expiry;
         await u.Run("""
             INSERT INTO c05_identity_session
             (tenant_id,session_id,account_id,membership_id,token_hmac,session_family,mfa_factor_id,mfa_verified_at_utc,
