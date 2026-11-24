@@ -1,0 +1,248 @@
+#!/usr/bin/env python3
+"""CRECISOL C06-03 — independent A/B/C on actual tenant identity context."""
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+BASE = "e5fe2830ab8284238389d7a8d5cc6d4add1a0b99"
+WORD_SHA = "ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c"
+DOMAIN = ROOT / "backend/src/Crecisol.Domain/Tenancy/C06OperationalMembershipContext.cs"
+ADAPTER = ROOT / "backend/src/Crecisol.Infrastructure/Tenancy/C06OperationalContextProjection.cs"
+FLOW = ROOT / "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs"
+AUTH = ROOT / "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs"
+WORD = ROOT / "docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx"
+CATALOG = ROOT / "docs/c06/C06_01_CATALOGO_ACCIONES.json"
+MATRIX = ROOT / "docs/c06/C06_02_MATRIZ_ROLES_CAPACIDADES.json"
+
+def need(good, reason):
+    if not good:
+        raise AssertionError("C06-03 NO-GO " + reason)
+
+def diff():
+    event = os.environ.get("GITHUB_EVENT_NAME", "")
+    if event == "pull_request":
+        need(os.environ.get("GITHUB_BASE_REF") == "dev", "feature PR must target dev")
+        base = ["origin/dev...HEAD"]
+    elif event == "push":
+        need(os.environ.get("GITHUB_REF") == "refs/heads/dev", "push must be dev")
+        base = ["HEAD^", "HEAD"]
+    else:
+        base = [BASE, "HEAD"]
+    changed = subprocess.check_output(["git", "diff", "--name-only", *base], cwd=ROOT,
+                                      text=True).splitlines()
+    exact = {
+        "backend/src/Crecisol.Domain/Tenancy/C06OperationalMembershipContext.cs",
+        "backend/src/Crecisol.Infrastructure/Tenancy/C06OperationalContextProjection.cs",
+        "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs",
+        "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs",
+        "qa/c06_03_context_audits.py",
+        ".github/workflows/c06-03-trusted-tenant-context.yml",
+    }
+    need(changed and all(p in exact or
+         p.startswith(("backend/tests/Crecisol.C06Membership.ContractsTests/",
+                       "docs/c06/C06_03_")) for p in changed),
+         "unexpected C06-03 diff: " + repr(changed))
+    need(not any(p.startswith(("frontend/", "database/", "backend/src/Crecisol.Api/",
+                               "backend/src/Crecisol.CredentialSecurity/"))
+                 for p in changed), "C06-03 altered UI, API, C05 schema or crypto")
+    return changed
+
+def audit_sources():
+    domain = DOMAIN.read_text(encoding="utf-8")
+    adapter = ADAPTER.read_text(encoding="utf-8")
+    flow = FLOW.read_text(encoding="utf-8")
+    auth = AUTH.read_text(encoding="utf-8")
+    domain_marks = (
+        "evidence.VerifiedHostTenant != evidence.SessionTenant",
+        "evidence.VerifiedHostTenant != evidence.MembershipTenant",
+        "evidence.SessionActor != evidence.AccountActor",
+        "evidence.SessionActor != evidence.MembershipActor",
+        "evidence.SessionActor != evidence.FactorActor",
+        "evidence.SessionMembershipId != evidence.MembershipId",
+        "evidence.SessionFactorId != evidence.FactorId",
+        "evidence.AccountRevisionInSession != evidence.CurrentAccountRevision",
+        "evidence.MembershipRevisionInSession != evidence.CurrentMembershipRevision",
+        "evidence.VerifiedHostAddressMode != evidence.TenantCatalogAddressMode",
+        "!evidence.SessionNotRevoked", "!evidence.AccountActive",
+        "!evidence.AccountMailboxVerified", "!evidence.MembershipActive",
+        "!evidence.FactorActive", "evidence.ServerIdleMinutes is < 5 or > 120",
+        "evidence.ServerNowUtc >= evidence.SessionExpiresAtUtc",
+        "evidence.ServerNowUtc >= evidence.MembershipExpiresAtUtc",
+        "evidence.ServerNowUtc - evidence.SessionLastSeenAtUtc >=",
+        "AuthorizesPrivateResource => false",
+    )
+    adapter_marks = (
+        "Tenant(Bytes(session, \"tenant_id\"))",
+        "Tenant(Bytes(membership, \"tenant_id\"))",
+        "Actor(Bytes(session, \"account_id\"))",
+        "Actor(Bytes(account, \"account_id\"))",
+        "Actor(Bytes(membership, \"account_id\"))",
+        "Actor(Bytes(factor, \"account_id\"))",
+        "SessionMembershipId = Id(Bytes(session, \"membership_id\"))",
+        "MembershipId = Id(Bytes(membership, \"membership_id\"))",
+        "FactorId = Id(Bytes(factor, \"factor_id\"))",
+        "ServerNowUtc = trustedDatabaseUtc",
+        "SessionNotRevoked = session[\"revoked_at_utc\"] is DBNull",
+        "FactorActive = Number(factor, \"factor_state\") == 1",
+    )
+    flow_marks = (
+        "SELECT h.tenant_id, h.host_revision, h.address_mode",
+        "AND h.verified_at_utc<=UTC_TIMESTAMP(6)",
+        "AND h.valid_until_utc>UTC_TIMESTAMP(6)",
+        "AND t.lifecycle_state=3",
+        "AND h.address_mode=t.address_mode FOR SHARE",
+        "unit.VerifiedHost = host;",
+        'var tenant = Bytes(host, "tenant_id");',
+        "else result = await Authenticated(unit, tenant, request, ct);",
+    )
+    auth_marks = (
+        'Digest("session", r.Bearer)',
+        "WHERE tenant_id=@t AND token_hmac=@h",
+        "AND revoked_at_utc IS NULL AND expires_at_utc>UTC_TIMESTAMP(6)",
+        "AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE FOR UPDATE",
+        "Number(session, \"account_revision\") != Number(account, \"security_revision\")",
+        "Number(session, \"membership_revision\") != Number(member, \"approval_revision\")",
+        "factor_state=1 AND revoked_at_utc IS NULL FOR UPDATE",
+        'var trustedClock = await u.One("SELECT UTC_TIMESTAMP(6) AS trusted_now_utc");',
+        "ResolveC06TenantContextFromLockedRows(",
+        "await SlideTenantSession(u, tenant, hash, idle);",
+    )
+    for tag, text, markers in (
+        ("Domain", domain, domain_marks),
+        ("Infrastructure", adapter, adapter_marks),
+        ("Host SQL", flow, flow_marks),
+        ("Auth transaction", auth, auth_marks),
+    ):
+        for marker in markers:
+            need(marker in text, tag + " missing security guard: " + marker)
+    need(auth.index("ResolveC06TenantContextFromLockedRows(") <
+         auth.index("await SlideTenantSession(u, tenant, hash, idle);"),
+         "identity boundary runs after session renewal/private work")
+    need("namespace Crecisol.Domain.Tenancy;" in domain and
+         "namespace Crecisol.Infrastructure.Identity;" in adapter and
+         not any(x in domain for x in ("MySqlConnector", "Microsoft.AspNetCore",
+                                       "System.Data.Sql", "HttpContext", "IResult")),
+         "Domain leaked SQL or transport")
+    need("new Guid(bytes, bigEndian: true)" in adapter,
+         "GUID encoding does not match C05 RFC4122 bytes")
+    need("private static C06OperationalMembershipContext" in adapter,
+         "proof accidentally exposed by public Infrastructure API")
+    need("GetRequiredService" not in adapter and "MapGet(" not in adapter and
+         "MapPost(" not in adapter, "unexpected new C06 identity endpoint")
+    need(not re.search(r"\bGRANT\s+(?:ALL|SELECT|INSERT|UPDATE|DELETE)\b", adapter, re.I),
+         "C06 identity adapter must not allocate database privileges")
+    return {"domain":len(domain_marks), "adapter":len(adapter_marks),
+            "host":len(flow_marks), "auth":len(auth_marks)}
+
+def prior():
+    source = json.loads(CATALOG.read_text(encoding="utf-8"))
+    roles = json.loads(MATRIX.read_text(encoding="utf-8"))
+    need(len(source["api_actions"]) == 80 and
+         len(source["non_http_contracts"]) == 12 and
+         len(source["normative_actions"]) == 28 and
+         len(roles["roles"]) == 10 and len(roles["actions"]) == 108,
+         "C06-01/02 lineage is inconsistent")
+    need(all(a["grantable"] is False and not a["http_registered"]
+             for a in source["normative_actions"]) and
+         all(a["policy_activated"] is False and a["grantable"] is False
+             for a in roles["actions"]), "a future permission was activated")
+    need(WORD.is_file() and hashlib.sha256(WORD.read_bytes()).hexdigest() == WORD_SHA,
+         "canonical approved Word is missing or modified")
+
+def security_mutations():
+    source = {
+        "domain":DOMAIN.read_text(encoding="utf-8"),
+        "adapter":ADAPTER.read_text(encoding="utf-8"),
+        "flow":FLOW.read_text(encoding="utf-8"),
+        "auth":AUTH.read_text(encoding="utf-8"),
+    }
+    cases = [
+        ("domain","evidence.VerifiedHostTenant != evidence.SessionTenant"),
+        ("domain","evidence.VerifiedHostTenant != evidence.MembershipTenant"),
+        ("domain","evidence.SessionActor != evidence.AccountActor"),
+        ("domain","evidence.SessionActor != evidence.MembershipActor"),
+        ("domain","evidence.SessionActor != evidence.FactorActor"),
+        ("domain","evidence.SessionMembershipId != evidence.MembershipId"),
+        ("domain","evidence.SessionFactorId != evidence.FactorId"),
+        ("domain","evidence.AccountRevisionInSession != evidence.CurrentAccountRevision"),
+        ("domain","evidence.MembershipRevisionInSession != evidence.CurrentMembershipRevision"),
+        ("domain","evidence.VerifiedHostAddressMode != evidence.TenantCatalogAddressMode"),
+        ("domain","!evidence.SessionNotRevoked"),
+        ("domain","!evidence.AccountMailboxVerified"),
+        ("domain","!evidence.MembershipActive"),
+        ("domain","!evidence.FactorActive"),
+        ("domain","evidence.ServerNowUtc >= evidence.SessionExpiresAtUtc"),
+        ("domain","evidence.ServerNowUtc >= evidence.MembershipExpiresAtUtc"),
+        ("domain","evidence.ServerNowUtc - evidence.SessionLastSeenAtUtc >="),
+        ("adapter",'Tenant(Bytes(membership, "tenant_id"))'),
+        ("adapter",'Actor(Bytes(factor, "account_id"))'),
+        ("adapter",'FactorId = Id(Bytes(factor, "factor_id"))'),
+        ("flow","AND h.address_mode=t.address_mode FOR SHARE"),
+        ("auth","ResolveC06TenantContextFromLockedRows("),
+        ("auth","AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE FOR UPDATE"),
+    ]
+    count = 0
+    markers = audit_sources()
+    table = {
+        "domain":(
+            "evidence.VerifiedHostTenant != evidence.SessionTenant",
+            "evidence.VerifiedHostTenant != evidence.MembershipTenant",
+            "evidence.SessionActor != evidence.AccountActor",
+            "evidence.SessionActor != evidence.MembershipActor",
+            "evidence.SessionActor != evidence.FactorActor",
+            "evidence.SessionMembershipId != evidence.MembershipId",
+            "evidence.SessionFactorId != evidence.FactorId",
+            "evidence.AccountRevisionInSession != evidence.CurrentAccountRevision",
+            "evidence.MembershipRevisionInSession != evidence.CurrentMembershipRevision",
+            "evidence.VerifiedHostAddressMode != evidence.TenantCatalogAddressMode",
+            "!evidence.SessionNotRevoked", "!evidence.AccountActive",
+            "!evidence.AccountMailboxVerified", "!evidence.MembershipActive",
+            "!evidence.FactorActive", "evidence.ServerIdleMinutes is < 5 or > 120",
+            "evidence.ServerNowUtc >= evidence.SessionExpiresAtUtc",
+            "evidence.ServerNowUtc >= evidence.MembershipExpiresAtUtc",
+            "evidence.ServerNowUtc - evidence.SessionLastSeenAtUtc >=",
+            "AuthorizesPrivateResource => false",
+        ),
+        "adapter":(
+            'Tenant(Bytes(membership, "tenant_id"))',
+            'Actor(Bytes(factor, "account_id"))',
+            'FactorId = Id(Bytes(factor, "factor_id"))',
+        ),
+        "flow":("AND h.address_mode=t.address_mode FOR SHARE",),
+        "auth":("ResolveC06TenantContextFromLockedRows(",
+                "AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE FOR UPDATE"),
+    }
+    for name, marker in cases:
+        need(source[name].count(marker) > 0, "attack marker not present: " + marker)
+        modified = source[name].replace(marker, "P0_CONTROL_REMOVED", 1)
+        need(any(required not in modified for required in table[name]),
+             "mutation failed to remove a check: " + marker)
+        count += 1
+    need(count == 23 and markers["domain"] >= 20, "negative source coverage incomplete")
+    print(f"PASS C06-03 B: {count} sensitive bypass mutations rejected by source gate")
+
+def main(stage):
+    changed = diff()
+    prior()
+    markers = audit_sources()
+    if stage == "A":
+        print("PASS C06-03 A: Word SHA, prior C06-01/02, exact scoped diff:",
+              changed, markers)
+    elif stage == "B":
+        security_mutations()
+    elif stage == "C":
+        suite = (ROOT/"backend/tests/Crecisol.C06Membership.ContractsTests/Program.cs").read_text(encoding="utf-8")
+        need(suite.count("Reject(Good() with {") >= 35 and
+             "C06OperationalMembershipContext.VerifyLockedServerEvidence" in suite,
+             "C06-03 negative .NET contracts missing")
+        print("PASS C06-03 C: Domain/Infrastructure separation, unchanged C05 API, 35+ negative contracts")
+    else:
+        raise AssertionError("expected A|B|C")
+
+if __name__ == "__main__":
+    main(sys.argv[1] if len(sys.argv) == 2 else "")

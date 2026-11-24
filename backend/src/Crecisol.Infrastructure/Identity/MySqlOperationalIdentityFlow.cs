@@ -85,13 +85,20 @@ public sealed partial class MySqlOperationalIdentityFlow : IOperationalIdentityF
             return platformResult with { SessionExpiresAtUtc = unit.SessionExpiresAtUtc, SessionIdleMinutes = unit.IdleMinutes };
         }
         var host = await unit.One("""
-            SELECT h.tenant_id FROM c04_verified_tenant_host h
+            SELECT h.tenant_id, h.host_revision, h.address_mode,
+                   t.catalog_revision, t.address_mode AS catalog_address_mode
+            FROM c04_verified_tenant_host h
             JOIN c04_tenant_catalog t ON t.tenant_id=h.tenant_id
             WHERE h.canonical_host=@host AND h.verification_state=2
             AND h.verified_at_utc<=UTC_TIMESTAMP(6) AND h.valid_until_utc>UTC_TIMESTAMP(6)
-            AND t.lifecycle_state=3 FOR SHARE
+            AND h.changed_at_utc<=UTC_TIMESTAMP(6) AND h.host_revision>0
+            AND t.lifecycle_state=3 AND t.updated_at_utc<=UTC_TIMESTAMP(6)
+            AND t.catalog_revision>0 AND h.address_mode=t.address_mode FOR SHARE
             """, ("host", request.Host));
         if (host is null) return new(false);
+        // C06-03: immutable host + catalog evidence remains server-side for
+        // the authenticated transaction. It is never read from body or claims.
+        unit.VerifiedHost = host;
         var tenant = Bytes(host, "tenant_id");
         // Persist quota before costly crypto, even when the operation is denied.
         if (!await Reserve(tenant, "peer:" + request.Peer, 80, ct) ||
@@ -230,6 +237,7 @@ public sealed partial class MySqlOperationalIdentityFlow : IOperationalIdentityF
         public byte[]? Actor { get; set; }
         public byte[]? Subject { get; set; }
         public bool VerifiedActor { get; set; }
+        public Dictionary<string, object>? VerifiedHost { get; set; }
         public int? IdleMinutes { get; set; }
         public long? PolicyRevision { get; set; }
         public DateTimeOffset? SessionExpiresAtUtc { get; set; }
