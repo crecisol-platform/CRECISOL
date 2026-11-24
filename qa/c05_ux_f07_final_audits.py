@@ -73,7 +73,10 @@ def scope() -> set[str]:
     # Accept only the exact two audited source-gate repairs. An arbitrary
     # mutation of either file (even though QA-only) remains a hard NO-GO.
     for path, expected_blob in POST_F07_QA_BLOBS.items():
-        actual_blob = subprocess.check_output(["git", "hash-object", path],
+        # Anchor to the exact versioned Git blob, not checkout bytes:
+        # text=auto may normalize legacy mixed-EOL QA sources on checkout.
+        # This cannot pass for a changed tracked blob at the checked-out SHA.
+        actual_blob = subprocess.check_output(["git", "rev-parse", "HEAD:" + path],
                                               cwd=ROOT, text=True).strip()
         need(actual_blob == expected_blob,
              "unreviewed post-F07 auditor mutation: " + path)
