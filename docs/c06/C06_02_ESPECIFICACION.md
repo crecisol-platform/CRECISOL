@@ -1,4 +1,29 @@
-# CRECISOL C06-02 — Especificación preparatoria del modelo de roles y capacidades
+# CRECISOL C06-02 — Modelo de roles y capacidades · especificación y estado candidato
+
+**ESTADO VIGENTE (24-11-2026): CANDIDATA IMPLEMENTADA EN CONTRATOS INTERNOS Y SQL AISLADO; A/B/C ESPECÍFICAS APROBADAS; NO CERTIFICADA NI FUSIONADA.** El material de preparación que sigue al informe actual es historial: su estado "NO IMPLEMENTADO" describe únicamente el momento inicial del PR #194. No es la situación de esta candidata.
+
+**Alcance exacto:** roles y propuestas de capacidades/adscripción por empresa y sucursal, verificables en Domain/Application/Infrastructure y MySQL 8.4 aislado, **sin concesión efectiva de derechos**. Se mantienen las 28 acciones futuras de C06-01 sin posibilidad de grant, y los 80 registros de inventario sin políticas C06 conectadas. C06-03/C06-04 conservan sus propias puertas de identidad y ABAC, respectivamente. No hay ninguna nueva pantalla, operación HTTP ni concesión de rol en sesiones C05.
+
+## Informe actual de implementación, pruebas y auditorías
+
+1. **Identidad:** repositorio original ID `1450414592`, ahora `crecisol-platform/CRECISOL`; base inmutable `dev` `b2e436221bca684eb43d4ce72e7044080cfd6601`. PR #194 `feature/c06-02-modelo-roles-preparacion-20261124` abierto en borrador. Ni `dev` ni `main` modificados por C06-02.
+2. **Modelos y puertos:** `backend/src/Crecisol.Domain/Authorization/C06PreparedRoleSnapshot.cs`, `backend/src/Crecisol.Application/Authorization/InspectPreparedTenantRoles.cs`, `backend/src/Crecisol.Infrastructure/Authorization/MySqlPreparedRoleReader.cs`. Validación en servidor de tenant, actor, sucursal, acción y tiempo; rol/revocación; consulta SQL con JOIN por tenant y parámetros; solo devuelve candidatos no autorizantes. `AuthorizesPrivateResource=false` por contrato.
+3. **MySQL:** migración aditiva `database/migrations/019_c06_prepared_roles.sql`, reversión `.down.sql`. Cinco tablas nuevas: catálogo de capacidades, roles tenant, propuestas de capacidades, propuestas de roles por membresía/sucursal y bitácora. FK compuestas, versión, revocación, bloqueo de grants, auditoría append-only, sin seed/product grants. Solo aplicada en CI sobre base desechable de MySQL 8.4, después de migraciones C05.
+4. **Pruebas .NET:** `backend/tests/Crecisol.PreparedRoles.ContractsTests/`: **37 verificaciones positivas y negativas PASS**, incluyendo aislamiento de tenants/actores/sucursales, códigos no asignables, revocación, entradas de tiempo inválidas, duplicados, denegación y cancelación.
+5. **Pruebas MySQL reales:** `backend/tests/Crecisol.PreparedRoles.MySqlTests/` y `database/tests/c06_02_prepared_roles_mysql.sh`: **21 ataques negativos rechazados**, **10 verificaciones del adaptador antes** y **10 después** de revocar, persistencia/versionado, privilegios sin activar y reversión aislada que preserva C05. **Diez mutaciones adversariales estructurales** fueron rechazadas adicionalmente por auditoría estática. No extrapolar estas cifras a BOLA/IDOR operativo ni a producción.
+6. **Auditoría A — trazabilidad:** validación del DOCX maestro SHA-256 `ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c`, del catálogo C06-01 y del diff acotado.
+7. **Auditoría B — seguridad:** contratos .NET, MySQL cross-tenant, realms y aislamiento, ventanas temporales, revocación, integridad, auditoría y rollback.
+8. **Auditoría C — arquitectura/compatibilidad:** capas Domain/Application/Infrastructure independientes de API, `.NET 10` con compilación sin errores ni warnings y Angular 22 compilado; frontend no cambiado. Advertencias anteriores no bloqueantes Angular: presupuestos CSS en cuatro componentes y paquetes CommonJS (`qrcode`, `dijkstrajs`); quedan fuera del cambio de C06-02. **Nota UX 9.5/10 no aplicable a interfaces porque esta microfase no crea ninguna**; no atribuir valoración visual inexistente.
+9. **Evidencia verificable sobre HEAD técnico `54aee9d25a8ca7c40a9b57aa370b4785ab321884`:** [workflow propio A/B/C 3/3 SUCCESS](https://github.com/crecisol-platform/CRECISOL/actions/runs/45467607993). [Inventario C06-01 SUCCESS](https://github.com/crecisol-platform/CRECISOL/actions/runs/45467606577). [Fundamentos SUCCESS](https://github.com/crecisol-platform/CRECISOL/actions/runs/45467620845). El SHA resultante de futuras ediciones documentales requiere cotejo CI propio.
+10. **Incidencia de gobierno — NO-GO de integración:** [auditor histórico C05 SHA1](https://github.com/crecisol-platform/CRECISOL/actions/runs/45467624528) falla en verificación de `qa/c05_sha1_exclusive_audits.py C`, porque su allowlist histórica compara el diff completo desde el commit del corte C05 y rechaza toda nueva ruta `backend/` o `database/` de C06. Sus pruebas A/B terminaron SUCCESS, pero la C de ámbito falla por definición. No equivale por sí misma a regresión de TOTP real; **no alterar, deshabilitar ni debilitar el candado** sin una decisión de alcance independiente y pruebas. El PR permanece draft y la CI roja se registra sin reinterpretarla como éxito.
+11. **Regresiones ampliadas:** C05 operacional Angular/API/MySQL y C03-10 integral deben verificarse en el SHA exacto antes del cierre. C06-02 no certifica un motor RBAC/ABAC ni pruebas de escalada C06-10.
+12. **Rollback:** revertir el PR antes de fusión no afecta datos. Si se ejecutase la migración C06 solo en un ambiente desechable, aplicar `.down.sql` con copia previa y verificar que permanezcan C05 y C04. Prohibida toda operación sobre datos reales de propietario, producción, `main` o SOLQARYN.
+
+**Decisión actual:** arquitectura y pruebas propias aprobadas; **C06-02 NO CERTIFICADA** hasta completar regresiones aplicables y resolver formalmente la incompatibilidad de alcance del gate antiguo, sin permitir privilegios ni avanzar a C06-03. No se adjudica 9.5/10 sin evidencia completa de las puertas exigidas.
+
+---
+
+## Preparación inicial del PR #194 (historial preservado, anterior a la implementación)
 
 **Estado:** PREPARACIÓN DOCUMENTAL; NO IMPLEMENTADO; NO PROBADO; NO CERTIFICADO.  
 **Fecha:** 2026-11-24. **Repositorio autorizado:** `crecisol-platform/CRECISOL` (ID `1450414592`).  
