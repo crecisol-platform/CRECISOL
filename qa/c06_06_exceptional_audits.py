@@ -71,6 +71,7 @@ def architecture():
 def persistence():
     schema=read("database/migrations/021_c06_exceptional_access.sql")
     test=read("database/tests/c06_06_exceptional_mysql.sh")
+    need(schema.count("CREATE TRIGGER ")==schema.count("END$$") and "\nEND$\n" not in schema,"trigger delimiter mismatch")
     need("CHECK(allowed IN (0,1))" in schema and "CHECK(allowed=0 OR exception_id IS NOT NULL)" in schema,"invalid ledger result")
     for marker in ("s.session_id=NEW.session_id AND s.operator_id=NEW.operator_id",
         "app.reviewer_id=NEW.operator_id AND app.review_session_id=NEW.session_id",

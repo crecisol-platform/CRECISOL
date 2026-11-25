@@ -150,7 +150,7 @@ BEGIN
                 AND NEW.event_at_utc>=cls.closed_at_utc)))
       )
  ) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='C06 exception audit transition mismatch'; END IF;
-END$
+END$$
 CREATE TRIGGER trg_c06_exception_audit_no_update BEFORE UPDATE ON c06_exception_audit FOR EACH ROW
 BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='C06 exception audit immutable'; END$$
 CREATE TRIGGER trg_c06_exception_audit_no_delete BEFORE DELETE ON c06_exception_audit FOR EACH ROW
