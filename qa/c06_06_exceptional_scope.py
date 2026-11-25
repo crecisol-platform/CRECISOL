@@ -24,6 +24,10 @@ PATHS = frozenset([
   "database/tests/c06_06_exceptional_mysql.sh"
 ])
 def require_exact(changed):
+    if "docs/c06/C06_08_ESPECIFICACION.md" in changed:
+        from c06_08_query_scope import require_exact
+        require_exact(changed)
+        return changed
     if "docs/c06/C06_07_ESPECIFICACION.md" in changed:
         from c06_07_privacy_scope import require_exact
         require_exact(changed)

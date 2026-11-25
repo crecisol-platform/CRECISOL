@@ -10,7 +10,7 @@ docker run --rm -d --name "$NAME" -p 127.0.0.1::3306 -e "MYSQL_ROOT_PASSWORD=$PA
   -e MYSQL_DATABASE=crecisol_c06_prepared "$IMAGE" >/dev/null
 ready=0
 for _ in $(seq 1 120); do
-  if docker exec -e "MYSQL_PWD=$PASSWORD" "$NAME" mysql -uroot -Nse 'SELECT 1' >/dev/null 2>&1; then
+  if docker exec -e "MYSQL_PWD=$PASSWORD" "$NAME" mysql --protocol=TCP -h127.0.0.1 -uroot -Nse 'SELECT 1' >/dev/null 2>&1; then
     ready=1; break
   fi
   sleep 1

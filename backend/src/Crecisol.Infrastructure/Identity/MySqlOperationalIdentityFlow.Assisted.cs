@@ -49,7 +49,7 @@ public sealed partial class MySqlOperationalIdentityFlow
             !await HasTwoValidReviews(u, tenant, caseId)) return new(false);
         if (r.Operation == "assisted/handoff-complete")
         {
-            var shares = await u.All("SELECT share_hmac FROM c05_identity_assisted_handoff WHERE tenant_id=@t AND case_id=@id AND expires_at_utc>UTC_TIMESTAMP(6) FOR UPDATE", ("t", tenant), ("id", caseId));
+            var shares = await u.All("SELECT share_hmac FROM c05_identity_assisted_handoff WHERE tenant_id=@t AND case_id=@id AND expires_at_utc>UTC_TIMESTAMP(6) LIMIT 3 FOR UPDATE", ("t", tenant), ("id", caseId));
             var a = Digest("handoff:" + Hex(caseId), Field(r, "shareA")); var b = Digest("handoff:" + Hex(caseId), Field(r, "shareB"));
             if (a.SequenceEqual(b) || shares.Count != 2 || !shares.Any(s => CryptographicOperations.FixedTimeEquals(Bytes(s, "share_hmac"), a)) ||
                 !shares.Any(s => CryptographicOperations.FixedTimeEquals(Bytes(s, "share_hmac"), b))) return new(false);
@@ -85,7 +85,7 @@ public sealed partial class MySqlOperationalIdentityFlow
         var rows = await u.All("""
             SELECT r.operator_id FROM c05_identity_assisted_review r
             JOIN c05_platform_operator p ON p.operator_id=r.operator_id AND p.active=1 AND p.recovery_pending=0 AND p.security_revision=r.operator_revision
-            WHERE r.tenant_id=@t AND r.case_id=@id AND r.approved=1 FOR SHARE
+            WHERE r.tenant_id=@t AND r.case_id=@id AND r.approved=1 LIMIT 3 FOR SHARE
             """, ("t", tenant), ("id", caseId));
         return rows.Count == 2;
     }

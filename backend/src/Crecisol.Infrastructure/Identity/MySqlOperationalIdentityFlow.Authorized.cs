@@ -69,7 +69,7 @@ public sealed partial class MySqlOperationalIdentityFlow
             return new(await AcceptTerms(u, tenant, actor, r), new { accepted = true });
         if (r.Operation == "security/events")
         {
-            var events = await u.All("SELECT action_code,outcome_code,created_at_utc FROM c05_identity_audit WHERE tenant_id=@t AND (actor_account_id=@a OR (subject_account_id=@a AND actor_account_id IS NULL)) ORDER BY created_at_utc DESC LIMIT 50", ("t", tenant), ("a", actor));
+            var events = await u.All("SELECT action_code,outcome_code,created_at_utc FROM c05_identity_audit WHERE tenant_id=@t AND (actor_account_id=@a OR (subject_account_id=@a AND actor_account_id IS NULL)) ORDER BY created_at_utc DESC,audit_id DESC LIMIT 50", ("t", tenant), ("a", actor));
             return new(true, new { events = events.Select(e => new { action = e["action_code"], outcome = e["outcome_code"], atUtc = e["created_at_utc"] }) });
         }
         if (r.Operation == "factor/recover-passkey")
@@ -81,16 +81,22 @@ public sealed partial class MySqlOperationalIdentityFlow
         // The authorization grant is independently revalidated inside this
         // same tenant-scoped transaction before any applicant data is fetched.
         if (r.Operation == "memberships/pending")
-            return await PendingMemberships(u, tenant, actor, r);
+            return await PendingMemberships(u, tenant, actor, member, session, r, Utc(trustedClock, "trusted_now_utc"));
+        // Restore needs only the validated session window, not an inventory.
+        if (r.Operation == "browser/restore")
+            return new(true, new OperationalSessionInventory(u.SessionExpiresAtUtc!.Value, Array.Empty<OperationalSessionSummary>()));
         if (r.Operation == "sessions")
         {
             var rows = await u.All("""
                 SELECT s.session_id,s.issued_at_utc,s.expires_at_utc,s.last_seen_at_utc,s.device_label,s.auth_method
                 FROM c05_identity_session s JOIN c05_identity_mfa_factor f ON f.account_id=s.account_id AND f.factor_id=s.mfa_factor_id
-                WHERE s.tenant_id=@t AND s.account_id=@a AND s.revoked_at_utc IS NULL AND s.expires_at_utc>UTC_TIMESTAMP(6)
+                WHERE s.tenant_id=@t AND s.account_id=@a AND s.membership_id=@mid AND s.revoked_at_utc IS NULL AND s.expires_at_utc>UTC_TIMESTAMP(6)
                 AND s.last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE AND s.account_revision=@ar AND s.membership_revision=@mr
-                AND f.factor_state=1 AND f.revoked_at_utc IS NULL ORDER BY s.last_seen_at_utc DESC
-                """, ("t", tenant), ("a", actor), ("ar", Number(account, "security_revision")), ("mr", Number(member, "approval_revision")), ("idle", idle));
+                AND f.factor_state=1 AND f.revoked_at_utc IS NULL ORDER BY s.last_seen_at_utc DESC,s.session_id DESC
+                LIMIT 4097
+                """, ("t", tenant), ("a", actor), ("mid", Bytes(member, "membership_id")), ("ar", Number(account, "security_revision")), ("mr", Number(member, "approval_revision")), ("idle", idle));
+            // Existing closed DTO admits 4096 rows; never silently truncate an inventory.
+            if (rows.Count > 4096) return new(false);
             return new(true, new OperationalSessionInventory(u.SessionExpiresAtUtc!.Value, rows.Select(row => new OperationalSessionSummary(
                 new Guid(Bytes(row, "session_id"), true), Utc(row, "issued_at_utc"), Utc(row, "expires_at_utc"), Utc(row, "last_seen_at_utc"),
                 Text(row, "device_label"), Text(row, "auth_method"))).ToArray()));
