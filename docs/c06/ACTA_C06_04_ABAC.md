@@ -1,6 +1,6 @@
 # CRECISOL — C06-04: acta institucional ABAC, propiedad e IDOR
 
-**Fecha:** 24-11-2026, America/Tegucigalpa. **Estado de esta acta:** CANDIDATA / CIERRE CONDICIONADO. Se vuelve efectiva únicamente si el POSTMERGE técnico y sus propias auditorías A/B/C PREMERGE y POSTMERGE terminan completed/success sobre sus SHAs reales. No declarar certificación por haber escrito este documento.
+**Fecha de elaboración:** 24-11-2026, America/Tegucigalpa. **ESTADO INSTITUCIONAL VIGENTE: C06-04 CERTIFICADA ÚNICAMENTE EN SU ALCANCE TÉCNICO, 9.5/10.** La condición inicial de esta acta se cumplió: código C06-04 PRE/POST A/B/C/E2E 4/4 SUCCESS ([#45522703023](https://github.com/crecisol-platform/CRECISOL/actions/runs/45522703023), [#45524471431](https://github.com/crecisol-platform/CRECISOL/actions/runs/45524471431)); C05 POST 2/2 SUCCESS; acta PR #202 PRE/POST A/B/C 3/3 SUCCESS ([#45528830322](https://github.com/crecisol-platform/CRECISOL/actions/runs/45528830322), [#45528982856](https://github.com/crecisol-platform/CRECISOL/actions/runs/45528982856)), más regresión C04-12 transversal SUCCESS [#45528982862](https://github.com/crecisol-platform/CRECISOL/actions/runs/45528982862). Se conserva abajo la cronología del estado condicionado, sin atribuir permisos futuros ni operaciones productivas.
 
 ## 1. Autoridad y límites
 
@@ -51,8 +51,80 @@ Repositorio CRECISOL ID original 1450414592, ubicación autorizada crecisol-plat
 
 ## 5. Juicio comercial, gates finales y reversión
 
-**Dictamen técnico preliminar: 9.5/10 con evidencia PREMERGE.** Solo podría formalizarse la aceptación final si el workflow POSTMERGE del PR #201 finaliza 4/4 SUCCESS en SHA 31b8f58fcdb5f6f134a0b663213976f285371653, no existen P0/P1 atribuibles al alcance, el E2E C05 POSTMERGE resulta SUCCESS y esta acta obtiene sus propias auditorías A/B/C PRE/POST sobre SHAs finales. **Hasta entonces C06-04 NO CERTIFICADA.**
+**Dictamen final y criterio como comprador técnico: 9.5/10 — ACEPTADA Y CERTIFICADA SOLO EN SU ALCANCE.** Se verificó la puerta antes condicionada: [PR #201 POSTMERGE A/B/C/E2E #45524471431](https://github.com/crecisol-platform/CRECISOL/actions/runs/45524471431) **4/4 SUCCESS** en SHA 31b8f58fcdb5f6f134a0b663213976f285371653; [C05 POSTMERGE #45524470905](https://github.com/crecisol-platform/CRECISOL/actions/runs/45524470905) **2/2 SUCCESS**; [acta #202 PRE A/B/C #45528830322](https://github.com/crecisol-platform/CRECISOL/actions/runs/45528830322) y [POST A/B/C #45528982856](https://github.com/crecisol-platform/CRECISOL/actions/runs/45528982856) **3/3 SUCCESS** cada una sobre SHA final de acta 43bc672f005e88b12f777bc4520a4687539be705. [C04-12 transversal #45528982862](https://github.com/crecisol-platform/CRECISOL/actions/runs/45528982862) **SUCCESS**. No se identificaron P0/P1 atribuibles al cambio en las pruebas y auditorías ejecutadas. Este juicio no es una promesa de seguridad absoluta ni certificación de producción.
 
-Al superar todas las puertas: C06-01/02/03/04 **4/11 microfases certificadas en sus alcances** y 5/37 capítulos completos; C06 global NO CERTIFICADO; C06-05 solo preparación independiente, C07 bloqueado. Antes del cierre documental vigente: 3/11. El motor no concede permisos de las 28 acciones futuras y no valida operaciones HTTP no implementadas.
+Al superar todas las puertas: C06-01/02/03/04 **4/11 microfases certificadas en sus alcances** y 5/37 capítulos completos; C06 global NO CERTIFICADO; C06-05 solo preparación independiente, C07 bloqueado. Antes del cierre documental se registraban 3/11; **puertas documentales satisfechas, estado vigente 4/11**. El motor no concede permisos de las 28 acciones futuras y no valida operaciones HTTP no implementadas.
 
 **Rollback:** revertir PR técnico #201 y esta acta con análisis de dependencias; en MySQL descartable retirar 020 antes de cualquier reversión C05 y verificar conservación de datos. Jamás ejecutar rollback en datos de propietario o producción en esta etapa.
+
+
+## 6. Informe final detallado para el propietario — cierre C06-04
+
+### 6.1 Objetivo y dictamen verificable
+**Requisito:** negar accesos IDOR cuando una persona solicita expedientes que no le pertenecen, incluso si otra persona trabaja en la misma empresa y sucursal. **CUMPLIDO dentro del ámbito implementado:** la ruta existente `POST /api/v1/identity/private/read` utiliza una decisión ABAC del backend basada en identidad C06-03, tenant, membresía, rol comprobado, acción `identity.private.read`, sucursal, propietario, grant específico y, para empleados no propietarios, asignación individual vigente. Un UUID de la petición solo es selector, nunca fuente de autorización. **No es una cobertura certificada de las 80 rutas ni de expedientes futuros que aún no tienen API.**
+
+### 6.2 Inventario exacto de lo entregado
+El [PR técnico #201](https://github.com/crecisol-platform/CRECISOL/pull/201) modificó **14 archivos autorizados**, agrupados de esta forma:
+
+| Capa / archivos | Resultado |
+| --- | --- |
+| Domain: `backend/src/Crecisol.Domain/Tenancy/C06CaseAbacPolicy.cs` | Política central pura, default deny, actor/acción/tenant/branch/owner/assignment |
+| Infrastructure: `backend/src/Crecisol.Infrastructure/Tenancy/C06CaseAbacProjection.cs`, `backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs` | Lectura transaccional con `FOR SHARE`, resolución desde filas SQL y control antes de exponer referencia privada |
+| Database: `database/migrations/020_c06_case_abac.sql`, `020_c06_case_abac.down.sql`, `database/operations/c06_04_local_runtime_role.sql` | Tabla aditiva de asignaciones por recurso, 3 FK compuestas, TTL finito, revocación irreversible, SELECT-only runtime y reversión |
+| Pruebas: proyecto `backend/tests/Crecisol.C06Abac.ContractsTests/`, `database/tests/c06_04_abac_mysql.sh` | 64 aserciones .NET y 22 ataques SQL MySQL 8.4 rechazados |
+| QA/E2E: `qa/c05_operational_flow_e2e.mjs`, `qa/c06_03_context_audits.py`, `qa/c06_04_abac_audits.py`, `.github/workflows/c06-04-abac-ownership.yml` | E2E real, 61 controles de seguridad por mutación, auditorías A/B/C y regresión heredada |
+| Especificación: `docs/c06/C06_04_ESPECIFICACION.md` | Contrato, amenazas, condiciones, límites y reversión |
+| Acta posterior PR #202 | Cinco archivos exclusivamente documentales/QA, sin nuevo código productivo |
+
+**Frontend: cero pantallas modificadas. API: cero rutas nuevas.** No se ejecutó migración sobre cuentas reales ni se habilitó gestión de asignaciones, VPS o cobros.
+
+### 6.3 Matriz funcional de aceptación — mismo negocio, otros ámbitos
+| Caso probado | Resultado exigido y observado |
+| --- | --- |
+| Usuario propietario + grant exacto vigente para su recurso | **ALLOW** |
+| Empleado A, recurso de empleado B, mismo tenant y sucursal, sin grant | **DENY** |
+| Empleado A con permiso amplio de sucursal, sin asignación exacta para el expediente B | **DENY** |
+| Empleado A con grant y asignación exacta, activa, no revocada para expediente B | **ALLOW** únicamente para B |
+| Empleado A intenta otro expediente del mismo compañero/sucursal | **DENY** |
+| Tenant o sucursal ajenos, ID o host falsificados | **DENY** |
+| Grants duplicados o ambiguos y acción no coincidente | **DENY** |
+| Asignación revocada, vencida, de otro actor o recurso | **DENY** |
+| Rol PLATFORM/SuperAdmin o personalizado sin autoridad | **DENY** |
+
+La ruta responde genéricamente al rechazo, sin transformar el selector del navegador en permiso ni devolver la referencia del expediente denegado.
+
+### 6.4 Evidencia real A/B/C y regresiones — por SHA
+| Prueba / puerta | Enlace y resultado |
+| --- | --- |
+| Técnica PREMERGE | [#45522703023](https://github.com/crecisol-platform/CRECISOL/actions/runs/45522703023) — A/B/C/E2E **4/4 SUCCESS**, 351 aserciones E2E, 9 escenarios nuevos, 64 .NET, 22 SQL |
+| Técnica POSTMERGE en SHA `31b8f58fcdb5f6f134a0b663213976f285371653` | [#45524471431](https://github.com/crecisol-platform/CRECISOL/actions/runs/45524471431) — **4/4 SUCCESS** |
+| C05 operación POSTMERGE | [#45524470905](https://github.com/crecisol-platform/CRECISOL/actions/runs/45524470905) — **2/2 SUCCESS** |
+| Acta institucional PREMERGE | [#45528830322](https://github.com/crecisol-platform/CRECISOL/actions/runs/45528830322) — A/B/C **3/3 SUCCESS** |
+| Acta institucional POSTMERGE SHA `43bc672f005e88b12f777bc4520a4687539be705` | [#45528982856](https://github.com/crecisol-platform/CRECISOL/actions/runs/45528982856) — **3/3 SUCCESS** |
+| Regresión integral C04-12 del SHA documental | [#45528982862](https://github.com/crecisol-platform/CRECISOL/actions/runs/45528982862) — **SUCCESS** |
+| Controles previos C06-03 del SHA técnico | [#45524471121](https://github.com/crecisol-platform/CRECISOL/actions/runs/45524471121) — A/B/C **3/3 SUCCESS** |
+
+**Auditoría A (trazabilidad y funcionalidad):** acción existente identificada `identity.private.read`, Documento Maestro y catálogos conservados, diff autorizado y evidencias por SHA.
+
+**Auditoría B (seguridad/privacidad):** IDOR en mismo tenant/sucursal, otro tenant, otros roles/actores, recursos y grants ajenos, expiración, revocación, SQL tenant-scope y ausencia de concesiones nuevas, con pruebas negativas reales.
+
+**Auditoría C (arquitectura y regresiones):** Domain separado de Infrastructure, `.NET 10 -warnaserror`, Angular 22 types/build, Chromium, C05/C06-03 y rollback limpio. **No se midió throughput o latencia en producción.**
+
+### 6.5 Errores detectados y correcciones sin ocultar intentos fallidos
+1. Primera auditoría exigía por equivocación el texto `tenant-custom` en la lista positiva; corregida para verificar expresamente su exclusión.
+2. Primera mutación retiraba solo una ocurrencia del control; corregida para detectar su ausencia total.
+3. La política usó inicialmente la acción futura `cases.read`; sustituida por la canónica y ya existente `identity.private.read` sin activar el catálogo futuro.
+4. Primer E2E verificó 348 aserciones pero finalizó en **FAILURE MySQL 3730** al desmontar C05 antes de la tabla dependiente C06. Se corrigió el orden: revertir primero C06-04, verificar preservación de recursos/membresías y después ejecutar los 18 rollbacks C05. **E2E definitivo: 351 PASS**. Ningún FAIL histórico se reetiqueta como PASS.
+
+### 6.6 Evaluación como comprador / calidad estricta
+**Calificación técnica del alcance: 9.5/10 — SÍ aceptaría/compraría esta entrega limitada de C06-04.** Fundamentación: control ABAC verificable en backend, pruebas negativas intraempresa y cross-tenant reales, aislamiento SQL, revocación, C05 intacto y evidencia PRE/POST por SHA. **No es una puntuación estadística ni una nota de toda CRECISOL.** Calidad visual: **N/A**, porque ninguna interfaz fue rediseñada; no declarar 9.5/10 visual. No se identificaron defectos P0/P1 en el cambio auditado.
+
+**Límites/riesgos residuales expresos:** la tabla de asignaciones tiene infraestructura de consulta, pero no un proceso productivo para emitirlas, renovarlas o auditarlas como delegaciones; habrá que diseñar emisión autorizada, aprobación, MFA step-up, techo de delegación y bitácora en su futura fase, sin concederlas prematuramente. `cases.read` y las otras acciones futuras no están habilitadas. Ninguna afirmación sobre todos los casos de uso, autorización de recursos futuros, rendimiento productivo o despliegue.
+
+### 6.7 Reversión, ramas y continuación
+- `dev` integra [PR #201](https://github.com/crecisol-platform/CRECISOL/pull/201) y [PR #202](https://github.com/crecisol-platform/CRECISOL/pull/202) (SHA de acta aprobado `43bc672f005e88b12f777bc4520a4687539be705`). `main` permanece sin cambios respecto al SHA verificado `b794181148d2c5e36c1c88127f19a8a9082acff5`.
+- Rollback evaluado solamente sobre MySQL 8.4 descartable: quitar tabla C06 dependiente primero, comprobar preservación C05; cualquier reversión en datos del propietario exige evaluación/backup separado. Revertir PR técnicos/documentales de forma controlada, no eliminar datos a ciegas.
+- **C06-01/02/03/04 = 4/11 CERTIFICADAS cada una en su alcance; 5/37 capítulos completos; C06 global NO CERTIFICADO.** La siguiente C06-05 (step-up para operaciones sensibles) solo queda habilitada para iniciar su propia preparación, sin asumir permisos por estar documentada.
+
+### 6.8 Contrato obligatorio de cierre futuro
+Toda microfase restante C06 se entregará con este nivel de detalle: objetivo real, alcance/cobertura negativa, archivos exactos, controles de tenant y PII, resultados positivos/negativos, auditorías A/B/C y E2E/CI con SHA y URLs, incidentes y correcciones, nota técnica y visual separadas, criterio explícito de compra, riesgos residuales, rollback, estado de `dev`/`main`, certificación precisa y siguiente gate. **No sustituir este reporte con un simple “CERTIFICADO”.**
