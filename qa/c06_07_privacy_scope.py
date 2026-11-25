@@ -21,6 +21,15 @@ PATHS = frozenset([
   "qa/c06_04_abac_audits.py",
   "qa/c06_05_stepup_audits.py"
 ])
+REVALIDATION_PATHS = frozenset([
+  "qa/c05_operational_flow_e2e.mjs",
+  "qa/c06_07_privacy_response_checks.mjs",
+  "qa/c06_07_privacy_oracle_tests.mjs",
+  "qa/c06_07_privacy_scope.py",
+  ".github/workflows/c06-07-privacy-minimization.yml",
+  "docs/c06/C06_07_ESPECIFICACION.md",
+])
 def require_exact(changed):
-    if set(changed) != PATHS:
-        raise AssertionError("C06-07 NO-GO unexpected successor diff " + repr(sorted(set(changed) ^ PATHS)))
+    actual = frozenset(changed)
+    if actual not in (PATHS, REVALIDATION_PATHS):
+        raise AssertionError("C06-07 NO-GO unexpected successor diff " + repr(sorted(actual)))

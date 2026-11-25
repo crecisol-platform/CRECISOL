@@ -54,7 +54,8 @@ const mails = [];
 const notices = [];
 const confidential = [rootPassword, appPassword, ...Object.values(keys)];
 let apiLogs = '', uiLogs = '', browser, assertions = 0;
-let finishPrivacyBrowser;
+let privacyBrowser;
+async function drainPrivacyBrowser() { if (privacyBrowser) await privacyBrowser.drain(); }
 const A = '00000000000000000000000000000001';
 const B = '00000000000000000000000000000002';
 const branch = '10000000-0000-4000-8000-000000000001';
@@ -97,7 +98,7 @@ async function api(operation, fields = {}, token, host = 'tenant-a.example.test'
       let text = ''; response.setEncoding('utf8'); response.on('data', chunk => text += chunk);
       response.on('end', () => { let data; try { data = JSON.parse(text); } catch { data = null; }
         try {
-          if (c06Privacy) inspectPrivacyResponse(operation,response.statusCode,data,response.headers['cache-control'],extra);
+          if (c06Privacy) inspectPrivacyResponse(operation,response.statusCode,text,response.headers['cache-control'],extra);
           resolve({ status: response.statusCode, data, cacheControl: response.headers['cache-control'] });
         } catch (error) { reject(error); }
       });
@@ -164,6 +165,7 @@ async function register(mailbox, page) {
   const token = await mailFor(mailbox); confidential.push(token);
   const proof = sql(`SELECT BIN_TO_UUID(proof_id,0) FROM c05_identity_mailbox_proof WHERE tenant_id=UNHEX('${A}') AND proof_state=0 ORDER BY created_at_utc DESC LIMIT 1`);
   if (page) {
+    await drainPrivacyBrowser();
     await page.goto(`http://127.0.0.1:${uiPort}/cuenta?vista=confirmar`);
     await page.getByLabel('Identificador de confirmación', { exact: true }).fill(proof);
     await page.getByLabel('Código de confirmación', { exact: true }).fill(token);
@@ -352,7 +354,7 @@ try {
       sql, noticeFor, mailFor, uiPort, reservePlatformWindow });
   } else {
   const browserContext = await browser.newContext();
-  if (c06Privacy) finishPrivacyBrowser = attachPrivacyBrowser(browserContext);
+  if (c06Privacy) privacyBrowser = attachPrivacyBrowser(browserContext);
   const page = await browserContext.newPage();
 
   // REAL MySQL+HTTP session-policy matrix: only the platform security admin
@@ -492,6 +494,7 @@ try {
   check((await api('memberships/pending', { cursor: 'malformed' }, approver.token)).status === 401,
     'malformed keyset cursor fails closed without applicant details');
   // Registration completion is now an independent screen; return to the login view.
+  await drainPrivacyBrowser();
   await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
   await page.getByRole('region', { name: 'Iniciar sesión', exact: true }).getByLabel('Correo electrónico', { exact: true }).fill('approver@example.test');
   await page.getByLabel('Contraseña', { exact: true }).fill(password);
@@ -542,6 +545,7 @@ try {
   check((await approverLogout).status() === 200, 'browser logout completes server revocation and cookie deletion before navigation');
   await page.getByRole('heading', { name: 'Iniciar sesión', exact: true }).waitFor();
   // Angular login and enrollment traverse the real same-origin proxy.
+  await drainPrivacyBrowser();
   await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
   await page.getByRole('region', { name: 'Iniciar sesión', exact: true }).getByLabel('Correo electrónico', { exact: true }).fill('member@example.test');
   await page.getByLabel('Contraseña', { exact: true }).fill(password);
@@ -549,6 +553,7 @@ try {
   await page.getByRole('button', { name: 'Configurar segundo factor' }).click();
   await page.getByText('No puedo escanear: mostrar clave manual', { exact: true }).click();
   const seed = await page.getByLabel('Clave de configuración MFA').innerText(); confidential.push(seed);
+  await drainPrivacyBrowser();
   await verifySha1EnrollmentQr(page, 'Código QR privado para vincular CRECISOL con tu aplicación de autenticación', seed, check);
   await page.getByLabel('Código de tu aplicación de autenticación').fill(totp(seed, true));
   const verified = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
@@ -597,6 +602,7 @@ try {
     'X-Crecisol-Browser': '1', Origin: `http://127.0.0.1:${uiPort}`, Cookie: `__Host-crecisol-c05=${token}`
   })).status === 400, 'ambient cookie cannot authorize a mutation without session-bound CSRF proof');
   const restoredRequest = page.waitForResponse(r => r.url().endsWith('/browser/restore'));
+  await drainPrivacyBrowser();
   await page.reload();
   check((await restoredRequest).status() === 200, 'reload restores only a server-validated cookie session and CSRF material');
   await page.getByRole('heading', { name: 'Tu sesión actual', exact: true }).waitFor();
@@ -736,6 +742,7 @@ try {
   await page.getByRole('heading', { name: 'Iniciar sesión', exact: true }).waitFor();
   check(true, 'Angular clears revoked session on server validation');
   await reserveTestWindow(35);
+  await drainPrivacyBrowser();
   await page.goto(`http://127.0.0.1:${uiPort}/cuenta?vista=recuperar`);
   await page.getByLabel('Correo para recuperación').fill('member@example.test');
   const recoveryReceipt = page.waitForResponse(r => r.url().endsWith('/recovery/request'));
@@ -757,6 +764,7 @@ try {
   check((await api('login', { mailbox: 'member@example.test', password })).status === 401, 'old password denied after recovery');
   check((await api('login', { mailbox: 'member@example.test', password: newPassword })).status === 200, 'new password works after recovery');
   async function uiLogin(mailbox, currentPassword) {
+    await drainPrivacyBrowser();
     await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
     const factorBucket = createHmac('sha256', Buffer.from(keys.CRECISOL_C05_TOKEN_HMAC_KEY, 'hex'))
       .update('C05/quota:mfa:' + accountId(mailbox)).digest('hex');
@@ -826,6 +834,7 @@ try {
   await page.getByRole('button', { name: 'Configurar segundo factor' }).click();
   await page.getByText('No puedo escanear: mostrar clave manual', { exact: true }).click();
   const replacedSeed = await page.getByLabel('Clave de configuración MFA').innerText(); confidential.push(replacedSeed);
+  await drainPrivacyBrowser();
   await verifySha1EnrollmentQr(page, 'Código QR privado para vincular CRECISOL con tu aplicación de autenticación', replacedSeed, check);
   await page.getByLabel('Código de tu aplicación de autenticación').fill(totp(replacedSeed, true));
   const reverified = page.waitForResponse(r => r.url().endsWith('/mfa/verify'));
@@ -892,7 +901,7 @@ try {
   check(!apiLogs.includes('member@example.test') && !apiLogs.includes('LOCAL-PRIVATE-REFERENCE'), 'API logs contain no mailbox or private resource');
   }
   }
-  if (c06Privacy) { await finishPrivacyBrowser(); reportPrivacyResponses(); }
+  if (c06Privacy) { await privacyBrowser.finish(); reportPrivacyResponses(); }
   await browser.close(); browser = undefined;
   for (const p of children.reverse()) { p.kill(); }
   await delay(1500);

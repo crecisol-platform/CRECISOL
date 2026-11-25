@@ -24,3 +24,9 @@ A maestro/catálogo 79 y alcance exacto; B contratos .NET por operación, campos
 
 ## 4. Reversión y límites
 Revertir PR únicamente dev, retirar permiso del rol offline y rutina 022 en laboratorio; no restaurar payload ya dispuesto ni borrar evidencia. No certificar portal de derechos, operación productiva, borrado de backups ni Dedicated DB. main y SOLQARYN intactas.
+
+## 5. Addendum de revalidación POST (25-11-2026)
+
+La repetición POSTMERGE 45613536702 registró 4/5 trabajos aprobados; E (139202955345) falló después de 418 comprobaciones con una infracción en mfa/enroll. No es evidencia suficiente de una fuga ni de una respuesta correcta. La certificación PRE histórica se conserva; queda bloqueada la apertura de C06-08 hasta obtener evidencia real satisfactoria.
+
+Candidata de corrección exclusiva de QA: inspección de texto HTTP sin convertir errores de lectura o JSON inválido en null; distinción entre captura incompleta y violación de contrato; comparación exacta de propiedades y cache-control; denegaciones sin campos; drenado de capturas antes de navegar y después de los dos enrollments; mensajes sin secretos. Se conserva el umbral de cobertura, los contratos del producto, el backend, frontend, MySQL y todas las regresiones. Diez pruebas locales con eventos simulados y un fixture mínimo mfa/enroll aprobadas; no equivalen a Chromium, Kestrel o MySQL reales. El workflow ejecutará el mismo archivo de pruebas contra el contrato completo del repositorio. El alcance alternativo de revalidación solo permite estos seis archivos y no modifica la lista histórica de veinte. Candidata NO CERTIFICADA; no fusionar ni abrir C06-08 sin validar de nuevo A/B/C/D/E y las regresiones aplicables sobre el árbol exacto.

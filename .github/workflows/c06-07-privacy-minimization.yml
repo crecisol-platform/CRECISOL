@@ -13,6 +13,7 @@ on:
       - 'database/operations/c06_07_local_privacy_worker.sql'
       - 'database/tests/c06_07_privacy_mysql.sh'
       - 'qa/c06_07_privacy_response_checks.mjs'
+      - 'qa/c06_07_privacy_oracle_tests.mjs'
       - 'qa/c05_operational_flow_e2e.mjs'
       - 'docs/c06/C06_07_ESPECIFICACION.md'
       - 'qa/c06_07_privacy_scope.py'
@@ -36,6 +37,7 @@ on:
       - 'database/operations/c06_07_local_privacy_worker.sql'
       - 'database/tests/c06_07_privacy_mysql.sh'
       - 'qa/c06_07_privacy_response_checks.mjs'
+      - 'qa/c06_07_privacy_oracle_tests.mjs'
       - 'qa/c05_operational_flow_e2e.mjs'
       - 'docs/c06/C06_07_ESPECIFICACION.md'
       - 'qa/c06_07_privacy_scope.py'
@@ -97,6 +99,7 @@ jobs:
       - run: |
           node --check qa/c05_operational_flow_e2e.mjs
           node --check qa/c06_07_privacy_response_checks.mjs
+          node --test qa/c06_07_privacy_oracle_tests.mjs
       - name: Angular 22 unchanged functional/regression compile
         run: |
           npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
