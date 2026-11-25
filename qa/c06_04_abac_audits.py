@@ -73,7 +73,7 @@ GUARDS={
  "e.Assignment","a.ResourceId == e.ResourceId",
  "a.ActorId == e.Identity.ActorId","a.Action.Value == e.RequiredAction.Value",
  "a.RevokedAtUtc is null","PrivilegedBranchReaders",
- "ReadRoles.Contains(e.RoleCode)","tenant-custom",
+ "ReadRoles.Contains(e.RoleCode)",
 ],
 "adapter":[
  "C06ReadAuthorizedCase(","GuidBytes(Field(request, \"branchId\"))",
@@ -120,6 +120,12 @@ def static_guards():
         source=read(key)
         for term in terms:need(term in source,f"{key} missing {term}")
     src=read("domain")
+    # A role is NOT permitted by being present in C06-02 proposals.
+    # The domain's exact read-role allowlist must explicitly exclude the
+    # custom/PLATFORM/SuperAdmin realm, rather than require a denied role.
+    role_allowlist=src.split("private static readonly HashSet<string> ReadRoles",1)[1].split("};",1)[0]
+    for denied in ('"tenant-custom"', '"platform-operator"', '"superadmin"', '"platform-incident-responder"'):
+        need(denied not in role_allowlist, "untrusted role became an allowed case reader: "+denied)
     need(not any(x in src for x in ("MySqlConnector","HttpContext","Microsoft.AspNetCore","System.Data.Sql")),
          "Domain contains transport or SQL references")
     need("private/read" not in src or "cases.read" in src,
