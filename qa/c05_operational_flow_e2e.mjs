@@ -25,10 +25,12 @@ const require = createRequire(path.join(root, 'frontend/package.json'));
 const { chromium } = require('@playwright/test');
 const AxeBuilder = require('@axe-core/playwright').default;
 if (process.argv.includes('--help')) { console.log('Usage: node qa/c05_operational_flow_e2e.mjs [--preview | --focus=operator | --focus=audit]'); process.exit(0); }
-if (process.argv.slice(2).some(a => !['--preview', '--focus=operator', '--focus=audit', '--c06-04'].includes(a))) throw new Error('Unknown isolated runner argument');
+if (process.argv.slice(2).some(a => !['--preview', '--focus=operator', '--focus=audit', '--c06-04', '--c06-05'].includes(a))) throw new Error('Unknown isolated runner argument');
 const preview = process.argv.includes('--preview');
 const focus = process.argv.includes('--focus=operator') ? 'operator' : process.argv.includes('--focus=audit') ? 'audit' : null;
 const c06Abac = process.argv.includes('--c06-04');
+const c06StepUp = process.argv.includes('--c06-05');
+if (c06StepUp && (process.argv.includes('--preview') || focus)) throw new Error('C06-05 E2E requires full isolated flow');
 if (c06Abac && (process.argv.includes('--preview') || focus)) throw new Error('C06-04 E2E requires full isolated flow');
 if (preview && focus) throw new Error('Preview and focused verification are separate modes');
 const offset = Number(process.env.CRECISOL_C05_TEST_PORT_OFFSET || '0');
@@ -441,6 +443,26 @@ try {
   check((await api('memberships/decide', { membershipId: memberId, decision: 'approve',
     reason: 'X'.repeat(241), code: '000000' }, approver.token)).status === 400,
     'oversize administrative justification is rejected at the HTTP boundary');
+  let c06ReasonProof;
+  if (c06StepUp) {
+    c06ReasonProof = approver.backups.pop();
+    check(typeof c06ReasonProof === 'string' && c06ReasonProof.length === 32,
+      'C06-05 isolated fresh backup fixture available');
+    check((await api('memberships/decide', { membershipId: memberId, decision: 'approve',
+      reason: 'Synthetic local approval' }, approver.token)).status === 400,
+      'C06-05 session alone cannot approve a membership');
+    check((await api('memberships/decide', { membershipId: memberId, decision: 'approve',
+      reason: 'Synthetic local approval', code: c06ReasonProof, stepUpVerified: 'true' }, approver.token)).status === 400,
+      'C06-05 browser cannot assert step-up');
+    check((await api('memberships/decide', { membershipId: memberId, decision: 'approve',
+      reason: '------------', code: c06ReasonProof }, approver.token)).status === 401,
+      'C06-05 service rejects punctuation-only reason even with fresh proof');
+    check((await api('memberships/decide', { membershipId: memberId, decision: 'approve',
+      reason: 'Synthetic local approval', code: '0'.repeat(32) }, approver.token)).status === 401,
+      'C06-05 well-shaped invalid backup proof cannot authorize');
+    check(Number(sql(`SELECT membership_state FROM c05_identity_membership WHERE tenant_id=UNHEX('${A}') AND membership_id=UUID_TO_BIN('${memberId}',0)`)) === 0,
+      'C06-05 rejected purposes and proofs leave membership pending');
+  }
   const pendingInventory = await api('memberships/pending', { cursor: 'start' }, approver.token);
   check(pendingInventory.status === 200 &&
     Array.isArray(pendingInventory.data?.requests) &&
@@ -467,11 +489,17 @@ try {
   await page.getByLabel('Solicitud pendiente seleccionada', { exact: true }).selectOption(memberId);
   await page.getByLabel('Decisión', { exact: true }).selectOption('approve');
   await page.getByLabel('Motivo de la decisión', { exact: true }).fill('Synthetic local approval');
-  await page.getByLabel('Código MFA del aprobador', { exact: true }).fill(approver.backups.pop());
+  await page.getByLabel('Código MFA del aprobador', { exact: true }).fill(c06ReasonProof ?? approver.backups.pop());
   await page.getByLabel('Revisé la solicitud y confirmo que esta es la decisión que deseo registrar.').check();
   const approvalResponse = page.waitForResponse(r => r.url().endsWith('/memberships/decide'));
   await page.getByRole('button', { name: 'Registrar decisión', exact: true }).click();
   check((await approvalResponse).status() === 200, 'Angular real MFA approver activates pending membership through API');
+  if (c06StepUp) {
+    check(Number(sql(`SELECT membership_state FROM c05_identity_membership WHERE tenant_id=UNHEX('${A}') AND membership_id=UUID_TO_BIN('${memberId}',0)`)) === 1,
+      'C06-05 valid proof survives malformed purpose and authorizes exactly the accepted decision');
+    check((await api('invitations/issue', { mailbox: 'c06-step-up-replay@example.test', code: c06ReasonProof },
+      approver.token)).status === 401, 'C06-05 consumed proof cannot be reused for another sensitive operation');
+  }
   const selfDecision = await api('memberships/decide', { membershipId: membershipId('approver@example.test'), decision: 'approve', reason: 'Self denied', code: await nextCode(approver.seed) }, approver.token);
   check(selfDecision.status === 401, 'self approval denied');
   await register('approval.race@example.test');

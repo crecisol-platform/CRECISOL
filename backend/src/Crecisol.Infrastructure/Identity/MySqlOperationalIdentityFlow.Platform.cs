@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Crecisol.Application.Identity;
+using Crecisol.Domain.Authorization;
 using MySqlConnector;
 
 namespace Crecisol.Infrastructure.Identity;
@@ -73,6 +74,11 @@ public sealed partial class MySqlOperationalIdentityFlow
         u.Actor = Bytes(principal, "operator_id");
         u.VerifiedActor = true;
         await SlidePlatformSession(u, tokenHash, idle);
+        // All authenticated fresh-proof operations pass through the purpose
+        // gate before any handler. Existing per-action quotas, factor checks,
+        // password checks, grants and recovery challenges remain mandatory.
+        if (C06SensitiveOperationPolicy.RequiresFreshFactor(C06StepUpRealm.Platform, r.Operation) &&
+            !C06PlatformStepUpPurpose(u, principal, r)) return new(false);
         if (r.Operation == "platform/sessions/keepalive")
             return new(true, new { expiresAtUtc = u.SessionExpiresAtUtc, idleMinutes = idle });
         if (r.Operation is "platform/session-policy" or "platform/session-policy/update")

@@ -60,7 +60,18 @@ def diff():
         "qa/c05_operational_flow_e2e.mjs",
         ".github/workflows/c06-04-abac-ownership.yml",
     }
-    need(changed and all(p in exact or p in c06_04_allowed or
+    # Named C06-05 additions only; retain every earlier security/DB/API guard.
+    c06_05_allowed = {
+        "qa/c06_02_role_model_audit.py",
+        "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Platform.cs",
+        "backend/src/Crecisol.Domain/Authorization/C06SensitiveOperationPolicy.cs",
+        "backend/tests/Crecisol.C06StepUp.ContractsTests/Program.cs",
+        "backend/tests/Crecisol.C06StepUp.ContractsTests/Crecisol.C06StepUp.ContractsTests.csproj",
+        "docs/c06/C06_05_ESPECIFICACION.md",
+        "qa/c06_05_stepup_audits.py",
+        ".github/workflows/c06-05-sensitive-step-up.yml",
+    }
+    need(changed and all(p in exact or p in c06_04_allowed or p in c06_05_allowed or
          p.startswith(("backend/tests/Crecisol.C06Membership.ContractsTests/",
                        "backend/tests/Crecisol.C06Abac.ContractsTests/",
                        "docs/c06/C06_03_")) for p in changed),
