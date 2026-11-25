@@ -46,6 +46,16 @@ def changed():
     if "docs/c06/ACTA_C06_05_STEPUP.md" in diff:
         need(set(diff)==successor,"unexpected C06-05 documentary scope "+repr(diff))
         allowed |= successor
+    # C06-06 closure, exact documentary scope; preserve previous invariants.
+    successor_06 = {
+      "docs/c06/ACTA_C06_06_EXCEPTIONAL_ACCESS.md",
+      "docs/ESTADO_VIGENTE_CAPITULOS.md",
+      "docs/planificacion-futura/C06_MICROFASES_PROPUESTAS.md",
+      "qa/institutional_c06_04_act_audits.py",
+    }
+    if "docs/c06/ACTA_C06_06_EXCEPTIONAL_ACCESS.md" in diff:
+        need(set(diff)==successor_06,"unexpected C06-06 documentary scope "+repr(diff))
+        allowed |= successor_06
     need(diff and set(diff)<=allowed,"acta diff changes runtime/schema or source "+repr(diff))
     return diff
 
@@ -76,7 +86,29 @@ def common():
     need("C06-04" in state and "C06-05" in state and "C06 global NO CERTIFICADO" in state,
          "official status missing conditional next gate")
     need("C06-04" in plan and "C06-05" in plan,"chapter plan missing bounded state")
+    verify_c06_06_acta(state,plan)
     return text
+
+def verify_c06_06_acta(state,plan):
+    """Check the immutable evidence record and integrated tree; not live CI."""
+    path=ROOT/"docs/c06/ACTA_C06_06_EXCEPTIONAL_ACCESS.md"
+    if not path.is_file():
+        return
+    text=path.read_text(encoding="utf-8")
+    code="37370beebbce8188f426df6a11e610615e5df665"
+    tree="3ae2797f91d73617af6ef4fbc5836b7d57ef8fc4"
+    for marker in (code,tree,"17d7dc5cb430c40843debfb3d9231b7a5f75395d","3862456be2dd01d7e7955f6fbc45b7daf678fbe6",
+                   "45553531887","5/5 SUCCESS","423 comprobaciones","64 contratos","34 operaciones",
+                   "9.5/10","C06 6/11","C06 global NO CERTIFICADO",
+                   "139000043152","139000043060","139000043029","139000042822","139000042944"):
+        need(marker in text,"C06-06 acta missing evidence "+marker)
+    need(subprocess.check_output(["git","rev-parse",code+"^{tree}"],cwd=ROOT,text=True).strip()==tree,
+         "C06-06 integrated tree mismatch")
+    need(subprocess.run(["git","merge-base","--is-ancestor",code,"HEAD"],cwd=ROOT).returncode==0,
+         "C06-06 tested integration not ancestral")
+    need(all("C06 6/11" in doc and "ACTA_C06_06_EXCEPTIONAL_ACCESS.md" in doc for doc in (state,plan)),
+         "C06-06 missing bounded state and acta reference")
+    print("PASS C06-06 ACTA: exact integrated tree and five-audit evidence record")
 
 def a():
     files=changed()
