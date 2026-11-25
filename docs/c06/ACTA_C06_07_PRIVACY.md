@@ -89,3 +89,36 @@ Registro POST del mismo árbol real al redactar: no atribuir PASS a trabajos pen
 9.5/10 en alcance técnico, aceptación SÍ: contratos de salida cerrados y negativos efectivos, compilación limpia y regresiones reales, disposición local de payloads y privilegios estrictos, trazabilidad/rollback y segregación de arquitectura. Visual N/A porque no hubo interfaz nueva; regresión UX aprobada. No afirmar ausencia universal de vulnerabilidades, operación productiva ni borrado físico/legal. No contabilizar contratos unitarios como operaciones reales por HTTP. Revertir PR de código solo en dev, revocar EXECUTE/retirar rutina 022 en laboratorio, sin restaurar payload ya dispuesto ni destruir evidencias. No alteraciones a main (SHA b794181148d2c5e36c1c88127f19a8a9082acff5; protección de rama no activada por este trabajo), SOLQARYN, VPS, producción o cobros.
 
 **C06 7/11; capítulos completos 5/37; C06 global NO CERTIFICADO; C06-08 — Aislamiento de listados y paginación, habilitada únicamente tras integración institucional de esta acta. C07 bloqueado.**
+
+## 8. Ratificación tras revalidación de privacidad e ingreso HTTP (25-11-2026)
+
+**C06-07 — REVALIDACIÓN APROBADA, 9.5/10 técnico, aceptación como comprador SÍ en el alcance local auditado.** No se elimina ni reinterpreta el historial. La regresión POST original obligó a detener C06-08. PR #210 corrige el contrato de caché de ingreso de ambos ámbitos de identidad sin cambiar autorización, rutas, MFA, sesiones, frontend, esquema MySQL ni proyección de datos; sustituye la captura Playwright tardía por observación HTTP acotada de las respuestas reales de Kestrel y distingue el recibo browser/restore del inventario de sesiones. La observación del relay no acredita por sí sola recepción en Chromium; el recorrido UI/E2E mantiene sus aserciones independientes.
+
+| Revisión | Resultado histórico y resolución |
+|---|---|
+| POST original [45613536702](https://github.com/crecisol-platform/CRECISOL/actions/runs/45613536702) | E FAILURE en mfa/enroll; no se pudo determinar retrospectivamente si era captura o contrato. |
+| PRE [45619768486](https://github.com/crecisol-platform/CRECISOL/actions/runs/45619768486) | E FAILURE en HTTP 400 de sessions por falta de private; 10 pruebas del oráculo aprobadas. |
+| PRE [45621380168](https://github.com/crecisol-platform/CRECISOL/actions/runs/45621380168) | A/B/C/D SUCCESS; seis negativas de ingreso reales aprobadas, E CANCELLED después de logout. No se atribuye PASS a E; espera de captura sin plazo identificada como hipótesis consistente, no como causa probada retrospectivamente. |
+| PRE [45630138784](https://github.com/crecisol-platform/CRECISOL/actions/runs/45630138784) | A/B/C/D/E 5/5 SUCCESS; revalidación integral definitiva del árbol exacto. |
+
+### 8.1. Identidad del código y evidencia
+
+PR [#210](https://github.com/crecisol-platform/CRECISOL/pull/210), base `f4383dcffa9f647756410e75bb14770c183361f9`, head `865138fa4c52eb74baede4c7786dd44a720f7912`, merge virtual PRE `750d53e6e26b10953b0f11612b784bc9da7b63b4`, merge real en dev `3789224e49f3183563a7f8491a3b3101f161a6a1`. Árbol completo idéntico `5bf350c9f38e314066890db5da191b437ed8062e`, mismos padres del merge comprobados. Diff técnico exacto: diez archivos (un Program.cs, documentación de especificación, un workflow y siete archivos QA), sin cambios de capas, permisos, datos o Maestro. A continuación los cinco jobs reales del PRE definitivo:
+
+| Auditoría | Job | Evidencia |
+|---|---|---|
+| A — requisitos y trazabilidad | 139260804038 | SUCCESS; huellas Word/PDF y blob, 1,876 elementos originales intactos, catálogo y alcance. |
+| B — seguridad y contratos | 139260804149 | SUCCESS; 255 comprobaciones .NET, 79 operaciones y WebAuthn real. |
+| C — arquitectura y compilación | 139260804234 | SUCCESS; .NET 10 sin errores ni advertencias, Angular 22/Node 24 y 16/16 pruebas Node del verificador/relay. |
+| D — persistencia y privilegios | 139260803641 | SUCCESS; MySQL 8.4 real, 10 operaciones indebidas rechazadas, disposición, idempotencia y rollback. |
+| E — integración completa | 139260804007 | SUCCESS; seis negativas adicionales de ingreso; 506 comprobaciones HTTP, 70 formas exitosas distintas, 144 respuestas con cabecera browser (143 observadas en el relay de navegador), dos enrolamientos MFA y 429 comprobaciones integradas. Logs de API sin credenciales, correo o recurso privado en los casos verificados. |
+
+11 workflows PRE aplicables SUCCESS: 45630138784 (privacidad), 45630138709 (acceso excepcional), 45630138473 (step-up), 45630138747 (ABAC), 45630138640 (C05 operativo), 45630138932 (catálogo), 45630138541 (SHA1), 45630138461 (UX), 45630138422 (C03 integral), 45630138725 (C03-08) y 45630138762 (foundation). Cuatro omitidos por condición: 45630138496, 45630138673, 45630138742, 45630138726; no se contabilizan como aprobación. Los conteos no representan casos únicos sumables.
+
+### 8.2. Dictamen y límites
+
+Ratifico 9.5/10 y aceptación SÍ por la cobertura real de la privacidad, negativa de ingreso, separación de arquitectura, estabilidad de contratos, pruebas de persistencia y regresiones aplicables. Evaluación visual N/A: no hay cambios de interfaz; la regresión UX sí pasó. No se identifica P0/P1 abierto en la evidencia ejecutada; no equivale a auditoría universal ni a certificación productiva. Los fallos históricos se conservan; la nueva evidencia resuelve el bloqueo técnico sin atribuir éxito a ejecuciones canceladas. Rollback: revertir únicamente PR #210 en dev y reabrir inmediatamente el bloqueo C06-08; no desactivar las políticas de privacidad para aprobar pruebas.
+
+POST del merge técnico observado al redactar: 14 workflows registrados (2 SUCCESS, 0 FAILURE, 12 sin conclusión, 0 con otra conclusión); privacidad #45633914842. No se considera PASS una repetición pendiente; si falla una regresión esencial, detener la siguiente microfase y corregir. La ratificación técnica se apoya en PRE real del árbol integrado idéntico y el protocolo de autonomía del propietario. main permanece en `b794181148d2c5e36c1c88127f19a8a9082acff5`; no se activó protección de rama, ni se modificó SOLQARYN, Maestro, VPS, producción o cobros.
+
+**C06 7/11; capítulos completos 5/37; C06 global NO CERTIFICADO. C06-08 habilitada para desarrollo propio secuencial tras integración del presente registro; C06-09 a C06-11 pendientes y C07 bloqueado.**

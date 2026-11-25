@@ -141,7 +141,30 @@ def verify_c06_07_acta(state,plan):
          "C06-07 tested integration not ancestral")
     need(all("C06 7/11" in doc and "ACTA_C06_07_PRIVACY.md" in doc for doc in (state,plan)),
          "C06-07 missing bounded state and acta reference")
+    verify_c06_07_revalidation(text,state,plan)
     print("PASS C06-07 ACTA: exact integrated tree and five-audit evidence record")
+
+def verify_c06_07_revalidation(acta,state,plan):
+    """Ratification of the later HTTP ingress/capture fix; retain original evidence."""
+    code="3789224e49f3183563a7f8491a3b3101f161a6a1"
+    tree="5bf350c9f38e314066890db5da191b437ed8062e"
+    virtual="750d53e6e26b10953b0f11612b784bc9da7b63b4"
+    head="865138fa4c52eb74baede4c7786dd44a720f7912"
+    for marker in (code,tree,virtual,head,"45630138784","5/5 SUCCESS",
+                   "139260804038","139260804149","139260804234","139260803641","139260804007",
+                   "506 comprobaciones HTTP","70 formas","143 observadas","429 comprobaciones",
+                   "16/16","45613536702","45619768486","45621380168","CANCELLED",
+                   "9.5/10","11 workflows PRE aplicables SUCCESS","C06 7/11"):
+        need(marker in acta,"C06-07 revalidation missing evidence "+marker)
+    for doc in (state,plan):
+        need(all(m in doc for m in (code,tree,"45630138784","RATIFICACIÓN C06-07","C06 7/11",
+                  "C06-08 habilitada","ACTA_C06_07_PRIVACY.md")),"C06-07 revalidation status missing")
+    for revision in (code,head):
+        need(subprocess.check_output(["git","rev-parse",revision+"^{tree}"],cwd=ROOT,text=True).strip()==tree,
+             "C06-07 revalidation tree mismatch "+revision)
+    need(subprocess.run(["git","merge-base","--is-ancestor",code,"HEAD"],cwd=ROOT).returncode==0,
+         "C06-07 revalidated integration not ancestral")
+    print("PASS C06-07 REVALIDATION ACTA: exact tree, historical failures retained, five verified jobs")
 
 def a():
     files=changed()
