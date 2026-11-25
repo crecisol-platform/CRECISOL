@@ -50,8 +50,9 @@ public static class C06CaseAbacPolicy
             !e.BranchActive || !e.ResourceActive ||
             e.GrantRevision <= 0 || !Utc(e.GrantIssuedAtUtc) ||
             e.GrantIssuedAtUtc > e.CheckedAtUtc ||
-            e.GrantExpiresAtUtc is not { } expires ||
-            !Utc(expires) || e.CheckedAtUtc >= expires ||
+            !e.GrantExpiresAtUtc.HasValue ||
+            !Utc(e.GrantExpiresAtUtc.Value) ||
+            e.CheckedAtUtc >= e.GrantExpiresAtUtc.Value ||
             e.GrantRevokedAtUtc is not null)
             return false;
 
