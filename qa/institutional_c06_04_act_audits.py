@@ -59,7 +59,8 @@ def common():
     plan=PLAN.read_text(encoding="utf-8")
     for marker in (CODE_SHA,"a27f1ec5e66355abf83d2b16f058f9b4ee8b405e",
                    "45522703023","45522703090","351","22","64",
-                   "identity.private.read","ABAC","NO CERTIFICADA","4/11"):
+                   "identity.private.read","ABAC","CERTIFICADA ÚNICAMENTE EN SU ALCANCE TÉCNICO",
+                   "45528830322","45528982856","45528982862","4/11"):
         need(marker in text,"acta missing verified evidence "+marker)
     need("C06-04" in state and "C06-05" in state and "C06 global NO CERTIFICADO" in state,
          "official status missing conditional next gate")
