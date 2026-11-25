@@ -41,6 +41,17 @@ def change_scope():
         "docs/ESTADO_VIGENTE_CAPITULOS.md",
         "docs/planificacion-futura/C06_MICROFASES_PROPUESTAS.md",
     }
+    # C06-05 shares the authenticated entrypoint. Keep A/B/C/D regression
+    # checks active; only these individually enumerated paths are permitted.
+    allowed |= {
+        "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Platform.cs",
+        "backend/src/Crecisol.Domain/Authorization/C06SensitiveOperationPolicy.cs",
+        "backend/tests/Crecisol.C06StepUp.ContractsTests/Program.cs",
+        "backend/tests/Crecisol.C06StepUp.ContractsTests/Crecisol.C06StepUp.ContractsTests.csproj",
+        "docs/c06/C06_05_ESPECIFICACION.md",
+        "qa/c06_05_stepup_audits.py",
+        ".github/workflows/c06-05-sensitive-step-up.yml",
+    }
     need(bool(changed),"empty diff cannot certify")
     need(all(x in allowed or x.startswith("backend/tests/Crecisol.C06Abac.ContractsTests/")
              for x in changed),"out-of-scope path "+repr(changed))

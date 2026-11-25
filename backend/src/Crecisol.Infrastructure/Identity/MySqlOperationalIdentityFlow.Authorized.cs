@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Crecisol.Application.Identity;
+using Crecisol.Domain.Authorization;
 using MySqlConnector;
 
 namespace Crecisol.Infrastructure.Identity;
@@ -110,6 +111,9 @@ public sealed partial class MySqlOperationalIdentityFlow
             return await C06ReadAuthorizedCase(u, tenant, actor, member, c06Context, r);
         if (r.Operation is "passkeys" or "passkeys/register")
             return await AuthenticatedPasskey(u, tenant, r, account, session, ct);
+        // C06-05: closed, server-selected purpose. Input validity never replaces
+        // C05's locked one-use factor consumption or the operation's permissions.
+        if (!u.VerifiedActor || !C06StepUpInputValid(C06StepUpRealm.Tenant, r)) return new(false);
         // A passkey-authenticated session still uses the enrolled TOTP/backup
         // for independent step-up on changes of security settings.
         factor = await u.One("SELECT * FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_kind=1 AND factor_state=1 AND revoked_at_utc IS NULL FOR UPDATE", ("a", actor));
@@ -201,5 +205,27 @@ public sealed partial class MySqlOperationalIdentityFlow
             return new(true, new { accepted = true });
         }
         return new(false);
+    }
+
+    private static bool C06StepUpInputValid(C06StepUpRealm realm, OperationalIdentityRequest request)
+    {
+        request.Fields.TryGetValue("code", out var code);
+        request.Fields.TryGetValue("reason", out var reason);
+        return C06SensitiveOperationPolicy.AcceptsInput(realm, request.Operation, code, reason);
+    }
+
+    // The operator session is independently resolved and locked in Platform().
+    // Store only an HMAC of the declared purpose in the existing platform audit;
+    // the audit outcome still comes from the actual operation and fresh factor.
+    private bool C06PlatformStepUpPurpose(Unit u, Dictionary<string, object> principal,
+        OperationalIdentityRequest request)
+    {
+        if (!u.VerifiedActor || u.Actor is not { } actor ||
+            !actor.SequenceEqual(Bytes(principal, "operator_id")) ||
+            !C06StepUpInputValid(C06StepUpRealm.Platform, request)) return false;
+        var reason = C06SensitiveOperationPolicy.RequiresHumanReason(C06StepUpRealm.Platform, request.Operation)
+            ? Field(request, "reason") : string.Empty;
+        u.PurposeHash = Digest("c06-step-up-purpose", request.Operation + "\n" + reason);
+        return true;
     }
 }
