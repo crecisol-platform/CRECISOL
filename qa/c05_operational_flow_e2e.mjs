@@ -847,6 +847,19 @@ try {
   await browser.close(); browser = undefined;
   for (const p of children.reverse()) { p.kill(); }
   await delay(1500);
+  // C06-04 has a composite FK to C05 resources and membership. Reverse its
+  // assignment table FIRST on this disposable schema; never disable FKs to
+  // conceal an unsafe rollback and never attempt deletion of real user data.
+  if (c06Abac) {
+    const resourceCount = Number(sql('SELECT COUNT(*) FROM c05_identity_private_resource'));
+    const membershipCount = Number(sql('SELECT COUNT(*) FROM c05_identity_membership'));
+    sql(readFileSync(path.join(root, 'database/migrations/020_c06_case_abac.down.sql'), 'utf8'));
+    check(sql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='c06_case_resource_assignment'") === '0',
+      'C06-04 ABAC rollback removes exact assignments before C05 resource tables');
+    check(Number(sql('SELECT COUNT(*) FROM c05_identity_private_resource')) === resourceCount &&
+      Number(sql('SELECT COUNT(*) FROM c05_identity_membership')) === membershipCount,
+      'C06-04 rollback preserves existing C05 cases and tenant memberships');
+  }
   // Reversible migrations are exercised on the actual populated schema.
   for (const migration of ['018_c05_session_idle_policy', '017_c05_totp_sha1_exclusive', '016_c05_existing_identity_join', '015_c05_session_devices', '014_c05_operator_recovery', '013_c05_abuse_signals', '012_c05_scoped_profile', '011_c05_platform_recovery', '010_c05_security_notices', '009_c05_pairing', '008_c05_terms_invitations', '007_c05_passkeys', '006_c05_operational_identity_flow', '005_c05_operational_login_directory', '004_c05_local_proof_delivery',
     '003_c05_pending_account_completion', '002_c05_registration_proof_outbox', '001_c05_identity_operational'])
