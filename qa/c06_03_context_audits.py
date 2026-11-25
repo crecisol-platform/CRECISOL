@@ -45,13 +45,31 @@ def diff():
         "docs/planificacion-futura/C06_MICROFASES_PROPUESTAS.md",
         ".github/workflows/c06-03-trusted-tenant-context.yml",
     }
-    need(changed and all(p in exact or
+    # C06-04 is the next sequential microphase. Keep C06-03 security
+    # invariant checks active while permitting ONLY its named files.
+    c06_04_allowed = {
+        "backend/src/Crecisol.Domain/Tenancy/C06CaseAbacPolicy.cs",
+        "backend/src/Crecisol.Infrastructure/Tenancy/C06CaseAbacProjection.cs",
+        "database/migrations/020_c06_case_abac.sql",
+        "database/migrations/020_c06_case_abac.down.sql",
+        "database/operations/c06_04_local_runtime_role.sql",
+        "database/tests/c06_04_abac_mysql.sh",
+        "docs/c06/C06_04_ESPECIFICACION.md",
+        "docs/c06/C06_04_ACTA_CIERRE.md",
+        "qa/c06_04_abac_audits.py",
+        "qa/c05_operational_flow_e2e.mjs",
+        ".github/workflows/c06-04-abac-ownership.yml",
+    }
+    need(changed and all(p in exact or p in c06_04_allowed or
          p.startswith(("backend/tests/Crecisol.C06Membership.ContractsTests/",
+                       "backend/tests/Crecisol.C06Abac.ContractsTests/",
                        "docs/c06/C06_03_")) for p in changed),
          "unexpected C06-03 diff: " + repr(changed))
-    need(not any(p.startswith(("frontend/", "database/", "backend/src/Crecisol.Api/",
+    need(not any(p.startswith(("frontend/", "backend/src/Crecisol.Api/",
                                "backend/src/Crecisol.CredentialSecurity/"))
                  for p in changed), "C06-03 altered UI, API, C05 schema or crypto")
+    need(not any(p.startswith("database/") and p not in c06_04_allowed
+                 for p in changed), "unapproved DB file cannot be a C06-04 dependency")
     return changed
 
 def audit_sources():
