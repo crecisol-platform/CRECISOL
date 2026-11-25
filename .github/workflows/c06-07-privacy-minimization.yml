@@ -4,6 +4,7 @@ on:
     branches: [dev]
     paths:
       - 'backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs'
+      - 'backend/src/Crecisol.Api/Program.cs'
       - 'backend/src/Crecisol.Api/Contracts/C06IdentityResponseProjection.cs'
       - 'backend/tests/Crecisol.C06Privacy.ContractsTests/Program.cs'
       - 'backend/tests/Crecisol.C06Privacy.ContractsTests/Crecisol.C06Privacy.ContractsTests.csproj'
@@ -13,6 +14,9 @@ on:
       - 'database/operations/c06_07_local_privacy_worker.sql'
       - 'database/tests/c06_07_privacy_mysql.sh'
       - 'qa/c06_07_privacy_response_checks.mjs'
+      - 'qa/c06_07_privacy_oracle_tests.mjs'
+      - 'qa/c06_07_privacy_relay.mjs'
+      - 'qa/c06_07_privacy_relay_tests.mjs'
       - 'qa/c05_operational_flow_e2e.mjs'
       - 'docs/c06/C06_07_ESPECIFICACION.md'
       - 'qa/c06_07_privacy_scope.py'
@@ -27,6 +31,7 @@ on:
     branches: [dev]
     paths:
       - 'backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs'
+      - 'backend/src/Crecisol.Api/Program.cs'
       - 'backend/src/Crecisol.Api/Contracts/C06IdentityResponseProjection.cs'
       - 'backend/tests/Crecisol.C06Privacy.ContractsTests/Program.cs'
       - 'backend/tests/Crecisol.C06Privacy.ContractsTests/Crecisol.C06Privacy.ContractsTests.csproj'
@@ -36,6 +41,9 @@ on:
       - 'database/operations/c06_07_local_privacy_worker.sql'
       - 'database/tests/c06_07_privacy_mysql.sh'
       - 'qa/c06_07_privacy_response_checks.mjs'
+      - 'qa/c06_07_privacy_oracle_tests.mjs'
+      - 'qa/c06_07_privacy_relay.mjs'
+      - 'qa/c06_07_privacy_relay_tests.mjs'
       - 'qa/c05_operational_flow_e2e.mjs'
       - 'docs/c06/C06_07_ESPECIFICACION.md'
       - 'qa/c06_07_privacy_scope.py'
@@ -97,6 +105,8 @@ jobs:
       - run: |
           node --check qa/c05_operational_flow_e2e.mjs
           node --check qa/c06_07_privacy_response_checks.mjs
+          node --check qa/c06_07_privacy_relay.mjs
+          node --test qa/c06_07_privacy_oracle_tests.mjs qa/c06_07_privacy_relay_tests.mjs
       - name: Angular 22 unchanged functional/regression compile
         run: |
           npm ci --prefix frontend --ignore-scripts --no-audit --no-fund

@@ -32,7 +32,19 @@ def catalog():
     need(len(routes)==79 and routes==rules==set(doc["operations"]),"response inventory drift")
     need(doc["authority"]=="HTTP_RESPONSE_CONTRACT_NOT_AUTHORIZATION","privacy grants authority")
     need("NO CERTIFICADA" in read("docs/c06/C06_07_ESPECIFICACION.md"),"premature certificate")
+def ingress_privacy():
+    program=read("backend/src/Crecisol.Api/Program.cs")
+    ingress=program.index('context.Request.Path.StartsWithSegments("/api/v1/identity", StringComparison.OrdinalIgnoreCase)')
+    platform=program.index('context.Request.Path.StartsWithSegments("/api/v1/platform-identity", StringComparison.OrdinalIgnoreCase)')
+    callback=program.index("context.Response.OnStarting(",platform)
+    cache=program.index('context.Response.Headers.CacheControl = "no-store, private"',callback)
+    exception=program.index("app.UseExceptionHandler(")
+    host=program.index("if (!trustedHosts.Contains(")
+    need(ingress<platform<callback<cache<exception<host,"identity ingress cache must survive early rejection and downstream error resets")
+    need('context.Response.Headers.CacheControl = "no-store";' in program,"public cache baseline removed")
+    need("C06-07 ingress " in read("qa/c05_operational_flow_e2e.mjs"),"real ingress regression matrix missing")
 def boundary():
+    ingress_privacy()
     module=read("backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs")
     code=read("backend/src/Crecisol.Api/Contracts/C06IdentityResponseProjection.cs")
     need(module.index("var result = await flow.ExecuteAsync")<module.index("C06IdentityResponseProjection.TryApply(operation, result, out var safe)")<module.index("browserTransport.Receipt(context, operation, safe, browserSession)")<module.index("Results.Ok(safe.Value)"),"raw response or bypass")
@@ -45,8 +57,21 @@ def boundary():
         need(mark in code,"missing "+mark)
     need("JsonSerializer.Serialize" not in code and "GetValue(value)" in code and "output.Add(field.Name, field.Read" in code,
          "projection must build allowed fields without serializing raw result")
-    need("inspectPrivacyResponse(operation,response.statusCode" in read("qa/c05_operational_flow_e2e.mjs") and
-         "attachPrivacyBrowser(browserContext)" in read("qa/c05_operational_flow_e2e.mjs"),"wire oracle not connected")
+    e2e=read("qa/c05_operational_flow_e2e.mjs")
+    relay=read("qa/c06_07_privacy_relay.mjs")
+    oracle=read("qa/c06_07_privacy_response_checks.mjs")
+    need("inspectPrivacyResponse(operation,response.statusCode" in e2e and
+         "startPrivacyRelay(apiPort, inspectPrivacyResponse)" in e2e and
+         e2e.count("target: `http://127.0.0.1:${proxyPort}`")==2 and
+         "await privacyRelay.finish(); reportPrivacyResponses();" in e2e,"wire oracle not connected")
+    for marker in ("hostname:'127.0.0.1'", "server.listen(0,'127.0.0.1'", "incoming.pipe(upstream)",
+                   "response.complete", "response.rawHeaders", "outgoing.end(body)", "setTimeout(fail,deadlineMs)",
+                   "size>maxBytes", "fatal:true", "inspect(op,response.statusCode,raw"):
+        need(marker in relay,"privacy relay invariant missing "+marker)
+    need("response.finished()" not in oracle and "response.body()" not in oracle and
+         "relayBrowserChecked>=10" in oracle and "relayEnrollments>=2" in oracle,"capture/coverage regression")
+    need("node --test qa/c06_07_privacy_oracle_tests.mjs qa/c06_07_privacy_relay_tests.mjs" in
+         read(".github/workflows/c06-07-privacy-minimization.yml"),"relay tests not connected")
 def architecture():
     scope(); boundary(); catalog()
     for p in ("frontend/","backend/src/Crecisol.Domain/","backend/src/Crecisol.Infrastructure/","backend/src/Crecisol.CredentialSecurity/"):

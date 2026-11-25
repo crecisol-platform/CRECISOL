@@ -67,6 +67,25 @@ if (operationalIdentityEnabled)
 
 var app = builder.Build();
 
+// Protect both identity realms before host validation, routing denials and
+// exception handling. Register first so even a downstream header reset
+// (including the exception handler) cannot remove the private/no-store policy.
+// Path selection affects caching only; it never grants access or selects a tenant.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api/v1/identity", StringComparison.OrdinalIgnoreCase) ||
+        context.Request.Path.StartsWithSegments("/api/v1/platform-identity", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers.CacheControl = "no-store, private";
+            context.Response.Headers.Pragma = "no-cache";
+            return Task.CompletedTask;
+        });
+    }
+    await next(context);
+});
+
 // Safe failure across every environment, with no server exception details.
 app.UseExceptionHandler(error => error.Run(context =>
 {
