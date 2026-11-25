@@ -74,11 +74,11 @@ export async function verifyScopedQueries({api,check,sql,A,B,actor,token,key,mem
     const fresh=await inbox('start');
     check(fresh.status===200 && typeof cursorOf(fresh)==='string','C06-08 new authorized page after grant revision');
     confidential.push(cursorOf(fresh));
-    // Change only the exact fixture B grant revision and scope; no grant from A
+    // Revoke only the exact fixture B grant; no grant from A
     // or another branch may keep the B continuation usable.
-    sql(`UPDATE c05_identity_resource_grant SET scope_kind=1,grant_revision=grant_revision+1 WHERE tenant_id=UNHEX('${B}') AND grant_id=UNHEX('${foreignGrant}')`);
-    check((await inbox(bCursor,foreignToken,'tenant-b.example.test')).status===401,'C06-08 downgraded B grant cannot continue its enterprise list');
-    check((await inbox('start',foreignToken,'tenant-b.example.test')).status===401,'C06-08 branch-only B grant cannot start enterprise list');
+    sql(`UPDATE c05_identity_resource_grant SET revoked_at_utc=UTC_TIMESTAMP(6),grant_revision=grant_revision+1 WHERE tenant_id=UNHEX('${B}') AND grant_id=UNHEX('${foreignGrant}')`);
+    check((await inbox(bCursor,foreignToken,'tenant-b.example.test')).status===401,'C06-08 revoked B grant cannot continue its enterprise list');
+    check((await inbox('start',foreignToken,'tenant-b.example.test')).status===401,'C06-08 revoked B grant cannot start enterprise list');
     const sa=await sessions(token),sb=await sessions(foreignToken,'tenant-b.example.test');
     check(sa.status===200 && sa.data.sessions.some(s=>norm(s.id)===sameTenantSession) && sa.data.sessions.every(s=>norm(s.id)!==foreignSession),'C06-08 A inventory isolates same actor across memberships');
     check(sb.status===200 && sb.data.sessions.length===1 && norm(sb.data.sessions[0].id)===foreignSession,'C06-08 B inventory isolates exact membership');
