@@ -77,7 +77,7 @@ jobs:
           npm run check:types --prefix frontend
           npm run build --prefix frontend
   d-e2e:
-    name: E2E | Chromium Angular Kestrel MySQL: step-up and ABAC regressions
+    name: "E2E | Chromium Angular Kestrel MySQL: step-up and ABAC regressions"
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
