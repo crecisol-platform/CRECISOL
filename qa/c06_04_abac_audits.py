@@ -44,6 +44,7 @@ def change_scope():
     # C06-05 shares the authenticated entrypoint. Keep A/B/C/D regression
     # checks active; only these individually enumerated paths are permitted.
     allowed |= {
+        "qa/c06_02_role_model_audit.py",
         "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Platform.cs",
         "backend/src/Crecisol.Domain/Authorization/C06SensitiveOperationPolicy.cs",
         "backend/tests/Crecisol.C06StepUp.ContractsTests/Program.cs",

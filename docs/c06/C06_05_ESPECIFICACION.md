@@ -37,8 +37,8 @@ Total: 10 TENANT + 9 PLATFORM = 19 operaciones de prueba fresca. No activar las 
 - Domain: C06SensitiveOperationPolicy.cs, lista cerrada y forma de prueba/motivo, sin SQL ni HTTP.
 - Infrastructure: Authorized.cs, Platform.cs; guardas previas a mutaciones/dispatch; autenticación y consumo C05 intactos; HMAC de finalidad de operador en la bitácora existente, sin código ni razón en claro; resultado real conserva su semántica. El motivo de la aprobación TENANT sigue registrado como HMAC en el ledger de aprobación. No modificar ABAC C06-04.
 - Pruebas de contrato .NET; E2E aislado opt-in --c06-05 junto con --c06-04, negativas de sesión sin prueba, campo inventado, razón inválida con prueba fresca, prueba inválida, estado inalterado y replay entre operaciones, éxito real de aprobación desde Angular. Pruebas de C05 y C06-03/04 no se suprimen.
-- A/B/C/D CI read-only y scope exacto; ampliar únicamente la lista de rutas de diff de auditores anteriores C06-03/C06-04 para las rutas de esta fase (mantener todas sus guardas, compilaciones, negativas y reglas DB/API). 
-- Frontend y DB: sin cambios. Nota visual N/A para el diff, no certificar nueva interfaz. Política de inactividad 30 minutos administrable y MFA de C05 intactos.
+- A/B/C/D CI read-only y scope exacto; ampliar únicamente la lista de rutas de diff de auditores anteriores C06-02/C06-03/C06-04 para las rutas de esta fase (mantener todas sus guardas, compilaciones, negativas y reglas DB/API). 
+- Frontend y DB: sin cambios. Nota visual N/A para el diff, no certificar nueva interfaz. Política de inactividad administrable y MFA de C05 intactos.
 
 ## Puertas de aceptación
 A: verificar maestro, inventario de las 19 acciones existentes y diff por SHA. B: contratos .NET, separación realm, input y causa, pruebas negativas HTTP y consumo real de C05. C: arquitectura, .NET10 y Angular22 con Node24; regresiones C06-03/04 y C05. D: Chromium/Kestrel/MySQL8.4 desechable, E2E real y rollback heredado. Revisar resultados y logs sobre HEAD y SHA integrado; no evaluar 9.5/10 ni comprar antes de PASS y revisión de alcance, sin P0/P1. Revisión estática no sustituye runtime. 

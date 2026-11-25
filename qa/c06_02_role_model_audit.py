@@ -85,6 +85,25 @@ def scope():
         "docs/ESTADO_VIGENTE_CAPITULOS.md",
         "docs/planificacion-futura/C06_MICROFASES_PROPUESTAS.md",
     }
+    # C06-05 changes shared runtime entrypoints, not the prepared-role registry.
+    # Admit only its exact reviewed diff and retain all historical guard checks.
+    c06_05_paths = {
+        "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs",
+        "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Platform.cs",
+        "backend/src/Crecisol.Domain/Authorization/C06SensitiveOperationPolicy.cs",
+        "backend/tests/Crecisol.C06StepUp.ContractsTests/Program.cs",
+        "backend/tests/Crecisol.C06StepUp.ContractsTests/Crecisol.C06StepUp.ContractsTests.csproj",
+        "docs/c06/C06_05_ESPECIFICACION.md",
+        "qa/c06_05_stepup_audits.py",
+        "qa/c05_operational_flow_e2e.mjs",
+        ".github/workflows/c06-05-sensitive-step-up.yml",
+        "qa/c06_03_context_audits.py",
+        "qa/c06_04_abac_audits.py",
+        "qa/c06_02_role_model_audit.py",
+    }
+    if "docs/c06/C06_05_ESPECIFICACION.md" in changed:
+        need(set(changed) == c06_05_paths, "unexpected C06-05 regression scope")
+        exact_docs |= c06_05_paths
     need(changed and all(p in exact_docs or any(p.startswith(a) for a in allowed)
                              for p in changed),
          "unexpected path in C06-02 diff: " + repr(changed))

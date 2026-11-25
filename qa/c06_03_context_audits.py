@@ -62,6 +62,7 @@ def diff():
     }
     # Named C06-05 additions only; retain every earlier security/DB/API guard.
     c06_05_allowed = {
+        "qa/c06_02_role_model_audit.py",
         "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Platform.cs",
         "backend/src/Crecisol.Domain/Authorization/C06SensitiveOperationPolicy.cs",
         "backend/tests/Crecisol.C06StepUp.ContractsTests/Program.cs",

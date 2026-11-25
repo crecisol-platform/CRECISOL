@@ -13,6 +13,7 @@ DOMAIN = "backend/src/Crecisol.Domain/Authorization/C06SensitiveOperationPolicy.
 AUTH = "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs"
 PLATFORM = "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Platform.cs"
 PATHS = [
+  "qa/c06_02_role_model_audit.py",
   "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs",
   "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Platform.cs",
   "backend/src/Crecisol.Domain/Authorization/C06SensitiveOperationPolicy.cs",
