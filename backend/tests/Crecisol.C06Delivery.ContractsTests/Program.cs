@@ -65,7 +65,9 @@ catch(InvalidOperationException ex) when(ex.Message=="Invalid protected content.
 foreach (var op in new[]{"profile/photo","platform/profile/photo"})
 {
     Check(C06IdentityResponseProjection.TryApply(op,new(true,new { png=base64,mime="image/png",width=64,height=64 }),out var safe) &&
-        safe.Allowed && JsonSerializer.Serialize(safe.Value).Contains(base64,StringComparison.Ordinal),"valid scoped raster "+op);
+        safe.Allowed,"valid scoped raster "+op);
+    using(var projected=JsonDocument.Parse(JsonSerializer.Serialize(safe.Value)))
+        Check(projected.RootElement.GetProperty("png").GetString()==base64,"exact decoded PNG field "+op);
     var badCrc=png.ToArray(); badCrc[29]^=1;
     var badLength=png.ToArray(); BinaryPrimitives.WriteInt32BigEndian(badLength.AsSpan(8,4),int.MaxValue);
     var wrongDimensions=png.ToArray(); wrongDimensions[19]=65;
