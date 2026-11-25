@@ -1,5 +1,5 @@
 // Synthetic only. Exercise real HTTP and MySQL; no fixture credential output.
-export async function verifyExceptionalAccess({platform,api,sql,check,provisionPlatformOperator,reservePlatformWindow,A,B,branch,otherBranch,resource,tenantToken,confidential,randomUUID}) {
+export async function verifyExceptionalAccess({platform,api,sql,check,provisionPlatformOperator,reservePlatformWindow,A,B,branch,otherBranch,resource,tenantToken,confidential,randomUUID,nextCode}) {
   const requester=provisionPlatformOperator('exception.requester@example.test');
   const reviewer=provisionPlatformOperator('exception.reviewer@example.test');
   const issuer=provisionPlatformOperator('exception.authority@example.test');
@@ -56,7 +56,7 @@ export async function verifyExceptionalAccess({platform,api,sql,check,provisionP
   check((await platform('breakglass/read',{exceptionId:id,resourceId:fake,code:requester.backups.at(-1)},req)).status===400,'C06-06 read cannot replace resource selector');
   await reservePlatformWindow(40);
   check((await platform('breakglass/read',{exceptionId:id,code:freshOpen},req)).status===401,'C06-06 consumed opening proof cannot read');
-  const freshRead=requester.backups.pop();
+  const freshRead=await nextCode(requester.seed); // Genuine RFC6238 SHA1, not only one-use backup.
   // Audit insert failure must roll back factor consumption and prohibit disclosure.
   sql("REVOKE INSERT ON crecisol_c05.c06_exception_audit FROM 'c05_identity_local_runtime';");
   try {
@@ -66,6 +66,8 @@ export async function verifyExceptionalAccess({platform,api,sql,check,provisionP
   }
   const result=await platform('breakglass/read',{exceptionId:id,code:freshRead},req);
   check(result.status===200 && result.data?.reference==='LOCAL-PRIVATE-REFERENCE' && Object.keys(result.data).length===1,'C06-06 real approved read returns only exact reference');
+  check(result.cacheControl?.includes('no-store') && result.cacheControl?.includes('private'),'C06-06 private projection is never cacheable');
+  check(sql(`SELECT COUNT(*) FROM c05_platform_operator WHERE operator_id=UNHEX('${requester.id}') AND last_totp_step IS NOT NULL`)==='1','C06-06 real TOTP step consumed');
   check((await platform('breakglass/read',{exceptionId:id,code:freshRead},req)).status===401,'C06-06 consumed read proof cannot replay');
   check((await platform('breakglass/close',{exceptionId:id},differentSession)).status===401,'C06-06 unrelated session cannot close');
   check((await platform('breakglass/close',{exceptionId:id},req)).status===200,'C06-06 requester closes immediately');
@@ -77,10 +79,17 @@ export async function verifyExceptionalAccess({platform,api,sql,check,provisionP
       AND a.expires_at_utc<=q.expires_at_utc AND a.reviewer_id<>q.requester_id AND LENGTH(q.purpose_hmac)=32 AND LENGTH(a.review_hmac)=32`)==='1','C06-06 exact bounded deadlines and separate purpose digests');
   const reqId=sql(`SELECT BIN_TO_UUID(session_id,0) FROM c06_exception_request WHERE exception_id=UUID_TO_BIN('${id}',0)`);
   const revId=sql(`SELECT BIN_TO_UUID(review_session_id,0) FROM c06_exception_approval WHERE exception_id=UUID_TO_BIN('${id}',0)`);
-  // Real expired historical fixture. No product clock manipulation.
+  // One DB UTC instant for both inserts. Independent UTC_TIMESTAMP(6)
+  // statements otherwise differ by microseconds and legitimately trigger the
+  // non-extension guard (run 45551835457). Never weaken the trigger.
   const expired=randomUUID();
-  sql(`INSERT INTO c06_exception_request VALUES(UUID_TO_BIN('${expired}',0),UNHEX('${requester.id}'),UUID_TO_BIN('${reqId}',0),1,UUID_TO_BIN('${grantR}',0),UNHEX('${A}'),UUID_TO_BIN('${branch}',0),UUID_TO_BIN('${resource}',0),UNHEX(REPEAT('ab',32)),UTC_TIMESTAMP(6)-INTERVAL 50 SECOND,UTC_TIMESTAMP(6)-INTERVAL 10 SECOND);
-  INSERT INTO c06_exception_approval VALUES(UUID_TO_BIN('${expired}',0),UNHEX('${reviewer.id}'),UUID_TO_BIN('${revId}',0),1,UUID_TO_BIN('${grantA}',0),UNHEX(REPEAT('cd',32)),UTC_TIMESTAMP(6)-INTERVAL 40 SECOND,UTC_TIMESTAMP(6)-INTERVAL 10 SECOND);`);
+  sql(`SET @historical_clock=UTC_TIMESTAMP(6);
+  SET @historical_expiry=@historical_clock-INTERVAL 10 SECOND;
+  INSERT INTO c06_exception_request VALUES(UUID_TO_BIN('${expired}',0),UNHEX('${requester.id}'),UUID_TO_BIN('${reqId}',0),1,UUID_TO_BIN('${grantR}',0),UNHEX('${A}'),UUID_TO_BIN('${branch}',0),UUID_TO_BIN('${resource}',0),UNHEX(REPEAT('ab',32)),@historical_clock-INTERVAL 50 SECOND,@historical_expiry);
+  INSERT INTO c06_exception_approval VALUES(UUID_TO_BIN('${expired}',0),UNHEX('${reviewer.id}'),UUID_TO_BIN('${revId}',0),1,UUID_TO_BIN('${grantA}',0),UNHEX(REPEAT('cd',32)),@historical_clock-INTERVAL 40 SECOND,@historical_expiry);`);
+  check(sql(`SELECT COUNT(*) FROM c06_exception_request q JOIN c06_exception_approval a USING(exception_id)
+    WHERE q.exception_id=UUID_TO_BIN('${expired}',0) AND q.expires_at_utc=a.expires_at_utc AND a.expires_at_utc<UTC_TIMESTAMP(6)
+    AND NOT EXISTS(SELECT 1 FROM c06_exception_close c WHERE c.exception_id=q.exception_id)`)==='1','C06-06 expired approval fixture is real and not closed');
   check((await platform('breakglass/read',{exceptionId:expired,code:requester.backups.at(-1)},req)).status===401,'C06-06 expired historical exception denied');
   await reservePlatformWindow(40);
   const second=await platform('breakglass/open',{...fields,code:requester.backups.pop()},req);

@@ -56,7 +56,7 @@ def guard():
          "GRANT SELECT ON crecisol_c05.c06_exception_entitlement" in role and
          "GRANT INSERT ON crecisol_c05.c06_exception_audit" in role and
          not any(x in role for x in ("GRANT UPDATE","GRANT DELETE","GRANT ALL","GRANT SELECT,INSERT,UPDATE","GRANT SELECT,INSERT ON crecisol_c05.c06_exception_entitlement")),"runtime grant broadened")
-    need("trg_c06_exception_audit_no_update" in schema and "trg_c06_exception_audit_no_delete" in schema,"audit not immutable")
+    need("trg_c06_exception_audit_no_update" in schema and "trg_c06_exception_audit_no_delete" in schema and "trg_c06_exception_audit_guard" in schema,"audit integrity/immutability missing")
 def architecture():
     scope()
     policy=read("backend/src/Crecisol.Domain/Authorization/C06ExceptionalAccessPolicy.cs")
@@ -68,6 +68,18 @@ def architecture():
         need(not diff,"unapproved frontend or crypto change")
     need("DROP TABLE IF EXISTS c06_exception_audit;" in read("database/migrations/021_c06_exceptional_access.down.sql") and
          "DROP TABLE IF EXISTS c05_" not in read("database/migrations/021_c06_exceptional_access.down.sql"),"unsafe rollback")
+def persistence():
+    schema=read("database/migrations/021_c06_exceptional_access.sql")
+    test=read("database/tests/c06_06_exceptional_mysql.sh")
+    need("CHECK(allowed IN (0,1))" in schema and "CHECK(allowed=0 OR exception_id IS NOT NULL)" in schema,"invalid ledger result")
+    for marker in ("s.session_id=NEW.session_id AND s.operator_id=NEW.operator_id",
+        "app.reviewer_id=NEW.operator_id AND app.review_session_id=NEW.session_id",
+        "req.requester_id=NEW.operator_id AND req.session_id=NEW.session_id",
+        "cls.exception_id IS NULL","cls.closed_by=NEW.operator_id",
+        "NEW.expires_at_utc<=req.expires_at_utc"):
+        need(marker in schema,"ledger/scope guard missing: "+marker)
+    need("INTERVAL 1 MICROSECOND" in test and "ERROR 1142" in test and "PASS C06-06 D MYSQL" in test,
+         "independent executable SQL/privilege audit missing")
 def catalog():
     from c06_01_permissions_catalog_audit import verify_catalog
     data=json.loads(read("docs/c06/C06_01_CATALOGO_ACCIONES.json"))
@@ -76,8 +88,9 @@ def catalog():
     need(len(overlay["actions"])==4 and len(overlay["activated_normative"])==3,"activation scope")
     need(all(x["grantable"] is False for x in data["normative_actions"]),"historic generic grant altered")
 if __name__=="__main__":
-    need(len(sys.argv)==2 and sys.argv[1] in ("A","B","C"),"stage")
+    need(len(sys.argv)==2 and sys.argv[1] in ("A","B","C","D"),"stage")
     if sys.argv[1]=="A": scope(); catalog()
     elif sys.argv[1]=="B": guard(); catalog()
-    else: architecture(); guard()
+    elif sys.argv[1]=="C": architecture(); guard()
+    else: persistence(); guard()
     print("PASS C06-06 "+sys.argv[1]+": source review only; real runtime evidence separately required")

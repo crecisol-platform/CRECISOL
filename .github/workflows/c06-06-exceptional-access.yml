@@ -1,4 +1,4 @@
-name: CRECISOL C06-06 exceptional access A-B-C-E2E
+name: CRECISOL C06-06 exceptional access five audits A-B-C-D-E
 on:
   pull_request:
     branches: [dev]
@@ -10,6 +10,7 @@ on:
       - 'database/migrations/021_c06_exceptional_access.sql'
       - 'database/migrations/021_c06_exceptional_access.down.sql'
       - 'database/operations/c06_06_local_runtime_role.sql'
+      - 'database/tests/c06_06_exceptional_mysql.sh'
       - 'backend/tests/Crecisol.C06ExceptionalAccess.ContractsTests/Crecisol.C06ExceptionalAccess.ContractsTests.csproj'
       - 'backend/tests/Crecisol.C06ExceptionalAccess.ContractsTests/Program.cs'
       - 'docs/c06/C06_06_ESPECIFICACION.md'
@@ -29,6 +30,7 @@ on:
       - 'database/migrations/021_c06_exceptional_access.sql'
       - 'database/migrations/021_c06_exceptional_access.down.sql'
       - 'database/operations/c06_06_local_runtime_role.sql'
+      - 'database/tests/c06_06_exceptional_mysql.sh'
       - 'backend/tests/Crecisol.C06ExceptionalAccess.ContractsTests/Crecisol.C06ExceptionalAccess.ContractsTests.csproj'
       - 'backend/tests/Crecisol.C06ExceptionalAccess.ContractsTests/Program.cs'
       - 'docs/c06/C06_06_ESPECIFICACION.md'
@@ -94,8 +96,20 @@ jobs:
           npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
           npm run check:types --prefix frontend
           npm run build --prefix frontend
-  d-e2e:
-    name: "E2E | Chromium Angular Kestrel MySQL: independent exceptional access"
+  d-persistence:
+    name: D | Real MySQL 8.4 integrity, privacy ledger and runtime privileges
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 qa/c06_06_exceptional_audits.py D
+      - run: bash -n database/tests/c06_06_exceptional_mysql.sh
+      - run: bash database/tests/c06_06_exceptional_mysql.sh
+  e-e2e:
+    name: "E | E2E Chromium Angular Kestrel MySQL: independent exceptional access and full regressions"
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:

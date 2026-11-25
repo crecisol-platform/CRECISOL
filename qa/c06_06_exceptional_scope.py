@@ -20,7 +20,8 @@ PATHS = frozenset([
   "qa/c06_02_role_model_audit.py",
   "qa/c06_03_context_audits.py",
   "qa/c06_04_abac_audits.py",
-  "qa/c06_05_stepup_audits.py"
+  "qa/c06_05_stepup_audits.py",
+  "database/tests/c06_06_exceptional_mysql.sh"
 ])
 def require_exact(changed):
     if set(changed) != PATHS:

@@ -91,7 +91,7 @@ async function api(operation, fields = {}, token, host = 'tenant-a.example.test'
       headers: { Host: host, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body),
         ...(token ? { Authorization: `Bearer ${token}` } : {}), ...extra } }, response => {
       let text = ''; response.setEncoding('utf8'); response.on('data', chunk => text += chunk);
-      response.on('end', () => { let data; try { data = JSON.parse(text); } catch { data = null; } resolve({ status: response.statusCode, data }); });
+      response.on('end', () => { let data; try { data = JSON.parse(text); } catch { data = null; } resolve({ status: response.statusCode, data, cacheControl: response.headers['cache-control'] }); });
     });
     req.setTimeout(120000, () => {
       console.error('Safe timeout operation=' + operation);
@@ -680,7 +680,7 @@ try {
   }
 
   if (c06Exceptional) await verifyExceptionalAccess({platform,api,sql,check,provisionPlatformOperator,
-    reservePlatformWindow,A,B,branch,otherBranch,resource,tenantToken:token,confidential,randomUUID});
+    reservePlatformWindow,A,B,branch,otherBranch,resource,tenantToken:token,confidential,randomUUID,nextCode});
 
   check((await api('private/read', { branchId: branch, resourceId: resource }, token, 'tenant-b.example.test')).status === 401, 'tenant B cannot use session A');
   check((await api('private/read', { branchId: otherBranch, resourceId: resource }, token)).status === 401, 'cross-branch IDOR denied');

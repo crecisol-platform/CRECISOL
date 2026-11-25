@@ -60,6 +60,8 @@ CREATE TABLE c06_exception_audit (
  FOREIGN KEY(exception_id) REFERENCES c06_exception_request(exception_id),
  FOREIGN KEY(operator_id) REFERENCES c05_platform_operator(operator_id),
  FOREIGN KEY(session_id) REFERENCES c05_platform_session(session_id),
+ CHECK(allowed IN (0,1)),
+ CHECK(allowed=0 OR exception_id IS NOT NULL),
  CHECK(action_code IN ('platform/breakglass/open','platform/breakglass/approve','platform/breakglass/read','platform/breakglass/close'))
 ) ENGINE=InnoDB;
 
@@ -123,6 +125,32 @@ CREATE TRIGGER trg_c06_exception_close_no_update BEFORE UPDATE ON c06_exception_
 BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='C06 exception close immutable'; END$$
 CREATE TRIGGER trg_c06_exception_close_no_delete BEFORE DELETE ON c06_exception_close FOR EACH ROW
 BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='C06 exception close immutable'; END$$
+-- The ledger is append-only AND positive records are attributable to the
+-- exact actor/session/transition. A mismatched operator and session, or an
+-- allowed record without its underlying transition, cannot be inserted.
+CREATE TRIGGER trg_c06_exception_audit_guard BEFORE INSERT ON c06_exception_audit FOR EACH ROW
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM c05_platform_session s
+    WHERE s.session_id=NEW.session_id AND s.operator_id=NEW.operator_id)
+ THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='C06 exception audit actor/session mismatch'; END IF;
+ IF NEW.allowed=1 AND NOT EXISTS (
+    SELECT 1 FROM c06_exception_request req
+    LEFT JOIN c06_exception_approval app ON app.exception_id=req.exception_id
+    LEFT JOIN c06_exception_close cls ON cls.exception_id=req.exception_id
+    WHERE req.exception_id=NEW.exception_id AND NEW.event_at_utc>=req.requested_at_utc
+      AND (
+        (NEW.action_code='platform/breakglass/approve'
+          AND app.reviewer_id=NEW.operator_id AND app.review_session_id=NEW.session_id
+          AND NEW.event_at_utc>=app.approved_at_utc)
+        OR (req.requester_id=NEW.operator_id AND req.session_id=NEW.session_id
+          AND (NEW.action_code='platform/breakglass/open'
+            OR (NEW.action_code='platform/breakglass/read' AND app.exception_id IS NOT NULL
+                AND cls.exception_id IS NULL AND NEW.event_at_utc>=app.approved_at_utc)
+            OR (NEW.action_code='platform/breakglass/close' AND cls.closed_by=NEW.operator_id
+                AND NEW.event_at_utc>=cls.closed_at_utc)))
+      )
+ ) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='C06 exception audit transition mismatch'; END IF;
+END$
 CREATE TRIGGER trg_c06_exception_audit_no_update BEFORE UPDATE ON c06_exception_audit FOR EACH ROW
 BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='C06 exception audit immutable'; END$$
 CREATE TRIGGER trg_c06_exception_audit_no_delete BEFORE DELETE ON c06_exception_audit FOR EACH ROW
