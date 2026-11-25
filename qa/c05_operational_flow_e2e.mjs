@@ -21,6 +21,7 @@ import { verifySha1EnrollmentQr } from './c05_totp_qr_checks.mjs';
 import { verifyExceptionalAccess } from './c06_06_exceptional_access_checks.mjs';
 import { inspectPrivacyResponse, reportPrivacyResponses } from './c06_07_privacy_response_checks.mjs';
 import { startPrivacyRelay } from './c06_07_privacy_relay.mjs';
+import { verifyScopedQueries } from './c06_08_query_checks.mjs';
 import { randomUUID } from 'node:crypto';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -29,13 +30,15 @@ const require = createRequire(path.join(root, 'frontend/package.json'));
 const { chromium } = require('@playwright/test');
 const AxeBuilder = require('@axe-core/playwright').default;
 if (process.argv.includes('--help')) { console.log('Usage: node qa/c05_operational_flow_e2e.mjs [--preview | --focus=operator | --focus=audit]'); process.exit(0); }
-if (process.argv.slice(2).some(a => !['--preview', '--focus=operator', '--focus=audit', '--c06-04', '--c06-05', '--c06-06', '--c06-07'].includes(a))) throw new Error('Unknown isolated runner argument');
+if (process.argv.slice(2).some(a => !['--preview', '--focus=operator', '--focus=audit', '--c06-04', '--c06-05', '--c06-06', '--c06-07', '--c06-08'].includes(a))) throw new Error('Unknown isolated runner argument');
 const preview = process.argv.includes('--preview');
 const focus = process.argv.includes('--focus=operator') ? 'operator' : process.argv.includes('--focus=audit') ? 'audit' : null;
 const c06Abac = process.argv.includes('--c06-04');
 const c06StepUp = process.argv.includes('--c06-05');
 const c06Exceptional = process.argv.includes('--c06-06');
 const c06Privacy = process.argv.includes('--c06-07');
+const c06Queries = process.argv.includes('--c06-08');
+if (c06Queries && !c06Privacy) throw new Error('C06-08 requires full C06-07 privacy regression');
 if (c06Privacy && !c06Exceptional) throw new Error('C06-07 requires full isolated C06-06 flow');
 if (c06Exceptional && (!c06Abac || !c06StepUp || preview || focus)) throw new Error('C06-06 requires isolated full C06-04/05 flow');
 if (c06StepUp && (process.argv.includes('--preview') || focus)) throw new Error('C06-05 E2E requires full isolated flow');
@@ -233,6 +236,7 @@ try {
   // Opt-in C06-04 isolates its new case assignment schema from historic C05 runs.
   if (c06Abac) sql(readFileSync(path.join(root, 'database/migrations/020_c06_case_abac.sql'), 'utf8'));
   if (c06Exceptional) sql(readFileSync(path.join(root, 'database/migrations/021_c06_exceptional_access.sql'), 'utf8'));
+  if (c06Queries) sql(readFileSync(path.join(root, 'database/migrations/023_c06_scoped_query_indexes.sql'), 'utf8'));
   check(sql('SELECT VERSION()').startsWith('8.4.'), 'eighteen forward migrations on real MySQL 8.4');
   sql(`INSERT INTO c04_tenant_catalog VALUES
     (UNHEX('${A}'),'tenant-a','Tenant A',3,2,1,UTC_TIMESTAMP(6)),
@@ -508,6 +512,8 @@ try {
     'token from tenant A cannot enumerate tenant B approval inbox');
   check((await api('memberships/pending', { cursor: 'malformed' }, approver.token)).status === 401,
     'malformed keyset cursor fails closed without applicant details');
+  if (c06Queries) await verifyScopedQueries({api,check,sql,A,B,actor:accountId('approver@example.test'),token:approver.token,
+    key:keys.CRECISOL_C05_TOKEN_HMAC_KEY,memberId,reserveTestWindow,confidential});
   // Registration completion is now an independent screen; return to the login view.
   await drainPrivacyRelay();
   await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
@@ -920,6 +926,12 @@ try {
   if (c06Privacy) { await privacyRelay.finish(); reportPrivacyResponses(); }
   for (const p of children.reverse()) { p.kill(); }
   await delay(1500);
+  if (c06Queries) {
+    const membershipCount=Number(sql('SELECT COUNT(*) FROM c05_identity_membership'));
+    sql(readFileSync(path.join(root, 'database/migrations/023_c06_scoped_query_indexes.down.sql'), 'utf8'));
+    check(sql("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=DATABASE() AND index_name LIKE 'ix_c06_08_%'")==='0','C06-08 rollback removes only query indexes');
+    check(Number(sql('SELECT COUNT(*) FROM c05_identity_membership'))===membershipCount,'C06-08 rollback preserves membership rows');
+  }
   if (c06Exceptional) {
     const resourceCount=Number(sql('SELECT COUNT(*) FROM c05_identity_private_resource'));
     const platformCount=Number(sql('SELECT COUNT(*) FROM c05_platform_operator'));

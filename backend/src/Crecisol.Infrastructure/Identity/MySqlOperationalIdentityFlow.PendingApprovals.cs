@@ -13,39 +13,45 @@ namespace Crecisol.Infrastructure.Identity;
 public sealed partial class MySqlOperationalIdentityFlow
 {
     private const int PendingApprovalPageSize = 12;
-    private const string PendingCursorFormat = "yyyyMMddHHmmssffffff";
 
     private async Task<OperationalIdentityResult> PendingMemberships(
-        Unit u, byte[] tenant, byte[] actor, OperationalIdentityRequest request)
+        Unit u, byte[] tenant, byte[] actor, Dictionary<string, object> membership,
+        Dictionary<string, object> session, OperationalIdentityRequest request, DateTimeOffset trustedNow)
     {
         // Same revocable tenant-wide permission as the audited decide endpoint.
         // A branch-only grant, expired grant, or grant from another tenant denies.
         var authority = await u.One("""
-            SELECT grant_id FROM c05_identity_resource_grant
+            SELECT grant_id,grant_revision FROM c05_identity_resource_grant
             WHERE tenant_id=@t AND account_id=@a
               AND permission_code='MEMBERSHIP_APPROVE'
               AND scope_kind=2 AND resource_id IS NULL AND branch_id=@t
               AND revoked_at_utc IS NULL AND granted_at_utc<=UTC_TIMESTAMP(6)
               AND expires_at_utc>UTC_TIMESTAMP(6)
-            LIMIT 1 FOR SHARE
+            LIMIT 2 FOR SHARE
             """, ("t", tenant), ("a", actor));
         if (authority is null) return new(false);
 
         // No caller-specified offset: bounded keyset pagination is stable even
         // when an earlier request is approved or denied between pages.
+        // Scope is derived from locked server evidence, never from cursor claims.
+        // Bind even to grant revision and exact host; rotation/revocation/context
+        // changes cannot make an old continuation a new authorization.
+        var host = u.VerifiedHost ?? throw new UnauthorizedAccessException("Missing verified host.");
+        var scope = string.Join("/", request.Host, Hex(tenant), Hex(actor),
+            Hex(Bytes(membership, "membership_id")), Hex(Bytes(session, "session_id")),
+            Hex(Bytes(authority, "grant_id")),
+            Number(authority, "grant_revision").ToString(CultureInfo.InvariantCulture),
+            Number(membership, "approval_revision").ToString(CultureInfo.InvariantCulture),
+            Number(session, "session_revision").ToString(CultureInfo.InvariantCulture),
+            Number(session, "account_revision").ToString(CultureInfo.InvariantCulture),
+            Number(host, "host_revision").ToString(CultureInfo.InvariantCulture),
+            Number(host, "catalog_revision").ToString(CultureInfo.InvariantCulture));
         var cursor = Field(request, "cursor");
         DateTime afterTime = DateTime.UnixEpoch;
         byte[] afterMembership = Guid.Empty.ToByteArray(true);
         if (cursor != "start")
         {
-            var pieces = cursor.Split('/', 2);
-            if (pieces.Length != 2 ||
-                !DateTime.TryParseExact(pieces[0], PendingCursorFormat,
-                    CultureInfo.InvariantCulture,
-                    DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
-                    out afterTime) ||
-                !Guid.TryParseExact(pieces[1], "D", out var afterId) ||
-                afterId == Guid.Empty)
+            if (!C06PendingCursor.TryDecode(tokenKey, scope, cursor, trustedNow, out afterTime, out var afterId))
                 return new(false);
             afterMembership = afterId.ToByteArray(true);
         }
@@ -76,8 +82,8 @@ public sealed partial class MySqlOperationalIdentityFlow
         }).ToArray();
         var last = visible.LastOrDefault();
         string? nextCursor = rows.Count > PendingApprovalPageSize && last is not null
-            ? Utc(last, "created_at_utc").UtcDateTime.ToString(PendingCursorFormat, CultureInfo.InvariantCulture)
-              + "/" + new Guid(Bytes(last, "membership_id"), true).ToString("D")
+            ? C06PendingCursor.Encode(tokenKey, scope, Utc(last, "created_at_utc").UtcDateTime,
+                new Guid(Bytes(last, "membership_id"), true), trustedNow)
             : null;
 
         return new(true, new { requests, nextCursor });

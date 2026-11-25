@@ -214,7 +214,7 @@ public static class OperationalIdentityModule
             finally { CryptographicOperations.ZeroMemory(bytes); }
             var peer = context.Connection.RemoteIpAddress?.MapToIPv6().ToString();
             if (peer is null) return Results.BadRequest();
-            var result = await flow.ExecuteAsync(new(host.Value, peer, operation == "browser/restore" ? "sessions" : operation, fields,
+            var result = await flow.ExecuteAsync(new(host.Value, peer, operation, fields,
                 bearer.Length == 0 ? null : bearer[7..], DeviceLabel(request.Headers.UserAgent.ToString())), ct);
             if (operation is "recovery/request" or "incidents/report" or "memberships/request") return Results.Accepted(value: new { accepted = true });
             if (operation is "assisted/request" or "platform/operator-recovery/request")

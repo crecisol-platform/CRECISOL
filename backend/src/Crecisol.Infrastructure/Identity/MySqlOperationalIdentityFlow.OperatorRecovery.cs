@@ -37,7 +37,7 @@ public sealed partial class MySqlOperationalIdentityFlow
     {
         var rows = await u.All("""
             SELECT r.reviewer_id FROM c05_platform_recovery_review r JOIN c05_platform_operator p ON p.operator_id=r.reviewer_id
-            WHERE r.case_id=@id AND r.approved=1 AND p.active=1 AND p.recovery_pending=0 AND p.security_revision=r.reviewer_revision FOR SHARE
+            WHERE r.case_id=@id AND r.approved=1 AND p.active=1 AND p.recovery_pending=0 AND p.security_revision=r.reviewer_revision LIMIT 3 FOR SHARE
             """, ("id", caseId));
         return rows.Count == 2;
     }
@@ -84,7 +84,7 @@ public sealed partial class MySqlOperationalIdentityFlow
         var target = Bytes(personRow, "operator_id"); u.Actor = target;
         if (r.Operation == "platform/operator-recovery/complete")
         {
-            var shares = await u.All("SELECT share_hmac FROM c05_platform_recovery_share WHERE case_id=@id AND expires_at_utc>UTC_TIMESTAMP(6) FOR UPDATE", ("id", id));
+            var shares = await u.All("SELECT share_hmac FROM c05_platform_recovery_share WHERE case_id=@id AND expires_at_utc>UTC_TIMESTAMP(6) LIMIT 3 FOR UPDATE", ("id", id));
             var a = Digest("operator-share:" + Hex(id), Field(r, "shareA")); var b = Digest("operator-share:" + Hex(id), Field(r, "shareB"));
             if (a.SequenceEqual(b) || shares.Count != 2 || !shares.Any(s => CryptographicOperations.FixedTimeEquals(Bytes(s, "share_hmac"), a)) ||
                 !shares.Any(s => CryptographicOperations.FixedTimeEquals(Bytes(s, "share_hmac"), b))) return new(false);

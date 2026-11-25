@@ -41,6 +41,10 @@ RELAY_REVALIDATION_PATHS = INGRESS_REVALIDATION_PATHS | frozenset([
   "qa/c06_07_privacy_relay_tests.mjs",
 ])
 def require_exact(changed):
+    if "docs/c06/C06_08_ESPECIFICACION.md" in changed:
+        from c06_08_query_scope import require_exact
+        require_exact(changed)
+        return
     actual = frozenset(changed)
     if actual not in (PATHS, REVALIDATION_PATHS, INGRESS_REVALIDATION_PATHS, RELAY_REVALIDATION_PATHS):
         raise AssertionError("C06-07 NO-GO unexpected successor diff " + repr(sorted(actual)))

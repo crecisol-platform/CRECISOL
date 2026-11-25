@@ -45,7 +45,8 @@ public sealed partial class MySqlOperationalIdentityFlow
         var actor = Bytes(account, "account_id");
         if (r.Operation == "passkeys")
         {
-            var rows = await u.All("SELECT f.factor_id,f.enrolled_at_utc FROM c05_identity_mfa_factor f WHERE account_id=@a AND factor_kind=2 AND factor_state=1 AND revoked_at_utc IS NULL", ("a", actor));
+            var rows = await u.All("SELECT f.factor_id,f.enrolled_at_utc FROM c05_identity_mfa_factor f WHERE account_id=@a AND factor_kind=2 AND factor_state=1 AND revoked_at_utc IS NULL ORDER BY enrolled_at_utc DESC,factor_id DESC LIMIT 9", ("a", actor));
+            if (rows.Count > 8) return new(false);
             return new(true, new { passkeys = rows.Select(row => new { id = new Guid(Bytes(row, "factor_id"), true), createdAtUtc = row["enrolled_at_utc"] }) });
         }
         if (r.Operation == "passkeys/revoke")
@@ -59,7 +60,7 @@ public sealed partial class MySqlOperationalIdentityFlow
         }
         if (r.Operation == "passkeys/register-options")
         {
-            var existing = await u.All("SELECT p.credential_id FROM c05_identity_passkey p JOIN c05_identity_mfa_factor f USING(account_id,factor_id) WHERE p.account_id=@a AND f.factor_state=1 AND f.revoked_at_utc IS NULL", ("a", actor));
+            var existing = await u.All("SELECT p.credential_id FROM c05_identity_passkey p JOIN c05_identity_mfa_factor f USING(account_id,factor_id) WHERE p.account_id=@a AND f.factor_state=1 AND f.revoked_at_utc IS NULL ORDER BY p.factor_id LIMIT 8", ("a", actor));
             if (existing.Count >= 8) return new(false);
             return await PasskeyCeremony(u, tenant, "REGISTER", passkeys.RegistrationOptions(actor,
                 existing.Select(row => Bytes(row, "credential_id")).ToArray()), account, session);
@@ -69,7 +70,7 @@ public sealed partial class MySqlOperationalIdentityFlow
             !Bytes(ceremony, "session_id").SequenceEqual(Bytes(session, "session_id")) ||
             Number(ceremony, "account_revision") != Number(account, "security_revision")) return new(false);
         // Concurrent options cannot bypass the credential cap.
-        var count = await u.All("SELECT factor_id FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_kind=2 AND factor_state=1", ("a", actor));
+        var count = await u.All("SELECT factor_id FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_kind=2 AND factor_state=1 LIMIT 8", ("a", actor));
         if (count.Count >= 8) return new(false);
         OperationalPasskey credential;
         try

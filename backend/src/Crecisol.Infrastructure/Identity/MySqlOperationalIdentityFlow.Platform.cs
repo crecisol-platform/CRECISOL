@@ -94,8 +94,9 @@ public sealed partial class MySqlOperationalIdentityFlow
         if (r.Operation is "platform/session" or "platform/restore") return new(true, new OperationalPlatformValidation(u.SessionExpiresAtUtc!.Value));
         if (r.Operation == "platform/sessions")
         {
-            var rows = await u.All("SELECT session_id,created_at_utc,expires_at_utc,last_seen_at_utc,device_label FROM c05_platform_session WHERE operator_id=@a AND security_revision=@v AND revoked_at_utc IS NULL AND expires_at_utc>UTC_TIMESTAMP(6) AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE ORDER BY last_seen_at_utc DESC",
+            var rows = await u.All("SELECT session_id,created_at_utc,expires_at_utc,last_seen_at_utc,device_label FROM c05_platform_session WHERE operator_id=@a AND security_revision=@v AND revoked_at_utc IS NULL AND expires_at_utc>UTC_TIMESTAMP(6) AND last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE ORDER BY last_seen_at_utc DESC,session_id DESC LIMIT 4097",
                 ("a", u.Actor), ("v", Number(principal, "security_revision")), ("idle", idle));
+            if (rows.Count > 4096) return new(false);
             return new(true, new { sessions = rows.Select(row => new { id = new Guid(Bytes(row, "session_id"), true), issuedAtUtc = row["created_at_utc"],
                 expiresAtUtc = row["expires_at_utc"], lastSeenAtUtc = row["last_seen_at_utc"], device = row["device_label"] }) });
         }
@@ -116,7 +117,7 @@ public sealed partial class MySqlOperationalIdentityFlow
         }
         if (r.Operation == "platform/abuse-summary")
         {
-            var rows = await u.All("SELECT signal_kind,COUNT(*) AS signals FROM c05_identity_abuse_signal WHERE created_at_utc>UTC_TIMESTAMP(6)-INTERVAL 1 DAY GROUP BY signal_kind");
+            var rows = await u.All("SELECT signal_kind,COUNT(*) AS signals FROM c05_identity_abuse_signal WHERE created_at_utc>UTC_TIMESTAMP(6)-INTERVAL 1 DAY GROUP BY signal_kind ORDER BY signal_kind LIMIT 4");
             return new(true, new { signals = rows.Select(row => new { kind = row["signal_kind"], count = row["signals"] }) });
         }
         if (r.Operation == "platform/cases/find")

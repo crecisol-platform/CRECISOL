@@ -116,6 +116,10 @@ def is_c05_security_path(path):
 
 def check_current_scope(paths):
  ensure(bool(paths), "empty current change scope")
+ if "docs/c06/C06_08_ESPECIFICACION.md" in paths:
+  from c06_08_query_scope import require_exact
+  require_exact(paths)
+  return len(paths)
  for path in paths:
   if path.startswith(("frontend/src/app/pages/platform-home",
                       "docs/CRECISOL_DOCUMENTO_MAESTRO")):

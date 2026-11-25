@@ -21,7 +21,9 @@ def scope():
         need(os.getenv("GITHUB_REF")=="refs/heads/dev","push outside dev")
         args=["HEAD^","HEAD"]
     else: args=[BASE,"HEAD"]
-    require_exact(git("diff","--name-only",*args).splitlines())
+    changed=git("diff","--name-only",*args).splitlines()
+    require_exact(changed)
+    return changed
 def catalog():
     from c06_01_permissions_catalog_audit import verify_catalog
     module=read("backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs")
@@ -73,9 +75,11 @@ def boundary():
     need("node --test qa/c06_07_privacy_oracle_tests.mjs qa/c06_07_privacy_relay_tests.mjs" in
          read(".github/workflows/c06-07-privacy-minimization.yml"),"relay tests not connected")
 def architecture():
-    scope(); boundary(); catalog()
+    changed=scope(); boundary(); catalog()
+    end= "3789224e49f3183563a7f8491a3b3101f161a6a1" if "docs/c06/C06_08_ESPECIFICACION.md" in changed else "HEAD"
+    need(subprocess.run(["git","merge-base","--is-ancestor",end,"HEAD"],cwd=ROOT).returncode==0,"privacy baseline not ancestral")
     for p in ("frontend/","backend/src/Crecisol.Domain/","backend/src/Crecisol.Infrastructure/","backend/src/Crecisol.CredentialSecurity/"):
-        need(not git("diff","--name-only",BASE,"HEAD","--",p),"unapproved existing layer change "+p)
+        need(not git("diff","--name-only",BASE,end,"--",p),"unapproved existing layer change "+p)
     need("contents: read" in read(".github/workflows/c06-07-privacy-minimization.yml"),"workflow write authority")
 def persistence():
     sql=read("database/migrations/022_c06_privacy_disposition.sql"); role=read("database/operations/c06_07_local_privacy_worker.sql")
