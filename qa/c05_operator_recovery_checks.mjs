@@ -85,8 +85,8 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
     check(photo.status===200&&photo.data.mime==='image/png'&&photo.data.width===64&&photo.data.height===64,'C06-09 operator reads only own raster');
     check((await platform('profile/photo',{},tokens[1])).status===401,'C06-09 independent operator cannot retrieve other operator image');
     check((await api('profile/photo',{},tokens[0])).status===401,'C06-09 operator bearer cannot retrieve tenant media');
-    const where="operator_id=UUID_TO_BIN('"+operators[1].id+"',0)";
-    // IDs are the disposable provisioner UUIDs, not browser input.
+    const where="operator_id=UNHEX('"+operators[1].id+"')";
+    // IDs are the provisioner's verified 16-byte hexadecimal values, not browser input.
     const original=sql('SELECT HEX(photo_png) FROM c05_platform_scoped_profile WHERE '+where);
     check(original.length>0,'C06-09 operator stored raster fixture');
     try {

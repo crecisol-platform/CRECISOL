@@ -59,7 +59,7 @@ export async function verifyProfile({ browser, api, platform, check, confidentia
     const where=`tenant_id=UNHEX('${A}') AND account_id=UNHEX('${accountId(owner.mailbox)}')`;
     const original=sql('SELECT HEX(photo_png) FROM c05_identity_scoped_profile WHERE '+where);
     check(original.length>0,'C06-09 stored raster fixture exists');
-    const badCrc=bytes.slice();badCrc[29]^=1;
+    const badCrc=Buffer.from(bytes);badCrc[29]^=1;
     try {
       for(const bad of [Buffer.from('<svg onload="x"/>'),Buffer.concat([bytes,Buffer.from('C06_09_TRAILING')]),badCrc,input]) {
         sql(`UPDATE c05_identity_scoped_profile SET photo_png=UNHEX('${bad.toString('hex')}') WHERE ${where}`);

@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.IO.Compression;
 using System.Text.Json;
 using Crecisol.Api.Configuration;
 using Crecisol.Api.Contracts;
@@ -16,6 +17,51 @@ new Random(20261125).NextBytes(pixels);
 var png=C06ProtectedContent.EncodePhoto(pixels);
 var base64=Convert.ToBase64String(png);
 Check(C06ProtectedContent.NormalizePhoto(png).SequenceEqual(png),"canonical raster roundtrip");
+// Construct independent containers with valid CRCs to exercise the inner
+// decompression budget, not just reject them at the outer checksum.
+static byte[] TestChunk(string name, byte[] data)
+{
+    var chunk=new byte[12+data.Length];
+    BinaryPrimitives.WriteInt32BigEndian(chunk.AsSpan(0,4),data.Length);
+    System.Text.Encoding.ASCII.GetBytes(name).CopyTo(chunk,4);
+    data.CopyTo(chunk,8);
+    uint crc=0xffffffffu;
+    foreach(var b in chunk.AsSpan(4,4+data.Length))
+    {
+        crc^=b;
+        for(var i=0;i<8;i++) crc=(crc&1)!=0?(crc>>1)^0xedb88320u:crc>>1;
+    }
+    BinaryPrimitives.WriteUInt32BigEndian(chunk.AsSpan(8+data.Length,4),~crc);
+    return chunk;
+}
+static byte[] Zip(byte[] bytes)
+{
+    using var output=new MemoryStream();
+    using(var z=new ZLibStream(output,CompressionLevel.Fastest,true)) z.Write(bytes);
+    return output.ToArray();
+}
+byte[] WithIdat(byte[] data) => png[..33].Concat(TestChunk("IDAT",data)).Concat(png[^12..]).ToArray();
+var scan=new byte[64*257];
+var invalidFilter=scan.ToArray();invalidFilter[0]=1;
+var extraText=png[..^12].Concat(TestChunk("tEXt","C06_09_SYNTHETIC_METADATA"u8.ToArray())).Concat(png[^12..]).ToArray();
+var hostileContainers=new[]{WithIdat(Zip(new byte[64*257+1])),WithIdat(Zip(new byte[64*257-1])),
+    WithIdat(Zip(invalidFilter)),WithIdat(new byte[]{0x78,0x00,0xff}),extraText};
+foreach(var malformed in hostileContainers)
+{
+    try { _=C06ProtectedContent.NormalizePhoto(malformed); Check(false,"inner malformed raster accepted"); }
+    catch(InvalidOperationException ex) when(ex.Message=="Invalid protected content.") { count++; }
+}
+var expectedBlank=C06ProtectedContent.EncodePhoto(new byte[64*64*4]);
+var reencoded=C06ProtectedContent.NormalizePhoto(WithIdat(Zip(scan)));
+Check(reencoded.SequenceEqual(expectedBlank),"reconstruction strips original compressor representation");
+var hidden="C06_09_SYNTHETIC_IDAT_TRAILING"u8.ToArray();
+var hiddenInput=WithIdat(Zip(scan).Concat(hidden).ToArray());
+try
+{
+    var clean=C06ProtectedContent.NormalizePhoto(hiddenInput);
+    Check(clean.SequenceEqual(expectedBlank)&&!clean.AsSpan().SequenceEqual(hiddenInput),"trailing compressed bytes never forwarded");
+}
+catch(InvalidOperationException ex) when(ex.Message=="Invalid protected content.") { count++; }
 foreach (var op in new[]{"profile/photo","platform/profile/photo"})
 {
     Check(C06IdentityResponseProjection.TryApply(op,new(true,new { png=base64,mime="image/png",width=64,height=64 }),out var safe) &&
