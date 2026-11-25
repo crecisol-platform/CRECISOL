@@ -18,6 +18,8 @@ import { verifyProfile } from './c05_profile_browser_checks.mjs';
 import { verifyTenantAuditBoundary } from './c05_tenant_audit_checks.mjs';
 import { verifyOperatorRecovery } from './c05_operator_recovery_checks.mjs';
 import { verifySha1EnrollmentQr } from './c05_totp_qr_checks.mjs';
+import { verifyExceptionalAccess } from './c06_06_exceptional_access_checks.mjs';
+import { randomUUID } from 'node:crypto';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 mkdirSync(path.join(root, '.cache'), { recursive: true });
@@ -25,11 +27,13 @@ const require = createRequire(path.join(root, 'frontend/package.json'));
 const { chromium } = require('@playwright/test');
 const AxeBuilder = require('@axe-core/playwright').default;
 if (process.argv.includes('--help')) { console.log('Usage: node qa/c05_operational_flow_e2e.mjs [--preview | --focus=operator | --focus=audit]'); process.exit(0); }
-if (process.argv.slice(2).some(a => !['--preview', '--focus=operator', '--focus=audit', '--c06-04', '--c06-05'].includes(a))) throw new Error('Unknown isolated runner argument');
+if (process.argv.slice(2).some(a => !['--preview', '--focus=operator', '--focus=audit', '--c06-04', '--c06-05', '--c06-06'].includes(a))) throw new Error('Unknown isolated runner argument');
 const preview = process.argv.includes('--preview');
 const focus = process.argv.includes('--focus=operator') ? 'operator' : process.argv.includes('--focus=audit') ? 'audit' : null;
 const c06Abac = process.argv.includes('--c06-04');
 const c06StepUp = process.argv.includes('--c06-05');
+const c06Exceptional = process.argv.includes('--c06-06');
+if (c06Exceptional && (!c06Abac || !c06StepUp || preview || focus)) throw new Error('C06-06 requires isolated full C06-04/05 flow');
 if (c06StepUp && (process.argv.includes('--preview') || focus)) throw new Error('C06-05 E2E requires full isolated flow');
 if (c06Abac && (process.argv.includes('--preview') || focus)) throw new Error('C06-04 E2E requires full isolated flow');
 if (preview && focus) throw new Error('Preview and focused verification are separate modes');
@@ -216,6 +220,7 @@ try {
     sql(readFileSync(path.join(root, 'database/migrations', migration + '.sql'), 'utf8'));
   // Opt-in C06-04 isolates its new case assignment schema from historic C05 runs.
   if (c06Abac) sql(readFileSync(path.join(root, 'database/migrations/020_c06_case_abac.sql'), 'utf8'));
+  if (c06Exceptional) sql(readFileSync(path.join(root, 'database/migrations/021_c06_exceptional_access.sql'), 'utf8'));
   check(sql('SELECT VERSION()').startsWith('8.4.'), 'eighteen forward migrations on real MySQL 8.4');
   sql(`INSERT INTO c04_tenant_catalog VALUES
     (UNHEX('${A}'),'tenant-a','Tenant A',3,2,1,UTC_TIMESTAMP(6)),
@@ -230,6 +235,7 @@ try {
   sql(readFileSync(path.join(root, 'database/operations/c05_local_runtime_role.sql'), 'utf8'));
   sql("GRANT 'c05_identity_local_runtime' TO 'c05_flow'@'%'; SET DEFAULT ROLE 'c05_identity_local_runtime' TO 'c05_flow'@'%';");
   if (c06Abac) sql(readFileSync(path.join(root, 'database/operations/c06_04_local_runtime_role.sql'), 'utf8'));
+  if (c06Exceptional) sql(readFileSync(path.join(root, 'database/operations/c06_06_local_runtime_role.sql'), 'utf8'));
 
   const operators = [provisionPlatformOperator('identity.one@example.test'), provisionPlatformOperator('identity.two@example.test'), provisionPlatformOperator('identity.three@example.test')];
   const smtp = child('dotnet', [process.env.CRECISOL_C05_SMTP_DLL || 'backend/tests/Crecisol.LoopbackSmtpReceiver/bin/Release/net10.0/Crecisol.LoopbackSmtpReceiver.dll']);
@@ -247,6 +253,7 @@ try {
   const env = { ...process.env, ...keys, CRECISOL_C01_ALLOWED_HOSTS: '127.0.0.1;tenant-a.example.test;tenant-b.example.test;platform-admin.example.test',
     CRECISOL_C05_REGISTRATION_ENABLED: 'true', CRECISOL_C05_LOCAL_ACCOUNT_COMPLETION_ENABLED: 'true', CRECISOL_C05_LOCAL_IDENTITY_ENABLED: 'true',
     CRECISOL_C05_KEY_VERSION: '1', CRECISOL_C05_LOCAL_SMTP_PORT: smtpPort,
+    CRECISOL_C06_BREAKGLASS_ENABLED: c06Exceptional ? 'true' : 'false',
     CRECISOL_C05_IDENTITY_DSN: `Server=127.0.0.1;Port=${port};Database=crecisol_c05;User ID=c05_flow;Password=${appPassword};SslMode=None;` };
   const startApi = () => {
     const p = child('dotnet', [process.env.CRECISOL_C05_API_DLL || 'backend/src/Crecisol.Api/bin/Release/net10.0/Crecisol.Api.dll', '--urls', `http://127.0.0.1:${apiPort}`], env);
@@ -672,6 +679,9 @@ try {
       'C06-04 original owner-only grant still works after broad grant revocation');
   }
 
+  if (c06Exceptional) await verifyExceptionalAccess({platform,api,sql,check,provisionPlatformOperator,
+    reservePlatformWindow,A,B,branch,otherBranch,resource,tenantToken:token,confidential,randomUUID});
+
   check((await api('private/read', { branchId: branch, resourceId: resource }, token, 'tenant-b.example.test')).status === 401, 'tenant B cannot use session A');
   check((await api('private/read', { branchId: otherBranch, resourceId: resource }, token)).status === 401, 'cross-branch IDOR denied');
   check((await api('sessions', {}, token, 'evil.example.test')).status === 400, 'unallowlisted Host denied');
@@ -875,6 +885,14 @@ try {
   await browser.close(); browser = undefined;
   for (const p of children.reverse()) { p.kill(); }
   await delay(1500);
+  if (c06Exceptional) {
+    const resourceCount=Number(sql('SELECT COUNT(*) FROM c05_identity_private_resource'));
+    const platformCount=Number(sql('SELECT COUNT(*) FROM c05_platform_operator'));
+    sql(readFileSync(path.join(root, 'database/migrations/021_c06_exceptional_access.down.sql'), 'utf8'));
+    check(sql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name LIKE 'c06_exception_%'")==='0','C06-06 rollback removes exception tables');
+    check(Number(sql('SELECT COUNT(*) FROM c05_identity_private_resource'))===resourceCount &&
+      Number(sql('SELECT COUNT(*) FROM c05_platform_operator'))===platformCount,'C06-06 rollback preserves private resources and operators');
+  }
   // C06-04 has a composite FK to C05 resources and membership. Reverse its
   // assignment table FIRST on this disposable schema; never disable FKs to
   // conceal an unsafe rollback and never attempt deletion of real user data.

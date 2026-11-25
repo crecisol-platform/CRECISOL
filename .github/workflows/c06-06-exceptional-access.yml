@@ -1,0 +1,123 @@
+name: CRECISOL C06-06 exceptional access A-B-C-E2E
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Platform.cs'
+      - 'backend/src/Crecisol.Domain/Authorization/C06ExceptionalAccessPolicy.cs'
+      - 'backend/src/Crecisol.Infrastructure/Tenancy/C06ExceptionalAccess.cs'
+      - 'database/migrations/021_c06_exceptional_access.sql'
+      - 'database/migrations/021_c06_exceptional_access.down.sql'
+      - 'database/operations/c06_06_local_runtime_role.sql'
+      - 'backend/tests/Crecisol.C06ExceptionalAccess.ContractsTests/Crecisol.C06ExceptionalAccess.ContractsTests.csproj'
+      - 'backend/tests/Crecisol.C06ExceptionalAccess.ContractsTests/Program.cs'
+      - 'docs/c06/C06_06_ESPECIFICACION.md'
+      - 'docs/c06/C06_06_CATALOGO_ACTIVACION.json'
+      - 'qa/c05_operational_flow_e2e.mjs'
+      - 'qa/c06_06_exceptional_access_checks.mjs'
+      - 'qa/c06_06_exceptional_scope.py'
+      - 'qa/c06_06_exceptional_audits.py'
+      - '.github/workflows/c06-06-exceptional-access.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Platform.cs'
+      - 'backend/src/Crecisol.Domain/Authorization/C06ExceptionalAccessPolicy.cs'
+      - 'backend/src/Crecisol.Infrastructure/Tenancy/C06ExceptionalAccess.cs'
+      - 'database/migrations/021_c06_exceptional_access.sql'
+      - 'database/migrations/021_c06_exceptional_access.down.sql'
+      - 'database/operations/c06_06_local_runtime_role.sql'
+      - 'backend/tests/Crecisol.C06ExceptionalAccess.ContractsTests/Crecisol.C06ExceptionalAccess.ContractsTests.csproj'
+      - 'backend/tests/Crecisol.C06ExceptionalAccess.ContractsTests/Program.cs'
+      - 'docs/c06/C06_06_ESPECIFICACION.md'
+      - 'docs/c06/C06_06_CATALOGO_ACTIVACION.json'
+      - 'qa/c05_operational_flow_e2e.mjs'
+      - 'qa/c06_06_exceptional_access_checks.mjs'
+      - 'qa/c06_06_exceptional_scope.py'
+      - 'qa/c06_06_exceptional_audits.py'
+      - '.github/workflows/c06-06-exceptional-access.yml'
+permissions:
+  contents: read
+jobs:
+  a-source:
+    name: A | Approved Word, catalog overlay and exact scope
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 qa/master_source_guard.py
+      - run: python3 qa/c06_01_permissions_catalog_audit.py A
+      - run: python3 qa/c06_06_exceptional_audits.py A
+  b-security:
+    name: B | Exceptional evidence and adversarial contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 qa/c06_06_exceptional_audits.py B
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet build backend/tests/Crecisol.C06ExceptionalAccess.ContractsTests/Crecisol.C06ExceptionalAccess.ContractsTests.csproj -c Release -warnaserror
+      - run: dotnet run --no-build -c Release --project backend/tests/Crecisol.C06ExceptionalAccess.ContractsTests/Crecisol.C06ExceptionalAccess.ContractsTests.csproj
+  c-architecture:
+    name: C | Domain separation and .NET 10 Angular 22 compile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 qa/c06_06_exceptional_audits.py C
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release -warnaserror
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - run: node --check qa/c05_operational_flow_e2e.mjs
+      - name: Angular 22 unchanged functional/regression compile
+        run: |
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+  d-e2e:
+    name: "E2E | Chromium Angular Kestrel MySQL: independent exceptional access"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile real API, local SMTP receiver and test-only provisioner
+        run: |
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release -warnaserror
+          dotnet build backend/tests/Crecisol.LoopbackSmtpReceiver/Crecisol.LoopbackSmtpReceiver.csproj -c Release -warnaserror
+          dotnet build backend/tools/Crecisol.LocalIdentityProvisioner/Crecisol.LocalIdentityProvisioner.csproj -c Release -warnaserror
+      - name: Angular + Chromium test runner
+        run: |
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+          cd frontend
+          npx playwright install --with-deps chromium
+      - name: Real exceptional access and previous security regressions
+        run: node qa/c05_operational_flow_e2e.mjs --c06-04 --c06-05 --c06-06

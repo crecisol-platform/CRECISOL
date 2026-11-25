@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "baseline": "docs/c06/C06_01_CATALOGO_ACCIONES.json",
+  "role_baseline": "docs/c06/C06_02_MATRIZ_ROLES_CAPACIDADES.json",
+  "authority": "DOCUMENTATION_ONLY_NOT_RUNTIME_AUTHORIZATION",
+  "source": "C06-06 local exceptional access; versioned activation overlay; historical inventories remain unchanged",
+  "feature_gate": "CRECISOL_C06_BREAKGLASS_ENABLED=true_and_C05_LOCAL_IDENTITY_ENABLED=true_and_local_isolation",
+  "activated_normative": [
+    "platform.breakglass.open",
+    "platform.breakglass.read",
+    "platform.breakglass.close"
+  ],
+  "actions": [
+    {
+      "action_id": "platform.breakglass.open",
+      "operation_code": "platform/breakglass/open",
+      "http_method": "POST",
+      "http_route": "/api/v1/platform-identity/breakglass/open",
+      "realm": "platform",
+      "access_boundary": "platform_temporary_exception",
+      "required_fields": [
+        "tenantId",
+        "branchId",
+        "resourceId",
+        "reason",
+        "code"
+      ],
+      "authorization_from": "backend_only",
+      "general_role_grantable": false,
+      "registered_in_local_api": true,
+      "ui_grant_source": false,
+      "source_file": "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs"
+    },
+    {
+      "action_id": "platform.breakglass.approve",
+      "operation_code": "platform/breakglass/approve",
+      "http_method": "POST",
+      "http_route": "/api/v1/platform-identity/breakglass/approve",
+      "realm": "platform",
+      "access_boundary": "platform_temporary_exception",
+      "required_fields": [
+        "exceptionId",
+        "reason",
+        "reviewReason",
+        "code"
+      ],
+      "authorization_from": "backend_only",
+      "general_role_grantable": false,
+      "registered_in_local_api": true,
+      "ui_grant_source": false,
+      "source_file": "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs"
+    },
+    {
+      "action_id": "platform.breakglass.read",
+      "operation_code": "platform/breakglass/read",
+      "http_method": "POST",
+      "http_route": "/api/v1/platform-identity/breakglass/read",
+      "realm": "platform",
+      "access_boundary": "platform_temporary_exception",
+      "required_fields": [
+        "exceptionId",
+        "code"
+      ],
+      "authorization_from": "backend_only",
+      "general_role_grantable": false,
+      "registered_in_local_api": true,
+      "ui_grant_source": false,
+      "source_file": "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs"
+    },
+    {
+      "action_id": "platform.breakglass.close",
+      "operation_code": "platform/breakglass/close",
+      "http_method": "POST",
+      "http_route": "/api/v1/platform-identity/breakglass/close",
+      "realm": "platform",
+      "access_boundary": "platform_temporary_exception",
+      "required_fields": [
+        "exceptionId"
+      ],
+      "authorization_from": "backend_only",
+      "general_role_grantable": false,
+      "registered_in_local_api": true,
+      "ui_grant_source": false,
+      "source_file": "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs"
+    }
+  ],
+  "approval_action": "platform.breakglass.approve",
+  "notes": "No generic role capability is activated; open/read/close implement the three normative actions only in isolated composition; approve is an additional independent workflow transition. Remaining 25 normative future actions unchanged."
+}

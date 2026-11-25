@@ -66,6 +66,11 @@ def scope():
         spec = [BASE, "HEAD"]
     changed = subprocess.check_output(
         ["git", "diff", "--name-only", *spec], cwd=ROOT, text=True).splitlines()
+    # Explicit sequential successor: preserve every other historical audit.
+    if "docs/c06/C06_06_ESPECIFICACION.md" in changed:
+        from c06_06_exceptional_scope import require_exact
+        require_exact(changed)
+        return changed
     allowed = (
         "backend/src/Crecisol.Domain/Authorization/",
         "backend/src/Crecisol.Application/Authorization/",

@@ -35,6 +35,11 @@ def diff():
         base = [BASE, "HEAD"]
     changed = subprocess.check_output(["git", "diff", "--name-only", *base], cwd=ROOT,
                                       text=True).splitlines()
+    # Explicit sequential successor: preserve every other historical audit.
+    if "docs/c06/C06_06_ESPECIFICACION.md" in changed:
+        from c06_06_exceptional_scope import require_exact
+        require_exact(changed)
+        return changed
     exact = {
         "backend/src/Crecisol.Domain/Tenancy/C06OperationalMembershipContext.cs",
         "backend/src/Crecisol.Infrastructure/Tenancy/C06OperationalContextProjection.cs",

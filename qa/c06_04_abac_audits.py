@@ -32,6 +32,11 @@ def change_scope():
     else: base=["af01c2e112c41c76a70effc4c271a1c8a30670b0","HEAD"]
     changed=subprocess.check_output(["git","diff","--name-only",*base],
                                     cwd=ROOT,text=True).splitlines()
+    # Explicit sequential successor: preserve every other historical audit.
+    if "docs/c06/C06_06_ESPECIFICACION.md" in changed:
+        from c06_06_exceptional_scope import require_exact
+        require_exact(changed)
+        return changed
     allowed=set(FILES.values())|{
         "qa/c06_04_abac_audits.py",
         "qa/c06_03_context_audits.py",
