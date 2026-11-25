@@ -35,6 +35,17 @@ def changed():
       "qa/institutional_c06_04_act_audits.py",
       ".github/workflows/c06-04-institutional-act.yml",
     }
+    # C06-05 may close without modifying C06-04's historical act or any
+    # product/runtime path. Admit only the four exact successor paths.
+    successor = {
+      "docs/c06/ACTA_C06_05_STEPUP.md",
+      "docs/ESTADO_VIGENTE_CAPITULOS.md",
+      "docs/planificacion-futura/C06_MICROFASES_PROPUESTAS.md",
+      "qa/institutional_c06_04_act_audits.py",
+    }
+    if "docs/c06/ACTA_C06_05_STEPUP.md" in diff:
+        need(set(diff)==successor,"unexpected C06-05 documentary scope "+repr(diff))
+        allowed |= successor
     need(diff and set(diff)<=allowed,"acta diff changes runtime/schema or source "+repr(diff))
     return diff
 
