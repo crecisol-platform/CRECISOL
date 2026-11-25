@@ -35,7 +35,12 @@ INGRESS_REVALIDATION_PATHS = REVALIDATION_PATHS | frozenset([
   "backend/src/Crecisol.Api/Program.cs",
   "qa/c06_07_privacy_audits.py",
 ])
+# Exact QA transport extension; no product or persistence change.
+RELAY_REVALIDATION_PATHS = INGRESS_REVALIDATION_PATHS | frozenset([
+  "qa/c06_07_privacy_relay.mjs",
+  "qa/c06_07_privacy_relay_tests.mjs",
+])
 def require_exact(changed):
     actual = frozenset(changed)
-    if actual not in (PATHS, REVALIDATION_PATHS, INGRESS_REVALIDATION_PATHS):
+    if actual not in (PATHS, REVALIDATION_PATHS, INGRESS_REVALIDATION_PATHS, RELAY_REVALIDATION_PATHS):
         raise AssertionError("C06-07 NO-GO unexpected successor diff " + repr(sorted(actual)))

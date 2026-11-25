@@ -57,8 +57,21 @@ def boundary():
         need(mark in code,"missing "+mark)
     need("JsonSerializer.Serialize" not in code and "GetValue(value)" in code and "output.Add(field.Name, field.Read" in code,
          "projection must build allowed fields without serializing raw result")
-    need("inspectPrivacyResponse(operation,response.statusCode" in read("qa/c05_operational_flow_e2e.mjs") and
-         "attachPrivacyBrowser(browserContext)" in read("qa/c05_operational_flow_e2e.mjs"),"wire oracle not connected")
+    e2e=read("qa/c05_operational_flow_e2e.mjs")
+    relay=read("qa/c06_07_privacy_relay.mjs")
+    oracle=read("qa/c06_07_privacy_response_checks.mjs")
+    need("inspectPrivacyResponse(operation,response.statusCode" in e2e and
+         "startPrivacyRelay(apiPort, inspectPrivacyResponse)" in e2e and
+         e2e.count("target: `http://127.0.0.1:${proxyPort}`")==2 and
+         "await privacyRelay.finish(); reportPrivacyResponses();" in e2e,"wire oracle not connected")
+    for marker in ("hostname:'127.0.0.1'", "server.listen(0,'127.0.0.1'", "incoming.pipe(upstream)",
+                   "response.complete", "response.rawHeaders", "outgoing.end(body)", "setTimeout(fail,deadlineMs)",
+                   "size>maxBytes", "fatal:true", "inspect(op,response.statusCode,raw"):
+        need(marker in relay,"privacy relay invariant missing "+marker)
+    need("response.finished()" not in oracle and "response.body()" not in oracle and
+         "relayBrowserChecked>=10" in oracle and "relayEnrollments>=2" in oracle,"capture/coverage regression")
+    need("node --test qa/c06_07_privacy_oracle_tests.mjs qa/c06_07_privacy_relay_tests.mjs" in
+         read(".github/workflows/c06-07-privacy-minimization.yml"),"relay tests not connected")
 def architecture():
     scope(); boundary(); catalog()
     for p in ("frontend/","backend/src/Crecisol.Domain/","backend/src/Crecisol.Infrastructure/","backend/src/Crecisol.CredentialSecurity/"):

@@ -1,16 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { EventEmitter } from 'node:events';
-import { inspectPrivacyResponse, attachPrivacyBrowser } from './c06_07_privacy_response_checks.mjs';
+import { inspectPrivacyResponse } from './c06_07_privacy_response_checks.mjs';
 
 const op='mfa/enroll', cache='no-store, private';
 const raw=JSON.stringify({secret:'SYNTHETIC',uri:'otpauth://totp/test'});
 const marker='synthetic-sensitive-value';
 const headers={'x-crecisol-browser':'1'};
-function response(status,body,finished=async()=>null) {
-  return {url:()=>'http://localhost/api/v1/identity/'+op,status:()=>status,
-    finished,body,headers:()=>({'cache-control':cache}),request:()=>({headers:()=>headers})};
-}
 function redacted(pattern) {
   return error=>pattern.test(error.message)&&!error.message.includes(marker);
 }
@@ -35,32 +30,13 @@ test('extra fields and missing fields remain fail closed',()=>{
 test('both cache directives are mandatory',()=>{
   for(const directive of ['private','no-store','x-no-store, private']) assert.throws(()=>inspectPrivacyResponse(op,200,raw,directive),/cache/);
 });
-test('browser drain waits for actual capture before navigation',async()=>{
-  const context=new EventEmitter(), audit=attachPrivacyBrowser(context);
-  let release, completed=false;
-  const gate=new Promise(resolve=>{release=resolve;});
-  context.emit('response',response(200,async()=>{await gate;return Buffer.from(raw);}));
-  const draining=audit.drain().then(()=>{completed=true;});
-  await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(completed,false);
-  release(); await draining; assert.equal(completed,true);
-  await audit.finish(); assert.equal(context.listenerCount('response'),0);
+
+test('browser restore accepts only its separate closed receipt contract',()=>{
+  const good=JSON.stringify({csrfToken:'synthetic',expiresAtUtc:'2026-11-25T14:00:00Z',idleMinutes:30});
+  assert.doesNotThrow(()=>inspectPrivacyResponse('browser/restore',200,good,cache,headers,'relay'));
+  assert.throws(()=>inspectPrivacyResponse('browser/restore',200,JSON.stringify({...JSON.parse(good),sessions:[]}),cache,headers,'relay'),/unexpected fields/);
+  assert.throws(()=>inspectPrivacyResponse('sessions',200,JSON.stringify({expiresAtUtc:'2026-11-25T14:00:00Z'}),cache,headers,'relay'),/unexpected fields/);
 });
-test('browser capture failure is distinct and redacted for success and denial',async()=>{
-  for(const status of [200,401]) {
-    const context=new EventEmitter(), audit=attachPrivacyBrowser(context);
-    context.emit('response',response(status,async()=>{throw new Error(marker);}));
-    await assert.rejects(audit.finish(),redacted(/wire capture unavailable: mfa\/enroll \[browser HTTP/));
-    assert.equal(context.listenerCount('response'),0);
-  }
-});
-test('browser body that was captured but invalid fails as a wire contract',async()=>{
-  const context=new EventEmitter(),audit=attachPrivacyBrowser(context);
-  context.emit('response',response(200,async()=>Buffer.from(marker)));
-  await assert.rejects(audit.finish(),redacted(/wire contract violation: mfa\/enroll \[browser HTTP 200\] invalid JSON/));
-});
-test('non-UTF8 payload cannot become a passing denial',async()=>{
-  const context=new EventEmitter(),audit=attachPrivacyBrowser(context);
-  context.emit('response',response(401,async()=>Buffer.from([0xff])));
-  await assert.rejects(audit.finish(),/wire capture unavailable/);
+test('redirects and uncontracted successful statuses cannot pass',()=>{
+  for(const status of [201,204,301,302]) assert.throws(()=>inspectPrivacyResponse(op,status,raw,cache,headers,'relay'),/unexpected status/);
 });

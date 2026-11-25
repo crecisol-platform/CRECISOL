@@ -1,7 +1,7 @@
 // Independent wire oracle: never print response bodies, values or credentials.
 import { readFileSync } from 'node:fs';
 const contract=JSON.parse(readFileSync(new URL('../docs/c06/C06_07_CONTRATOS_RESPUESTA.json',import.meta.url),'utf8'));
-let checked=0, browserChecked=0;
+let checked=0, browserChecked=0, relayBrowserChecked=0, relayEnrollments=0;
 const seen=new Set();
 function demand(ok,op) { if(!ok) throw new Error('C06-07 wire contract violation: '+op); }
 function object(value) { return value!==null && typeof value==='object' && !Array.isArray(value); }
@@ -27,14 +27,15 @@ export function inspectPrivacyResponse(op,status,raw,cacheControl,extra={},sourc
   const directives=typeof cacheControl==='string'?cacheControl.toLowerCase().split(',').map(x=>x.trim()):[];
   demand(directives.includes('no-store')&&directives.includes('private'),label+' cache');
   const browser=Object.entries(extra).some(([key,value])=>key.toLowerCase()==='x-crecisol-browser'&&value==='1');
-  if(status>=400) { demand(data===null || (object(data) && Object.keys(data).length===0),label+' denial'); checked++; if(browser) browserChecked++; return; }
-  if(status!==200 && status!==202) return;
+  const counted=()=>{checked++; if(browser){browserChecked++; if(source==='relay') relayBrowserChecked++;}};
+  if(status>=400) { demand(data===null || (object(data) && Object.keys(data).length===0),label+' denial'); counted(); return; }
+  demand(status===200 || status===202,label+' unexpected status');
   const fields=browser&&rule.browser_fields?rule.browser_fields:(rule.alternative_fields&&data?.realm==='PLATFORM_OPERATOR'?rule.alternative_fields:rule.fields);
   exact(data,fields,label);
   if(browser) demand(!('sessionToken' in data),label+' browser credential');
   if(rule.shape==='sessionOnly') demand(data.recoveryCodes===null,label+' unexpected recovery codes');
   const n=contract.nested;
-  if(rule.shape==='sessions') items(data.sessions,n.tenantSessions,label);
+  if(rule.shape==='sessions'&&!(browser&&rule.browser_fields)) items(data.sessions,n.tenantSessions,label);
   if(rule.shape==='platformSessions') items(data.sessions,n.platformSessions,label);
   if(rule.shape==='pending') {
     items(data.requests,n.pending,label);
@@ -52,36 +53,10 @@ export function inspectPrivacyResponse(op,status,raw,cacheControl,extra={},sourc
     for(const item of [...(p.allowCredentials||[]),...(p.excludeCredentials||[])]) subset(item,w.descriptor,label+' descriptor');
     if(p.authenticatorSelection) subset(p.authenticatorSelection,w.selection,label+' selection');
   }
-  seen.add(op); checked++; if(browser) browserChecked++;
+  if(source==='relay'&&browser&&op==='mfa/enroll') relayEnrollments++;
+  seen.add(op); counted();
 }
 export function reportPrivacyResponses() {
-  demand(checked>=60 && seen.size>=18 && browserChecked>=10,'coverage');
-  console.log('PASS C06-07 HTTP response privacy checks='+checked+' successful operation shapes='+seen.size+' browser responses='+browserChecked);
-}
-export function attachPrivacyBrowser(context) {
-  const pending=new Set(); let failure;
-  const onResponse=response=>{
-    const url=new URL(response.url());
-    const prefix=url.pathname.startsWith('/api/v1/platform-identity/')?'/api/v1/platform-identity/':url.pathname.startsWith('/api/v1/identity/')?'/api/v1/identity/':null;
-    if(!prefix) return;
-    const op=(prefix.includes('platform-identity')?'platform/':'')+url.pathname.slice(prefix.length);
-    if(!Object.hasOwn(contract.operations,op)) return;
-    const status=response.status();
-    const task=(async()=>{
-      let raw;
-      try {
-        if(await response.finished()) throw new Error('incomplete response');
-        raw=new TextDecoder('utf-8',{fatal:true}).decode(await response.body());
-      } catch {
-        // Never attach Playwright's original error, URL, headers or payload.
-        throw new Error('C06-07 wire capture unavailable: '+op+' [browser HTTP '+status+']');
-      }
-      inspectPrivacyResponse(op,status,raw,response.headers()['cache-control'],response.request().headers(),'browser');
-    })().catch(error=>{failure??=error;});
-    pending.add(task);
-    void task.then(()=>pending.delete(task));
-  };
-  context.on('response',onResponse);
-  const drain=async()=>{while(pending.size) await Promise.all([...pending]); if(failure) throw failure;};
-  return { drain, finish:async()=>{try { await drain(); } finally { context.off('response',onResponse); } await drain();} };
+  demand(checked>=60 && seen.size>=18 && browserChecked>=10 && relayBrowserChecked>=10 && relayEnrollments>=2,'coverage');
+  console.log('PASS C06-07 HTTP response privacy checks='+checked+' successful operation shapes='+seen.size+' browser-header responses='+browserChecked+' real browser-path relay responses='+relayBrowserChecked+' MFA enrollments='+relayEnrollments);
 }
