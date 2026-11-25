@@ -75,6 +75,15 @@ def changed():
     if "docs/c06/ACTA_C06_08_SCOPED_QUERIES.md" in diff:
         need(set(diff)==successor_08,"unexpected C06-08 documentary scope "+repr(diff))
         allowed |= successor_08
+    successor_09 = {
+      "docs/c06/ACTA_C06_09_PROTECTED_DELIVERY.md",
+      "docs/ESTADO_VIGENTE_CAPITULOS.md",
+      "docs/planificacion-futura/C06_MICROFASES_PROPUESTAS.md",
+      "qa/institutional_c06_04_act_audits.py",
+    }
+    if "docs/c06/ACTA_C06_09_PROTECTED_DELIVERY.md" in diff:
+        need(set(diff)==successor_09,"unexpected C06-09 documentary scope "+repr(diff))
+        allowed |= successor_09
     need(diff and set(diff)<=allowed,"acta diff changes runtime/schema or source "+repr(diff))
     return diff
 
@@ -108,6 +117,7 @@ def common():
     verify_c06_06_acta(state,plan)
     verify_c06_07_acta(state,plan)
     verify_c06_08_acta(state,plan)
+    verify_c06_09_acta(state,plan)
     return text
 
 def verify_c06_06_acta(state,plan):
@@ -215,6 +225,46 @@ def verify_c06_08_acta(state,plan):
               "ACTA_C06_08_SCOPED_QUERIES.md","C06 global NO CERTIFICADO")),"C06-08 bounded status missing")
     print("PASS C06-08 ACTA: exact integrated tree, 28 paths, evidence and bounded next gate")
 
+def verify_c06_09_acta(state,plan):
+    """Check immutable evidence, exact scope and bounded next step, not live CI."""
+    path=ROOT/"docs/c06/ACTA_C06_09_PROTECTED_DELIVERY.md"
+    if not path.is_file():
+        return
+    text=path.read_text(encoding="utf-8")
+    code="01e27372689fa3494727eebc30bd0b71db56d174"
+    head="af865e81a1ff8ace8fbbae3f824fe89a11a71477"
+    tree="85b4badbd881abb755f363d764b1c2af8dcb4ff9"
+    prior="da67bfe38940edd25842b2f963090e3d1406ce45"
+    for marker in (code,head,tree,prior,"4670574540f8008e74efcd73c6105d952d8dc15c","45716942933",
+                   "139565303593","139565303414","139565303803","139565303021","139565303370",
+                   "45716943110","139565304234","139565304224","139565304201","139565303712",
+                   "5/5 SUCCESS","16 workflows PRE aplicables SUCCESS","80 comprobaciones",
+                   "33 comprobaciones","255 comprobaciones","16/16","528 comprobaciones integradas",
+                   "54 verificaciones","574 comprobaciones HTTP","73 formas","148 observadas",
+                   "351 comprobaciones integradas","66 mutaciones","ERROR 1142","ERROR 1452","ERROR 3819",
+                   "45696887241","45697214588","45697214149","9.5/10","C06 9/11",
+                   "C06 global NO CERTIFICADO","C06-10 habilitada","no grantables"):
+        need(marker in text,"C06-09 acta missing evidence "+marker)
+    for revision in (code,head):
+        need(subprocess.check_output(["git","rev-parse",revision+"^{tree}"],cwd=ROOT,text=True).strip()==tree,
+             "C06-09 integrated tree mismatch "+revision)
+    need(subprocess.run(["git","merge-base","--is-ancestor",code,"HEAD"],cwd=ROOT).returncode==0,
+         "C06-09 tested integration not ancestral")
+    parents=subprocess.check_output(["git","show","-s","--format=%P",code],cwd=ROOT,text=True).strip().split()
+    need(parents==[prior,head],"C06-09 merge parent mismatch")
+    import ast
+    source=subprocess.check_output(["git","show",code+":qa/c06_09_delivery_scope.py"],cwd=ROOT,text=True)
+    expected=set(ast.literal_eval(next(node.value.args[0] for node in ast.parse(source).body
+                 if isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and t.id=="PATHS" for t in node.targets))))
+    diff=set(subprocess.check_output(["git","diff","--name-only",prior,code],cwd=ROOT,text=True).splitlines())
+    need(len(diff)==30 and diff==expected,"C06-09 technical scope drift")
+    need(not any(p.startswith(("frontend/","database/operations/","database/migrations/")) or "DOCUMENTO_MAESTRO" in p for p in diff),
+         "C06-09 unapproved source or privilege change")
+    for doc in (state,plan):
+        need(all(m in doc for m in (code,tree,"45716942933","C06 9/11","C06-10 habilitada",
+              "ACTA_C06_09_PROTECTED_DELIVERY.md","C06 global NO CERTIFICADO")),"C06-09 bounded status missing")
+    print("PASS C06-09 ACTA: exact integrated tree, 30 paths, evidence and bounded next gate")
+
 def a():
     files=changed()
     common()
@@ -231,9 +281,15 @@ def b():
          '"platform-operator"' not in policy.split("ReadRoles",1)[1].split("};",1)[0] and
          '"tenant-custom"' not in policy.split("ReadRoles",1)[1].split("};",1)[0],
          "platform or custom role accidentally gains private read")
-    need("C06CaseAbacPolicy.Allows(evidence)" in adapter and
-         adapter.index("C06CaseAbacPolicy.Allows(evidence)") < adapter.index('return new(true, new { reference ='),
-         "private data returned before ABAC")
+    # Preserve the historical ABAC ordering requirement; the C06-09
+    # successor now also requires the closed reference-content gate.
+    if (ROOT/"docs/c06/ACTA_C06_09_PROTECTED_DELIVERY.md").is_file():
+        from c06_04_abac_audits import verify_case_delivery_order
+        verify_case_delivery_order(adapter)
+    else:
+        need("C06CaseAbacPolicy.Allows(evidence)" in adapter and
+             adapter.index("C06CaseAbacPolicy.Allows(evidence)") < adapter.index('return new(true, new { reference ='),
+             "private data returned before ABAC")
     need(schema.count("FOREIGN KEY(")==3 and
          "INSERT INTO c06_case_resource_assignment" not in schema,
          "tenant FKs or no-seed guarantee broken")
