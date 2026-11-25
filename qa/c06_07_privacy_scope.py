@@ -1,0 +1,26 @@
+"""Exact C06-07 successor scope, preserving previous invariants."""
+PATHS = frozenset([
+  "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs",
+  "backend/src/Crecisol.Api/Contracts/C06IdentityResponseProjection.cs",
+  "backend/tests/Crecisol.C06Privacy.ContractsTests/Program.cs",
+  "backend/tests/Crecisol.C06Privacy.ContractsTests/Crecisol.C06Privacy.ContractsTests.csproj",
+  "docs/c06/C06_07_CONTRATOS_RESPUESTA.json",
+  "database/migrations/022_c06_privacy_disposition.sql",
+  "database/migrations/022_c06_privacy_disposition.down.sql",
+  "database/operations/c06_07_local_privacy_worker.sql",
+  "database/tests/c06_07_privacy_mysql.sh",
+  "qa/c06_07_privacy_response_checks.mjs",
+  "qa/c05_operational_flow_e2e.mjs",
+  "docs/c06/C06_07_ESPECIFICACION.md",
+  "qa/c06_07_privacy_scope.py",
+  "qa/c06_07_privacy_audits.py",
+  ".github/workflows/c06-07-privacy-minimization.yml",
+  "qa/c06_06_exceptional_scope.py",
+  "qa/c06_02_role_model_audit.py",
+  "qa/c06_03_context_audits.py",
+  "qa/c06_04_abac_audits.py",
+  "qa/c06_05_stepup_audits.py"
+])
+def require_exact(changed):
+    if set(changed) != PATHS:
+        raise AssertionError("C06-07 NO-GO unexpected successor diff " + repr(sorted(set(changed) ^ PATHS)))

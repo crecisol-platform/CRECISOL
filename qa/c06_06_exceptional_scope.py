@@ -24,5 +24,9 @@ PATHS = frozenset([
   "database/tests/c06_06_exceptional_mysql.sh"
 ])
 def require_exact(changed):
+    if "docs/c06/C06_07_ESPECIFICACION.md" in changed:
+        from c06_07_privacy_scope import require_exact
+        require_exact(changed)
+        return changed
     if set(changed) != PATHS:
         raise AssertionError("C06-06 NO-GO unexpected successor diff " + repr(sorted(set(changed) ^ PATHS)))

@@ -1,0 +1,708 @@
+{
+  "schema_version": 1,
+  "authority": "HTTP_RESPONSE_CONTRACT_NOT_AUTHORIZATION",
+  "baseline": "C06-01 plus C06-06 overlay",
+  "operations": {
+    "logout": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "sessions/revoke": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "recovery/request": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "recovery/complete": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "password/change": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "mailbox/request": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "mailbox/complete": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "memberships/decide": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "memberships/request": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "passkeys/register": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "passkeys/revoke": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "terms/accept": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "invitations/issue": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "invitations/accept": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "sessions/revoke-all": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "pairings/approve": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "incidents/report": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "platform/logout": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "platform/sessions/revoke": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "platform/sessions/revoke-all": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "platform/profile/save": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "platform/profile/photo-upload": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "platform/profile/photo-remove": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "platform/password/change": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "platform/mailbox/request": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "platform/mailbox/complete": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "platform/incidents/report": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "platform/review": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "assisted/complete": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "assisted/handoff-complete": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "factor/recover-passkey": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "profile/save": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "profile/photo-upload": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "profile/photo-remove": {
+      "shape": "ack",
+      "fields": [
+        "accepted"
+      ]
+    },
+    "login": {
+      "shape": "challenge",
+      "fields": [
+        "challenge",
+        "enrollmentRequired",
+        "stepUpRequired"
+      ]
+    },
+    "factor/replace": {
+      "shape": "challenge",
+      "fields": [
+        "challenge",
+        "enrollmentRequired",
+        "stepUpRequired"
+      ]
+    },
+    "mfa/enroll": {
+      "shape": "enroll",
+      "fields": [
+        "secret",
+        "uri"
+      ]
+    },
+    "mfa/verify": {
+      "shape": "sessionWithCodes",
+      "fields": [
+        "sessionToken",
+        "expiresAtUtc",
+        "recoveryCodes"
+      ],
+      "browser_fields": [
+        "csrfToken",
+        "expiresAtUtc",
+        "recoveryCodes",
+        "idleMinutes"
+      ],
+      "session_token_in_browser": false
+    },
+    "sessions/rotate": {
+      "shape": "sessionOnly",
+      "fields": [
+        "sessionToken",
+        "expiresAtUtc",
+        "recoveryCodes"
+      ],
+      "browser_fields": [
+        "csrfToken",
+        "expiresAtUtc",
+        "recoveryCodes",
+        "idleMinutes"
+      ],
+      "session_token_in_browser": false
+    },
+    "passkeys/login": {
+      "shape": "sessionOnly",
+      "fields": [
+        "sessionToken",
+        "expiresAtUtc",
+        "recoveryCodes"
+      ],
+      "browser_fields": [
+        "csrfToken",
+        "expiresAtUtc",
+        "recoveryCodes",
+        "idleMinutes"
+      ],
+      "session_token_in_browser": false
+    },
+    "pairings/complete": {
+      "shape": "sessionOnly",
+      "fields": [
+        "sessionToken",
+        "expiresAtUtc",
+        "recoveryCodes"
+      ],
+      "browser_fields": [
+        "csrfToken",
+        "expiresAtUtc",
+        "recoveryCodes",
+        "idleMinutes"
+      ],
+      "session_token_in_browser": false
+    },
+    "platform/mfa": {
+      "shape": "sessionOnly",
+      "fields": [
+        "sessionToken",
+        "expiresAtUtc",
+        "recoveryCodes"
+      ],
+      "browser_fields": [
+        "csrfToken",
+        "expiresAtUtc",
+        "recoveryCodes",
+        "idleMinutes"
+      ],
+      "session_token_in_browser": false
+    },
+    "platform/sessions/rotate": {
+      "shape": "sessionOnly",
+      "fields": [
+        "sessionToken",
+        "expiresAtUtc",
+        "recoveryCodes"
+      ],
+      "browser_fields": [
+        "csrfToken",
+        "expiresAtUtc",
+        "recoveryCodes",
+        "idleMinutes"
+      ],
+      "session_token_in_browser": false
+    },
+    "sessions": {
+      "shape": "sessions",
+      "fields": [
+        "expiresAtUtc",
+        "sessions"
+      ]
+    },
+    "browser/restore": {
+      "shape": "sessions",
+      "fields": [
+        "expiresAtUtc",
+        "sessions"
+      ],
+      "browser_fields": [
+        "csrfToken",
+        "expiresAtUtc",
+        "idleMinutes"
+      ]
+    },
+    "sessions/keepalive": {
+      "shape": "keepalive",
+      "fields": [
+        "expiresAtUtc",
+        "idleMinutes"
+      ]
+    },
+    "platform/sessions/keepalive": {
+      "shape": "keepalive",
+      "fields": [
+        "expiresAtUtc",
+        "idleMinutes"
+      ]
+    },
+    "memberships/pending": {
+      "shape": "pending",
+      "fields": [
+        "requests",
+        "nextCursor"
+      ]
+    },
+    "private/read": {
+      "shape": "reference",
+      "fields": [
+        "reference"
+      ]
+    },
+    "platform/breakglass/read": {
+      "shape": "reference",
+      "fields": [
+        "reference"
+      ]
+    },
+    "passkeys/options": {
+      "shape": "assertion",
+      "fields": [
+        "challenge",
+        "publicKey"
+      ]
+    },
+    "passkeys/register-options": {
+      "shape": "registration",
+      "fields": [
+        "challenge",
+        "publicKey"
+      ]
+    },
+    "passkeys": {
+      "shape": "passkeys",
+      "fields": [
+        "passkeys"
+      ]
+    },
+    "terms": {
+      "shape": "terms",
+      "fields": [
+        "version",
+        "text",
+        "hash"
+      ]
+    },
+    "pairings/start": {
+      "shape": "pairing",
+      "fields": [
+        "token",
+        "nonce",
+        "fingerprint",
+        "expiresAtUtc"
+      ]
+    },
+    "security/events": {
+      "shape": "events",
+      "fields": [
+        "events"
+      ]
+    },
+    "platform/login": {
+      "shape": "platformLogin",
+      "fields": [
+        "challenge",
+        "stepUpRequired"
+      ]
+    },
+    "platform/session": {
+      "shape": "platformSession",
+      "fields": [
+        "expiresAtUtc",
+        "realm"
+      ]
+    },
+    "platform/restore": {
+      "shape": "platformSession",
+      "fields": [
+        "expiresAtUtc",
+        "realm"
+      ],
+      "browser_fields": [
+        "csrfToken",
+        "expiresAtUtc",
+        "idleMinutes"
+      ]
+    },
+    "platform/sessions": {
+      "shape": "platformSessions",
+      "fields": [
+        "sessions"
+      ]
+    },
+    "platform/session-policy": {
+      "shape": "sessionPolicy",
+      "fields": [
+        "idleMinutes",
+        "revision",
+        "canManage"
+      ]
+    },
+    "platform/session-policy/update": {
+      "shape": "sessionPolicy",
+      "fields": [
+        "idleMinutes",
+        "revision",
+        "canManage"
+      ]
+    },
+    "platform/case": {
+      "shape": "caseReceipt",
+      "fields": [
+        "caseId",
+        "createdAtUtc",
+        "readyAtUtc",
+        "expiresAtUtc",
+        "blocked",
+        "consumed"
+      ],
+      "alternative_fields": [
+        "caseId",
+        "realm",
+        "readyAtUtc",
+        "blocked",
+        "consumed"
+      ]
+    },
+    "platform/cases/find": {
+      "shape": "caseId",
+      "fields": [
+        "caseId"
+      ]
+    },
+    "platform/abuse-summary": {
+      "shape": "signals",
+      "fields": [
+        "signals"
+      ]
+    },
+    "profile/read": {
+      "shape": "profile",
+      "fields": [
+        "displayName",
+        "language",
+        "timeZone",
+        "hasPhoto"
+      ]
+    },
+    "platform/profile/read": {
+      "shape": "profile",
+      "fields": [
+        "displayName",
+        "language",
+        "timeZone",
+        "hasPhoto"
+      ]
+    },
+    "profile/photo": {
+      "shape": "photo",
+      "fields": [
+        "png",
+        "mime",
+        "width",
+        "height"
+      ]
+    },
+    "platform/profile/photo": {
+      "shape": "photo",
+      "fields": [
+        "png",
+        "mime",
+        "width",
+        "height"
+      ]
+    },
+    "platform/release-share": {
+      "shape": "share",
+      "fields": [
+        "share",
+        "expiresAtUtc"
+      ]
+    },
+    "platform/factor/replace": {
+      "shape": "platformFactor",
+      "fields": [
+        "challenge",
+        "secret",
+        "uri"
+      ]
+    },
+    "platform/factor/confirm": {
+      "shape": "codes",
+      "fields": [
+        "accepted",
+        "recoveryCodes"
+      ]
+    },
+    "platform/operator-recovery/enroll": {
+      "shape": "codes",
+      "fields": [
+        "accepted",
+        "recoveryCodes"
+      ]
+    },
+    "assisted/request": {
+      "shape": "assisted",
+      "fields": [
+        "reference",
+        "accepted"
+      ]
+    },
+    "platform/operator-recovery/request": {
+      "shape": "assisted",
+      "fields": [
+        "reference",
+        "accepted"
+      ]
+    },
+    "platform/operator-recovery/complete": {
+      "shape": "operatorEnrollment",
+      "fields": [
+        "challenge",
+        "secret",
+        "uri",
+        "enrollmentRequired"
+      ]
+    },
+    "platform/breakglass/open": {
+      "shape": "exceptionOpen",
+      "fields": [
+        "exceptionId",
+        "state",
+        "expiresAtUtc"
+      ]
+    },
+    "platform/breakglass/approve": {
+      "shape": "exceptionApprove",
+      "fields": [
+        "state"
+      ]
+    },
+    "platform/breakglass/close": {
+      "shape": "exceptionClose",
+      "fields": [
+        "state"
+      ]
+    }
+  },
+  "nested": {
+    "tenantSessions": [
+      "id",
+      "issuedAtUtc",
+      "expiresAtUtc",
+      "lastSeenAtUtc",
+      "device",
+      "factor"
+    ],
+    "platformSessions": [
+      "id",
+      "issuedAtUtc",
+      "expiresAtUtc",
+      "lastSeenAtUtc",
+      "device"
+    ],
+    "pending": [
+      "id",
+      "requestedAtUtc",
+      "mailboxHint"
+    ],
+    "passkeys": [
+      "id",
+      "createdAtUtc"
+    ],
+    "events": [
+      "action",
+      "outcome",
+      "atUtc"
+    ],
+    "signals": [
+      "kind",
+      "count"
+    ],
+    "webAuthn": {
+      "assertion": [
+        "challenge",
+        "timeout",
+        "rpId",
+        "allowCredentials",
+        "userVerification",
+        "hints"
+      ],
+      "registration": [
+        "rp",
+        "user",
+        "challenge",
+        "pubKeyCredParams",
+        "timeout",
+        "excludeCredentials",
+        "authenticatorSelection",
+        "attestation",
+        "hints",
+        "attestationFormats"
+      ],
+      "descriptor": [
+        "type",
+        "id",
+        "transports"
+      ],
+      "user": [
+        "id",
+        "name",
+        "displayName"
+      ],
+      "rp": [
+        "id",
+        "name"
+      ],
+      "parameter": [
+        "type",
+        "alg"
+      ],
+      "selection": [
+        "authenticatorAttachment",
+        "residentKey",
+        "requireResidentKey",
+        "userVerification"
+      ]
+    }
+  },
+  "standalone": {
+    "publicBranding": "Existing PublishedPlatformBrandDto",
+    "registrationIntakeProofCompletion": "Fixed neutral accepted",
+    "privateResourceHarness": "Existing typed route; not registered in Program.cs"
+  },
+  "retention": {
+    "scope": "LOCAL_ONLY; no legal/production approval",
+    "enforced": [
+      {
+        "table": "c05_identity_recovery",
+        "field": "protected_payload",
+        "deadline": "expires_at_utc or consumed_at_utc at/before DB UTC"
+      },
+      {
+        "table": "c05_identity_sensitive_outbox",
+        "field": "protected_payload",
+        "deadline": "expires_at_utc or delivered_at_utc at/before DB UTC"
+      }
+    ],
+    "worker": "offline EXECUTE-only, no scheduling",
+    "batchLimit": 100
+  }
+}

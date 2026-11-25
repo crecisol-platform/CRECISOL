@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Security.Cryptography;
 using Crecisol.Api.Configuration;
+using Crecisol.Api.Contracts;
 using Crecisol.Application.Identity;
 using Crecisol.CredentialSecurity;
 using Crecisol.Infrastructure.Identity;
@@ -115,6 +116,8 @@ public static class OperationalIdentityModule
     {
         // Validate all configuration and crypto before accepting any request.
         _ = endpoints.ServiceProvider.GetRequiredService<IOperationalIdentityFlow>();
+        if (!C06IdentityResponseProjection.Operations.ToHashSet(StringComparer.Ordinal).SetEquals(Operations.Keys.Concat(C06BreakglassOperations.Keys)))
+            throw new InvalidOperationException("Identity response inventory mismatch.");
         foreach (var operation in Operations.Keys)
         {
             var selected = operation;
@@ -138,11 +141,9 @@ public static class OperationalIdentityModule
         if (exceptional && Environment.GetEnvironmentVariable("CRECISOL_C06_BREAKGLASS_ENABLED") != "true")
             return Results.NotFound();
         var expectedFields = exceptional ? exceptionalFields! : Operations[operation];
-        if (exceptional)
-        {
-            context.Response.Headers.CacheControl = "no-store, private";
-            context.Response.Headers.Pragma = "no-cache";
-        }
+        // All identity responses, including denials and neutral receipts, are private.
+        context.Response.Headers.CacheControl = "no-store, private";
+        context.Response.Headers.Pragma = "no-cache";
         var browser = OperationalBrowserSessionTransport.IsBrowser(request);
         try
         {
@@ -216,11 +217,13 @@ public static class OperationalIdentityModule
             var result = await flow.ExecuteAsync(new(host.Value, peer, operation == "browser/restore" ? "sessions" : operation, fields,
                 bearer.Length == 0 ? null : bearer[7..], DeviceLabel(request.Headers.UserAgent.ToString())), ct);
             if (operation is "recovery/request" or "incidents/report" or "memberships/request") return Results.Accepted(value: new { accepted = true });
-            if (operation == "assisted/request") return Results.Accepted(value: result.Value ?? new OperationalAssistedReceipt(Guid.NewGuid()));
-            if (operation == "platform/operator-recovery/request") return Results.Accepted(value: result.Value ?? new OperationalAssistedReceipt(Guid.NewGuid()));
+            if (operation is "assisted/request" or "platform/operator-recovery/request")
+                return Results.Accepted(value: C06IdentityResponseProjection.NeutralAssisted(result));
             if (operation == "platform/incidents/report") return Results.Accepted(value: new { accepted = true });
-            if (browser) return browserTransport.Receipt(context, operation, result, browserSession);
-            return result.Allowed ? Results.Ok(result.Value ?? new { accepted = true }) : Results.Unauthorized();
+            if (!C06IdentityResponseProjection.TryApply(operation, result, out var safe))
+                return Results.Unauthorized();
+            if (browser) return browserTransport.Receipt(context, operation, safe, browserSession);
+            return safe.Allowed ? Results.Ok(safe.Value) : Results.Unauthorized();
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
         catch (JsonException) { return Results.BadRequest(); }

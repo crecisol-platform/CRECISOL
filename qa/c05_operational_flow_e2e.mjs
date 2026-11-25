@@ -19,6 +19,7 @@ import { verifyTenantAuditBoundary } from './c05_tenant_audit_checks.mjs';
 import { verifyOperatorRecovery } from './c05_operator_recovery_checks.mjs';
 import { verifySha1EnrollmentQr } from './c05_totp_qr_checks.mjs';
 import { verifyExceptionalAccess } from './c06_06_exceptional_access_checks.mjs';
+import { inspectPrivacyResponse, reportPrivacyResponses, attachPrivacyBrowser } from './c06_07_privacy_response_checks.mjs';
 import { randomUUID } from 'node:crypto';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -27,12 +28,14 @@ const require = createRequire(path.join(root, 'frontend/package.json'));
 const { chromium } = require('@playwright/test');
 const AxeBuilder = require('@axe-core/playwright').default;
 if (process.argv.includes('--help')) { console.log('Usage: node qa/c05_operational_flow_e2e.mjs [--preview | --focus=operator | --focus=audit]'); process.exit(0); }
-if (process.argv.slice(2).some(a => !['--preview', '--focus=operator', '--focus=audit', '--c06-04', '--c06-05', '--c06-06'].includes(a))) throw new Error('Unknown isolated runner argument');
+if (process.argv.slice(2).some(a => !['--preview', '--focus=operator', '--focus=audit', '--c06-04', '--c06-05', '--c06-06', '--c06-07'].includes(a))) throw new Error('Unknown isolated runner argument');
 const preview = process.argv.includes('--preview');
 const focus = process.argv.includes('--focus=operator') ? 'operator' : process.argv.includes('--focus=audit') ? 'audit' : null;
 const c06Abac = process.argv.includes('--c06-04');
 const c06StepUp = process.argv.includes('--c06-05');
 const c06Exceptional = process.argv.includes('--c06-06');
+const c06Privacy = process.argv.includes('--c06-07');
+if (c06Privacy && !c06Exceptional) throw new Error('C06-07 requires full isolated C06-06 flow');
 if (c06Exceptional && (!c06Abac || !c06StepUp || preview || focus)) throw new Error('C06-06 requires isolated full C06-04/05 flow');
 if (c06StepUp && (process.argv.includes('--preview') || focus)) throw new Error('C06-05 E2E requires full isolated flow');
 if (c06Abac && (process.argv.includes('--preview') || focus)) throw new Error('C06-04 E2E requires full isolated flow');
@@ -51,6 +54,7 @@ const mails = [];
 const notices = [];
 const confidential = [rootPassword, appPassword, ...Object.values(keys)];
 let apiLogs = '', uiLogs = '', browser, assertions = 0;
+let finishPrivacyBrowser;
 const A = '00000000000000000000000000000001';
 const B = '00000000000000000000000000000002';
 const branch = '10000000-0000-4000-8000-000000000001';
@@ -91,7 +95,12 @@ async function api(operation, fields = {}, token, host = 'tenant-a.example.test'
       headers: { Host: host, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body),
         ...(token ? { Authorization: `Bearer ${token}` } : {}), ...extra } }, response => {
       let text = ''; response.setEncoding('utf8'); response.on('data', chunk => text += chunk);
-      response.on('end', () => { let data; try { data = JSON.parse(text); } catch { data = null; } resolve({ status: response.statusCode, data, cacheControl: response.headers['cache-control'] }); });
+      response.on('end', () => { let data; try { data = JSON.parse(text); } catch { data = null; }
+        try {
+          if (c06Privacy) inspectPrivacyResponse(operation,response.statusCode,data,response.headers['cache-control'],extra);
+          resolve({ status: response.statusCode, data, cacheControl: response.headers['cache-control'] });
+        } catch (error) { reject(error); }
+      });
     });
     req.setTimeout(120000, () => {
       console.error('Safe timeout operation=' + operation);
@@ -343,6 +352,7 @@ try {
       sql, noticeFor, mailFor, uiPort, reservePlatformWindow });
   } else {
   const browserContext = await browser.newContext();
+  if (c06Privacy) finishPrivacyBrowser = attachPrivacyBrowser(browserContext);
   const page = await browserContext.newPage();
 
   // REAL MySQL+HTTP session-policy matrix: only the platform security admin
@@ -882,6 +892,7 @@ try {
   check(!apiLogs.includes('member@example.test') && !apiLogs.includes('LOCAL-PRIVATE-REFERENCE'), 'API logs contain no mailbox or private resource');
   }
   }
+  if (c06Privacy) { await finishPrivacyBrowser(); reportPrivacyResponses(); }
   await browser.close(); browser = undefined;
   for (const p of children.reverse()) { p.kill(); }
   await delay(1500);
