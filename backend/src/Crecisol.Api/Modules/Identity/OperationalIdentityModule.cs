@@ -101,6 +101,16 @@ public static class OperationalIdentityModule
         return services;
     }
 
+    // C06-06 is a separate, explicitly enabled local-only surface. The
+    // historic Operations dictionary and its contracts are not replaced.
+    private static readonly IReadOnlyDictionary<string, string[]> C06BreakglassOperations = new Dictionary<string, string[]>
+    {
+        ["platform/breakglass/open"] = ["tenantId", "branchId", "resourceId", "reason", "code"],
+        ["platform/breakglass/approve"] = ["exceptionId", "tenantId", "branchId", "resourceId", "reason", "reviewReason", "code"],
+        ["platform/breakglass/read"] = ["exceptionId", "code"],
+        ["platform/breakglass/close"] = ["exceptionId"],
+    };
+
     public static void MapLocalOperationalIdentity(this IEndpointRouteBuilder endpoints)
     {
         // Validate all configuration and crypto before accepting any request.
@@ -112,11 +122,27 @@ public static class OperationalIdentityModule
                 ? "/api/v1/platform-identity/" + selected[9..] : "/api/v1/identity/" + selected,
                 (HttpContext context, IOperationalIdentityFlow flow, CancellationToken ct) => Handle(context, flow, selected, ct));
         }
+        if (Environment.GetEnvironmentVariable("CRECISOL_C06_BREAKGLASS_ENABLED") == "true")
+            foreach (var operation in C06BreakglassOperations.Keys)
+            {
+                var selected = operation;
+                endpoints.MapPost("/api/v1/platform-identity/" + selected[9..],
+                    (HttpContext context, IOperationalIdentityFlow flow, CancellationToken ct) => Handle(context, flow, selected, ct));
+            }
     }
 
     private static async Task<IResult> Handle(HttpContext context, IOperationalIdentityFlow flow, string operation, CancellationToken ct)
     {
         var request = context.Request;
+        var exceptional = C06BreakglassOperations.TryGetValue(operation, out var exceptionalFields);
+        if (exceptional && Environment.GetEnvironmentVariable("CRECISOL_C06_BREAKGLASS_ENABLED") != "true")
+            return Results.NotFound();
+        var expectedFields = exceptional ? exceptionalFields! : Operations[operation];
+        if (exceptional)
+        {
+            context.Response.Headers.CacheControl = "no-store, private";
+            context.Response.Headers.Pragma = "no-cache";
+        }
         var browser = OperationalBrowserSessionTransport.IsBrowser(request);
         try
         {
@@ -165,11 +191,11 @@ public static class OperationalIdentityModule
                 fields = new Dictionary<string, string>(StringComparer.Ordinal);
                 foreach (var property in json.RootElement.EnumerateObject())
                     if (property.Value.ValueKind != JsonValueKind.String ||
-                        !Operations[operation].Contains(property.Name) ||
+                        !expectedFields.Contains(property.Name) ||
                         !fields.TryAdd(property.Name, property.Value.GetString()!) ||
                         fields[property.Name].Length < 1 ||
                         fields[property.Name].Length > (property.Name is "response" or "pixels" ? 24000 : 512)) return Results.BadRequest();
-                if (fields.Count != Operations[operation].Length) return Results.BadRequest();
+                if (fields.Count != expectedFields.Length) return Results.BadRequest();
                 foreach (var (name, value) in fields)
                 {
                     if ((name is "challenge" or "token") && (value.Length != 64 || !value.All(Uri.IsHexDigit))) return Results.BadRequest();

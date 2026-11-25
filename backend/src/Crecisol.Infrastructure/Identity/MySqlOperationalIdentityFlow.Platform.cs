@@ -79,6 +79,12 @@ public sealed partial class MySqlOperationalIdentityFlow
         // password checks, grants and recovery challenges remain mandatory.
         if (C06SensitiveOperationPolicy.RequiresFreshFactor(C06StepUpRealm.Platform, r.Operation) &&
             !C06PlatformStepUpPurpose(u, principal, r)) return new(false);
+        if (C06ExceptionalAccessPolicy.IsOperation(r.Operation))
+        {
+            if (Environment.GetEnvironmentVariable("CRECISOL_C06_BREAKGLASS_ENABLED") != "true")
+                return new(false);
+            return await C06ExceptionalAccess(u, principal, session, r, ct);
+        }
         if (r.Operation == "platform/sessions/keepalive")
             return new(true, new { expiresAtUtc = u.SessionExpiresAtUtc, idleMinutes = idle });
         if (r.Operation is "platform/session-policy" or "platform/session-policy/update")

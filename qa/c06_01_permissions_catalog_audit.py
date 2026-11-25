@@ -73,6 +73,45 @@ STANDALONE = {
          "backend/src/Crecisol.Api/Modules/Identity/PrivateResourceReadModule.cs", "tenant_branch_resource_grant"),
 }
 
+
+def verify_exception_overlay(source):
+    """Explicit successor inventory; the original 80/12/28 is historical."""
+    marker = "private static readonly IReadOnlyDictionary<string, string[]> C06BreakglassOperations"
+    overlay_path = ROOT / "docs/c06/C06_06_CATALOGO_ACTIVACION.json"
+    if marker not in source:
+        need(not overlay_path.exists(), "exception overlay without registered surface")
+        return
+    need(source.count(marker) == 1 and overlay_path.is_file(), "exception surface missing reviewed overlay")
+    block = source.split(marker, 1)[1].split("public static void MapLocalOperationalIdentity", 1)[0]
+    pairs = re.findall(r'\["([^"]+)"\]\s*=\s*\[([^\]]*)\]', block)
+    actual = {name: re.findall(r'"([^"]+)"', fields) for name, fields in pairs}
+    expected = {"platform/breakglass/open":["tenantId","branchId","resourceId","reason","code"],"platform/breakglass/approve":["exceptionId","tenantId","branchId","resourceId","reason","reviewReason","code"],"platform/breakglass/read":["exceptionId","code"],"platform/breakglass/close":["exceptionId"]}
+    need(len(pairs) == len(expected) and actual == expected, "exception route contract drift")
+    overlay = json.loads(overlay_path.read_text(encoding="utf-8"))
+    need(overlay["authority"] == "DOCUMENTATION_ONLY_NOT_RUNTIME_AUTHORIZATION" and
+         overlay["feature_gate"] == "CRECISOL_C06_BREAKGLASS_ENABLED=true_and_C05_LOCAL_IDENTITY_ENABLED=true_and_local_isolation",
+         "exception feature gate changed")
+    need(overlay["activated_normative"] == ["platform.breakglass.open","platform.breakglass.read","platform.breakglass.close"],
+         "unapproved normative action activation")
+    need(len(overlay["actions"]) == len(expected), "exception action count")
+    seen = set()
+    for row in overlay["actions"]:
+        op = row["operation_code"]
+        need(op in expected and op not in seen and row["required_fields"] == expected[op] and
+             row["action_id"] == op.replace("/", ".") and row["http_method"] == "POST" and
+             row["http_route"] == "/api/v1/platform-identity/" + op[9:] and row["realm"] == "platform" and
+             row["access_boundary"] == "platform_temporary_exception" and row["source_file"] == SOURCE and
+             row["authorization_from"] == "backend_only" and row["general_role_grantable"] is False and
+             row["registered_in_local_api"] is True and row["ui_grant_source"] is False,
+             "exception overlay boundary drift")
+        seen.add(op)
+    need(seen == set(expected), "exception routes missing")
+    need('Environment.GetEnvironmentVariable("CRECISOL_C06_BREAKGLASS_ENABLED") == "true"' in source and
+         "foreach (var operation in C06BreakglassOperations.Keys)" in source and
+         'endpoints.MapPost("/api/v1/platform-identity/" + selected[9..]' in source and
+         "expectedFields" in source and 'context.Response.Headers.CacheControl = "no-store, private"' in source,
+         "exception registration or privacy drift")
+
 def verify_catalog(data, source, program):
     need(data.get("schema_version") == 1 and data.get("authority") == "DOCUMENTATION_ONLY_NOT_RUNTIME_AUTHORIZATION",
          "inventory masquerades as a runtime authorization service")
@@ -84,6 +123,7 @@ def verify_catalog(data, source, program):
     need("app.MapMfaVerifiedPrivateResourceRead(" not in program,
          "harness private route now exposed in production composition")
     found = operations(source)
+    verify_exception_overlay(source)
     rows = data.get("api_actions")
     need(isinstance(rows, list), "missing catalog")
     ids, routes, codes, extras = set(), set(), set(), []

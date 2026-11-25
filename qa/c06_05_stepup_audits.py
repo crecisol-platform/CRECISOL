@@ -48,6 +48,11 @@ def scope():
     else:
         base = [BASE, "HEAD"]
     changed = subprocess.check_output(["git", "diff", "--name-only", *base], cwd=ROOT, text=True).splitlines()
+    # Explicit sequential successor: preserve every other historical audit.
+    if "docs/c06/C06_06_ESPECIFICACION.md" in changed:
+        from c06_06_exceptional_scope import require_exact
+        require_exact(changed)
+        return changed
     need(set(changed) == set(PATHS), "unexpected or missing files: " + repr(changed))
     need(not any(p.startswith(("frontend/", "database/", "backend/src/Crecisol.Api/", "backend/src/Crecisol.CredentialSecurity/")) for p in changed), "unexpected UI, DB, API or crypto change")
 
