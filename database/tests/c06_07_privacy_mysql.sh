@@ -120,6 +120,20 @@ deny_worker "UPDATE c05_identity_recovery SET consumed_at_utc=UTC_TIMESTAMP(6)" 
 deny_worker "DELETE FROM c05_identity_recovery" "delete evidence" 1142
 deny_worker "UPDATE c05_identity_sensitive_outbox SET protected_payload=X'FF'" "write outbox payload" 1142
 deny_worker "SELECT * FROM c05_identity_account" "read accounts" 1142
+# Verify actual API principal cannot execute this administrative routine.
+apply "$ROOT/database/operations/c05_local_runtime_role.sql"
+RUNTIME_PASSWORD="$(openssl rand -hex 24)"
+sql "CREATE USER 'c06_privacy_runtime_test'@'localhost' IDENTIFIED BY '$RUNTIME_PASSWORD'; GRANT 'c05_identity_local_runtime' TO 'c06_privacy_runtime_test'@'localhost'; SET DEFAULT ROLE 'c05_identity_local_runtime' TO 'c06_privacy_runtime_test'@'localhost';"
+runtime_sql() {
+ docker exec -e "MYSQL_PWD=$RUNTIME_PASSWORD" "$NAME" mysql -uc06_privacy_runtime_test -N -B -D crecisol_c05 -e "$1"
+}
+[[ "$(runtime_sql 'SELECT COUNT(*) FROM c05_identity_recovery')" == "4" ]]
+if err="$(runtime_sql 'CALL c06_dispose_closed_sensitive_payloads(1)' 2>&1)"; then
+ echo 'FAIL C06-07 D runtime unexpectedly allowed disposal' >&2; exit 1
+fi
+[[ "$err" == *"ERROR 1370 "* ]] || { echo 'FAIL C06-07 D wrong routine denial' >&2; exit 1; }
+rejected=$((rejected+1))
+echo 'PASS C06-07 D rejected API runtime routine execution (MySQL 1370)'
 # No product/runtime privilege is created by the maintenance role.
 assert "SELECT COUNT(*) FROM mysql.procs_priv WHERE Db=DATABASE() AND Routine_name='c06_dispose_closed_sensitive_payloads' AND User='c05_identity_local_runtime'" "0" "no runtime execution grant"
 apply "$ROOT/database/migrations/022_c06_privacy_disposition.down.sql"

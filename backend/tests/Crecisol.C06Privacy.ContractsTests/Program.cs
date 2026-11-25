@@ -26,7 +26,7 @@ var samples=new Dictionary<string,object?>
     ["enroll"]=new { secret=seed, uri },
     ["sessionWithCodes"]=new OperationalSessionReceipt(token,now,codesList),
     ["sessionOnly"]=new OperationalSessionReceipt(token,now),
-    ["sessions"]=new OperationalSessionInventory(now,[new OperationalSessionSummary(id,now,now,now,"API","TOTP")]),
+    ["sessions"]=new OperationalSessionInventory(now,new[]{new OperationalSessionSummary(id,now,now,now,"API","TOTP")}),
     ["keepalive"]=new { expiresAtUtc=now,idleMinutes=30 },
     ["pending"]=new { requests=new[]{new { id=id.ToString("D"),requestedAtUtc=now,mailboxHint="ab•••@example.test" }},nextCursor=(string?)null },
     ["reference"]=new { reference="PRIVATE-REFERENCE" },
@@ -149,6 +149,8 @@ Check(!C06IdentityResponseProjection.TryApply("unknown",new(true,new { accepted=
 Check(!C06IdentityResponseProjection.TryApply("private/read",new(true,new { reference="allowed",ownerAccountId=id }),out _),"extra private owner rejected");
 Check(!C06IdentityResponseProjection.TryApply("private/read",new(true,new { reference=new { password="secret" }}),out _),"nested object in scalar rejected");
 Check(!C06IdentityResponseProjection.TryApply("private/read",new(true,new UntrustedGetter()),out _),"arbitrary DTO rejected before getter");
+Check(!C06IdentityResponseProjection.TryApply("private/read",new(true,new Dictionary<string,object?> { ["reference"]="private",["passwordPhc"]="secret" }),out _),"raw database dictionary denied");
+Check(!C06IdentityResponseProjection.TryApply("private/read",new(true,new { reference="value" }){ SessionIdleMinutes=121 },out _),"invalid session metadata denied");
 Check(!C06IdentityResponseProjection.TryApply("sessions",new(true,new { expiresAtUtc=now,sessions=new[]{new { id,issuedAtUtc=now,expiresAtUtc=now,lastSeenAtUtc=now,device="API",factor="TOTP",tokenHmac=token }} }),out _),"nested session digest denied");
 Check(!C06IdentityResponseProjection.TryApply("memberships/pending",new(true,new { requests=new[]{new { id=id.ToString("D"),requestedAtUtc=now,mailboxHint="full.mailbox@example.test" }},nextCursor=(string?)null }),out _),"unmasked mailbox denied");
 Check(!C06IdentityResponseProjection.TryApply("passkeys/login",new(true,new OperationalSessionReceipt(token,now,codesList)),out _),"backup codes not allowed in passkey login");

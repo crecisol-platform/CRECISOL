@@ -116,6 +116,8 @@ public static class OperationalIdentityModule
     {
         // Validate all configuration and crypto before accepting any request.
         _ = endpoints.ServiceProvider.GetRequiredService<IOperationalIdentityFlow>();
+        if (!C06IdentityResponseProjection.Operations.ToHashSet(StringComparer.Ordinal).SetEquals(Operations.Keys.Concat(C06BreakglassOperations.Keys)))
+            throw new InvalidOperationException("Identity response inventory mismatch.");
         foreach (var operation in Operations.Keys)
         {
             var selected = operation;

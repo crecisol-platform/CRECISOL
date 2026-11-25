@@ -235,7 +235,11 @@ public static class C06IdentityResponseProjection
     private static Projection Array(Projection element, int maximum) => value =>
     {
         IEnumerable sequence;
-        if (value is JsonElement { ValueKind: JsonValueKind.Array } json) sequence = json.EnumerateArray().ToArray();
+        if (value is JsonElement { ValueKind: JsonValueKind.Array } json)
+        {
+            if (json.GetArrayLength() > maximum) throw Invalid();
+            sequence = json.EnumerateArray().ToArray();
+        }
         else if (value is IEnumerable items && value is not string &&
             (value.GetType().IsArray || value.GetType().Assembly == typeof(Enumerable).Assembly ||
              (value.GetType().IsGenericType && value.GetType().GetGenericTypeDefinition() == typeof(List<>))))
@@ -310,8 +314,9 @@ public static class C06IdentityResponseProjection
         string[]? codes = null;
         if (receipt.RecoveryCodes is not null)
         {
-            if (receipt.RecoveryCodes.Count != 10) throw Invalid();
-            codes = receipt.RecoveryCodes.Select(code => (string)Hex(32)(code)!).ToArray();
+            var projected = (object?[])Array(Hex(32), 10)(receipt.RecoveryCodes)!;
+            if (projected.Length != 10) throw Invalid();
+            codes = projected.Cast<string>().ToArray();
         }
         return new OperationalSessionReceipt(receipt.SessionToken, receipt.ExpiresAtUtc, codes);
     }
