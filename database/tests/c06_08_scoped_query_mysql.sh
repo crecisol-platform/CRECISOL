@@ -45,12 +45,24 @@ for file in "$ROOT"/database/migrations/[0-9][0-9][0-9]_c05_*.sql; do
 done
 
 assert "SELECT VERSION() LIKE '8.4.%'" "1" "real MySQL 8.4"
+for file in "$ROOT"/database/migrations/0{19,20,21,22}_c06_*.sql; do
+  [[ "$file" == *.down.sql ]] && continue
+  apply "$file"
+done
 apply "$ROOT/database/operations/c05_local_runtime_role.sql"
+baseline_indexes() { sql "SELECT table_name,index_name,non_unique,seq_in_index,column_name,COALESCE(sub_part,0),COALESCE(collation,''),index_type,is_visible FROM information_schema.statistics WHERE table_schema=DATABASE() AND LEFT(index_name,10)<>'ix_c06_08_' ORDER BY table_name,index_name,seq_in_index"; }
+baseline_fks() { sql "SELECT table_name,constraint_name,ordinal_position,column_name,referenced_table_name,referenced_column_name FROM information_schema.key_column_usage WHERE table_schema=DATABASE() AND referenced_table_name IS NOT NULL ORDER BY table_name,constraint_name,ordinal_position"; }
+before_indexes="$(baseline_indexes)"
+before_fks="$(baseline_fks)"
+[[ -n "$before_indexes" && -n "$before_fks" ]]
 before_grants="$(sql "SHOW GRANTS FOR 'c05_identity_local_runtime'")"
 apply "$ROOT/database/migrations/023_c06_scoped_query_indexes.sql"
+[[ "$(baseline_indexes)" == "$before_indexes" ]] || { echo "FAIL forward migration replaced a baseline index" >&2; exit 1; }
+[[ "$(baseline_fks)" == "$before_fks" ]] || { echo "FAIL forward migration changed a foreign key" >&2; exit 1; }
+echo "PASS C06-08 D forward migration preserves every baseline index and FK"
 assert "SELECT GROUP_CONCAT(column_name ORDER BY seq_in_index SEPARATOR ',') FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='c05_identity_membership' AND index_name='ix_c06_08_pending'" "tenant_id,membership_state,created_at_utc,membership_id" "ix_c06_08_pending exact index order"
 assert "SELECT GROUP_CONCAT(column_name ORDER BY seq_in_index SEPARATOR ',') FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='c05_identity_session' AND index_name='ix_c06_08_tenant_sessions'" "tenant_id,account_id,membership_id,revoked_at_utc,last_seen_at_utc,session_id" "ix_c06_08_tenant_sessions exact index order"
-assert "SELECT GROUP_CONCAT(column_name ORDER BY seq_in_index SEPARATOR ',') FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='c05_platform_session' AND index_name='ix_c06_08_operator_sessions'" "operator_id,security_revision,revoked_at_utc,last_seen_at_utc,session_id" "ix_c06_08_operator_sessions exact index order"
+assert "SELECT GROUP_CONCAT(column_name ORDER BY seq_in_index SEPARATOR ',') FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='c05_platform_session' AND index_name='ix_c06_08_operator_sessions'" "security_revision,operator_id,revoked_at_utc,last_seen_at_utc,session_id" "ix_c06_08_operator_sessions exact index order"
 assert "SELECT GROUP_CONCAT(column_name ORDER BY seq_in_index SEPARATOR ',') FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='c05_identity_audit' AND index_name='ix_c06_08_subject_events'" "tenant_id,subject_account_id,actor_account_id,created_at_utc,audit_id" "ix_c06_08_subject_events exact index order"
 assert "SELECT GROUP_CONCAT(column_name ORDER BY seq_in_index SEPARATOR ',') FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='c05_identity_abuse_signal' AND index_name='ix_c06_08_signal_window'" "created_at_utc,signal_kind" "ix_c06_08_signal_window exact index order"
 [[ "$(sql "SHOW GRANTS FOR 'c05_identity_local_runtime'")" == "$before_grants" ]]
@@ -72,14 +84,36 @@ plan="$(sql "EXPLAIN SELECT membership_id FROM c05_identity_membership FORCE IND
 echo "PASS C06-08 D pending keyset index usable"
 app_password="$(openssl rand -hex 24)"
 sql "CREATE USER 'c06_query_test'@'localhost' IDENTIFIED BY '$app_password'; GRANT 'c05_identity_local_runtime' TO 'c06_query_test'@'localhost'; SET DEFAULT ROLE 'c05_identity_local_runtime' TO 'c06_query_test'@'localhost';"
-if ddl_error="$(docker exec -e "MYSQL_PWD=$app_password" "$NAME" mysql --protocol=TCP -h127.0.0.1 -uc06_query_test -N -B -D crecisol_c05 -e "ALTER TABLE c05_identity_membership DROP INDEX ix_c06_08_pending" 2>&1)"; then
-  echo "FAIL runtime gained DDL" >&2; exit 1
+# Same authenticated socket connection for positive and negative commands.
+# Never count a failed login, a missing index, or a failed FK as denied DDL.
+app_sql() {
+  docker exec -e "MYSQL_PWD=$app_password" "$NAME" mysql --protocol=SOCKET -uc06_query_test -N -B -D crecisol_c05 -e "$1"
+}
+[[ "$(app_sql "SELECT COUNT(*) FROM c05_identity_membership")" == "3" ]]
+echo "PASS C06-08 D runtime account has the intended read privilege"
+if ddl_error="$(app_sql "DROP INDEX ix_c06_08_pending ON c05_identity_membership" 2>&1)"; then
+  echo "FAIL runtime gained INDEX privilege" >&2; exit 1
 fi
-[[ "$ddl_error" == *"ERROR 1142 "* ]] || { echo "FAIL unexpected SQL rejection of runtime DDL" >&2; exit 1; }
-echo "PASS C06-08 D runtime cannot alter query indexes"
+# MySQL 1142 is table-command denial; 1044 is database-level privilege
+# denial. Both are SQLSTATE 42000. The preceding SELECT proves authentication.
+if [[ "$ddl_error" != *"ERROR 1142 (42000)"* && "$ddl_error" != *"ERROR 1044 (42000)"* ]]; then
+  printf 'FAIL unexpected SQL rejection of runtime DDL; numeric code: %s\n' "$(printf '%s' "$ddl_error" | grep -oE 'ERROR [0-9]+' | head -n 1 || true)" >&2
+  exit 1
+fi
+printf 'PASS C06-08 D runtime cannot drop query indexes (%s)\n' "$(printf '%s' "$ddl_error" | grep -oE 'ERROR [0-9]+' | head -n 1)"
+[[ "$(app_sql "SELECT COUNT(*) FROM c05_identity_membership")" == "3" ]]
 before_rows="$(sql "SELECT GROUP_CONCAT(HEX(membership_id) ORDER BY membership_id) FROM c05_identity_membership")"
 apply "$ROOT/database/migrations/023_c06_scoped_query_indexes.down.sql"
 assert "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=DATABASE() AND index_name LIKE 'ix_c06_08_%'" "0" "rollback removes only new indexes"
 [[ "$(sql "SELECT GROUP_CONCAT(HEX(membership_id) ORDER BY membership_id) FROM c05_identity_membership")" == "$before_rows" ]]
 [[ "$(sql "SHOW GRANTS FOR 'c05_identity_local_runtime'")" == "$before_grants" ]]
+[[ "$(baseline_indexes)" == "$before_indexes" ]] || { echo "FAIL rollback changed a baseline index" >&2; exit 1; }
+[[ "$(baseline_fks)" == "$before_fks" ]] || { echo "FAIL rollback changed a foreign key" >&2; exit 1; }
+echo "PASS C06-08 D rollback preserves every baseline index and FK"
+# A second apply/rollback must be clean as well; no metadata drift.
+apply "$ROOT/database/migrations/023_c06_scoped_query_indexes.sql"
+apply "$ROOT/database/migrations/023_c06_scoped_query_indexes.down.sql"
+[[ "$(baseline_indexes)" == "$before_indexes" && "$(baseline_fks)" == "$before_fks" ]]
+assert "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=DATABASE() AND LEFT(index_name,10)='ix_c06_08_'" "0" "second rollback no residual indexes"
+[[ "$(sql "SELECT GROUP_CONCAT(HEX(membership_id) ORDER BY membership_id) FROM c05_identity_membership")" == "$before_rows" ]]
 echo "PASS C06-08 D MYSQL: isolated counts, keyset index, unchanged rows and privileges, reversible DDL"

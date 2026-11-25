@@ -236,7 +236,15 @@ try {
   // Opt-in C06-04 isolates its new case assignment schema from historic C05 runs.
   if (c06Abac) sql(readFileSync(path.join(root, 'database/migrations/020_c06_case_abac.sql'), 'utf8'));
   if (c06Exceptional) sql(readFileSync(path.join(root, 'database/migrations/021_c06_exceptional_access.sql'), 'utf8'));
-  if (c06Queries) sql(readFileSync(path.join(root, 'database/migrations/023_c06_scoped_query_indexes.sql'), 'utf8'));
+  const queryIndexBaseline = () => sql("SELECT table_name,index_name,non_unique,seq_in_index,column_name,COALESCE(sub_part,0),COALESCE(collation,''),index_type,is_visible FROM information_schema.statistics WHERE table_schema=DATABASE() AND LEFT(index_name,10)<>'ix_c06_08_' ORDER BY table_name,index_name,seq_in_index");
+  const queryFkBaseline = () => sql("SELECT table_name,constraint_name,ordinal_position,column_name,referenced_table_name,referenced_column_name FROM information_schema.key_column_usage WHERE table_schema=DATABASE() AND referenced_table_name IS NOT NULL ORDER BY table_name,constraint_name,ordinal_position");
+  const queryIndexesBefore = c06Queries ? queryIndexBaseline() : null;
+  const queryFksBefore = c06Queries ? queryFkBaseline() : null;
+  if (c06Queries) {
+    sql(readFileSync(path.join(root, 'database/migrations/023_c06_scoped_query_indexes.sql'), 'utf8'));
+    check(queryIndexesBefore !== '' && queryIndexBaseline() === queryIndexesBefore && queryFksBefore !== '' && queryFkBaseline() === queryFksBefore,
+      'C06-08 forward indexes preserve all original indexes and foreign keys');
+  }
   check(sql('SELECT VERSION()').startsWith('8.4.'), 'eighteen forward migrations on real MySQL 8.4');
   sql(`INSERT INTO c04_tenant_catalog VALUES
     (UNHEX('${A}'),'tenant-a','Tenant A',3,2,1,UTC_TIMESTAMP(6)),
@@ -937,6 +945,8 @@ try {
     sql(readFileSync(path.join(root, 'database/migrations/023_c06_scoped_query_indexes.down.sql'), 'utf8'));
     check(sql("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=DATABASE() AND index_name LIKE 'ix_c06_08_%'")==='0','C06-08 rollback removes only query indexes');
     check(Number(sql('SELECT COUNT(*) FROM c05_identity_membership'))===membershipCount,'C06-08 rollback preserves membership rows');
+    check(queryIndexBaseline() === queryIndexesBefore && queryFkBaseline() === queryFksBefore,
+      'C06-08 rollback preserves all original indexes and foreign keys after real HTTP and browser flow');
   }
   if (c06Exceptional) {
     const resourceCount=Number(sql('SELECT COUNT(*) FROM c05_identity_private_resource'));

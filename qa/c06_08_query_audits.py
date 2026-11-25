@@ -56,7 +56,11 @@ def persistence():
     up=read("database/migrations/023_c06_scoped_query_indexes.sql");down=read("database/migrations/023_c06_scoped_query_indexes.down.sql")
     need(up.count(" ADD INDEX ")==5 and down.count(" DROP INDEX ")==5,"index count")
     need(not any(m in up.upper()+down.upper() for m in ("GRANT ","CREATE TABLE","DROP TABLE","DELETE FROM","UPDATE ","INSERT INTO","CREATE USER")),"DDL outside index-only scope")
-    need("SHOW GRANTS FOR" in read("database/tests/c06_08_scoped_query_mysql.sh") and "PASS C06-08 D MYSQL" in read("database/tests/c06_08_scoped_query_mysql.sh"),"independent persistence audit missing")
+    need("ix_c06_08_operator_sessions (security_revision,operator_id,revoked_at_utc,last_seen_at_utc,session_id)" in up,"operator index must not replace FK support index")
+    test=read("database/tests/c06_08_scoped_query_mysql.sh")
+    for mark in ("SHOW GRANTS FOR","baseline_indexes","baseline_fks","DROP INDEX ix_c06_08_pending ON c05_identity_membership","ERROR 1142 (42000)","ERROR 1044 (42000)","second rollback no residual indexes","PASS C06-08 D MYSQL"):
+        need(mark in test,"independent persistence audit missing "+mark)
+    need("queryIndexBaseline() === queryIndexesBefore" in read("qa/c05_operational_flow_e2e.mjs"),"end-to-end metadata preservation absent")
 if __name__=="__main__":
     stage=sys.argv[1] if len(sys.argv)==2 else ""
     need(stage in ("A","B","C","D"),"stage")
