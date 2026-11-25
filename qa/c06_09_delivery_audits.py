@@ -65,6 +65,8 @@ def boundary():
         need(forbidden not in logger,"unsafe diagnostic formatting "+forbidden)
     from c06_07_privacy_audits import boundary as previous_privacy
     from c06_08_query_audits import boundary as previous_queries
+    from c06_04_abac_audits import verify_case_delivery_order
+    verify_case_delivery_order(abac)
     previous_privacy();previous_queries()
 def persistence():
     script=read("database/tests/c06_09_delivery_mysql.sh")

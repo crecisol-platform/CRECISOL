@@ -144,6 +144,19 @@ GUARDS={
  "assignment revocation immediately denies future read",
 ],
 }
+def verify_case_delivery_order(adapter):
+    # C06-09 successor: the original ABAC denial remains mandatory and the
+    # reference is now constrained by the closed protected-content contract.
+    gate="if (!C06CaseAbacPolicy.Allows(evidence)) return new(false);"
+    select='var reference = Text(resource, "display_reference");'
+    deliver="return C06ProtectedContent.IsDisplayReference(reference) ? new(true, new { reference }) : new(false);"
+    need(all(adapter.count(marker)==1 for marker in (gate,select,deliver)),
+         "case authorization/content gate missing or ambiguous")
+    need(adapter.index(gate)<adapter.index(select)<adapter.index(deliver),
+         "private data emitted before authorization/content validation")
+    need(adapter.count("new(true")==1 and "new(true" not in adapter[:adapter.index(gate)],
+         "uncontrolled early allow or additional case delivery")
+
 def static_guards():
     for key,terms in GUARDS.items():
         source=read(key)
@@ -164,11 +177,7 @@ def static_guards():
          auth.index("C06ReadAuthorizedCase(u, tenant, actor, member, c06Context, r)") ,
          "ABAC read precedes C06-03 identity")
     adapter=read("adapter")
-    need(adapter.index("C06CaseAbacPolicy.Allows(evidence)") <
-         adapter.index('return new(true, new { reference ='),
-         "private data emitted before authorization")
-    need("new(true" not in adapter[:adapter.index("C06CaseAbacPolicy.Allows(evidence)")],
-         "uncontrolled early allow")
+    verify_case_delivery_order(adapter)
     migration=read("migration")
     need("INSERT INTO c06_case_resource_assignment" not in migration,
          "assignment migration seeds grants")
@@ -197,6 +206,18 @@ def negative_gate():
          "real MySQL negative scripts missing")
     need(read("e2e").count("C06-04")>=8,
          "real authenticated HTTP negative tests missing")
+    adapter=read("adapter")
+    for mutation in (
+        adapter.replace("if (!C06CaseAbacPolicy.Allows(evidence)) return new(false);",""),
+        adapter.replace("C06ProtectedContent.IsDisplayReference(reference) ? new(true, new { reference }) : new(false)","new(true, new { reference })"),
+        adapter.replace('var reference = Text(resource, "display_reference");',""),
+        adapter.replace("if (!C06CaseAbacPolicy.Allows(evidence)) return new(false);","return new(true);"),
+        adapter.replace("if (!C06CaseAbacPolicy.Allows(evidence)) return new(false);",'var reference = Text(resource, "display_reference");\n        if (!C06CaseAbacPolicy.Allows(evidence)) return new(false);')
+    ):
+        need(mutation!=adapter,"delivery mutation was not applied")
+        try: verify_case_delivery_order(mutation)
+        except AssertionError: n+=1
+        else: raise AssertionError("unsafe case delivery mutation accepted")
     print(f"PASS C06-04 B: {n} structural bypass mutations detected; independent .NET, MySQL and HTTP tests required separately")
 
 def main(stage):
