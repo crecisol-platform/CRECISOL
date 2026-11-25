@@ -1,0 +1,69 @@
+name: CRECISOL C06-04 acta institucional A-B-C
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'docs/c06/ACTA_C06_04_ABAC.md'
+      - 'docs/ESTADO_VIGENTE_CAPITULOS.md'
+      - 'docs/planificacion-futura/C06_MICROFASES_PROPUESTAS.md'
+      - 'qa/institutional_c06_04_act_audits.py'
+      - '.github/workflows/c06-04-institutional-act.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'docs/c06/ACTA_C06_04_ABAC.md'
+      - 'docs/ESTADO_VIGENTE_CAPITULOS.md'
+      - 'docs/planificacion-futura/C06_MICROFASES_PROPUESTAS.md'
+      - 'qa/institutional_c06_04_act_audits.py'
+      - '.github/workflows/c06-04-institutional-act.yml'
+permissions:
+  contents: read
+jobs:
+  a:
+    name: A | Canonical Word provenance, evidence SHAs and status
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 qa/master_source_guard.py
+      - run: python3 qa/institutional_c06_04_act_audits.py A
+  b:
+    name: B | ABAC ownership contracts and MySQL 8.4 offensive SQL
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 qa/institutional_c06_04_act_audits.py B
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet run -c Release --project backend/tests/Crecisol.C06Abac.ContractsTests/Crecisol.C06Abac.ContractsTests.csproj
+      - run: bash database/tests/c06_04_abac_mysql.sh
+  c:
+    name: C | .NET 10 and Angular 22 architecture and regression compile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 qa/institutional_c06_04_act_audits.py C
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release -warnaserror
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - run: |
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
