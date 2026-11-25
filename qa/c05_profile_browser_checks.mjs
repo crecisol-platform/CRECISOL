@@ -1,5 +1,5 @@
 import { crc32, inflateSync } from 'node:zlib';
-export async function verifyProfile({ browser, api, check, confidential, owner, sql, A, B, accountId, uiPort, mailFor, approver, password }) {
+export async function verifyProfile({ browser, api, platform, check, confidential, owner, sql, A, B, accountId, uiPort, mailFor, approver, password, c06Delivery=false, reserveTestWindow, reservePlatformWindow }) {
   const context = await browser.newContext(); const page = await context.newPage(); let dialogs = 0;
   page.on('dialog', async d => { dialogs++; await d.dismiss(); });
   await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
@@ -54,6 +54,26 @@ export async function verifyProfile({ browser, api, check, confidential, owner, 
   }
   check(names.join(',') === 'IHDR,IDAT,IEND' && inflateSync(Buffer.concat(compressed)).length === 64 * 257,
     'stored avatar contains only canonical raster chunks, fixed pixel budget, and no original EXIF or text metadata');
+  if (c06Delivery) {
+    await reserveTestWindow(15);
+    const where=`tenant_id=UNHEX('${A}') AND account_id=UNHEX('${accountId(owner.mailbox)}')`;
+    const original=sql('SELECT HEX(photo_png) FROM c05_identity_scoped_profile WHERE '+where);
+    check(original.length>0,'C06-09 stored raster fixture exists');
+    const badCrc=bytes.slice();badCrc[29]^=1;
+    try {
+      for(const bad of [Buffer.from('<svg onload="x"/>'),Buffer.concat([bytes,Buffer.from('C06_09_TRAILING')]),badCrc,input]) {
+        sql(`UPDATE c05_identity_scoped_profile SET photo_png=UNHEX('${bad.toString('hex')}') WHERE ${where}`);
+        const rejected=await api('profile/photo',{},token);
+        check(rejected.status===401&&!rejected.data,'C06-09 actual stored malformed media is denied, not forwarded');
+      }
+    } finally {sql(`UPDATE c05_identity_scoped_profile SET photo_png=UNHEX('${original}') WHERE ${where}`);}
+    check((await api('profile/photo',{},token)).data?.png===photo.data.png,'C06-09 restored authorized raster is unchanged');
+    for(const key of ['accountId','tenantId','mediaId','path','url','signature','format'])
+      check((await api('profile/photo',{[key]:'forged'},token)).status===400,'C06-09 photo rejects caller-selected resource or delivery format');
+    await reservePlatformWindow(5);
+    check((await platform('profile/photo',{},token)).status===401,'C06-09 tenant bearer cannot retrieve operator media');
+    await reserveTestWindow(20);
+  }
   check((await api('profile/photo-upload', { pixels: Buffer.from('<svg onload=alert(1)>').toString('base64') }, token)).status === 401,
     'SVG/polyglot containers cannot enter the raw fixed-size raster API');
   check((await api('profile/read', { accountId: 'forged-owner' }, token)).status === 400,
@@ -94,6 +114,7 @@ export async function verifyProfile({ browser, api, check, confidential, owner, 
   const profileB = await api('profile/read', {}, sessionB.data.sessionToken, 'tenant-b.example.test');
   check(profileB.status === 200 && profileB.data.displayName === '' && !profileB.data.hasPhoto,
     'a second membership inherits neither the first tenant profile nor its image');
+  if (c06Delivery) check((await api('profile/photo',{},sessionB.data.sessionToken,'tenant-b.example.test')).status===401,'C06-09 same authenticated actor in B cannot retrieve A image');
   sql(`INSERT INTO c05_identity_scoped_profile(tenant_id,account_id,protected_profile,photo_state,updated_at_utc)
     SELECT UNHEX('${B}'),account_id,protected_profile,0,UTC_TIMESTAMP(6) FROM c05_identity_scoped_profile WHERE tenant_id=UNHEX('${A}') AND account_id=UNHEX('${accountId(owner.mailbox)}')`);
   check((await api('profile/read', {}, sessionB.data.sessionToken, 'tenant-b.example.test')).status === 401,

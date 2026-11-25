@@ -85,10 +85,10 @@ export async function verifyScopedQueries({api,check,sql,A,B,actor,token,key,mem
     check((await sessions(token,'tenant-b.example.test')).status===401,'C06-08 A session cannot enumerate B');
     const auditFixture=(tenant,account,action)=>`INSERT INTO c05_identity_audit(tenant_id,audit_id,actor_account_id,action_code,outcome_code,context_hmac,created_at_utc)
       VALUES(UNHEX('${tenant}'),UNHEX('${hex()}'),UNHEX('${account}'),'${action}',1,UNHEX('${randomBytes(32).toString('hex')}'),UTC_TIMESTAMP(6));`;
-    sql(auditFixture(A,actor,'C06_08_A_OWN')+auditFixture(B,actor,'C06_08_B_OWN')+auditFixture(A,synthetic[0].account,'C06_08_A_OTHER'));
+    sql(auditFixture(A,actor,'profile/photo')+auditFixture(B,actor,'profile/photo-remove')+auditFixture(A,synthetic[0].account,'profile/photo-upload'));
     const ae=await api('security/events',{},token), be=await api('security/events',{},foreignToken,'tenant-b.example.test');
-    check(ae.status===200 && ae.data.events.some(e=>e.action==='C06_08_A_OWN') && !ae.data.events.some(e=>['C06_08_B_OWN','C06_08_A_OTHER'].includes(e.action)),'C06-08 personal events deny other actors and the same actor in B');
-    check(be.status===200 && be.data.events.some(e=>e.action==='C06_08_B_OWN') && !be.data.events.some(e=>e.action==='C06_08_A_OWN'),'C06-08 B event inventory remains scoped to B');
+    check(ae.status===200 && ae.data.events.some(e=>e.action==='profile/photo') && !ae.data.events.some(e=>['profile/photo-remove','profile/photo-upload'].includes(e.action)),'C06-08 personal events deny other actors and the same actor in B');
+    check(be.status===200 && be.data.events.some(e=>e.action==='profile/photo-remove') && !be.data.events.some(e=>e.action==='profile/photo'),'C06-08 B event inventory remains scoped to B');
 
   } finally {
     // Remove only exact synthetic rows; immutable audit events remain for the
