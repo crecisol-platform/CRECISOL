@@ -25,9 +25,11 @@ const require = createRequire(path.join(root, 'frontend/package.json'));
 const { chromium } = require('@playwright/test');
 const AxeBuilder = require('@axe-core/playwright').default;
 if (process.argv.includes('--help')) { console.log('Usage: node qa/c05_operational_flow_e2e.mjs [--preview | --focus=operator | --focus=audit]'); process.exit(0); }
-if (process.argv.slice(2).some(a => !['--preview', '--focus=operator', '--focus=audit'].includes(a))) throw new Error('Unknown isolated runner argument');
+if (process.argv.slice(2).some(a => !['--preview', '--focus=operator', '--focus=audit', '--c06-04'].includes(a))) throw new Error('Unknown isolated runner argument');
 const preview = process.argv.includes('--preview');
 const focus = process.argv.includes('--focus=operator') ? 'operator' : process.argv.includes('--focus=audit') ? 'audit' : null;
+const c06Abac = process.argv.includes('--c06-04');
+if (c06Abac && (process.argv.includes('--preview') || focus)) throw new Error('C06-04 E2E requires full isolated flow');
 if (preview && focus) throw new Error('Preview and focused verification are separate modes');
 const offset = Number(process.env.CRECISOL_C05_TEST_PORT_OFFSET || '0');
 if (![0, 1].includes(offset) || (preview && offset !== 0)) throw new Error('Invalid isolated port offset');
@@ -210,6 +212,8 @@ try {
   for (const migration of ['001_c05_identity_operational', '002_c05_registration_proof_outbox', '003_c05_pending_account_completion',
     '004_c05_local_proof_delivery', '005_c05_operational_login_directory', '006_c05_operational_identity_flow', '007_c05_passkeys', '008_c05_terms_invitations', '009_c05_pairing', '010_c05_security_notices', '011_c05_platform_recovery', '012_c05_scoped_profile', '013_c05_abuse_signals', '014_c05_operator_recovery', '015_c05_session_devices', '016_c05_existing_identity_join', '017_c05_totp_sha1_exclusive', '018_c05_session_idle_policy'])
     sql(readFileSync(path.join(root, 'database/migrations', migration + '.sql'), 'utf8'));
+  // Opt-in C06-04 isolates its new case assignment schema from historic C05 runs.
+  if (c06Abac) sql(readFileSync(path.join(root, 'database/migrations/020_c06_case_abac.sql'), 'utf8'));
   check(sql('SELECT VERSION()').startsWith('8.4.'), 'eighteen forward migrations on real MySQL 8.4');
   sql(`INSERT INTO c04_tenant_catalog VALUES
     (UNHEX('${A}'),'tenant-a','Tenant A',3,2,1,UTC_TIMESTAMP(6)),
@@ -223,6 +227,8 @@ try {
       UNHEX(SHA2('Entorno ficticio de pruebas CRECISOL. Solo datos sinteticos; no constituye un contrato productivo.',256)),UTC_TIMESTAMP(6),TRUE FROM c04_tenant_catalog;`);
   sql(readFileSync(path.join(root, 'database/operations/c05_local_runtime_role.sql'), 'utf8'));
   sql("GRANT 'c05_identity_local_runtime' TO 'c05_flow'@'%'; SET DEFAULT ROLE 'c05_identity_local_runtime' TO 'c05_flow'@'%';");
+  if (c06Abac) sql(readFileSync(path.join(root, 'database/operations/c06_04_local_runtime_role.sql'), 'utf8'));
+
   const operators = [provisionPlatformOperator('identity.one@example.test'), provisionPlatformOperator('identity.two@example.test'), provisionPlatformOperator('identity.three@example.test')];
   const smtp = child('dotnet', [process.env.CRECISOL_C05_SMTP_DLL || 'backend/tests/Crecisol.LoopbackSmtpReceiver/bin/Release/net10.0/Crecisol.LoopbackSmtpReceiver.dll']);
   let smtpPort;
@@ -593,6 +599,51 @@ try {
   assert.equal(await page.getByLabel('Referencia privada').innerText(), 'LOCAL-PRIVATE-REFERENCE');
   await page.keyboard.press('Escape'); // Recuperar acceso al resumen tras cerrar el modal.
   check(true, 'Angular private resource authorized by tenant, branch and owner');
+  if (c06Abac) {
+    // Synthetic MySQL rows tested through the real Angular/Kestrel/C05 flow.
+    const coworker = accountId('approver@example.test');
+    const assignedCase = '30000000-0000-4000-8000-000000000001';
+    const unassignedCase = '30000000-0000-4000-8000-000000000002';
+    sql(`INSERT INTO c05_identity_private_resource VALUES
+      (UNHEX('${A}'),UUID_TO_BIN('${branch}',0),UUID_TO_BIN('${assignedCase}',0),UNHEX('${coworker}'),1,'LOCAL-C06-ASSIGNED-001'),
+      (UNHEX('${A}'),UUID_TO_BIN('${branch}',0),UUID_TO_BIN('${unassignedCase}',0),UNHEX('${coworker}'),1,'LOCAL-C06-UNASSIGNED-002');`);
+    check((await api('private/read', { branchId: branch, resourceId: assignedCase }, token)).status === 401,
+      'C06-04 same tenant and branch, coworker case denied without grant');
+    sql(`INSERT INTO c05_identity_resource_grant VALUES(
+      UNHEX('${A}'),UUID_TO_BIN(UUID(),0),UNHEX('${actor}'),UUID_TO_BIN('${branch}',0),
+      NULL,2,'RESOURCE_READ',UNHEX('${coworker}'),
+      UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)+INTERVAL 1 HOUR,NULL,1);`);
+    check((await api('private/read', { branchId: branch, resourceId: assignedCase }, token)).status === 401,
+      'C06-04 broad branch grant alone cannot read a coworker case');
+    check((await api('private/read', { branchId: branch, resourceId: resource }, token)).status === 401,
+      'C06-04 duplicate matching owner and branch grants fail closed');
+    sql(`INSERT INTO c06_case_resource_assignment(
+      tenant_id,assignment_id,branch_id,resource_id,account_id,approved_by_account_id,
+      action_id,assignment_state,revision,issued_at_utc,expires_at_utc)
+      VALUES(UNHEX('${A}'),UUID_TO_BIN(UUID(),0),UUID_TO_BIN('${branch}',0),
+      UUID_TO_BIN('${assignedCase}',0),UNHEX('${actor}'),UNHEX('${coworker}'),
+      'cases.read',1,1,UTC_TIMESTAMP(6)-INTERVAL 1 MINUTE,UTC_TIMESTAMP(6)+INTERVAL 1 HOUR);`);
+    const assignedRead = await api('private/read', { branchId: branch, resourceId: assignedCase }, token);
+    check(assignedRead.status === 200 && assignedRead.data?.reference === 'LOCAL-C06-ASSIGNED-001',
+      'C06-04 exact assignment allows only the intended coworker case');
+    check((await api('private/read', { branchId: branch, resourceId: unassignedCase }, token)).status === 401,
+      'C06-04 second coworker case in the same branch remains private');
+    check((await api('private/read', { branchId: otherBranch, resourceId: assignedCase }, token)).status === 401,
+      'C06-04 assignment cannot extend to another branch');
+    check((await api('private/read', { branchId: branch, resourceId: assignedCase }, token, 'tenant-b.example.test')).status === 401,
+      'C06-04 assignment cannot extend to another tenant');
+    sql(`UPDATE c06_case_resource_assignment
+      SET assignment_state=3,revision=revision+1,revoked_at_utc=UTC_TIMESTAMP(6)
+      WHERE tenant_id=UNHEX('${A}') AND resource_id=UUID_TO_BIN('${assignedCase}',0);`);
+    check((await api('private/read', { branchId: branch, resourceId: assignedCase }, token)).status === 401,
+      'C06-04 assignment revocation immediately denies future read');
+    sql(`UPDATE c05_identity_resource_grant SET revoked_at_utc=UTC_TIMESTAMP(6)
+      WHERE tenant_id=UNHEX('${A}') AND account_id=UNHEX('${actor}')
+        AND permission_code='RESOURCE_READ' AND scope_kind=2;`);
+    check((await api('private/read', { branchId: branch, resourceId: resource }, token)).status === 200,
+      'C06-04 original owner-only grant still works after broad grant revocation');
+  }
+
   check((await api('private/read', { branchId: branch, resourceId: resource }, token, 'tenant-b.example.test')).status === 401, 'tenant B cannot use session A');
   check((await api('private/read', { branchId: otherBranch, resourceId: resource }, token)).status === 401, 'cross-branch IDOR denied');
   check((await api('sessions', {}, token, 'evil.example.test')).status === 400, 'unallowlisted Host denied');
