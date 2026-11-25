@@ -32,6 +32,9 @@ PATHS=frozenset([
   "qa/c06_09_delivery_scope.py"
 ])
 def require_exact(changed):
+    if "docs/c06/C06_10_ESPECIFICACION.md" in changed:
+        from c06_10_offensive_scope import require_exact as require_offensive
+        return require_offensive(changed)
     actual=frozenset(changed)
     if actual!=PATHS:
         raise AssertionError("C06-09 NO-GO unexpected scope "+repr(sorted(actual ^ PATHS)))

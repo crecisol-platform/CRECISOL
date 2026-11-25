@@ -67,6 +67,10 @@ def scope():
     changed = subprocess.check_output(
         ["git", "diff", "--name-only", *spec], cwd=ROOT, text=True).splitlines()
     # Explicit sequential successor: preserve every other historical audit.
+    if "docs/c06/C06_10_ESPECIFICACION.md" in changed:
+        from c06_10_offensive_scope import require_exact
+        require_exact(changed)
+        return changed
     if "docs/c06/C06_09_ESPECIFICACION.md" in changed:
         from c06_09_delivery_scope import require_exact
         require_exact(changed)
