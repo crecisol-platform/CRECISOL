@@ -4,7 +4,7 @@ on:
     branches: [dev]
     paths:
       - 'backend/src/Crecisol.Domain/Tenancy/C06CaseAbacPolicy.cs'
-      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Abac.cs'
+      - 'backend/src/Crecisol.Infrastructure/Tenancy/C06CaseAbacProjection.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs'
       - 'backend/tests/Crecisol.C06Abac.ContractsTests/**'
       - 'database/migrations/020_c06_case_abac*'
@@ -19,7 +19,7 @@ on:
     branches: [dev]
     paths:
       - 'backend/src/Crecisol.Domain/Tenancy/C06CaseAbacPolicy.cs'
-      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Abac.cs'
+      - 'backend/src/Crecisol.Infrastructure/Tenancy/C06CaseAbacProjection.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs'
       - 'backend/tests/Crecisol.C06Abac.ContractsTests/**'
       - 'database/migrations/020_c06_case_abac*'

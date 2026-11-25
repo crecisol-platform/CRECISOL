@@ -11,7 +11,7 @@ Entregable: evaluar **actor autenticado, rol de membresía, acción exacta del s
 
 ## Arquitectura y decisión
 - Domain: backend/src/Crecisol.Domain/Tenancy/C06CaseAbacPolicy.cs. Función pura fail-closed; contexto C06-03, rol real de fila SQL, acción fija cases.read, permiso de servidor RESOURCE_READ, recurso y branch de catálogo, propietario, grant válido y asignación.
-- Infrastructure: backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Abac.cs. Lee recurso y grant de forma parametrizada, con FOR SHARE dentro de la **misma transacción C05**, y utiliza hora real UTC_TIMESTAMP(6); actor/tenant nunca se aceptan de fields, headers o claims. Bloquea duplicidad de grants (LIMIT 2, count=1), conserva el recurso autorizado en la misma fila bloqueada.
+- Infrastructure: backend/src/Crecisol.Infrastructure/Tenancy/C06CaseAbacProjection.cs. Lee recurso y grant de forma parametrizada, con FOR SHARE dentro de la **misma transacción C05**, y utiliza hora real UTC_TIMESTAMP(6); actor/tenant nunca se aceptan de fields, headers o claims. Bloquea duplicidad de grants (LIMIT 2, count=1), conserva el recurso autorizado en la misma fila bloqueada.
 - Integración: Authorized.cs reusa contexto ya comprobado en C06-03 y llama al evaluador antes de devolver referencia privada; no crea endpoint nuevo.
 - Propietario y grant exacto (scope 1): ALLOW solo recurso propio y actor coincidente.
 - OWNER / ADMIN / tenant-owner / tenant-admin con grant explícito de sucursal (scope 2): ALLOW exclusivamente en su sucursal y tenant, nunca por rol solamente ni por una propuesta C06-02.

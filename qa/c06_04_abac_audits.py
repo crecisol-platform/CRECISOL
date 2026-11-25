@@ -9,7 +9,7 @@ import sys
 ROOT=Path(__file__).resolve().parents[1]
 FILES={
   "domain": "backend/src/Crecisol.Domain/Tenancy/C06CaseAbacPolicy.cs",
-  "adapter": "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Abac.cs",
+  "adapter": "backend/src/Crecisol.Infrastructure/Tenancy/C06CaseAbacProjection.cs",
   "auth": "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs",
   "migration": "database/migrations/020_c06_case_abac.sql",
   "rollback": "database/migrations/020_c06_case_abac.down.sql",
