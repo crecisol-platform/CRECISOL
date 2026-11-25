@@ -56,8 +56,8 @@ def master_inventory():
     need(len(m["roles"])==10 and len(m["actions"])==108,"C06-02 role matrix drift")
     need(all(a["grantable"] is False and a["policy_activated"] is False
              for a in m["actions"]),"C06-02 future roles activated")
-    need("cases.read" in {a["action_id"] for a in m["actions"]},
-         "canonical cases.read action missing")
+    need("identity.private.read" in {a["action_id"] for a in m["actions"]},
+         "canonical identity.private.read action missing")
 
 GUARDS={
 "domain":[
@@ -65,7 +65,7 @@ GUARDS={
  "e.Identity.TenantId != e.ResourceTenant","e.Identity.TenantId != e.GrantTenant",
  "e.Identity.ActorId != e.GrantActor","e.ResourceBranch != e.SelectorBranch",
  "e.ResourceId != e.SelectorResource","e.ResourceBranch != e.GrantBranch",
- "e.RequiredAction.Value != \"cases.read\"",
+ "e.RequiredAction.Value != \"identity.private.read\"",
  "e.GrantPermissionCode != \"RESOURCE_READ\"",
  "e.GrantRevokedAtUtc is not null","e.GrantExpiresAtUtc.HasValue",
  "e.GrantScope == 1","e.GrantResource == e.ResourceId",
@@ -81,7 +81,7 @@ GUARDS={
  "JOIN c05_identity_branch b","WHERE r.tenant_id=@t AND r.branch_id=@b AND r.resource_id=@r",
  "FROM c05_identity_resource_grant","permission_code='RESOURCE_READ'",
  "LIMIT 2 FOR SHARE","grants.Count != 1",
- "FROM c06_case_resource_assignment","action_id='cases.read'",
+ "FROM c06_case_resource_assignment","action_id='identity.private.read'",
  "assignments.Count != 1","UTC_TIMESTAMP(6) AS server_now_utc",
  "C06CaseAbacPolicy.Allows(evidence)","DbTenant(Bytes(resource, \"tenant_id\"))",
  "DbActor(Bytes(resource, \"owner_account_id\"))",
@@ -97,7 +97,7 @@ GUARDS={
  "FOREIGN KEY(tenant_id,branch_id,resource_id)",
  "FOREIGN KEY(tenant_id,account_id)",
  "FOREIGN KEY(tenant_id,approved_by_account_id)",
- "ck_c06_case_action_exact CHECK (action_id='cases.read')",
+ "ck_c06_case_action_exact CHECK (action_id='identity.private.read')",
  "ck_c06_case_time","ck_c06_case_revocation",
  "trg_c06_case_assignment_immutable","trg_c06_case_assignment_no_delete",
 ],
@@ -128,7 +128,7 @@ def static_guards():
         need(denied not in role_allowlist, "untrusted role became an allowed case reader: "+denied)
     need(not any(x in src for x in ("MySqlConnector","HttpContext","Microsoft.AspNetCore","System.Data.Sql")),
          "Domain contains transport or SQL references")
-    need("private/read" not in src or "cases.read" in src,
+    need("private/read" not in src or "identity.private.read" in src,
          "Domain action not fixed to backend")
     auth=read("auth")
     need(auth.index("ResolveC06TenantContextFromLockedRows(") <

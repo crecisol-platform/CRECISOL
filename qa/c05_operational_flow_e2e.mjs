@@ -622,7 +622,7 @@ try {
       action_id,assignment_state,revision,issued_at_utc,expires_at_utc)
       VALUES(UNHEX('${A}'),UUID_TO_BIN(UUID(),0),UUID_TO_BIN('${branch}',0),
       UUID_TO_BIN('${assignedCase}',0),UNHEX('${actor}'),UNHEX('${coworker}'),
-      'cases.read',1,1,UTC_TIMESTAMP(6)-INTERVAL 1 MINUTE,UTC_TIMESTAMP(6)+INTERVAL 1 HOUR);`);
+      'identity.private.read',1,1,UTC_TIMESTAMP(6)-INTERVAL 1 MINUTE,UTC_TIMESTAMP(6)+INTERVAL 1 HOUR);`);
     const assignedRead = await api('private/read', { branchId: branch, resourceId: assignedCase }, token);
     check(assignedRead.status === 200 && assignedRead.data?.reference === 'LOCAL-C06-ASSIGNED-001',
       'C06-04 exact assignment allows only the intended coworker case');

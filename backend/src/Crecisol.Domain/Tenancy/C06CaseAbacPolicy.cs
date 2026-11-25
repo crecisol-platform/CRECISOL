@@ -2,7 +2,7 @@ namespace Crecisol.Domain.Tenancy;
 
 /// <summary>
 /// Authoritative C06-04 policy for the ONLY current tenant-private case read
-/// operation: private/read -> cases.read -> RESOURCE_READ.
+/// operation: private/read -> identity.private.read -> RESOURCE_READ.
 /// Inputs MUST be constructed from locked backend DB rows, except selectors
 /// which remain untrusted and are compared to database resource identity.
 /// No C06-02 proposal, role label or browser-supplied attribute is a grant.
@@ -39,7 +39,7 @@ public static class C06CaseAbacPolicy
 
         if (!Utc(e.CheckedAtUtc) || e.Identity.VerifiedAtUtc > e.CheckedAtUtc ||
             !ReadRoles.Contains(e.RoleCode) ||
-            e.RequiredAction.Value != "cases.read" ||
+            e.RequiredAction.Value != "identity.private.read" ||
             e.GrantPermissionCode != "RESOURCE_READ" ||
             e.Identity.TenantId != e.ResourceTenant ||
             e.Identity.TenantId != e.GrantTenant ||

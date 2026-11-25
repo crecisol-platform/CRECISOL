@@ -31,7 +31,7 @@ CREATE TABLE c06_case_resource_assignment (
     FOREIGN KEY(tenant_id,approved_by_account_id)
     REFERENCES c05_identity_membership(tenant_id,account_id)
     ON UPDATE RESTRICT ON DELETE RESTRICT,
-  CONSTRAINT ck_c06_case_action_exact CHECK (action_id='cases.read'),
+  CONSTRAINT ck_c06_case_action_exact CHECK (action_id='identity.private.read'),
   CONSTRAINT ck_c06_case_state CHECK (assignment_state IN (1,2,3)),
   CONSTRAINT ck_c06_case_revision CHECK (revision > 0),
   CONSTRAINT ck_c06_case_time CHECK (

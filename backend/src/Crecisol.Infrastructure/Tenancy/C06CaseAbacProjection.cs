@@ -63,7 +63,7 @@ public sealed partial class MySqlOperationalIdentityFlow
                        assignment_state,revision,issued_at_utc,expires_at_utc,revoked_at_utc
                   FROM c06_case_resource_assignment
                  WHERE tenant_id=@t AND account_id=@a AND branch_id=@b
-                   AND resource_id=@r AND action_id='cases.read'
+                   AND resource_id=@r AND action_id='identity.private.read'
                  LIMIT 2 FOR SHARE
                 """, ("t", tenant), ("a", actor), ("b", selectedBranch),
                 ("r", selectedResource));
@@ -98,7 +98,7 @@ public sealed partial class MySqlOperationalIdentityFlow
             BranchActive = Number(resource, "branch_active") == 1,
             ResourceActive = Number(resource, "resource_state") == 1,
             RoleCode = roleCode,
-            RequiredAction = TenantRequiredAction.FromServerPolicy("cases.read"),
+            RequiredAction = TenantRequiredAction.FromServerPolicy("identity.private.read"),
             GrantTenant = DbTenant(Bytes(grant, "tenant_id")),
             GrantActor = DbActor(Bytes(grant, "account_id")),
             GrantBranch = DbBranch(Bytes(grant, "branch_id")),

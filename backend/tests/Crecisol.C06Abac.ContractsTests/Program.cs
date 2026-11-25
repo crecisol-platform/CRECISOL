@@ -12,7 +12,7 @@ var branch2 = TenantBranchId.From(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa
 var branchB = TenantBranchId.From(Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb11"));
 var resource1 = TenantResourceId.From(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa21"));
 var resource2 = TenantResourceId.From(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa22"));
-var actionRead = TenantRequiredAction.FromServerPolicy("cases.read");
+var actionRead = TenantRequiredAction.FromServerPolicy("identity.private.read");
 var actionWrite = TenantRequiredAction.FromServerPolicy("cases.write");
 
 C06OperationalMembershipContext Identity() =>
