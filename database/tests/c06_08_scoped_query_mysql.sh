@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-NAME="crecisol-c06-query-$"
+NAME="crecisol-c06-query-$$"
 PASSWORD="$(openssl rand -hex 24)"
 IMAGE='mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902'
 cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
@@ -10,8 +10,8 @@ docker run --rm -d --name "$NAME" -p 127.0.0.1::3306 \
   -e "MYSQL_ROOT_PASSWORD=$PASSWORD" -e MYSQL_DATABASE=crecisol_c05 "$IMAGE" >/dev/null
 ready=0
 for _ in $(seq 1 120); do
-  if docker exec -e "MYSQL_PWD=$PASSWORD" "$NAME" mysql -uroot -Nse 'SELECT 1' >/dev/null 2>&1; then
-    if docker logs "$NAME" 2>&1 | grep -q 'MySQL init process done'; then ready=1; break; fi
+  if docker exec -e "MYSQL_PWD=$PASSWORD" "$NAME" mysql --protocol=TCP -h127.0.0.1 -uroot -Nse 'SELECT 1' >/dev/null 2>&1; then
+    ready=1; break
   fi
   sleep 1
 done
@@ -72,9 +72,10 @@ plan="$(sql "EXPLAIN SELECT membership_id FROM c05_identity_membership FORCE IND
 echo "PASS C06-08 D pending keyset index usable"
 app_password="$(openssl rand -hex 24)"
 sql "CREATE USER 'c06_query_test'@'localhost' IDENTIFIED BY '$app_password'; GRANT 'c05_identity_local_runtime' TO 'c06_query_test'@'localhost'; SET DEFAULT ROLE 'c05_identity_local_runtime' TO 'c06_query_test'@'localhost';"
-if docker exec -e "MYSQL_PWD=$app_password" "$NAME" mysql -uc06_query_test -N -B -D crecisol_c05 -e "ALTER TABLE c05_identity_membership DROP INDEX ix_c06_08_pending" >/dev/null 2>&1; then
+if ddl_error="$(docker exec -e "MYSQL_PWD=$app_password" "$NAME" mysql --protocol=TCP -h127.0.0.1 -uc06_query_test -N -B -D crecisol_c05 -e "ALTER TABLE c05_identity_membership DROP INDEX ix_c06_08_pending" 2>&1)"; then
   echo "FAIL runtime gained DDL" >&2; exit 1
 fi
+[[ "$ddl_error" == *"ERROR 1142 "* ]] || { echo "FAIL unexpected SQL rejection of runtime DDL" >&2; exit 1; }
 echo "PASS C06-08 D runtime cannot alter query indexes"
 before_rows="$(sql "SELECT GROUP_CONCAT(HEX(membership_id) ORDER BY membership_id) FROM c05_identity_membership")"
 apply "$ROOT/database/migrations/023_c06_scoped_query_indexes.down.sql"

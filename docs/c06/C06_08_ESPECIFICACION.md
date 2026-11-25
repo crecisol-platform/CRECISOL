@@ -24,3 +24,6 @@ A: Word/PDF y catálogo inalterados, diff exacto. B: pruebas de codec real, nega
 
 ### Refuerzo previo a ejecución
 El reloj confiable de cada consulta excluye filas creadas después del corte de lectura, evitando emitir un cursor futuro durante altas concurrentes. La prueba HTTP contrasta las páginas completas con el conjunto autorizado exacto de MySQL, cubre revocación del grant de B (además del caso previo de permiso limitado a sucursal), eventos de dos tenants para el mismo actor y sesiones de operadores distintos. Chromium ejercita la segunda página real, denegación al cambiar la revisión del permiso, limpieza de filas y reinicio autorizado; sin leer secretos ni simular respuestas. Los fixtures permanecen en la base desechable y se eliminan antes de las regresiones anteriores; los eventos inmutables se preservan hasta el rollback integral. Todas estas pruebas siguen pendientes de ejecución real.
+
+### Ajuste del entorno de comprobación
+- La ejecución D inicial no arrancó por un nombre de contenedor inválido. Se corrige el sufijo de proceso y se exige disponibilidad TCP del servidor MySQL definitivo antes de migrar, también en la regresión C06-02. No se modifica ninguna regla funcional de C06-02 ni se acepta un fallo de conexión como prueba de denegación SQL: el intento DDL debe retornar ERROR 1142.

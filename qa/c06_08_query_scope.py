@@ -13,6 +13,7 @@ PATHS=frozenset([
   "backend/tests/Crecisol.C06Query.ContractsTests/Program.cs",
   "database/migrations/023_c06_scoped_query_indexes.down.sql",
   "database/migrations/023_c06_scoped_query_indexes.sql",
+  "database/tests/c06_02_prepared_roles_mysql.sh",
   "database/tests/c06_08_scoped_query_mysql.sh",
   "docs/c06/C06_08_ESPECIFICACION.md",
   "qa/c05_operational_flow_e2e.mjs",
