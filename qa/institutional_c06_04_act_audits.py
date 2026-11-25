@@ -66,6 +66,15 @@ def changed():
     if "docs/c06/ACTA_C06_07_PRIVACY.md" in diff:
         need(set(diff)==successor_07,"unexpected C06-07 documentary scope "+repr(diff))
         allowed |= successor_07
+    successor_08 = {
+      "docs/c06/ACTA_C06_08_SCOPED_QUERIES.md",
+      "docs/ESTADO_VIGENTE_CAPITULOS.md",
+      "docs/planificacion-futura/C06_MICROFASES_PROPUESTAS.md",
+      "qa/institutional_c06_04_act_audits.py",
+    }
+    if "docs/c06/ACTA_C06_08_SCOPED_QUERIES.md" in diff:
+        need(set(diff)==successor_08,"unexpected C06-08 documentary scope "+repr(diff))
+        allowed |= successor_08
     need(diff and set(diff)<=allowed,"acta diff changes runtime/schema or source "+repr(diff))
     return diff
 
@@ -98,6 +107,7 @@ def common():
     need("C06-04" in plan and "C06-05" in plan,"chapter plan missing bounded state")
     verify_c06_06_acta(state,plan)
     verify_c06_07_acta(state,plan)
+    verify_c06_08_acta(state,plan)
     return text
 
 def verify_c06_06_acta(state,plan):
@@ -165,6 +175,45 @@ def verify_c06_07_revalidation(acta,state,plan):
     need(subprocess.run(["git","merge-base","--is-ancestor",code,"HEAD"],cwd=ROOT).returncode==0,
          "C06-07 revalidated integration not ancestral")
     print("PASS C06-07 REVALIDATION ACTA: exact tree, historical failures retained, five verified jobs")
+
+def verify_c06_08_acta(state,plan):
+    """Verify recorded evidence, exact technical tree and bounded status; not live CI."""
+    path=ROOT/"docs/c06/ACTA_C06_08_SCOPED_QUERIES.md"
+    if not path.is_file():
+        return
+    text=path.read_text(encoding="utf-8")
+    code="990ae64da906ec07f16c87bdbd1b476cfd16b257"
+    head="6640cd914608d9907633a60c573dd78cdaf3f105"
+    tree="b81b7940b14561b612005b163d0f33ad3aa38763"
+    prior="ff5de0670d5a09e31b32c3b6aff7e78c5449fee8"
+    for marker in (code,head,tree,prior,"9d7db9b7152b45ca0c81fd99205c929df831fb7f",
+                   "45660058699","139367175244","139367174667","139367174098",
+                   "139367174984","139367174750","5/5 SUCCESS","13 workflows PRE aplicables SUCCESS",
+                   "33 comprobaciones","255 comprobaciones","16/16","474 comprobaciones integradas",
+                   "540 comprobaciones HTTP","70 formas","148 observadas","8 aserciones Angular",
+                   "ERROR 1142","ERROR 1553","45641579789","45642143005",
+                   "9.5/10","C06 8/11","C06 global NO CERTIFICADO","C06-09 habilitada"):
+        need(marker in text,"C06-08 acta missing evidence "+marker)
+    for revision in (code,head):
+        need(subprocess.check_output(["git","rev-parse",revision+"^{tree}"],cwd=ROOT,text=True).strip()==tree,
+             "C06-08 integrated tree mismatch "+revision)
+    need(subprocess.run(["git","merge-base","--is-ancestor",code,"HEAD"],cwd=ROOT).returncode==0,
+         "C06-08 tested integration not ancestral")
+    parents=subprocess.check_output(["git","show","-s","--format=%P",code],cwd=ROOT,text=True).strip().split()
+    need(parents==[prior,head],"C06-08 merge parent mismatch")
+    # Read historical scope from the tested commit, not a future edited guard.
+    import ast
+    source=subprocess.check_output(["git","show",code+":qa/c06_08_query_scope.py"],cwd=ROOT,text=True)
+    expected=set(ast.literal_eval(next(node.value.args[0] for node in ast.parse(source).body
+                 if isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and t.id=="PATHS" for t in node.targets))))
+    diff=set(subprocess.check_output(["git","diff","--name-only",prior,code],cwd=ROOT,text=True).splitlines())
+    need(len(diff)==28 and diff==expected,"C06-08 technical scope drift")
+    need(not any(p.startswith("frontend/") or p.startswith("database/operations/") or "DOCUMENTO_MAESTRO" in p for p in diff),
+         "C06-08 unapproved frontend/privilege/source change")
+    for doc in (state,plan):
+        need(all(m in doc for m in (code,tree,"45660058699","C06 8/11","C06-09 habilitada",
+              "ACTA_C06_08_SCOPED_QUERIES.md","C06 global NO CERTIFICADO")),"C06-08 bounded status missing")
+    print("PASS C06-08 ACTA: exact integrated tree, 28 paths, evidence and bounded next gate")
 
 def a():
     files=changed()
