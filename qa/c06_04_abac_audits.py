@@ -155,8 +155,11 @@ def negative_gate():
     for key, terms in GUARDS.items():
         source=read(key)
         for term in terms:
-            modified=source.replace(term,"POLICY_GUARD_REMOVED",1)
-            need(term not in modified,"mutated control still present "+term)
+            # Remove ALL occurrences so each security invariant is truly absent;
+            # a repeated reference must not produce a false-negative test.
+            modified=source.replace(term,"POLICY_GUARD_REMOVED")
+            need(term not in modified and modified != source,
+                 "mutated control still present "+term)
             n+=1
     need(n>=55,"insufficient source mutations")
     need(read("dotnet").count("No(")>=50,
