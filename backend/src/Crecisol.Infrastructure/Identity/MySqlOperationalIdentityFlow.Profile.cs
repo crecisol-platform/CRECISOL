@@ -23,8 +23,18 @@ public sealed partial class MySqlOperationalIdentityFlow
             finally { CryptographicOperations.ZeroMemory(plain); }
         }
         if (r.Operation == "profile/read") return new(true, new { profile.DisplayName, profile.Language, profile.TimeZone, hasPhoto = row is not null && Number(row, "photo_state") == 2 });
-        if (r.Operation == "profile/photo") return row is null || Number(row, "photo_state") != 2 ? new(false) :
-            new(true, new { png = Convert.ToBase64String(Bytes(row, "photo_png")), mime = "image/png", width = 64, height = 64 });
+        if (r.Operation == "profile/photo")
+        {
+            if (row is null || Number(row, "photo_state") != 2) return new(false);
+            byte[]? canonical = null;
+            try
+            {
+                canonical = CanonicalProfilePng.Normalize(Bytes(row, "photo_png"));
+                return new(true, new { png = Convert.ToBase64String(canonical), mime = "image/png", width = 64, height = 64 });
+            }
+            catch (InvalidOperationException) { return new(false); }
+            finally { if (canonical is not null) CryptographicOperations.ZeroMemory(canonical); }
+        }
         if (r.Operation == "profile/save")
         {
             var name = Field(r, "displayName").Trim(); var language = Field(r, "language"); var zone = Field(r, "timeZone");

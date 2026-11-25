@@ -57,7 +57,7 @@ public static class C06IdentityResponseProjection
         var keepalive = Object(F("expiresAtUtc", date), F("idleMinutes", Idle));
         var pendingItem = Object(F("id", id), F("requestedAtUtc", date), F("mailboxHint", MaskedMailbox));
         var pending = Object(F("requests", Array(pendingItem, 100)), F("nextCursor", Nullable(Text(256))));
-        var reference = Object(F("reference", text));
+        var reference = Object(F("reference", DisplayReference));
 
         // WebAuthn standard fields only: omit unsupported extensions and library
         // metadata, reject duplicate properties and malformed known values.
@@ -76,7 +76,7 @@ public static class C06IdentityResponseProjection
         var passkeys = Object(F("passkeys", Array(Object(F("id", id), F("createdAtUtc", date)), 8)));
         var terms = Object(F("version", text), F("text", Text(262144)), F("hash", Hex(64)));
         var pairing = Object(F("token", token), F("nonce", Hex(64)), F("fingerprint", Hex(12)), F("expiresAtUtc", date));
-        var events = Object(F("events", Array(Object(F("action", Text(96)), F("outcome", number), F("atUtc", date)), 50)));
+        var events = Object(F("events", Array(Object(F("action", AuditAction), F("outcome", AuditOutcome), F("atUtc", date)), 50)));
         var platformLogin = Object(F("challenge", token), F("stepUpRequired", True));
         var platformSession = Object(F("expiresAtUtc", date), F("realm", Literal("PLATFORM_IDENTITY")));
         var platformSessions = Object(F("sessions", Array(Object(F("id", id), F("issuedAtUtc", date), F("expiresAtUtc", date), F("lastSeenAtUtc", date), F("device", Text(64))), 4096)));
@@ -87,7 +87,7 @@ public static class C06IdentityResponseProjection
         var caseId = Object(F("caseId", id));
         var signals = Object(F("signals", Array(Object(F("kind", Text(32)), F("count", number)), 32)));
         var profile = Object(F("displayName", Text(80)), F("language", Text(16)), F("timeZone", Text(64)), F("hasPhoto", boolean));
-        var photo = Object(F("png", Text(32768)), F("mime", Literal("image/png")), F("width", LiteralNumber(64)), F("height", LiteralNumber(64)));
+        var photo = Object(F("png", ProtectedPhoto), F("mime", Literal("image/png")), F("width", LiteralNumber(64)), F("height", LiteralNumber(64)));
         var share = Object(F("share", token), F("expiresAtUtc", date));
         var platformFactor = Object(F("challenge", token), F("secret", Base32), F("uri", TotpUri));
         var codes = Object(F("accepted", True), F("recoveryCodes", backupCodes));
@@ -274,6 +274,24 @@ public static class C06IdentityResponseProjection
         JsonElement { ValueKind: JsonValueKind.Number } j when j.TryGetInt64(out var n) => n,
         _ => throw Invalid()
     };
+    private static object? DisplayReference(object? value)
+    {
+        var text = (string)Text(120)(value)!;
+        return C06ProtectedContent.IsDisplayReference(text) ? text : throw Invalid();
+    }
+    private static object? ProtectedPhoto(object? value) =>
+        C06ProtectedContent.NormalizePhotoBase64((string)Text(32768)(value)!);
+    private static object? AuditAction(object? value)
+    {
+        // Historical or corrupted labels are represented neutrally; never
+        // render arbitrary persisted strings as security-event metadata.
+        var action = (string)Text(96)(value)!;
+        return action == "PLATFORM_ASSISTED_REVIEW" ||
+            (!action.StartsWith("platform/", StringComparison.Ordinal) && Rules.ContainsKey(action))
+            ? action : "security/event";
+    }
+    private static object? AuditOutcome(object? value) =>
+        Integer(value) is long n && n is 0 or 1 ? n : throw Invalid();
     private static object? Idle(object? value) => Integer(value) is long n && n is >= 5 and <= 120 ? n : throw Invalid();
     private static object? Date(object? value) => value is DateTime or DateTimeOffset ? value : throw Invalid();
     private static object? Identifier(object? value) =>

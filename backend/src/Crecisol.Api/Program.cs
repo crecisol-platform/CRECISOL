@@ -6,6 +6,11 @@ using Crecisol.Api.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// C06-09: one process logging sink with a closed, value-free record format.
+// Do not let default request logging print raw paths, query strings or exceptions.
+builder.Logging.ClearProviders();
+builder.Logging.AddProvider(new C06SafeRuntimeLoggerProvider(Console.Out));
+
 // Explicit fail-closed host list. No domain is assumed owned or verified.
 // For local CI only: CRECISOL_C01_ALLOWED_HOSTS=127.0.0.1
 var allowed = (Environment.GetEnvironmentVariable("CRECISOL_C01_ALLOWED_HOSTS") ?? "")
@@ -66,6 +71,7 @@ if (operationalIdentityEnabled)
 }
 
 var app = builder.Build();
+var safeHttpOutcome = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger(C06SafeRuntimeLoggerProvider.OutcomeCategory);
 
 // Protect both identity realms before host validation, routing denials and
 // exception handling. Register first so even a downstream header reset
@@ -74,16 +80,24 @@ var app = builder.Build();
 app.Use(async (context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/api/v1/identity", StringComparison.OrdinalIgnoreCase) ||
-        context.Request.Path.StartsWithSegments("/api/v1/platform-identity", StringComparison.OrdinalIgnoreCase))
+        context.Request.Path.StartsWithSegments("/api/v1/platform-identity", StringComparison.OrdinalIgnoreCase) ||
+        context.Request.Path.StartsWithSegments("/api/v1/private", StringComparison.OrdinalIgnoreCase) ||
+        context.Request.Path.StartsWithSegments("/api/v1/media", StringComparison.OrdinalIgnoreCase) ||
+        context.Request.Path.StartsWithSegments("/api/v1/downloads", StringComparison.OrdinalIgnoreCase) ||
+        context.Request.Path.StartsWithSegments("/api/v1/exports", StringComparison.OrdinalIgnoreCase) ||
+        context.Request.Path.StartsWithSegments("/api/v1/logs", StringComparison.OrdinalIgnoreCase))
     {
         context.Response.OnStarting(() =>
         {
             context.Response.Headers.CacheControl = "no-store, private";
             context.Response.Headers.Pragma = "no-cache";
+            context.Response.Headers["Cross-Origin-Resource-Policy"] = "same-origin";
             return Task.CompletedTask;
         });
     }
     await next(context);
+    // Numeric HTTP outcome only; never use a path, user, header or exception as a log field.
+    safeHttpOutcome.LogInformation(new EventId(context.Response.StatusCode), "HTTP outcome");
 });
 
 // Safe failure across every environment, with no server exception details.
