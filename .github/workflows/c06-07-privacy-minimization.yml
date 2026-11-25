@@ -4,6 +4,7 @@ on:
     branches: [dev]
     paths:
       - 'backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs'
+      - 'backend/src/Crecisol.Api/Program.cs'
       - 'backend/src/Crecisol.Api/Contracts/C06IdentityResponseProjection.cs'
       - 'backend/tests/Crecisol.C06Privacy.ContractsTests/Program.cs'
       - 'backend/tests/Crecisol.C06Privacy.ContractsTests/Crecisol.C06Privacy.ContractsTests.csproj'
@@ -28,6 +29,7 @@ on:
     branches: [dev]
     paths:
       - 'backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs'
+      - 'backend/src/Crecisol.Api/Program.cs'
       - 'backend/src/Crecisol.Api/Contracts/C06IdentityResponseProjection.cs'
       - 'backend/tests/Crecisol.C06Privacy.ContractsTests/Program.cs'
       - 'backend/tests/Crecisol.C06Privacy.ContractsTests/Crecisol.C06Privacy.ContractsTests.csproj'

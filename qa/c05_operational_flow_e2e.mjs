@@ -273,6 +273,19 @@ try {
   };
   let apiProcess = startApi();
   await until(async () => { try { return (await api('login', {})).status === 400; } catch { return false; } }, 'Kestrel readiness');
+  // Fail early on ingress privacy regressions before the long MFA/UX suite.
+  // api() invokes the independent wire oracle: status, empty denial, both
+  // cache directives. Keep the original authenticated negative matrix below.
+  if (c06Privacy) {
+    for (const [op, host] of [['sessions','tenant-a.example.test'],['platform/sessions','platform-admin.example.test']]) {
+      check((await api(op, {}, undefined, 'evil.example.test')).status === 400,
+        'C06-07 ingress '+op+' unallowlisted Host: empty private denial');
+      for (const header of ['X-Forwarded-Host','Forwarded']) {
+        check((await api(op, {}, undefined, host, { [header]:'forged' })).status === 400,
+          'C06-07 ingress '+op+' '+header+': empty private denial');
+      }
+    }
+  }
   const proxyPath = path.join(root, '.cache', `c05-proxy-${process.pid}.json`);
   writeFileSync(proxyPath, JSON.stringify({
     '/api/v1/platform-identity': { target: `http://127.0.0.1:${apiPort}`, secure: false, changeOrigin: true, headers: { Host: 'platform-admin.example.test' } },
