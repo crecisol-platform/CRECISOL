@@ -117,7 +117,8 @@ public sealed partial class MySqlOperationalIdentityFlow
 
         // The private reference is retrieved from the SAME locked resource row,
         // after authorization. No separate lookup, TOCTOU, or ownership bypass.
-        return new(true, new { reference = Text(resource, "display_reference") });
+        var reference = Text(resource, "display_reference");
+        return C06ProtectedContent.IsDisplayReference(reference) ? new(true, new { reference }) : new(false);
     }
 
     private static TenantId DbTenant(byte[] key) => TenantId.From(DbId(key));

@@ -41,6 +41,10 @@ RELAY_REVALIDATION_PATHS = INGRESS_REVALIDATION_PATHS | frozenset([
   "qa/c06_07_privacy_relay_tests.mjs",
 ])
 def require_exact(changed):
+    if "docs/c06/C06_09_ESPECIFICACION.md" in changed:
+        from c06_09_delivery_scope import require_exact
+        require_exact(changed)
+        return
     if "docs/c06/C06_08_ESPECIFICACION.md" in changed:
         from c06_08_query_scope import require_exact
         require_exact(changed)

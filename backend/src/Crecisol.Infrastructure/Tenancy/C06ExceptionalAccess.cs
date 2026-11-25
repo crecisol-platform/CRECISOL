@@ -214,7 +214,9 @@ public sealed partial class MySqlOperationalIdentityFlow
               AND NOT EXISTS(SELECT 1 FROM c06_exception_close c WHERE c.exception_id=req.exception_id)
             FOR SHARE
             """, ("id", requested), ("actor", actor), ("session", sessionId), ("revision", revision), ("idle", currentIdle));
-        return projection is null ? await Finish(false) : await Finish(true, new { reference = Text(projection, "display_reference") });
+        if (projection is null) return await Finish(false);
+        var reference = Text(projection, "display_reference");
+        return C06ProtectedContent.IsDisplayReference(reference) ? await Finish(true, new { reference }) : await Finish(false);
     }
 
     private async Task<Dictionary<string, object>?> C06ExceptionEntitlement(Unit u, byte[] actor, long revision,

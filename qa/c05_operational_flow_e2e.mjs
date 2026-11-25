@@ -22,6 +22,7 @@ import { verifyExceptionalAccess } from './c06_06_exceptional_access_checks.mjs'
 import { inspectPrivacyResponse, reportPrivacyResponses } from './c06_07_privacy_response_checks.mjs';
 import { startPrivacyRelay } from './c06_07_privacy_relay.mjs';
 import { verifyScopedQueries, verifyBrowserScopedPages } from './c06_08_query_checks.mjs';
+import { verifyDeliveryBoundary, verifyPrivateReference } from './c06_09_delivery_checks.mjs';
 import { randomUUID } from 'node:crypto';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -30,7 +31,7 @@ const require = createRequire(path.join(root, 'frontend/package.json'));
 const { chromium } = require('@playwright/test');
 const AxeBuilder = require('@axe-core/playwright').default;
 if (process.argv.includes('--help')) { console.log('Usage: node qa/c05_operational_flow_e2e.mjs [--preview | --focus=operator | --focus=audit]'); process.exit(0); }
-if (process.argv.slice(2).some(a => !['--preview', '--focus=operator', '--focus=audit', '--c06-04', '--c06-05', '--c06-06', '--c06-07', '--c06-08'].includes(a))) throw new Error('Unknown isolated runner argument');
+if (process.argv.slice(2).some(a => !['--preview', '--focus=operator', '--focus=audit', '--c06-04', '--c06-05', '--c06-06', '--c06-07', '--c06-08', '--c06-09'].includes(a))) throw new Error('Unknown isolated runner argument');
 const preview = process.argv.includes('--preview');
 const focus = process.argv.includes('--focus=operator') ? 'operator' : process.argv.includes('--focus=audit') ? 'audit' : null;
 const c06Abac = process.argv.includes('--c06-04');
@@ -38,6 +39,8 @@ const c06StepUp = process.argv.includes('--c06-05');
 const c06Exceptional = process.argv.includes('--c06-06');
 const c06Privacy = process.argv.includes('--c06-07');
 const c06Queries = process.argv.includes('--c06-08');
+const c06Delivery = process.argv.includes('--c06-09');
+if (c06Delivery && !c06Queries) throw new Error('C06-09 requires all scoped-query and privacy regressions');
 if (c06Queries && !c06Privacy) throw new Error('C06-08 requires full C06-07 privacy regression');
 if (c06Privacy && !c06Exceptional) throw new Error('C06-07 requires full isolated C06-06 flow');
 if (c06Exceptional && (!c06Abac || !c06StepUp || preview || focus)) throw new Error('C06-06 requires isolated full C06-04/05 flow');
@@ -477,6 +480,7 @@ try {
   check((await api('terms/accept', { version: terms.version, hash: terms.hash, accepted: 'true' }, approver.token)).status === 200,
     'verified approver explicitly accepts the published tenant terms');
   await verifyTenantAuditBoundary({ api, platform, check, token: approver.token, sql, B });
+  if (c06Delivery) await verifyDeliveryBoundary({api,check,sql,A,actor:accountId('approver@example.test'),token:approver.token,apiPort,confidential,reserveTestWindow});
   if (focus !== 'audit') {
   await verifyInvitations({ api, check, register, mailFor, password, approver, terms, sql, A, B, accountId });
   await reserveTestWindow(65);
@@ -685,6 +689,7 @@ try {
   assert.equal(await page.getByLabel('Referencia privada').innerText(), 'LOCAL-PRIVATE-REFERENCE');
   await page.keyboard.press('Escape'); // Recuperar acceso al resumen tras cerrar el modal.
   check(true, 'Angular private resource authorized by tenant, branch and owner');
+  if (c06Delivery) await verifyPrivateReference({api,check,sql,A,branch,resource,token,confidential,reserveTestWindow});
   if (c06Abac) {
     // Synthetic MySQL rows tested through the real Angular/Kestrel/C05 flow.
     const coworker = accountId('approver@example.test');
@@ -910,9 +915,9 @@ try {
   check((await api('login', { mailbox: 'member.changed@example.test', password: passkeyRecovered.password })).status === 401, 'revoked MFA cannot downgrade account to password-only enrollment');
   const recoveredOwner = await verifyAssisted({ browser, api, platform, check, confidential, operators: operators.slice(0, 2), password, enrollLogin, nextCode, totp,
     mailFor, noticeFor, sql, A, accountId, uiPort, reserveTestWindow });
-  await verifyProfile({ browser, api, check, confidential, owner: recoveredOwner, sql, A, B, accountId, uiPort, mailFor, approver, password });
+  await verifyProfile({ browser, api, platform, check, confidential, owner: recoveredOwner, sql, A, B, accountId, uiPort, mailFor, approver, password, c06Delivery, reserveTestWindow, reservePlatformWindow });
   const monitorToken = await verifyOperatorRecovery({ browser, platform, api, check, confidential, operators, nextCode, totp,
-    sql, noticeFor, mailFor, uiPort, reservePlatformWindow });
+    sql, noticeFor, mailFor, uiPort, reservePlatformWindow, c06Delivery });
   // Least privileges are asserted dynamically, not by searching GRANT text.
   for (const statement of ["UPDATE c05_identity_resource_grant SET permission_code='ADMIN'", 'DELETE FROM c05_identity_audit',
     "UPDATE c05_identity_audit SET action_code='FORGED'", 'CREATE TABLE unauthorized(id INT)']) {
@@ -934,6 +939,11 @@ try {
     'real abuse threshold creates a durable redacted signal visible only in the platform monitor');
   check(!confidential.filter(s => typeof s === 'string' && s.length >= 12).some(s => apiLogs.includes(s)), 'API logs contain no password, seed, token or key');
   check(!apiLogs.includes('member@example.test') && !apiLogs.includes('LOCAL-PRIVATE-REFERENCE'), 'API logs contain no mailbox or private resource');
+  if (c06Delivery) {
+    check(!confidential.filter(v=>typeof v==='string'&&v.startsWith('C06_09_')).some(v=>apiLogs.includes(v)), 'C06-09 raw request path, query, headers and persisted audit canaries absent from runtime logs');
+    check(/CRECISOL_RUNTIME source=http level=2 event=404/.test(apiLogs) && /CRECISOL_RUNTIME source=http level=2 event=200/.test(apiLogs), 'C06-09 redacted HTTP diagnostics remain operational');
+    check(!/Request starting|Request finished|System\.InvalidOperationException:/.test(apiLogs),'C06-09 raw framework request and exception formatting absent');
+  }
   }
   }
   await browser.close(); browser = undefined;

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { verifySha1EnrollmentQr } from './c05_totp_qr_checks.mjs';
 
 export async function verifyOperatorRecovery({ browser, platform, api, check, confidential, operators, nextCode, totp,
-  sql, noticeFor, mailFor, uiPort, reservePlatformWindow }) {
+  sql, noticeFor, mailFor, uiPort, reservePlatformWindow, c06Delivery=false }) {
   await reservePlatformWindow(35);
   const target = operators[0];
   const oldLogin = await platform('login', { mailbox: target.mailbox, password: target.password });
@@ -77,6 +77,27 @@ export async function verifyOperatorRecovery({ browser, platform, api, check, co
   await profilePage.locator('dialog.cs-modal:modal').waitFor({ state: 'hidden' });
   check((await platform('profile/read', {}, tokens[1])).data.displayName === '', 'one operator cannot inherit another operator profile');
   check((await api('profile/read', {}, tokens[0])).status === 401, 'platform profile credential cannot read any tenant profile');
+  if(c06Delivery) {
+    await reservePlatformWindow(12);
+    const pixels=Buffer.alloc(64*64*4,107).toString('base64');
+    check((await platform('profile/photo-upload',{pixels},tokens[0])).status===200,'C06-09 authorized operator saves bounded raster');
+    const photo=await platform('profile/photo',{},tokens[0]);
+    check(photo.status===200&&photo.data.mime==='image/png'&&photo.data.width===64&&photo.data.height===64,'C06-09 operator reads only own raster');
+    check((await platform('profile/photo',{},tokens[1])).status===401,'C06-09 independent operator cannot retrieve other operator image');
+    check((await api('profile/photo',{},tokens[0])).status===401,'C06-09 operator bearer cannot retrieve tenant media');
+    const where="operator_id=UNHEX('"+operators[1].id+"')";
+    // IDs are the provisioner's verified 16-byte hexadecimal values, not browser input.
+    const original=sql('SELECT HEX(photo_png) FROM c05_platform_scoped_profile WHERE '+where);
+    check(original.length>0,'C06-09 operator stored raster fixture');
+    try {
+      sql("UPDATE c05_platform_scoped_profile SET photo_png=X'3C7376673E' WHERE "+where);
+      check((await platform('profile/photo',{},tokens[0])).status===401,'C06-09 malformed stored operator raster denied');
+    } finally {sql("UPDATE c05_platform_scoped_profile SET photo_png=UNHEX('"+original+"') WHERE "+where);}
+    check((await platform('profile/photo',{},tokens[0])).data?.png===photo.data.png,'C06-09 operator restored raster reads correctly');
+    check((await platform('profile/photo-remove',{},tokens[0])).status===200,'C06-09 operator removes own raster');
+    check((await platform('profile/photo',{},tokens[0])).status===401,'C06-09 deleted operator raster cannot be retrieved');
+    await reservePlatformWindow(20);
+  }
   check(Number(sql(`SELECT TIMESTAMPDIFF(SECOND,UTC_TIMESTAMP(6),ready_at_utc) FROM c05_platform_recovery_case WHERE case_id=UUID_TO_BIN('${caseId}',0)`)) > 86300,
     'operator recovery enforces the same full twenty-four-hour cooling policy');
   check((await platform('release-share', { caseId, code: operators[1].backups.pop() }, tokens[0])).status === 401,

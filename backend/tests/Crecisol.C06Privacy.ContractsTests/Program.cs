@@ -44,7 +44,7 @@ var samples=new Dictionary<string,object?>
     ["caseId"]=new { caseId=id },
     ["signals"]=new { signals=new[]{new { kind="ACCOUNT",count=4L }} },
     ["profile"]=new { DisplayName="Test",Language="es-HN",TimeZone="America/Tegucigalpa",hasPhoto=false },
-    ["photo"]=new { png="AAAA",mime="image/png",width=64,height=64 },
+    ["photo"]=new { png=Convert.ToBase64String(C06ProtectedContent.EncodePhoto(new byte[64*64*4])),mime="image/png",width=64,height=64 },
     ["share"]=new { share=token,expiresAtUtc=now },
     ["platformFactor"]=new { challenge=token,secret=seed,uri },
     ["codes"]=new { accepted=true,recoveryCodes=codesList },

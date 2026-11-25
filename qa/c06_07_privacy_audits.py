@@ -76,7 +76,7 @@ def boundary():
          read(".github/workflows/c06-07-privacy-minimization.yml"),"relay tests not connected")
 def architecture():
     changed=scope(); boundary(); catalog()
-    end= "3789224e49f3183563a7f8491a3b3101f161a6a1" if "docs/c06/C06_08_ESPECIFICACION.md" in changed else "HEAD"
+    end= "3789224e49f3183563a7f8491a3b3101f161a6a1" if any(p in changed for p in ("docs/c06/C06_08_ESPECIFICACION.md","docs/c06/C06_09_ESPECIFICACION.md")) else "HEAD"
     need(subprocess.run(["git","merge-base","--is-ancestor",end,"HEAD"],cwd=ROOT).returncode==0,"privacy baseline not ancestral")
     for p in ("frontend/","backend/src/Crecisol.Domain/","backend/src/Crecisol.Infrastructure/","backend/src/Crecisol.CredentialSecurity/"):
         need(not git("diff","--name-only",BASE,end,"--",p),"unapproved existing layer change "+p)
