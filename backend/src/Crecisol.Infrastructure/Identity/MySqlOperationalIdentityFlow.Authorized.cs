@@ -56,7 +56,7 @@ public sealed partial class MySqlOperationalIdentityFlow
         var trustedClock = await u.One("SELECT UTC_TIMESTAMP(6) AS trusted_now_utc");
         if (trustedClock is null || u.VerifiedHost is null)
             throw new UnauthorizedAccessException("Trusted identity context unavailable.");
-        _ = ResolveC06TenantContextFromLockedRows(
+        var c06Context = ResolveC06TenantContextFromLockedRows(
             u.VerifiedHost, tenant, account, member, session, factor, idle,
             Utc(trustedClock, "trusted_now_utc"));
 
@@ -107,21 +107,7 @@ public sealed partial class MySqlOperationalIdentityFlow
                 (DateTime)session["mfa_verified_at_utc"]);
         }
         if (r.Operation == "private/read")
-        {
-            var branch = GuidBytes(Field(r, "branchId"));
-            var resourceId = GuidBytes(Field(r, "resourceId"));
-            var resource = await u.One("SELECT r.* FROM c05_identity_private_resource r JOIN c05_identity_branch b USING(tenant_id,branch_id) WHERE r.tenant_id=@t AND r.branch_id=@b AND r.resource_id=@r AND r.resource_state=1 AND b.active=1 FOR SHARE",
-                ("t", tenant), ("b", branch), ("r", resourceId));
-            if (resource is null) return new(false);
-            var grant = await u.One("""
-                SELECT grant_id FROM c05_identity_resource_grant WHERE tenant_id=@t AND account_id=@a
-                AND branch_id=@b AND permission_code='RESOURCE_READ' AND revoked_at_utc IS NULL
-                AND granted_at_utc<=UTC_TIMESTAMP(6) AND (expires_at_utc IS NULL OR expires_at_utc>UTC_TIMESTAMP(6))
-                AND ((scope_kind=1 AND resource_id=@r AND @owner=@a) OR (scope_kind=2 AND resource_id IS NULL))
-                LIMIT 1 FOR SHARE
-                """, ("t", tenant), ("a", actor), ("b", branch), ("r", resourceId), ("owner", Bytes(resource, "owner_account_id")));
-            return grant is null ? new(false) : new(true, new { reference = Text(resource, "display_reference") });
-        }
+            return await C06ReadAuthorizedCase(u, tenant, actor, member, c06Context, r);
         if (r.Operation is "passkeys" or "passkeys/register")
             return await AuthenticatedPasskey(u, tenant, r, account, session, ct);
         // A passkey-authenticated session still uses the enrolled TOTP/backup
