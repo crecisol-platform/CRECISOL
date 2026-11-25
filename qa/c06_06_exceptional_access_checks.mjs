@@ -36,25 +36,34 @@ export async function verifyExceptionalAccess({platform,api,sql,check,provisionP
   check((await platform('breakglass/open',{...fields,code:'0'.repeat(32)},req)).status===401,'C06-06 shaped invalid MFA denied');
   // Requester quota is independently committed, so allow a fresh real window
   // before exercising all transitions; no clock or quota injection.
-  await reservePlatformWindow(25);
+  await reservePlatformWindow(40);
   const freshOpen=requester.backups.pop();
   const opened=await platform('breakglass/open',{...fields,code:freshOpen},req);
   check(opened.status===200 && opened.data?.state==='pending' && !('reference' in opened.data),'C06-06 valid request returns no private data');
   const id=opened.data.exceptionId;
   check((await platform('breakglass/read',{exceptionId:id,code:requester.backups.at(-1)},req)).status===401,'C06-06 pending request cannot read');
-  check((await platform('breakglass/approve',{exceptionId:id,reason,reviewReason,code:requester.backups.at(-1)},req)).status===401,'C06-06 self review denied');
-  check((await platform('breakglass/approve',{exceptionId:id,reason,reviewReason,code:issuer.backups.at(-1)},outsider)).status===401,'C06-06 unentitled reviewer denied');
-  check((await platform('breakglass/approve',{exceptionId:id,reason:reason+' altered',reviewReason,code:reviewer.backups.at(-1)},rev)).status===401,'C06-06 independent reviewer must match original purpose');
-  check((await platform('breakglass/approve',{exceptionId:id,reason,reviewReason},rev)).status===400,'C06-06 reviewer fresh MFA required');
-  const approved=await platform('breakglass/approve',{exceptionId:id,reason,reviewReason,code:reviewer.backups.pop()},rev);
+  check((await platform('breakglass/approve',{exceptionId:id,tenantId,branchId:branch,resourceId:resource,reason,reviewReason,code:requester.backups.at(-1)},req)).status===401,'C06-06 self review denied');
+  check((await platform('breakglass/approve',{exceptionId:id,tenantId,branchId:branch,resourceId:resource,reason,reviewReason,code:issuer.backups.at(-1)},outsider)).status===401,'C06-06 unentitled reviewer denied');
+  check((await platform('breakglass/approve',{exceptionId:id,tenantId,branchId:branch,resourceId:resource,reason:reason+' altered',reviewReason,code:reviewer.backups.at(-1)},rev)).status===401,'C06-06 independent reviewer must match original purpose');
+  check((await platform('breakglass/approve',{exceptionId:id,tenantId,branchId:branch,resourceId:resource,reason,reviewReason},rev)).status===400,'C06-06 reviewer fresh MFA required');
+  check((await platform('breakglass/approve',{exceptionId:id,tenantId,branchId:otherBranch,resourceId:resource,reason,reviewReason,code:reviewer.backups.at(-1)},rev)).status===401,'C06-06 reviewer confirms exact target independently');
+  const approved=await platform('breakglass/approve',{exceptionId:id,tenantId,branchId:branch,resourceId:resource,reason,reviewReason,code:reviewer.backups.pop()},rev);
   check(approved.status===200&&approved.data?.state==='approved'&&!('reference' in approved.data),'C06-06 independent approval is scoped not disclosure');
+  check((await platform('breakglass/approve',{exceptionId:id,tenantId,branchId:branch,resourceId:resource,reason,reviewReason,code:reviewer.backups.at(-1)},rev)).status===401,'C06-06 immutable approval cannot be duplicated or extended');
   check((await platform('breakglass/read',{exceptionId:id,code:reviewer.backups.at(-1)},rev)).status===401,'C06-06 reviewer cannot consume requester authority');
   const differentSession=await login(requester);
   check((await platform('breakglass/read',{exceptionId:id,code:requester.backups.at(-1)},differentSession)).status===401,'C06-06 other session of same operator denied');
   check((await platform('breakglass/read',{exceptionId:id,resourceId:fake,code:requester.backups.at(-1)},req)).status===400,'C06-06 read cannot replace resource selector');
-  await reservePlatformWindow(20);
+  await reservePlatformWindow(40);
   check((await platform('breakglass/read',{exceptionId:id,code:freshOpen},req)).status===401,'C06-06 consumed opening proof cannot read');
   const freshRead=requester.backups.pop();
+  // Audit insert failure must roll back factor consumption and prohibit disclosure.
+  sql("REVOKE INSERT ON crecisol_c05.c06_exception_audit FROM 'c05_identity_local_runtime';");
+  try {
+    check((await platform('breakglass/read',{exceptionId:id,code:freshRead},req)).status===401,'C06-06 audit failure denies private response');
+  } finally {
+    sql("GRANT INSERT ON crecisol_c05.c06_exception_audit TO 'c05_identity_local_runtime';");
+  }
   const result=await platform('breakglass/read',{exceptionId:id,code:freshRead},req);
   check(result.status===200 && result.data?.reference==='LOCAL-PRIVATE-REFERENCE' && Object.keys(result.data).length===1,'C06-06 real approved read returns only exact reference');
   check((await platform('breakglass/read',{exceptionId:id,code:freshRead},req)).status===401,'C06-06 consumed read proof cannot replay');
@@ -73,13 +82,24 @@ export async function verifyExceptionalAccess({platform,api,sql,check,provisionP
   sql(`INSERT INTO c06_exception_request VALUES(UUID_TO_BIN('${expired}',0),UNHEX('${requester.id}'),UUID_TO_BIN('${reqId}',0),1,UUID_TO_BIN('${grantR}',0),UNHEX('${A}'),UUID_TO_BIN('${branch}',0),UUID_TO_BIN('${resource}',0),UNHEX(REPEAT('ab',32)),UTC_TIMESTAMP(6)-INTERVAL 50 SECOND,UTC_TIMESTAMP(6)-INTERVAL 10 SECOND);
   INSERT INTO c06_exception_approval VALUES(UUID_TO_BIN('${expired}',0),UNHEX('${reviewer.id}'),UUID_TO_BIN('${revId}',0),1,UUID_TO_BIN('${grantA}',0),UNHEX(REPEAT('cd',32)),UTC_TIMESTAMP(6)-INTERVAL 40 SECOND,UTC_TIMESTAMP(6)-INTERVAL 10 SECOND);`);
   check((await platform('breakglass/read',{exceptionId:expired,code:requester.backups.at(-1)},req)).status===401,'C06-06 expired historical exception denied');
-  await reservePlatformWindow(20);
+  await reservePlatformWindow(40);
   const second=await platform('breakglass/open',{...fields,code:requester.backups.pop()},req);
   check(second.status===200,'C06-06 second separately authorized request');
   const secondId=second.data.exceptionId;
-  check((await platform('breakglass/approve',{exceptionId:secondId,reason,reviewReason,code:reviewer.backups.pop()},rev)).status===200,'C06-06 second independent approval');
+  check((await platform('breakglass/approve',{exceptionId:secondId,tenantId,branchId:branch,resourceId:resource,reason,reviewReason,code:reviewer.backups.pop()},rev)).status===200,'C06-06 second independent approval');
+  // Revoke the reviewer's session, then prove an otherwise valid approval cannot be read.
+  const third=await platform('breakglass/open',{...fields,code:requester.backups.pop()},req);
+  check(third.status===200,'C06-06 distinct exception before session revocation');
+  const thirdId=third.data.exceptionId;
+  const temporaryReviewerSession=await login(reviewer);
+  check((await platform('breakglass/approve',{exceptionId:thirdId,tenantId,branchId:branch,resourceId:resource,reason,reviewReason,code:reviewer.backups.pop()},temporaryReviewerSession)).status===200,'C06-06 approval bound to separate reviewer session');
+  check((await platform('logout',{},temporaryReviewerSession)).status===200,'C06-06 reviewer session explicitly revoked');
+  check((await platform('breakglass/read',{exceptionId:thirdId,code:requester.backups.at(-1)},req)).status===401,'C06-06 reviewer session revocation cancels approval');
   sql(`UPDATE c06_exception_entitlement SET revoked_at_utc=UTC_TIMESTAMP(6) WHERE entitlement_id=UUID_TO_BIN('${grantA}',0)`);
   check((await platform('breakglass/read',{exceptionId:secondId,code:requester.backups.at(-1)},req)).status===401,'C06-06 reviewer entitlement revocation immediately denies');
+  // An operator cannot open a new exception after explicit requester grant revocation.
+  sql(`UPDATE c06_exception_entitlement SET revoked_at_utc=UTC_TIMESTAMP(6) WHERE entitlement_id=UUID_TO_BIN('${grantR}',0)`);
+  check((await platform('breakglass/open',{...fields,code:requester.backups.at(-1)},req)).status===401,'C06-06 requester eligibility revocation denies opening');
   for (const [statement,label] of [
     [`UPDATE c06_exception_request SET expires_at_utc=expires_at_utc+INTERVAL 1 MINUTE WHERE exception_id=UUID_TO_BIN('${id}',0)`,'deadline cannot extend'],
     [`DELETE FROM c06_exception_approval WHERE exception_id=UUID_TO_BIN('${id}',0)`,'approval immutable'],

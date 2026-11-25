@@ -106,7 +106,7 @@ public static class OperationalIdentityModule
     private static readonly IReadOnlyDictionary<string, string[]> C06BreakglassOperations = new Dictionary<string, string[]>
     {
         ["platform/breakglass/open"] = ["tenantId", "branchId", "resourceId", "reason", "code"],
-        ["platform/breakglass/approve"] = ["exceptionId", "reason", "reviewReason", "code"],
+        ["platform/breakglass/approve"] = ["exceptionId", "tenantId", "branchId", "resourceId", "reason", "reviewReason", "code"],
         ["platform/breakglass/read"] = ["exceptionId", "code"],
         ["platform/breakglass/close"] = ["exceptionId"],
     };

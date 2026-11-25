@@ -86,7 +86,9 @@ jobs:
         with:
           node-version: '24.15.0'
           package-manager-cache: false
-      - run: node --check qa/c05_operational_flow_e2e.mjs
+      - run: |
+          node --check qa/c05_operational_flow_e2e.mjs
+          node --check qa/c06_06_exceptional_access_checks.mjs
       - name: Angular 22 unchanged functional/regression compile
         run: |
           npm ci --prefix frontend --ignore-scripts --no-audit --no-fund

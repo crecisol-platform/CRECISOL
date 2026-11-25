@@ -40,6 +40,9 @@
       "access_boundary": "platform_temporary_exception",
       "required_fields": [
         "exceptionId",
+        "tenantId",
+        "branchId",
+        "resourceId",
         "reason",
         "reviewReason",
         "code"

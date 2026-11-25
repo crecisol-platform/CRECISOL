@@ -34,6 +34,10 @@ def guard():
     for m in ("u.VerifiedActor","sessionId.SequenceEqual(requestSession)","IndependentReview",
               "C06ExceptionEntitlement","C06ExceptionResourceActive","C06ExceptionLiveSession",
               "CryptographicOperations.FixedTimeEquals","PlatformTotp(u, principal, code!)",
+              '!GuidBytes(Input("tenantId")!).SequenceEqual(targetTenant)',
+              '!GuidBytes(Input("branchId")!).SequenceEqual(targetBranch)',
+              '!GuidBytes(Input("resourceId")!).SequenceEqual(targetResource)',
+              "vs.revoked_at_utc IS NULL","rs.expires_at_utc>UTC_TIMESTAMP(6)",
               "LIMIT 2 FOR SHARE","C06ExceptionalAccessPolicy.AllowsRead(evidence)",
               "INSERT INTO c06_exception_audit","req.requester_id=@actor AND req.session_id=@session",
               "AND NOT EXISTS(SELECT 1 FROM c06_exception_close", "app.expires_at_utc>UTC_TIMESTAMP(6)"):

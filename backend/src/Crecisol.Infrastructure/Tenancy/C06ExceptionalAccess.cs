@@ -73,10 +73,11 @@ public sealed partial class MySqlOperationalIdentityFlow
                 (exception_id,requester_id,session_id,security_revision,entitlement_id,
                  tenant_id,branch_id,resource_id,purpose_hmac,requested_at_utc,expires_at_utc)
                 VALUES(@id,@actor,@session,@revision,@grant,@t,@b,@r,@purpose,UTC_TIMESTAMP(6),
-                       LEAST(UTC_TIMESTAMP(6)+INTERVAL 10 MINUTE,@grantExpiry))
+                       LEAST(UTC_TIMESTAMP(6)+INTERVAL @maximumMinutes MINUTE,@grantExpiry))
                 """, ("id", id), ("actor", actor), ("session", sessionId), ("revision", revision),
                 ("grant", Bytes(entitlement, "entitlement_id")), ("t", tenant), ("b", branch),
-                ("r", resource), ("purpose", purpose), ("grantExpiry", Utc(entitlement, "expires_at_utc").UtcDateTime)) != 1)
+                ("r", resource), ("purpose", purpose), ("maximumMinutes", C06ExceptionalAccessPolicy.MaximumMinutes),
+                ("grantExpiry", Utc(entitlement, "expires_at_utc").UtcDateTime)) != 1)
                 return await Finish(false);
             linked = id; u.PurposeHash = purpose;
             var receipt = await u.One("SELECT expires_at_utc FROM c06_exception_request WHERE exception_id=@id FOR SHARE", ("id", id));
@@ -122,6 +123,15 @@ public sealed partial class MySqlOperationalIdentityFlow
         var approval = await u.One("SELECT * FROM c06_exception_approval WHERE exception_id=@id FOR SHARE", ("id", requested));
         if (isApprove)
         {
+            // The reviewer confirms the exact target received independently.
+            // Even a reviewer with multiple scoped grants cannot be tricked
+            // into approving a different tenant, branch, or resource ID.
+            if (!C06ExceptionalAccessPolicy.ValidIdentifier(Input("tenantId")) ||
+                !C06ExceptionalAccessPolicy.ValidIdentifier(Input("branchId")) ||
+                !C06ExceptionalAccessPolicy.ValidIdentifier(Input("resourceId")) ||
+                !GuidBytes(Input("tenantId")!).SequenceEqual(targetTenant) ||
+                !GuidBytes(Input("branchId")!).SequenceEqual(targetBranch) ||
+                !GuidBytes(Input("resourceId")!).SequenceEqual(targetResource)) return await Finish(false);
             var reviewGrant = await C06ExceptionEntitlement(u, actor, revision, targetTenant, targetBranch, targetResource, 2);
             if (reviewGrant is null) return await Finish(false);
             linked = requested;
@@ -169,12 +179,17 @@ public sealed partial class MySqlOperationalIdentityFlow
         // The only private projection. Scope is exclusively the locked request.
         // Recheck every deadline in the actual read; no lists, export, owner
         // information, cross-resource selectors, or blanket tenant permission.
+        var currentIdle = await SessionIdleMinutes(u);
         var projection = await u.One("""
             SELECT resource.display_reference
             FROM c06_exception_request req
             JOIN c06_exception_approval app ON app.exception_id=req.exception_id
             JOIN c06_exception_entitlement rg ON rg.entitlement_id=req.entitlement_id
             JOIN c06_exception_entitlement ag ON ag.entitlement_id=app.entitlement_id
+            JOIN c05_platform_session rs ON rs.session_id=req.session_id AND rs.operator_id=req.requester_id AND rs.security_revision=req.security_revision
+            JOIN c05_platform_session vs ON vs.session_id=app.review_session_id AND vs.operator_id=app.reviewer_id AND vs.security_revision=app.review_revision
+            JOIN c05_platform_operator ro ON ro.operator_id=rs.operator_id AND ro.security_revision=rs.security_revision
+            JOIN c05_platform_operator vo ON vo.operator_id=vs.operator_id AND vo.security_revision=vs.security_revision
             JOIN c05_identity_private_resource resource
               ON resource.tenant_id=req.tenant_id AND resource.branch_id=req.branch_id AND resource.resource_id=req.resource_id
             JOIN c05_identity_branch branch ON branch.tenant_id=resource.tenant_id AND branch.branch_id=resource.branch_id
@@ -184,10 +199,21 @@ public sealed partial class MySqlOperationalIdentityFlow
               AND app.approved_at_utc<=UTC_TIMESTAMP(6) AND app.expires_at_utc>UTC_TIMESTAMP(6)
               AND rg.revoked_at_utc IS NULL AND ag.revoked_at_utc IS NULL
               AND rg.expires_at_utc>UTC_TIMESTAMP(6) AND ag.expires_at_utc>UTC_TIMESTAMP(6)
+              AND rg.issued_at_utc<=UTC_TIMESTAMP(6) AND ag.issued_at_utc<=UTC_TIMESTAMP(6)
+              AND rg.operator_id=req.requester_id AND rg.security_revision=req.security_revision AND rg.capability=1
+              AND ag.operator_id=app.reviewer_id AND ag.security_revision=app.review_revision AND ag.capability=2
+              AND rg.tenant_id=req.tenant_id AND rg.branch_id=req.branch_id AND rg.resource_id=req.resource_id
+              AND ag.tenant_id=req.tenant_id AND ag.branch_id=req.branch_id AND ag.resource_id=req.resource_id
+              AND app.reviewer_id<>req.requester_id
+              AND ro.active=1 AND ro.recovery_pending=0 AND vo.active=1 AND vo.recovery_pending=0
+              AND rs.revoked_at_utc IS NULL AND vs.revoked_at_utc IS NULL
+              AND rs.expires_at_utc>UTC_TIMESTAMP(6) AND vs.expires_at_utc>UTC_TIMESTAMP(6)
+              AND rs.last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE
+              AND vs.last_seen_at_utc>UTC_TIMESTAMP(6)-INTERVAL @idle MINUTE
               AND resource.resource_state=1 AND branch.active=1 AND tenant.lifecycle_state=3
               AND NOT EXISTS(SELECT 1 FROM c06_exception_close c WHERE c.exception_id=req.exception_id)
             FOR SHARE
-            """, ("id", requested), ("actor", actor), ("session", sessionId), ("revision", revision));
+            """, ("id", requested), ("actor", actor), ("session", sessionId), ("revision", revision), ("idle", currentIdle));
         return projection is null ? await Finish(false) : await Finish(true, new { reference = Text(projection, "display_reference") });
     }
 

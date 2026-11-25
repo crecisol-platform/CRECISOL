@@ -85,7 +85,7 @@ def verify_exception_overlay(source):
     block = source.split(marker, 1)[1].split("public static void MapLocalOperationalIdentity", 1)[0]
     pairs = re.findall(r'\["([^"]+)"\]\s*=\s*\[([^\]]*)\]', block)
     actual = {name: re.findall(r'"([^"]+)"', fields) for name, fields in pairs}
-    expected = {"platform/breakglass/open":["tenantId","branchId","resourceId","reason","code"],"platform/breakglass/approve":["exceptionId","reason","reviewReason","code"],"platform/breakglass/read":["exceptionId","code"],"platform/breakglass/close":["exceptionId"]}
+    expected = {"platform/breakglass/open":["tenantId","branchId","resourceId","reason","code"],"platform/breakglass/approve":["exceptionId","tenantId","branchId","resourceId","reason","reviewReason","code"],"platform/breakglass/read":["exceptionId","code"],"platform/breakglass/close":["exceptionId"]}
     need(len(pairs) == len(expected) and actual == expected, "exception route contract drift")
     overlay = json.loads(overlay_path.read_text(encoding="utf-8"))
     need(overlay["authority"] == "DOCUMENTATION_ONLY_NOT_RUNTIME_AUTHORIZATION" and
