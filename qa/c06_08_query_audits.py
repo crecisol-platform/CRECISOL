@@ -42,7 +42,7 @@ def boundary():
         need(m in a,"tenant inventory "+m)
     for m in ("operator_id=@a AND security_revision=@v","ORDER BY last_seen_at_utc DESC,session_id DESC LIMIT 4097","if (rows.Count > 4096) return new(false)","GROUP BY signal_kind ORDER BY signal_kind LIMIT 4"):
         need(m in p,"platform inventory "+m)
-    for m in ("LIMIT 2 FOR SHARE","WHERE m.tenant_id=@t AND m.membership_state=0","ORDER BY m.created_at_utc ASC,m.membership_id ASC","LIMIT 13","C06PendingCursor.TryDecode(tokenKey, scope","grant_revision","approval_revision","session_revision","account_revision","host_revision","catalog_revision","C06PendingCursor.Encode(tokenKey, scope"):
+    for m in ("LIMIT 2 FOR SHARE","WHERE m.tenant_id=@t AND m.membership_state=0","m.created_at_utc<=@now","ORDER BY m.created_at_utc ASC,m.membership_id ASC","LIMIT 13","C06PendingCursor.TryDecode(tokenKey, scope","grant_revision","approval_revision","session_revision","account_revision","host_revision","catalog_revision","C06PendingCursor.Encode(tokenKey, scope"):
         need(m in q,"pending query "+m)
     need(q.index("if (authority is null)")<q.index("C06PendingCursor.TryDecode")<q.index("SELECT m.membership_id"),"cursor/authority before data")
     for m in ("LifetimeSeconds = 600","HMACSHA256.HashData","CryptographicOperations.FixedTimeEquals","expiry <= now.ToUnixTimeSeconds()","parsed > now.UtcDateTime","parts.Length != 5"):
@@ -65,6 +65,6 @@ if __name__=="__main__":
     elif stage=="C":
         scope();boundary();inventory()
         need("contents: read" in read(".github/workflows/c06-08-scoped-queries.yml"),"workflow permissions")
-        need("verifyScopedQueries(" in read("qa/c05_operational_flow_e2e.mjs"),"HTTP integration missing")
+        need("verifyScopedQueries(" in read("qa/c05_operational_flow_e2e.mjs") and "verifyBrowserScopedPages(" in read("qa/c05_operational_flow_e2e.mjs"),"HTTP/browser integration missing")
     else: persistence()
     print("PASS C06-08 "+stage+": source review; real execution separately required")

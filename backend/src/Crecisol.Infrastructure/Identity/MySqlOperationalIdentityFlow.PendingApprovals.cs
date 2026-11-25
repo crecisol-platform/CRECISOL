@@ -65,13 +65,14 @@ public sealed partial class MySqlOperationalIdentityFlow
             LEFT JOIN c05_identity_contact c ON c.account_id=m.account_id
             WHERE m.tenant_id=@t AND m.membership_state=0 AND m.account_id<>@a
               AND a.mailbox_verified_at_utc IS NOT NULL AND a.account_state IN (0,1)
+              AND m.created_at_utc<=@now
               AND (m.created_at_utc>@after OR
                 (m.created_at_utc=@after AND m.membership_id>@cursorId))
             ORDER BY m.created_at_utc ASC,m.membership_id ASC
             LIMIT 13
             """,
             ("t", tenant), ("a", actor), ("after", afterTime),
-            ("cursorId", afterMembership));
+            ("cursorId", afterMembership), ("now", trustedNow.UtcDateTime));
 
         var visible = rows.Take(PendingApprovalPageSize).ToArray();
         var requests = visible.Select(row => new

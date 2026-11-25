@@ -21,7 +21,7 @@ import { verifySha1EnrollmentQr } from './c05_totp_qr_checks.mjs';
 import { verifyExceptionalAccess } from './c06_06_exceptional_access_checks.mjs';
 import { inspectPrivacyResponse, reportPrivacyResponses } from './c06_07_privacy_response_checks.mjs';
 import { startPrivacyRelay } from './c06_07_privacy_relay.mjs';
-import { verifyScopedQueries } from './c06_08_query_checks.mjs';
+import { verifyScopedQueries, verifyBrowserScopedPages } from './c06_08_query_checks.mjs';
 import { randomUUID } from 'node:crypto';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -435,6 +435,11 @@ try {
     'increasing global policy immediately extends a previously valid existing session to 30 minutes');
   const live = await platform('sessions', {}, reviewerToken);
   check(live.status === 200 && live.data.sessions.length > 0, 'another operator session is unaffected by permitted configuration');
+  if (c06Queries) {
+    const adminList=await platform('sessions',{},adminToken);
+    check(adminList.status===200 && adminList.data.sessions.length>0 && adminList.data.sessions.every(a=>!live.data.sessions.some(b=>a.id===b.id)), 'C06-08 operator session inventory isolates distinct authenticated operators');
+    check((await platform('sessions',{operatorId:'forged'},adminToken)).status===400,'C06-08 caller-selected platform operator denied');
+  }
   // Simulate old last activity with SQL ONLY in the disposable database; do
   // not wait 30 actual minutes or forge the API clock.
   const adminDigest = createHmac('sha256', Buffer.from(keys.CRECISOL_C05_TOKEN_HMAC_KEY, 'hex'))
@@ -526,6 +531,7 @@ try {
   const queueResponse = page.waitForResponse(response => response.url().endsWith('/memberships/pending'));
   await page.getByRole('button', { name: 'Consultar solicitudes', exact: true }).click();
   check((await queueResponse).status() === 200, 'Angular obtains allowed pending memberships through real tenant-authorized API');
+  if (c06Queries) await verifyBrowserScopedPages({page,check,sql,A,actor:accountId('approver@example.test'),reserveTestWindow});
   await page.getByRole('button', { name: 'Revisar solicitud', exact: true }).first().click();
   await page.getByLabel('Solicitud pendiente seleccionada', { exact: true }).selectOption(memberId);
   await page.getByLabel('Decisión', { exact: true }).selectOption('approve');
