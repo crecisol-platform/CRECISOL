@@ -132,6 +132,22 @@ reject "$(grant_sql "$T" "$G1" "$BR" "$RES" "$MB" "$MA" "UTC_TIMESTAMP(6)+INTERV
 reject "$(grant_sql "$T" "$G1" "$BR" "$RES" "$MB" "$MA" "$END" "$H2" 2)" "stale subject revision" 1644
 reject "$(grant_sql "$T" "$G1" "$BR" "$RES" "$MA" "$MA" "$END" "$H2")" "self grant" 3819
 assert "SELECT COUNT(*) FROM c06_delegation_grant" "0" "denials create no grant"
+
+# Real .NET writer with a dedicated, non-runtime synthetic SQL account.
+# No new privilege file or default role; the whole container is disposable.
+if [[ "${C06_DELEGATION_WRITER_TESTS:-0}" == 1 ]]; then
+  writer_password="$(openssl rand -hex 24)"
+  sql "CREATE USER 'c06_delegation_writer_test'@'%' IDENTIFIED BY '$writer_password';
+       GRANT SELECT ON crecisol_c05.c05_identity_membership TO 'c06_delegation_writer_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_grant TO 'c06_delegation_writer_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_revocation TO 'c06_delegation_writer_test'@'%';"
+  writer_port="$(docker port "$NAME" 3306/tcp | sed -n 's/^127\.0\.0\.1://p')"
+  [[ "$writer_port" =~ ^[0-9]+$ && "$writer_port" != 3306 ]]
+  C06_DELEGATION_TEST_DSN="Server=127.0.0.1;Port=$writer_port;Database=crecisol_c05;User ID=c06_delegation_writer_test;Password=$writer_password;SslMode=None;Pooling=False" \
+    dotnet run -c Release --project "$ROOT/backend/tests/Crecisol.C06Delegation.MySqlTests/Crecisol.C06Delegation.MySqlTests.csproj"
+  sql "DROP USER 'c06_delegation_writer_test'@'%'"
+  assert "SELECT CONCAT((SELECT COUNT(*) FROM c06_delegation_grant),':',(SELECT COUNT(*) FROM c06_delegation_revocation))" "0:0" "writer tests rolled back all data"
+fi
 sql "START TRANSACTION; $(grant_sql "$T" "$G1" "$BR" "$RES" "$MB" "$MA" "$END" "$H2"); $(revoke_sql "$T" "$G1" "$BR" "$RES" "$MA" "$H3"); ROLLBACK;"
 assert "SELECT CONCAT((SELECT COUNT(*) FROM c06_delegation_grant),':',(SELECT COUNT(*) FROM c06_delegation_revocation))" "0:0" "issue and revoke roll back together"
 sql "$(grant_sql "$T" "$G1" "$BR" "$RES" "$MB" "$MA" "$END" "$H2")"

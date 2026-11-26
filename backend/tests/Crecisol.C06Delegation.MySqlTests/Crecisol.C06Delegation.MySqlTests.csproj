@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Crecisol.Infrastructure/Crecisol.Infrastructure.csproj" />
+    <!-- Exercise the exact internal production source without making it a public API. -->
+    <Compile Include="../../src/Crecisol.Infrastructure/Authorization/MySqlC06DelegationLedger.cs" Link="MySqlC06DelegationLedger.cs" />
+  </ItemGroup>
+</Project>
