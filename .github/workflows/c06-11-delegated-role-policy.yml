@@ -9,6 +9,7 @@ on:
       - 'docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md'
       - '.github/workflows/c06-11-delegated-role-policy.yml'
       - 'qa/c06_11_delegated_role_scope.py'
+      - 'qa/c06_02_role_model_audit.py'
 permissions:
   contents: read
 jobs:
@@ -23,6 +24,9 @@ jobs:
           persist-credentials: false
       - run: python3 qa/master_source_guard.py
       - run: python3 qa/c06_11_delegated_role_scope.py
+      - run: python3 qa/c06_02_role_model_audit.py A
+      - run: python3 qa/c06_02_role_model_audit.py B
+      - run: python3 qa/c06_02_role_model_audit.py C
   b-contracts:
     name: B | Delegation policy real .NET 10 positive and negative contracts
     runs-on: ubuntu-24.04
