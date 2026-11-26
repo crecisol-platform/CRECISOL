@@ -10,6 +10,10 @@ on:
       - '.github/workflows/c06-11-delegated-role-policy.yml'
       - 'qa/c06_11_delegated_role_scope.py'
       - 'qa/c06_02_role_model_audit.py'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegatedRead.cs'
+      - 'database/migrations/026_c06_delegation_authority.sql'
+      - 'database/migrations/026_c06_delegation_authority.down.sql'
+      - 'qa/c05_sha1_exclusive_audits.py'
       - 'qa/c06_03_context_audits.py'
       - 'qa/c06_04_abac_audits.py'
       - 'qa/c06_05_stepup_audits.py'
@@ -51,6 +55,9 @@ jobs:
       - run: python3 qa/c06_02_role_model_audit.py A
       - run: python3 qa/c06_02_role_model_audit.py B
       - run: python3 qa/c06_02_role_model_audit.py C
+      - run: python3 qa/c05_sha1_exclusive_audits.py A
+      - run: python3 qa/c05_sha1_exclusive_audits.py B
+      - run: python3 qa/c05_sha1_exclusive_audits.py C
       - name: Historical identity ABAC and step-up controls on current source
         run: |
           set -euo pipefail
@@ -119,7 +126,7 @@ jobs:
       - run: bash -n database/tests/c06_11_delegated_role_mysql.sh
       - run: C06_DELEGATION_WRITER_TESTS=1 bash database/tests/c06_11_delegated_role_mysql.sh
   e-confirmation:
-    name: E2 | Actual C05 session, SHA1 TOTP, one-use confirmation and MySQL transaction
+    name: E2 | Actual C05 session, SHA1 TOTP, provenance, delegated read and revocation
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:

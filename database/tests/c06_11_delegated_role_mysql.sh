@@ -119,6 +119,12 @@ if [[ "${C06_DELEGATION_FLOW_TESTS:-0}" == 1 ]]; then
   apply "$proof_down"
   assert "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='crecisol_c05' AND table_name IN('c06_delegation_confirmation','c06_delegation_lab_entitlement')" "0" "empty confirmation migration reversal"
   apply "$proof_up"
+  authority_up="$ROOT/database/migrations/026_c06_delegation_authority.sql"
+  authority_down="$ROOT/database/migrations/026_c06_delegation_authority.down.sql"
+  apply "$authority_up"
+  apply "$authority_down"
+  assert "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='crecisol_c05' AND table_name='c06_delegation_authority'" "0" "empty provenance migration reversal"
+  apply "$authority_up"
   runtime_password="$(openssl rand -hex 24)"
   fixture_password="$(openssl rand -hex 24)"
   sql "CREATE USER 'c06_delegation_flow_test'@'%' IDENTIFIED BY '$runtime_password';
@@ -130,6 +136,7 @@ if [[ "${C06_DELEGATION_FLOW_TESTS:-0}" == 1 ]]; then
        GRANT SELECT ON crecisol_c05.c06_delegation_lab_entitlement TO 'c06_delegation_flow_test'@'%';
        GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_grant TO 'c06_delegation_flow_test'@'%';
        GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_revocation TO 'c06_delegation_flow_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_authority TO 'c06_delegation_flow_test'@'%';
        GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_confirmation TO 'c06_delegation_flow_test'@'%';
        GRANT UPDATE(consumed_at_utc) ON crecisol_c05.c06_delegation_confirmation TO 'c06_delegation_flow_test'@'%';
        GRANT SELECT,INSERT ON crecisol_c05.c04_verified_tenant_host TO 'c06_delegation_fixture_test'@'%';
@@ -141,6 +148,7 @@ if [[ "${C06_DELEGATION_FLOW_TESTS:-0}" == 1 ]]; then
        GRANT SELECT,INSERT,UPDATE ON crecisol_c05.c06_delegation_lab_entitlement TO 'c06_delegation_fixture_test'@'%';
        GRANT SELECT ON crecisol_c05.c06_delegation_grant TO 'c06_delegation_fixture_test'@'%';
        GRANT SELECT ON crecisol_c05.c06_delegation_revocation TO 'c06_delegation_fixture_test'@'%';
+       GRANT SELECT ON crecisol_c05.c06_delegation_authority TO 'c06_delegation_fixture_test'@'%';
        GRANT SELECT ON crecisol_c05.c06_delegation_confirmation TO 'c06_delegation_fixture_test'@'%';
        GRANT SELECT ON crecisol_c05.c05_identity_private_resource TO 'c06_delegation_fixture_test'@'%';
        GRANT SELECT ON crecisol_c05.c05_identity_audit TO 'c06_delegation_fixture_test'@'%';"
@@ -149,7 +157,12 @@ if [[ "${C06_DELEGATION_FLOW_TESTS:-0}" == 1 ]]; then
   C06_DELEGATION_FLOW_DSN="Server=127.0.0.1;Port=$flow_port;Database=crecisol_c05;User ID=c06_delegation_flow_test;Password=$runtime_password;SslMode=None;Pooling=False" \
   C06_DELEGATION_FIXTURE_DSN="Server=127.0.0.1;Port=$flow_port;Database=crecisol_c05;User ID=c06_delegation_fixture_test;Password=$fixture_password;SslMode=None;Pooling=False" \
     dotnet run -c Release --project "$ROOT/backend/tests/Crecisol.C06Delegation.FlowTests/Crecisol.C06Delegation.FlowTests.csproj"
-  assert "SELECT COUNT(*) FROM c06_delegation_confirmation WHERE consumed_at_utc IS NOT NULL" "2" "two confirmations committed"
+  assert "SELECT COUNT(*) FROM c06_delegation_confirmation WHERE consumed_at_utc IS NOT NULL" "3" "three confirmations committed"
+  assert "SELECT COUNT(*) FROM c06_delegation_authority" "2" "two immutable issuance provenance rows"
+  reject "UPDATE c06_delegation_authority SET source_revision=source_revision+1" "provenance immutable" 1644
+  reject "DELETE FROM c06_delegation_authority" "provenance history immutable" 1644
+  if error="$(apply "$authority_down" 2>&1)"; then echo "FAIL C06-11 FLOW populated authority rollback succeeded" >&2; exit 1; fi
+  [[ "$error" == *"ERROR 1644 "* ]]
   reject "UPDATE c06_delegation_confirmation SET consumed_at_utc=NULL WHERE consumed_at_utc IS NOT NULL" "confirmation cannot revive" 1644
   reject "UPDATE c06_delegation_confirmation SET binding_hmac=UNHEX(REPEAT('aa',32)) WHERE consumed_at_utc IS NULL" "confirmation binding immutable" 1644
   reject "DELETE FROM c06_delegation_confirmation" "confirmation history immutable" 1644

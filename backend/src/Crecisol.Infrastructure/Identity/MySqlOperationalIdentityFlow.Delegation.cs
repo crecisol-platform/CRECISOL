@@ -103,7 +103,7 @@ public sealed partial class MySqlOperationalIdentityFlow
         var subject=await u.One("""
             SELECT m.tenant_id,m.membership_id,m.account_id,m.role_code,m.approval_revision,
                    m.membership_state,m.granted_at_utc,m.expires_at_utc,
-                   a.account_state,a.mailbox_verified_at_utc
+                   a.account_state,a.mailbox_verified_at_utc,a.security_revision AS subject_security_revision
             FROM c05_identity_membership m JOIN c05_identity_account a ON a.account_id=m.account_id
             WHERE m.tenant_id=@t AND m.membership_id=@m FOR SHARE
             """,("t",tenant),("m",target));
@@ -203,7 +203,8 @@ public sealed partial class MySqlOperationalIdentityFlow
             StepUp=null!
         };
         if(!C06ScopedRoleDelegationPolicy.CanPrepare(e)) return new(false);
-        var binding=DelegationConfirmationBinding(e,DbId(sessionId),s.Reason,ent,stepFactor,own);
+        var binding=DelegationConfirmationBinding(e,DbId(sessionId),s.Reason,ent,stepFactor,own,
+            Bytes(scoped,"owner_account_id"),Number(subject,"subject_security_revision"));
         try
         {
             if(r.Operation=="delegation/prepare")
@@ -260,6 +261,28 @@ public sealed partial class MySqlOperationalIdentityFlow
                     identity.SessionRevision,identity.AccountRevision,identity.MembershipRevision,now)};
                 if(!await ledger.AppendAsync(proved,DbId(sessionId),tokenKey,s.Reason,ct))
                     throw new InvalidOperationException("Delegation decision changed before append.");
+                if(intent.Command==C06DelegationCommand.Assign)
+                {
+                    // No provenance means no effective delegation, even if a
+                    // legacy test/operator inserts a bare ledger issuance.
+                    if(own is null || await u.Run("""
+                        INSERT INTO c06_delegation_authority
+                        (tenant_id,grant_id,source_grant_id,source_revision,issuer_account_revision,
+                         subject_account_revision,entitlement_revision,owner_account_id,challenge_hmac)
+                        SELECT g.tenant_id,g.grant_id,@source,@sourceRevision,@issuerRevision,
+                               @subjectRevision,@entRevision,@owner,@challenge
+                        FROM c06_delegation_grant g
+                        WHERE g.tenant_id=@t AND g.subject_membership_id=@subject
+                          AND g.issuer_membership_id=@issuer AND g.branch_id=@b AND g.resource_id=@r
+                          AND g.action_id='identity.private.read' AND g.role_id=@role
+                          AND g.issued_at_utc=@now AND g.revision=1
+                        """,("source",Bytes(own,"grant_id")),("sourceRevision",Number(own,"grant_revision")),
+                        ("issuerRevision",identity.AccountRevision),("subjectRevision",Number(subject,"subject_security_revision")),
+                        ("entRevision",Number(ent,"revision")),("owner",Bytes(scoped,"owner_account_id")),("challenge",hash),
+                        ("t",tenant),("subject",target),("issuer",actorMembership),("b",branch),("r",resource),
+                        ("role",roleId),("now",now.UtcDateTime))!=1)
+                        throw new InvalidOperationException("Delegation provenance was not appended.");
+                }
                 u.Subject=Bytes(subject,"account_id");
                 return new(true,new {accepted=true});
             }
@@ -269,15 +292,18 @@ public sealed partial class MySqlOperationalIdentityFlow
     }
 
     private byte[] DelegationConfirmationBinding(C06LockedDelegationEvidence e,Guid sessionId,string reason,
-        Dictionary<string,object> entitlement,Dictionary<string,object> factor,Dictionary<string,object>? own)
+        Dictionary<string,object> entitlement,Dictionary<string,object> factor,Dictionary<string,object>? own,
+        byte[] resourceOwner,long subjectAccountRevision)
     {
         var (purpose,intent)=MySqlC06DelegationLedger.Digests(e,sessionId,tokenKey,reason);
         try
         {
             using var stream=new MemoryStream();
             using var writer=new BinaryWriter(stream,Encoding.UTF8,leaveOpen:true);
-            writer.Write("CRECISOL/C06/delegation/confirmation/v1");
+            writer.Write("CRECISOL/C06/delegation/confirmation/v2");
             writer.Write(intent);
+            writer.Write(resourceOwner);
+            writer.Write(subjectAccountRevision);
             writer.Write(Bytes(factor,"factor_id"));
             writer.Write(Number(factor,"factor_revision"));
             writer.Write(Number(entitlement,"revision"));
