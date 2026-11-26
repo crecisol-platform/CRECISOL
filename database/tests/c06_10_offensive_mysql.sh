@@ -39,7 +39,7 @@ reject() {
     printf 'FAIL C06-10 D wrong SQL rejection: %s (expected %s, actual %s)\n' "$2" "$3" "$(printf '%s' "$error" | grep -oE 'ERROR [0-9]+' | head -n 1 || true)" >&2
     exit 1
   fi
-  if [[ -n "${4:-}" && "$error" != *"`$4`"* ]]; then
+  if [[ -n "${4:-}" && "$error" != *"\`$4\`"* ]]; then
     printf 'FAIL C06-10 D wrong constraint: %s (expected %s)\n' "$2" "$4" >&2
     exit 1
   fi
