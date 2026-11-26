@@ -237,6 +237,111 @@ revoke_sql() {
   printf "INSERT INTO c06_delegation_revocation VALUES(%s,%s,%s,%s,%s,%s,1,1,1,2,UTC_TIMESTAMP(6),%s,%s)" \
     "$1" "$2" "$3" "$4" "$ACTION" "$5" "$H1" "$6"
 }
+
+# Separate lifecycle candidate on the same disposable MySQL 8.4 fixture.
+# The old D/E/E2 modes remain unchanged. Root here is a synthetic SQL oracle,
+# not a substitute for actual application MFA/ABAC or provenance.
+if [[ "${C06_DELEGATION_LIFECYCLE_TESTS:-0}" == 1 ]]; then
+  [[ "${C06_DELEGATION_WRITER_TESTS:-0}" == 0 && "${C06_DELEGATION_FLOW_TESTS:-0}" == 0 ]]
+  apply "$ROOT/database/migrations/025_c06_delegation_confirmation.sql"
+  apply "$ROOT/database/migrations/026_c06_delegation_authority.sql"
+  apply "$ROOT/database/migrations/027_c06_privacy_requests.sql"
+  cycle_up="$ROOT/database/migrations/028_c06_delegation_cycle_head.sql"
+  cycle_down="$ROOT/database/migrations/028_c06_delegation_cycle_head.down.sql"
+  # Check both empty reversal and preservation of a populated 024 baseline.
+  apply "$cycle_up"
+  assert "SELECT COUNT(*) FROM c06_delegation_cycle_head" "0" "empty lifecycle head"
+  apply "$cycle_down"
+  assert "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='crecisol_c05' AND table_name='c06_delegation_cycle_head'" "0" "empty lifecycle reversal"
+  sql "$(grant_sql "$T" "$G1" "$BR" "$RES" "$MB" "$MA" "$END" "$H2"); $(revoke_sql "$T" "$G1" "$BR" "$RES" "$MA" "$H3"); $(grant_sql "$T" "$G2" "$BR" "$RES" "$MD" "$MA" "$END" "$H4");"
+  ME="UNHEX(REPEAT('45',16))"
+  sql "INSERT INTO c05_identity_membership(tenant_id,membership_id,account_id,membership_state,role_code,granted_at_utc,expires_at_utc,created_at_utc) VALUES($U,$ME,$D,1,'MEMBER',$PAST,UTC_TIMESTAMP(6)+INTERVAL 1 DAY,$PAST); $(grant_sql "$U" "$G1" "$BR" "$RES" "$ME" "$MC" "$END" "$H2");"
+  snapshot="$(sql "SELECT HEX(tenant_id),HEX(grant_id),revision,HEX(intent_hmac),issued_at_utc,expires_at_utc FROM c06_delegation_grant ORDER BY tenant_id,grant_id; SELECT HEX(tenant_id),HEX(grant_id),revision,HEX(intent_hmac),revoked_at_utc FROM c06_delegation_revocation ORDER BY tenant_id,grant_id;")"
+  apply "$cycle_up"
+  assert "SELECT CONCAT(revision,':',issuance_revision,':',terminal_at_utc IS NOT NULL) FROM c06_delegation_cycle_head WHERE tenant_id=$T AND subject_membership_id=$MB" "2:1:1" "backfill exact terminal head"
+  assert "SELECT CONCAT(revision,':',terminal_at_utc IS NULL) FROM c06_delegation_cycle_head WHERE tenant_id=$U AND subject_membership_id=$ME" "1:1" "colliding grant ID isolated by tenant"
+  assert "SELECT COUNT(*) FROM c06_delegation_cycle_head" "3" "one head per historical scope"
+  apply "$cycle_down"
+  [[ "$(sql "SELECT HEX(tenant_id),HEX(grant_id),revision,HEX(intent_hmac),issued_at_utc,expires_at_utc FROM c06_delegation_grant ORDER BY tenant_id,grant_id; SELECT HEX(tenant_id),HEX(grant_id),revision,HEX(intent_hmac),revoked_at_utc FROM c06_delegation_revocation ORDER BY tenant_id,grant_id;")" == "$snapshot" ]]
+  echo "PASS C06-11 D lifecycle representable rollback preserves immutable rows"
+  apply "$cycle_up"
+  ROLE2="UNHEX(REPEAT('62',16))"
+  G5="UNHEX(REPEAT('85',16))"
+  H7="UNHEX(REPEAT('a7',32))"
+  H8="UNHEX(REPEAT('a8',32))"
+  sql "INSERT INTO c06_delegation_role VALUES($T,$ROLE2,'tenant-viewer',1,$PAST,NULL)"
+  cycle_grant() {
+    # tenant, grant, subject, issuer, role, issuance revision, digest
+    printf "INSERT INTO c06_delegation_grant VALUES(%s,%s,%s,%s,%s,%s,%s,%s,1,1,1,1,%s,UTC_TIMESTAMP(6),%s,%s,%s)" "$1" "$2" "$BR" "$RES" "$ACTION" "$3" "$5" "$4" "$6" "$END" "$H1" "$7"
+  }
+  cycle_revoke() {
+    # tenant, grant, issuer, expected revision, next revision, digest
+    printf "INSERT INTO c06_delegation_revocation VALUES(%s,%s,%s,%s,%s,%s,1,1,%s,%s,UTC_TIMESTAMP(6),%s,%s)" "$1" "$2" "$BR" "$RES" "$ACTION" "$3" "$4" "$5" "$H1" "$6"
+  }
+  reject "$(cycle_grant "$T" "$G3" "$MB" "$MA" "$ROLE" 1 "$H5")" "old generation cannot be reused" 1062
+  reject "$(cycle_grant "$T" "$G3" "$MB" "$MA" "$ROLE" 2 "$H5")" "even issuance denied" 3819
+  reject "$(cycle_grant "$T" "$G3" "$MB" "$MA" "$ROLE" 5 "$H5")" "cannot skip generation" 1644
+  reject "$(cycle_grant "$T" "$G3" "$MD" "$MA" "$ROLE" 3 "$H5")" "active predecessor cannot be overwritten" 1644
+  reject "$(cycle_grant "$T" "$G3" "$MB" "$MA" "$ROLE2" 3 "$H5")" "different role cannot reissue" 1644
+  reject "$(cycle_grant "$U" "$G3" "$MB" "$MC" "$ROLE" 3 "$H5")" "foreign subject cannot reissue" 1644
+  assert "SELECT COUNT(*) FROM c06_delegation_grant" "3" "denied generation statements leave no partial issuance"
+  sql "START TRANSACTION; $(cycle_grant "$T" "$G3" "$MB" "$MA" "$ROLE" 3 "$H5"); ROLLBACK;"
+  assert "SELECT revision FROM c06_delegation_cycle_head WHERE tenant_id=$T AND subject_membership_id=$MB" "2" "head rolls back with new grant"
+  assert "SELECT COUNT(*) FROM c06_delegation_grant WHERE tenant_id=$T AND grant_id=$G3" "0" "rolled-back grant absent"
+  logs="$(mktemp -d)"
+  trap 'rm -rf "$logs"; cleanup' EXIT
+  (sql "START TRANSACTION; $(cycle_grant "$T" "$G3" "$MB" "$MA" "$ROLE" 3 "$H5"); SELECT SLEEP(2); COMMIT;" >"$logs/a" 2>&1) &
+  pid_a=$!
+  (sql "START TRANSACTION; $(cycle_grant "$T" "$G4" "$MB" "$MA" "$ROLE" 3 "$H6"); SELECT SLEEP(2); COMMIT;" >"$logs/b" 2>&1) &
+  pid_b=$!
+  wins=0
+  losses=0
+  if wait "$pid_a"; then wins=$((wins+1)); else grep -q 'ERROR 1062 ' "$logs/a"; losses=$((losses+1)); fi
+  if wait "$pid_b"; then wins=$((wins+1)); else grep -q 'ERROR 1062 ' "$logs/b"; losses=$((losses+1)); fi
+  [[ "$wins:$losses" == "1:1" ]]
+  assert "SELECT COUNT(*) FROM c06_delegation_grant WHERE tenant_id=$T AND subject_membership_id=$MB AND revision=3" "1" "exactly one concurrent reissue"
+  winner="$(sql "SELECT HEX(grant_id) FROM c06_delegation_cycle_head WHERE tenant_id=$T AND subject_membership_id=$MB AND revision=3")"
+  [[ "$winner" =~ ^[0-9A-F]{32}$ ]]
+  win="UNHEX('$winner')"
+  reject "$(cycle_revoke "$T" "$win" "$MA" 1 2 "$H7")" "old revision cannot revoke new issuance" 1644
+  reject "$(cycle_revoke "$T" "$G1" "$MA" 1 2 "$H7")" "old immutable revocation cannot be repeated" 1062
+  reject "$(cycle_revoke "$U" "$win" "$MC" 3 4 "$H7")" "foreign head cannot be revoked" 1644
+  sql "START TRANSACTION; $(cycle_revoke "$T" "$win" "$MA" 3 4 "$H7"); ROLLBACK;"
+  assert "SELECT revision FROM c06_delegation_cycle_head WHERE tenant_id=$T AND subject_membership_id=$MB" "3" "revocation rollback restores active head"
+  sql "$(cycle_revoke "$T" "$win" "$MA" 3 4 "$H7"); $(cycle_grant "$T" "$G5" "$MB" "$MA" "$ROLE" 5 "$H8");"
+  assert "SELECT CONCAT(revision,':',issuance_revision,':',grant_id=$G5,':',terminal_at_utc IS NULL) FROM c06_delegation_cycle_head WHERE tenant_id=$T AND subject_membership_id=$MB" "5:5:1:1" "third issuance uses new ID and revision"
+  assert "SELECT COUNT(*) FROM c06_delegation_grant WHERE tenant_id=$T AND subject_membership_id=$MB" "3" "all historical issuances retained"
+  assert "SELECT COUNT(*) FROM c06_delegation_revocation WHERE tenant_id=$T" "2" "both immutable revocations retained"
+  reject "UPDATE c06_delegation_grant SET revision=1 WHERE tenant_id=$T AND grant_id=$G5" "new issuance immutable" 1644
+  reject "DELETE FROM c06_delegation_revocation WHERE tenant_id=$T AND grant_id=$win" "new revocation immutable" 1644
+  # Dedicated fixture writer may append ledger rows but may not mutate the
+  # head directly. The original runtime role must remain completely unchanged.
+  cycle_password="$(openssl rand -hex 24)"
+  sql "CREATE USER 'c06_cycle_test'@'localhost' IDENTIFIED BY '$cycle_password';
+       GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_grant TO 'c06_cycle_test'@'localhost';
+       GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_revocation TO 'c06_cycle_test'@'localhost';
+       GRANT SELECT ON crecisol_c05.c06_delegation_cycle_head TO 'c06_cycle_test'@'localhost';"
+  cycle_writer() { docker exec -e "MYSQL_PWD=$cycle_password" "$NAME" mysql --protocol=SOCKET -uc06_cycle_test -N -B -D crecisol_c05 -e "$1"; }
+  for statement in "UPDATE c06_delegation_cycle_head SET revision=1 WHERE tenant_id=$T" "DELETE FROM c06_delegation_cycle_head WHERE tenant_id=$T" "INSERT INTO c06_delegation_cycle_head SELECT * FROM c06_delegation_cycle_head WHERE tenant_id=$T"; do
+    if error="$(cycle_writer "$statement" 2>&1)"; then echo "FAIL C06-11 D direct head mutation allowed" >&2; exit 1; fi
+    [[ "$error" == *"ERROR 1142 "* ]]
+    echo "PASS C06-11 D direct lifecycle head mutation denied"
+  done
+  sql "DROP USER 'c06_cycle_test'@'localhost'"
+  [[ "$(sql "SHOW GRANTS FOR 'c05_identity_local_runtime'")" == "$before_grants" ]]
+  assert "SELECT COUNT(*) FROM c06_delegation_authority" "0" "bare SQL lifecycle never produces authority provenance"
+  assert "SELECT COUNT(*) FROM c06_delegation_confirmation" "0" "no MFA proof manufactured"
+  assert "SELECT COUNT(*) FROM c05_identity_resource_grant" "0" "no operational authority minted"
+  if error="$(apply "$cycle_down" 2>&1)"; then echo "FAIL C06-11 D unrepresentable history reverted" >&2; exit 1; fi
+  [[ "$error" == *"ERROR 1644 "* ]]
+  assert "SELECT COUNT(*) FROM c06_delegation_grant" "5" "refused down preserves all grants"
+  assert "SELECT COUNT(*) FROM c06_delegation_revocation" "2" "refused down preserves all revocations"
+  assert "SELECT revision FROM c06_delegation_cycle_head WHERE tenant_id=$T AND subject_membership_id=$MB" "5" "refused down preserves current head"
+  assert "SELECT revision FROM c06_delegation_cycle_head WHERE tenant_id=$U AND subject_membership_id=$ME" "1" "foreign colliding head unchanged"
+  echo "PASS C06-11 lifecycle SQL checks; two independent reissue writers; no application authorization claim"
+  exit 0
+fi
+
 reject "$(grant_sql "$T" "$G1" "$BR" "$RES" "$MC" "$MA" "$END" "$H2")" "foreign subject" 1644
 reject "$(grant_sql "$T" "$G1" "$BR" "$RES" "$MB" "$MC" "$END" "$H2")" "foreign issuer" 1644
 reject "$(grant_sql "$T" "$G1" "$BR2" "$R2" "$MB" "$MA" "$END" "$H2")" "ungranted branch" 1644
