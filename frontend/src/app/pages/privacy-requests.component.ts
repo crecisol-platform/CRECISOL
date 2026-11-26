@@ -74,7 +74,11 @@ export class PrivacyRequestsComponent implements OnDestroy {
   date(v:string):string{return identityDateLabel(v,this.identity.profile()?.timeZone);}
   choose(right:PrivacyRight):void{
     if(this.busy()||this.status()!=='ready'||!isPrivacyRight(right))return;
-    this.dismiss();this.receipt.set(null);this.chosen.set(right);this.review()?.open();
+    this.dismiss();this.receipt.set(null);this.chosen.set(right);
+    const g=this.generation;
+    afterNextRender(()=>{
+      if(this.current(g)&&this.chosen()===right&&!this.busy())this.review()?.open();
+    },{injector:this.injector});
   }
   dismiss():void{
     if(this.expiryTimer)clearTimeout(this.expiryTimer);

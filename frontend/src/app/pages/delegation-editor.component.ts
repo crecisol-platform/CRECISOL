@@ -91,7 +91,11 @@ export class DelegationEditorComponent implements OnDestroy {
       if(!this.current(g))return;
       this.selection.set({...exactSelection(row),inspection:current});
       this.busy.set(false);
-      this.review()?.open();
+      // The child input still reflects busy=true until Angular renders.
+      // Opening early is deliberately rejected by the institutional modal.
+      afterNextRender(()=>{
+        if(this.current(g)&&this.selection()!==null&&!this.busy())this.review()?.open();
+      },{injector:this.injector});
     }catch{
       if(this.current(g)){
         this.items.set([]);this.cursor.set(null);this.status.set('error');
