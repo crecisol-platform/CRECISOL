@@ -35,7 +35,14 @@ reject() {
   if error="$(sql "$1" 2>&1)"; then
     echo "FAIL C06-10 D unexpectedly permitted: $2" >&2; exit 1
   fi
-  [[ "$error" == *"ERROR $3 "* ]] || { echo "FAIL C06-10 D wrong SQL rejection: $2 (expected $3)" >&2; exit 1; }
+  if [[ "$error" != *"ERROR $3 "* ]]; then
+    printf 'FAIL C06-10 D wrong SQL rejection: %s (expected %s, actual %s)\n' "$2" "$3" "$(printf '%s' "$error" | grep -oE 'ERROR [0-9]+' | head -n 1 || true)" >&2
+    exit 1
+  fi
+  if [[ -n "${4:-}" && "$error" != *"`$4`"* ]]; then
+    printf 'FAIL C06-10 D wrong constraint: %s (expected %s)\n' "$2" "$4" >&2
+    exit 1
+  fi
   rejected=$((rejected+1))
   echo "PASS C06-10 D rejected $2 (MySQL $3)"
 }
@@ -96,8 +103,15 @@ echo "PASS C06-10 D exact tenant lookup distinguishes deliberately colliding IDs
 insert="INSERT INTO c06_case_resource_assignment(tenant_id,assignment_id,branch_id,resource_id,account_id,approved_by_account_id,action_id,assignment_state,revision,issued_at_utc,expires_at_utc)"
 suffix="'identity.private.read',1,1,UTC_TIMESTAMP(6)-INTERVAL 1 MINUTE,UTC_TIMESTAMP(6)+INTERVAL 1 HOUR"
 sql "$insert VALUES($T_A,$ASG,$BR,$RES,$A1,$A2,$suffix)"
-reject "$insert VALUES($T_B,UNHEX(REPEAT('74',16)),$BR,$RES,$A1,$B1,$suffix)" "cross-tenant actor despite colliding object IDs" 1452
-reject "$insert VALUES($T_A,UNHEX(REPEAT('74',16)),$BR,$RES,$A1,$B1,$suffix)" "foreign approver despite colliding object IDs" 1452
+reject "$insert VALUES($T_B,UNHEX(REPEAT('74',16)),$BR,$RES,$A1,$B1,$suffix)" "cross-tenant actor despite colliding object IDs" 1452 fk_c06_case_member
+# Isolate the approver FK: use a valid local actor without an existing
+# assignment for this resource/action, so the unique key cannot mask the FK.
+assert "SELECT COUNT(*) FROM c05_identity_membership WHERE tenant_id=$T_A AND account_id=$A2" "1" "approver test actor is a valid local member"
+assert "SELECT COUNT(*) FROM c05_identity_membership WHERE tenant_id=$T_A AND account_id=$B1" "0" "foreign approver has no local membership"
+assert "SELECT COUNT(*) FROM c06_case_resource_assignment WHERE tenant_id=$T_A AND branch_id=$BR AND resource_id=$RES AND account_id=$A2 AND action_id='identity.private.read'" "0" "approver test has no duplicate assignment"
+reject "$insert VALUES($T_A,UNHEX(REPEAT('74',16)),$BR,$RES,$A2,$B1,$suffix)" "foreign approver despite colliding object IDs" 1452 fk_c06_case_approver
+# Separately prove the original unique constraint still rejects duplicates.
+reject "$insert VALUES($T_A,UNHEX(REPEAT('76',16)),$BR,$RES,$A1,$A2,$suffix)" "duplicate local assignment" 1062
 reject "INSERT INTO c05_identity_private_resource VALUES($T_B,$BR,UNHEX(REPEAT('75',16)),$A2,1,'C06-10-FOREIGN')" "foreign resource owner" 1452
 deny "$insert VALUES($T_B,UNHEX(REPEAT('74',16)),$BR,$RES,$B1,$B1,$suffix)" "runtime cannot mint assignment" 1142
 deny "UPDATE c06_case_resource_assignment SET account_id=$A2 WHERE tenant_id=$T_A AND assignment_id=$ASG" "runtime cannot reassign ownership" 1142
@@ -106,7 +120,9 @@ deny "UPDATE c05_identity_private_resource SET owner_account_id=$B1 WHERE tenant
 deny "UPDATE c05_identity_resource_grant SET permission_code='ADMIN'" "runtime cannot escalate grant" 1142
 assert "SELECT COUNT(*) FROM c06_case_resource_assignment WHERE tenant_id=$T_A AND account_id=$A1 AND approved_by_account_id=$A2" "1" "original exact assignment preserved"
 assert "SELECT COUNT(*) FROM c06_case_resource_assignment WHERE tenant_id=$T_B" "0" "foreign assignment remains absent"
+assert "SELECT COUNT(*) FROM c06_case_resource_assignment" "1" "all rejected assignments remain absent"
 assert "SELECT COUNT(*) FROM c05_identity_private_resource" "2" "original private rows remain unchanged"
 [[ "$(sql "SHOW GRANTS FOR 'c05_identity_local_runtime'")" == "$before_grants" ]]
 [[ "$(app_sql "SELECT COUNT(*) FROM c05_identity_membership")" == "3" ]]
-echo "PASS C06-10 D MYSQL: three exact FK denials, five exact runtime privilege denials, collision isolation and intact grants"
+[[ "$rejected" == 4 ]]
+echo "PASS C06-10 D MYSQL: three exact FK denials, one exact uniqueness denial, five exact runtime privilege denials, collision isolation and intact grants"
