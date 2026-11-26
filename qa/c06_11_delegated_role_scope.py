@@ -54,8 +54,17 @@ def main():
     down=(ROOT/"database/migrations/024_c06_delegated_role_ledger.down.sql").read_text(encoding="utf-8")
     import re
     sql=re.sub(r"(?m)^\s*--[^\n]*$", "", up)
-    need(not re.search(r"\b(?:GRANT|ALTER\s+TABLE|DROP\s+TABLE)\b",sql,re.I),
-         "new ledger changes old privileges/schema")
+    # Quoted error messages may contain the word grant; inspect executable SQL.
+    def no_authority_change(source):
+        unquoted=re.sub(r"'(?:''|[^'])*'", "''", source)
+        return re.search(r"\b(?:GRANT|ALTER\s+TABLE|DROP\s+TABLE)\b",unquoted,re.I) is None
+    need(no_authority_change(sql),"new ledger changes old privileges/schema")
+    for forbidden in ("GRANT SELECT ON sample TO sample_role",
+                      "ALTER TABLE sample ADD COLUMN unsafe INT",
+                      "DROP TABLE sample"):
+        need(not no_authority_change(sql+"\n"+forbidden+";"),"dangerous DDL mutation accepted")
+    need(no_authority_change("SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='C06 grant immutable';"),
+         "quoted error message incorrectly treated as a privilege grant")
     for invariant in ("uq_c06_dg_scope","fk_c06_dc_actor","fk_c06_dc_resource","fk_c06_dg_issuer_scope",
                       "fk_c06_dv_exact","trg_c06_dg_no_update","trg_c06_dv_no_delete","ck_c06_dg_no_self",
                       "NEW.expires_at_utc<=c.valid_until_utc","NEW.expires_at_utc<=s.expires_at_utc"):
