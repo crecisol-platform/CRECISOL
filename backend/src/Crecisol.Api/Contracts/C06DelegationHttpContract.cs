@@ -66,9 +66,11 @@ public static class C06DelegationHttpContract
                inspection.MembershipRevision is <=0 or long.MaxValue ||
                inspection.CeilingRevision is <=0 or long.MaxValue ||
                inspection.CanAssign==inspection.CanRevoke ||
-               (inspection.CanAssign && (inspection.GrantRevision!=0 ||
+               (inspection.CanAssign && (inspection.GrantRevision<0 ||
+                  inspection.GrantRevision>long.MaxValue-3 || inspection.GrantRevision%2!=0 ||
                   inspection.MaxExpiresAtUtc is not { } max || max.Offset!=TimeSpan.Zero || max<=DateTimeOffset.UtcNow)) ||
-               (inspection.CanRevoke && (inspection.GrantRevision!=1 || inspection.MaxExpiresAtUtc is not null)))
+               (inspection.CanRevoke && (inspection.GrantRevision<1 || inspection.GrantRevision>long.MaxValue-2 ||
+                  inspection.GrantRevision%2!=1 || inspection.MaxExpiresAtUtc is not null)))
                 return false;
             // Decimal strings preserve exact BIGINT revisions in JavaScript.
             safe=new(true,new
