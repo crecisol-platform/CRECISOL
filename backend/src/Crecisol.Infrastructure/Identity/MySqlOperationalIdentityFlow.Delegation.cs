@@ -169,7 +169,11 @@ public sealed partial class MySqlOperationalIdentityFlow
         var intent=new C06DelegationIntent(s.Command,scope,subjectActor,s.Membership,s.Role,
             s.RoleRevision,s.SubjectRevision,s.CeilingRevision,s.GrantRevision,s.Until);
         var ledger=u.DelegationLedger();
-        var existing=await ledger.ReadEvidenceAsync(intent,ct);
+        // Migration 028 is mandatory for the laboratory overlay. No fallback
+        // to historical single-issuance reads if the schema is absent.
+        var cycle=await ledger.ReadCycleEvidenceAsync(intent,ct);
+        var existing=cycle.Grant;
+        var head=cycle.Head;
         var clock=await u.One("SELECT UTC_TIMESTAMP(6) AS trusted_now_utc");
         if(clock is null) return new(false);
         var now=Utc(clock,"trusted_now_utc");
@@ -235,14 +239,14 @@ public sealed partial class MySqlOperationalIdentityFlow
                 ExpectedCeilingRevision=e.Ceiling.Revision,
                 ExpectedGrantRevision=existing?.Revision??0
             };
-            var canAssign=C06ScopedRoleDelegationPolicy.CanPrepare(e with
+            var canAssign=CanPrepareCycle(e with
             {
                 Intent=current with {Command=C06DelegationCommand.Assign,UntilUtc=maxUntil}
-            });
-            var canRevoke=C06ScopedRoleDelegationPolicy.CanPrepare(e with
+            },head);
+            var canRevoke=CanPrepareCycle(e with
             {
                 Intent=current with {Command=C06DelegationCommand.Revoke,UntilUtc=null}
-            });
+            },head);
             if(!canAssign && !canRevoke) return new(false);
             // No content, mailbox, account ID, grant ID, bearer or challenge.
             u.Subject=Bytes(subject,"account_id");
@@ -250,9 +254,9 @@ public sealed partial class MySqlOperationalIdentityFlow
                 e.SubjectMembershipRevision,e.Ceiling.Revision,current.ExpectedGrantRevision,
                 canAssign,canRevoke,canAssign ? maxUntil : null));
         }
-        if(!C06ScopedRoleDelegationPolicy.CanPrepare(e)) return new(false);
+        if(!CanPrepareCycle(e,head)) return new(false);
         var binding=DelegationConfirmationBinding(e,DbId(sessionId),s.Reason,ent,stepFactor,own,
-            Bytes(scoped,"owner_account_id"),Number(subject,"subject_security_revision"));
+            Bytes(scoped,"owner_account_id"),Number(subject,"subject_security_revision"),head);
         try
         {
             if(r.Operation=="delegation/prepare")
@@ -307,7 +311,8 @@ public sealed partial class MySqlOperationalIdentityFlow
                     throw new InvalidOperationException("Delegation confirmation lost its revision.");
                 var proved=e with {StepUp=new(intent,identity.TenantId,identity.ActorId,identity.MembershipId,
                     identity.SessionRevision,identity.AccountRevision,identity.MembershipRevision,now)};
-                if(!await ledger.AppendAsync(proved,DbId(sessionId),tokenKey,s.Reason,ct))
+                var appended=await ledger.AppendCycleAsync(proved,head,DbId(sessionId),tokenKey,s.Reason,ct);
+                if(appended is null)
                     throw new InvalidOperationException("Delegation decision changed before append.");
                 if(intent.Command==C06DelegationCommand.Assign)
                 {
@@ -323,12 +328,14 @@ public sealed partial class MySqlOperationalIdentityFlow
                         WHERE g.tenant_id=@t AND g.subject_membership_id=@subject
                           AND g.issuer_membership_id=@issuer AND g.branch_id=@b AND g.resource_id=@r
                           AND g.action_id='identity.private.read' AND g.role_id=@role
-                          AND g.issued_at_utc=@now AND g.revision=1
+                          AND g.grant_id=@grant AND g.issued_at_utc=@now
+                          AND g.revision=@revision
                         """,("source",Bytes(own,"grant_id")),("sourceRevision",Number(own,"grant_revision")),
                         ("issuerRevision",identity.AccountRevision),("subjectRevision",Number(subject,"subject_security_revision")),
                         ("entRevision",Number(ent,"revision")),("owner",Bytes(scoped,"owner_account_id")),("challenge",hash),
                         ("t",tenant),("subject",target),("issuer",actorMembership),("b",branch),("r",resource),
-                        ("role",roleId),("now",now.UtcDateTime))!=1)
+                        ("role",roleId),("now",now.UtcDateTime),("grant",appended.Value.ToByteArray(true)),
+                        ("revision",checked(intent.ExpectedGrantRevision+1)))!=1)
                         throw new InvalidOperationException("Delegation provenance was not appended.");
                 }
                 u.Subject=Bytes(subject,"account_id");
@@ -339,16 +346,30 @@ public sealed partial class MySqlOperationalIdentityFlow
         finally { CryptographicOperations.ZeroMemory(binding); }
     }
 
+    private static bool CanPrepareCycle(C06LockedDelegationEvidence e,C06DelegationCycleHead? head)
+    {
+        // An existing terminal scope is eligible only for an explicit new
+        // issuance with its latest even revision, not a reset or extension.
+        if(e.Intent.Command==C06DelegationCommand.Assign && head is not null)
+            return C06ScopedRoleDelegationPolicy.CanPrepareReissue(e,head);
+        if(e.Intent.Command==C06DelegationCommand.Revoke &&
+           (head is null || head.Revision<1 || head.Revision>long.MaxValue-2 || head.Revision%2==0))
+            return false;
+        return C06ScopedRoleDelegationPolicy.CanPrepare(e);
+    }
+
     private byte[] DelegationConfirmationBinding(C06LockedDelegationEvidence e,Guid sessionId,string reason,
         Dictionary<string,object> entitlement,Dictionary<string,object> factor,Dictionary<string,object>? own,
-        byte[] resourceOwner,long subjectAccountRevision)
+        byte[] resourceOwner,long subjectAccountRevision,C06DelegationCycleHead? head)
     {
-        var (purpose,intent)=MySqlC06DelegationLedger.Digests(e,sessionId,tokenKey,reason);
+        var (purpose,intent)=MySqlC06DelegationLedger.Digests(e,sessionId,tokenKey,reason,true,head);
         try
         {
             using var stream=new MemoryStream();
             using var writer=new BinaryWriter(stream,Encoding.UTF8,leaveOpen:true);
-            writer.Write("CRECISOL/C06/delegation/confirmation/v2");
+            // Old challenges prepared before the migration cannot authorize
+            // a cycle-aware transition. The digest binds the exact head ID.
+            writer.Write("CRECISOL/C06/delegation/confirmation/v3");
             writer.Write(intent);
             writer.Write(resourceOwner);
             writer.Write(subjectAccountRevision);
