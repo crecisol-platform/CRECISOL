@@ -74,7 +74,6 @@
               <div><dt>Membresía</dt><dd>{{ selected.membershipId }}</dd></div>
             </dl>
           </div>
-          @if (modalError()) { <p class="delegation-error" role="alert">{{ modalError() }}</p> }
           @if (step() === 1) {
             <form (submit)="prepare($event)" class="delegation-form">
               @if (selected.inspection.canAssign) {
