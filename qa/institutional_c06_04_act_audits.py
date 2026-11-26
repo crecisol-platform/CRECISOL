@@ -84,6 +84,15 @@ def changed():
     if "docs/c06/ACTA_C06_09_PROTECTED_DELIVERY.md" in diff:
         need(set(diff)==successor_09,"unexpected C06-09 documentary scope "+repr(diff))
         allowed |= successor_09
+    successor_10 = {
+      "docs/c06/ACTA_C06_10_OFFENSIVE_REGRESSION.md",
+      "docs/ESTADO_VIGENTE_CAPITULOS.md",
+      "docs/planificacion-futura/C06_MICROFASES_PROPUESTAS.md",
+      "qa/institutional_c06_04_act_audits.py",
+    }
+    if "docs/c06/ACTA_C06_10_OFFENSIVE_REGRESSION.md" in diff:
+        need(set(diff)==successor_10,"unexpected C06-10 documentary scope "+repr(diff))
+        allowed |= successor_10
     need(diff and set(diff)<=allowed,"acta diff changes runtime/schema or source "+repr(diff))
     return diff
 
@@ -118,6 +127,7 @@ def common():
     verify_c06_07_acta(state,plan)
     verify_c06_08_acta(state,plan)
     verify_c06_09_acta(state,plan)
+    verify_c06_10_acta(state,plan)
     return text
 
 def verify_c06_06_acta(state,plan):
@@ -264,6 +274,44 @@ def verify_c06_09_acta(state,plan):
         need(all(m in doc for m in (code,tree,"45716942933","C06 9/11","C06-10 habilitada",
               "ACTA_C06_09_PROTECTED_DELIVERY.md","C06 global NO CERTIFICADO")),"C06-09 bounded status missing")
     print("PASS C06-09 ACTA: exact integrated tree, 30 paths, evidence and bounded next gate")
+
+def verify_c06_10_acta(state,plan):
+    """Verify immutable PRE evidence and exact integrated QA tree; not live CI."""
+    path=ROOT/"docs/c06/ACTA_C06_10_OFFENSIVE_REGRESSION.md"
+    if not path.is_file():
+        return
+    text=path.read_text(encoding="utf-8")
+    code="ec0258b1d2c0738dbcb0c43aa305be18db0f9a3f"
+    head="ffca485df3de5c713fbbd68598398c3194ea5420"
+    tree="9072c2694fa6e565503ac75c562390c35af0dacc"
+    prior="42e89226b3e53dfa8ec10da1ddf7961d4ce290f3"
+    for marker in (code,head,tree,prior,"16857973bf3880748f90bf42b6c424d587bd1eed",
+                   "45734643721","139624806309","139624806620","139624806686",
+                   "139624806571","139624806532","5/5 SUCCESS","15/15 workflows PRE SUCCESS",
+                   "228/228","921 comprobaciones integradas","862 comprobaciones HTTP",
+                   "1452","1062","1142","45723923745","45737693483",
+                   "9.5/10","C06 9/11","C06 10/11","C06-11 bloqueada",
+                   "C06 global NO CERTIFICADO","NO CERTIFICADA"):
+        need(marker in text,"C06-10 acta missing evidence "+marker)
+    need(subprocess.check_output(["git","rev-parse",code+"^{tree}"],cwd=ROOT,text=True).strip()==tree,
+         "C06-10 integrated tree mismatch")
+    need(subprocess.run(["git","merge-base","--is-ancestor",code,"HEAD"],cwd=ROOT).returncode==0,
+         "C06-10 tested integration not ancestral")
+    parents=subprocess.check_output(["git","show","-s","--format=%P",code],cwd=ROOT,text=True).strip().split()
+    need(parents==[prior],"C06-10 squash parent mismatch")
+    import ast
+    source=subprocess.check_output(["git","show",code+":qa/c06_10_offensive_scope.py"],cwd=ROOT,text=True)
+    expected=set(ast.literal_eval(next(node.value.args[0] for node in ast.parse(source).body
+                 if isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and t.id=="PATHS" for t in node.targets))))
+    diff=set(subprocess.check_output(["git","diff","--name-only",prior,code],cwd=ROOT,text=True).splitlines())
+    need(len(diff)==19 and diff==expected,"C06-10 technical scope drift")
+    need(not any(p.startswith(("frontend/","backend/","database/operations/","database/migrations/")) or "DOCUMENTO_MAESTRO" in p for p in diff),
+         "C06-10 unapproved product, schema, grants or source change")
+    for doc in (state,plan):
+        need(all(m in doc for m in (code,tree,"45734643721","45737693483","C06 9/11","C06 10/11",
+              "ACTA_C06_10_OFFENSIVE_REGRESSION.md","C06 global NO CERTIFICADO")), "C06-10 bounded status missing")
+    print("PASS C06-10 ACTA: exact integrated QA tree, 19 paths, conditional gate; no live CI claim")
+
 
 def a():
     files=changed()
