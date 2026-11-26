@@ -35,6 +35,8 @@ public sealed record C06DelegationGrant(
     Guid RoleId, long Revision, DateTimeOffset FromUtc, DateTimeOffset UntilUtc,
     DateTimeOffset? RevokedAtUtc)
 {
+    // The legacy ledger leaves this empty. Only a future cycle-aware reader may supply it.
+    public Guid GrantId { get; init; }
     public override string ToString() => "C06DelegationGrant[redacted]";
 }
 
@@ -103,6 +105,26 @@ public sealed record C06DelegationDecision(
     public override string ToString() => "C06DelegationDecision[redacted;not_a_grant]";
 }
 
+/// <summary>Trusted, locked current head of a single exact grant lifecycle.
+/// The storage adapter must read this independently of the immutable grant row.
+/// It is never a request DTO or an authorization credential.</summary>
+public sealed record C06DelegationCycleHead(
+    C06DelegationScope Scope, TenantActorId Subject, Guid SubjectMembershipId,
+    Guid GrantId, long Revision)
+{
+    public override string ToString() => "C06DelegationCycleHead[redacted]";
+}
+
+/// <summary>Proposed new issuance after an immutable revocation. The future
+/// writer must prove the new ID is unused and atomically CAS the exact head,
+/// append issuance/provenance/audit and consume the bound factor. No read
+/// authorization follows from this record.</summary>
+public sealed record C06DelegationReissueDecision(
+    Guid PreviousGrantId, Guid NewGrantId, long ExpectedRevision, long NextRevision)
+{
+    public override string ToString() => "C06DelegationReissueDecision[redacted;not_a_grant]";
+}
+
 public static class C06ScopedRoleDelegationPolicy
 {
     // Initial reviewed allowlist: deliberately not cases.read or a new module.
@@ -119,7 +141,39 @@ public static class C06ScopedRoleDelegationPolicy
 
     public static C06DelegationDecision? Decide(C06LockedDelegationEvidence? e) => DecideCore(e, true);
 
-    private static C06DelegationDecision? DecideCore(C06LockedDelegationEvidence? e, bool requireStepUp)
+    // Explicit separate lifecycle contract. No existing caller is migrated by
+    // this change; legacy Prepare/Decide remain fail-closed for terminal rows.
+    public static bool CanPrepareReissue(C06LockedDelegationEvidence? e, C06DelegationCycleHead? head) =>
+        ValidTerminalHead(e, head) && DecideCore(e, false, terminalReissue:true) is not null;
+
+    public static C06DelegationReissueDecision? DecideReissue(
+        C06LockedDelegationEvidence? e, C06DelegationCycleHead? head, Guid newGrantId)
+    {
+        if (head is null || newGrantId == Guid.Empty || newGrantId == head.GrantId ||
+            !ValidTerminalHead(e, head) || DecideCore(e, true, terminalReissue:true) is not { } decision)
+            return null;
+        return new(head.GrantId, newGrantId, decision.ExpectedRevision, decision.NextRevision);
+    }
+
+    private static bool ValidTerminalHead(C06LockedDelegationEvidence? e, C06DelegationCycleHead? head)
+    {
+        if (e is null || head is null || e.Existing is not { } previous || e.Intent is not { } intent ||
+            intent.Command != C06DelegationCommand.Assign || previous.RevokedAtUtc is null ||
+            previous.GrantId == Guid.Empty || head.GrantId != previous.GrantId ||
+            head.Scope != previous.Scope || head.Scope != intent.Scope ||
+            head.Subject != previous.Subject || head.Subject != intent.Subject ||
+            head.SubjectMembershipId != previous.SubjectMembershipId ||
+            head.SubjectMembershipId != intent.SubjectMembershipId ||
+            head.Revision != previous.Revision || head.Revision != intent.ExpectedGrantRevision ||
+            // Issuance is odd, revocation is even. Leave room for the new
+            // issuance AND its eventual revocation; never wrap or reset CAS.
+            head.Revision < 2 || head.Revision % 2 != 0 || head.Revision > long.MaxValue - 3)
+            return false;
+        return true;
+    }
+
+    private static C06DelegationDecision? DecideCore(C06LockedDelegationEvidence? e, bool requireStepUp,
+        bool terminalReissue = false)
     {
         if (e is null || e.Identity is null || e.Intent is null ||
             e.Ceiling is null || (requireStepUp && e.StepUp is null) || e.SubjectTenant is null ||
@@ -189,14 +243,15 @@ public static class C06ScopedRoleDelegationPolicy
         }
         else
         {
-            // No implicit extension, reactivation, or overwrite. New grants
-            // require a separate reviewed lifecycle, not reuse of revoked rows.
+            // No implicit extension, reactivation, or overwrite. Only the
+            // separate, explicit terminal lifecycle contract can propose a new issuance.
             var own = e.ActorEffectiveRead;
             if (own is null || own.Identity != e.Identity || own.RoleCode != e.ActorRoleCode ||
                 own.CheckedAtUtc != now || own.ResourceTenant != i.Scope.Tenant ||
                 own.ResourceBranch != i.Scope.Branch || own.ResourceId != i.Scope.Resource ||
                 own.RequiredAction != i.Scope.Action || !C06CaseAbacPolicy.Allows(own) ||
-                g is not null || !e.SubjectMembershipActive ||
+                (!terminalReissue && g is not null) ||
+                (terminalReissue && (g is null || g.RevokedAtUtc is null)) || !e.SubjectMembershipActive ||
                 !Utc(e.SubjectMembershipUntilUtc) || e.SubjectMembershipUntilUtc <= now ||
                 i.UntilUtc is not { } until || !Utc(until) || until <= now ||
                 until > c.UntilUtc || until > e.SubjectMembershipUntilUtc ||
