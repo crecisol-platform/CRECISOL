@@ -7,10 +7,10 @@ const sizes=[{width:320,height:720},{width:390,height:844},{width:768,height:102
 const selector={branchId:'11111111-2222-4333-8444-555555555555',resourceId:'22222222-3333-4444-8555-666666666666',
   membershipId:'33333333-4444-4555-8666-777777777777',roleId:'44444444-5555-4666-8777-888888888888'};
 const other={...selector,membershipId:'55555555-6666-4777-8888-999999999999'};
-const rev=(canAssign:boolean)=>({roleCode:'tenant-staff',roleRevision:'1',membershipRevision:'9007199254740993',
-  ceilingRevision:'1',grantRevision:canAssign?'0':'1',canAssign,canRevoke:!canAssign,
+const rev=(canAssign:boolean,generation=canAssign?'0':'1')=>({roleCode:'tenant-staff',roleRevision:'1',membershipRevision:'9007199254740993',
+  ceilingRevision:'1',grantRevision:generation,canAssign,canRevoke:!canAssign,
   maxExpiresAtUtc:canAssign?new Date(Date.now()+60*60_000).toISOString():null});
-async function setup(page:Page,denied=false,confirmDenied=false){
+async function setup(page:Page,denied=false,confirmDenied=false,reissue=false){
   let phase=0;const writes: Array<Record<string,string>>=[];
   await page.route('**/api/v1/**',route=>route.fulfill({status:404,body:''}));
   await page.route('**/api/v1/identity/browser/restore',route=>route.fulfill({json:{
@@ -21,12 +21,13 @@ async function setup(page:Page,denied=false,confirmDenied=false){
     if(denied)return route.fulfill({status:401,body:''});
     const body=route.request().postDataJSON();
     if(body.cursor==='start')return route.fulfill({json:{items:phase===0?
-      [{...selector,inspection:rev(true)},{...other,inspection:rev(false)}]:[{...other,inspection:rev(false)}],nextCursor:null}});
+      [{...selector,inspection:rev(true,reissue?'2':'0')},{...other,inspection:rev(false,reissue?'3':'1')}]:[{...other,inspection:rev(false)}],nextCursor:null}});
     return route.fulfill({status:400,body:''});
   });
   await page.route('**/api/v1/identity/delegation/inspect',route=>{
     const body=route.request().postDataJSON();
-    return route.fulfill({json:rev(body.membershipId===selector.membershipId)});
+    const assigning=body.membershipId===selector.membershipId;
+    return route.fulfill({json:rev(assigning,reissue?(assigning?'2':'3'):(assigning?'0':'1'))});
   });
   await page.route('**/api/v1/identity/delegation/prepare',route=>{
     const body=route.request().postDataJSON();writes.push(body);
@@ -94,4 +95,37 @@ test('C06 failed MFA clears challenge and prior authorized candidates',async({pa
   await dialog.getByRole('button',{name:'Cerrar ventana'}).click();
   await expect(section.getByRole('list',{name:'Candidatos autorizados'})).toHaveCount(0);
   await expect(section.getByText('Catálogo no disponible')).toBeVisible();
+});
+
+test('C06 new grant after revocation keeps exact terminal revision and distinct user explanation',async({page},info)=>{
+  await page.setViewportSize({width:390,height:844});const writes=await setup(page,false,false,true);
+  const section=page.getByRole('region',{name:'Administración de permisos'});
+  await section.getByRole('button',{name:'Gestionar permisos'}).click();
+  await expect(section.getByText('Nuevo otorgamiento disponible')).toBeVisible();
+  await section.getByRole('button',{name:/Revisar concesión/}).click();
+  const dialog=page.getByRole('dialog',{name:'Revisión de permiso'});
+  await expect(dialog.getByText('Se registrará un permiso nuevo.',{exact:false})).toBeVisible();
+  await capture(page,info,'reissue-review-390');
+  await dialog.getByLabel('Motivo de la operación').fill('Nuevo otorgamiento sintético');
+  await dialog.getByRole('button',{name:'Preparar confirmación'}).click();
+  await dialog.getByLabel('Código de seis dígitos').fill('123456');
+  await dialog.getByRole('button',{name:'Confirmar concesión'}).click();
+  await expect(dialog).not.toBeVisible();
+  expect(writes).toHaveLength(2);
+  expect(writes[0].grantRevision).toBe('2');expect(writes[0].command).toBe('assign');
+  expect(writes[1]).toEqual({...writes[0],challenge:'b'.repeat(64),code:'123456'});
+});
+test('C06 later revocation preserves revision three in both requests',async({page})=>{
+  const writes=await setup(page,false,false,true);
+  const section=page.getByRole('region',{name:'Administración de permisos'});
+  await section.getByRole('button',{name:'Gestionar permisos'}).click();
+  await section.getByRole('button',{name:/Revisar revocación/}).click();
+  const dialog=page.getByRole('dialog',{name:'Revisión de permiso'});
+  await dialog.getByLabel('Motivo de la operación').fill('Revocación de la nueva generación');
+  await dialog.getByRole('button',{name:'Preparar confirmación'}).click();
+  await dialog.getByLabel('Código de seis dígitos').fill('123456');
+  await dialog.getByRole('button',{name:'Confirmar revocación'}).click();
+  await expect(dialog).not.toBeVisible();
+  expect(writes).toHaveLength(2);expect(writes[0].grantRevision).toBe('3');
+  expect(writes[0].command).toBe('revoke');expect(writes[1].grantRevision).toBe('3');
 });
