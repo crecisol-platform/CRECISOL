@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-NAME="crecisol-c06-delegation-$"
+NAME="crecisol-c06-delegation-$$"
 PASSWORD="$(openssl rand -hex 24)"
 IMAGE='mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902'
 cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
