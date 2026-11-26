@@ -23,6 +23,7 @@ import { inspectPrivacyResponse, reportPrivacyResponses } from './c06_07_privacy
 import { startPrivacyRelay } from './c06_07_privacy_relay.mjs';
 import { verifyScopedQueries, verifyBrowserScopedPages } from './c06_08_query_checks.mjs';
 import { verifyDeliveryBoundary, verifyPrivateReference } from './c06_09_delivery_checks.mjs';
+import { verifyAuthorizationMatrix, verifySameTenantObjects, verifyBrowserDenial } from './c06_10_offensive_checks.mjs';
 import { randomUUID } from 'node:crypto';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -31,7 +32,7 @@ const require = createRequire(path.join(root, 'frontend/package.json'));
 const { chromium } = require('@playwright/test');
 const AxeBuilder = require('@axe-core/playwright').default;
 if (process.argv.includes('--help')) { console.log('Usage: node qa/c05_operational_flow_e2e.mjs [--preview | --focus=operator | --focus=audit]'); process.exit(0); }
-if (process.argv.slice(2).some(a => !['--preview', '--focus=operator', '--focus=audit', '--c06-04', '--c06-05', '--c06-06', '--c06-07', '--c06-08', '--c06-09'].includes(a))) throw new Error('Unknown isolated runner argument');
+if (process.argv.slice(2).some(a => !['--preview', '--focus=operator', '--focus=audit', '--c06-04', '--c06-05', '--c06-06', '--c06-07', '--c06-08', '--c06-09', '--c06-10'].includes(a))) throw new Error('Unknown isolated runner argument');
 const preview = process.argv.includes('--preview');
 const focus = process.argv.includes('--focus=operator') ? 'operator' : process.argv.includes('--focus=audit') ? 'audit' : null;
 const c06Abac = process.argv.includes('--c06-04');
@@ -40,6 +41,8 @@ const c06Exceptional = process.argv.includes('--c06-06');
 const c06Privacy = process.argv.includes('--c06-07');
 const c06Queries = process.argv.includes('--c06-08');
 const c06Delivery = process.argv.includes('--c06-09');
+const c06Offensive = process.argv.includes('--c06-10');
+if (c06Offensive && !c06Delivery) throw new Error('C06-10 requires all prior isolated security regressions');
 if (c06Delivery && !c06Queries) throw new Error('C06-09 requires all scoped-query and privacy regressions');
 if (c06Queries && !c06Privacy) throw new Error('C06-08 requires full C06-07 privacy regression');
 if (c06Privacy && !c06Exceptional) throw new Error('C06-07 requires full isolated C06-06 flow');
@@ -190,6 +193,11 @@ async function register(mailbox, page) {
 async function enrollLogin(mailbox) {
   const login = await api('login', { mailbox, password }); check(login.status === 200, 'contextual password login');
   confidential.push(login.data.challenge);
+  if(c06Offensive && mailbox==='approver@example.test') {
+    await reserveTestWindow(5);await reservePlatformWindow(5);
+    check((await api('mfa/enroll',{challenge:login.data.challenge},undefined,'tenant-b.example.test')).status===401,'C06-10 real unused A password challenge cannot enroll in B');
+    check((await platform('mfa',{challenge:login.data.challenge,code:'000000'})).status===401,'C06-10 real unused tenant challenge cannot enter platform realm');
+  }
   const enrollment = await api('mfa/enroll', { challenge: login.data.challenge }); check(enrollment.status === 200, 'MFA enrollment uses password-bound challenge');
   const seed = enrollment.data.secret; confidential.push(seed);
   check(/^[A-Z2-7]{32}$/.test(seed) &&
@@ -481,6 +489,7 @@ try {
     'verified approver explicitly accepts the published tenant terms');
   await verifyTenantAuditBoundary({ api, platform, check, token: approver.token, sql, B });
   if (c06Delivery) await verifyDeliveryBoundary({api,check,sql,A,actor:accountId('approver@example.test'),token:approver.token,apiPort,confidential,reserveTestWindow});
+  if(c06Offensive) await verifyAuthorizationMatrix({api,platform,sql,check,A,B,tenantToken:approver.token,operatorToken:reviewerToken,uiPort,reserveTestWindow,reservePlatformWindow,confidential});
   if (focus !== 'audit') {
   await verifyInvitations({ api, check, register, mailFor, password, approver, terms, sql, A, B, accountId });
   await reserveTestWindow(65);
@@ -530,7 +539,7 @@ try {
   check((await api('memberships/pending', { cursor: 'malformed' }, approver.token)).status === 401,
     'malformed keyset cursor fails closed without applicant details');
   if (c06Queries) await verifyScopedQueries({api,check,sql,A,B,actor:accountId('approver@example.test'),token:approver.token,
-    key:keys.CRECISOL_C05_TOKEN_HMAC_KEY,memberId,reserveTestWindow,confidential});
+    key:keys.CRECISOL_C05_TOKEN_HMAC_KEY,memberId,reserveTestWindow,confidential,c06Offensive,nextProof:()=>nextCode(approver.seed)});
   // Registration completion is now an independent screen; return to the login view.
   await drainPrivacyRelay();
   await page.goto(`http://127.0.0.1:${uiPort}/cuenta`);
@@ -690,6 +699,19 @@ try {
   await page.keyboard.press('Escape'); // Recuperar acceso al resumen tras cerrar el modal.
   check(true, 'Angular private resource authorized by tenant, branch and owner');
   if (c06Delivery) await verifyPrivateReference({api,check,sql,A,branch,resource,token,confidential,reserveTestWindow});
+  if(c06Offensive) {
+    await reserveTestWindow(30);
+    const start=await api('login',{mailbox:'approver@example.test',password});
+    check(start.status===200,'C06-10 approver obtains new real password challenge');
+    confidential.push(start.data.challenge);
+    const authenticated=await api('mfa/verify',{challenge:start.data.challenge,code:await nextCode(approver.seed)});
+    check(authenticated.status===200,'C06-10 approver obtains independent fresh MFA session');
+    const secondApprover=authenticated.data.sessionToken;confidential.push(secondApprover);
+    await register('c06-10.pending@example.test');
+    await verifySameTenantObjects({api,sql,check,A,memberToken:token,approverToken:secondApprover,reviewerToken,memberId:membershipId('c06-10.pending@example.test'),memberProof:await nextCode(seed),branch,resource,reserveTestWindow,reservePlatformWindow});
+    await verifyBrowserDenial({page,check,AxeBuilder,branch,otherBranch,resource,reserveTestWindow});
+    check((await api('logout',{},secondApprover)).status===200,'C06-10 supplemental approver session revoked explicitly');
+  }
   if (c06Abac) {
     // Synthetic MySQL rows tested through the real Angular/Kestrel/C05 flow.
     const coworker = accountId('approver@example.test');

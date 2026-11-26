@@ -1,0 +1,789 @@
+{
+  "schema_version": 1,
+  "base_sha": "42e89226b3e53dfa8ec10da1ddf7961d4ce290f3",
+  "scope": "isolated loopback synthetic; no public target; no new permissions",
+  "session_scenarios": [
+    "anonymous",
+    "forged",
+    "wrong_realm",
+    "wrong_host"
+  ],
+  "operations": [
+    {
+      "operation": "assisted/complete",
+      "realm": "tenant",
+      "boundary": "tenant_preauth_or_proof",
+      "fields": [
+        "caseId",
+        "token",
+        "newPassword"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "assisted/handoff-complete",
+      "realm": "tenant",
+      "boundary": "tenant_preauth_or_proof",
+      "fields": [
+        "caseId",
+        "shareA",
+        "shareB",
+        "newPassword"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "assisted/request",
+      "realm": "tenant",
+      "boundary": "tenant_preauth_or_proof",
+      "fields": [
+        "mailbox",
+        "automaticMethodsUnavailable"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "browser/restore",
+      "realm": "tenant",
+      "boundary": "tenant_own_session",
+      "fields": [],
+      "mode": "browser_session"
+    },
+    {
+      "operation": "factor/recover-passkey",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [
+        "token",
+        "newPassword"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "factor/replace",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [
+        "currentPassword",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "incidents/report",
+      "realm": "tenant",
+      "boundary": "tenant_preauth_or_proof",
+      "fields": [
+        "token"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "invitations/accept",
+      "realm": "tenant",
+      "boundary": "tenant_preauth_or_proof",
+      "fields": [
+        "mailbox",
+        "password",
+        "code",
+        "token",
+        "version",
+        "hash",
+        "accepted"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "invitations/issue",
+      "realm": "tenant",
+      "boundary": "tenant_approver_grant",
+      "fields": [
+        "mailbox",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "login",
+      "realm": "tenant",
+      "boundary": "tenant_preauth_or_proof",
+      "fields": [
+        "mailbox",
+        "password"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "logout",
+      "realm": "tenant",
+      "boundary": "tenant_own_session",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "mailbox/complete",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [
+        "token",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "mailbox/request",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [
+        "mailbox",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "memberships/decide",
+      "realm": "tenant",
+      "boundary": "tenant_approver_grant",
+      "fields": [
+        "membershipId",
+        "decision",
+        "reason",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "memberships/pending",
+      "realm": "tenant",
+      "boundary": "tenant_approver_grant",
+      "fields": [
+        "cursor"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "memberships/request",
+      "realm": "tenant",
+      "boundary": "tenant_preauth_or_proof",
+      "fields": [
+        "mailbox",
+        "password",
+        "code",
+        "proofId",
+        "proofCode",
+        "version",
+        "hash",
+        "accepted"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "mfa/enroll",
+      "realm": "tenant",
+      "boundary": "tenant_preauth_or_proof",
+      "fields": [
+        "challenge"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "mfa/verify",
+      "realm": "tenant",
+      "boundary": "tenant_preauth_or_proof",
+      "fields": [
+        "challenge",
+        "code"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "pairings/approve",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [
+        "token",
+        "fingerprint",
+        "confirmed",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "pairings/complete",
+      "realm": "tenant",
+      "boundary": "tenant_preauth_or_proof",
+      "fields": [
+        "token",
+        "signature"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "pairings/start",
+      "realm": "tenant",
+      "boundary": "tenant_preauth_or_proof",
+      "fields": [
+        "publicKey",
+        "signature"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "passkeys",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "passkeys/login",
+      "realm": "tenant",
+      "boundary": "tenant_preauth_or_proof",
+      "fields": [
+        "challenge",
+        "response"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "passkeys/options",
+      "realm": "tenant",
+      "boundary": "tenant_preauth_or_proof",
+      "fields": [],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "passkeys/register",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [
+        "challenge",
+        "response"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "passkeys/register-options",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "passkeys/revoke",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [
+        "factorId",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "password/change",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [
+        "currentPassword",
+        "newPassword",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/abuse-summary",
+      "realm": "platform",
+      "boundary": "platform_privileged",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/breakglass/approve",
+      "realm": "platform",
+      "boundary": "platform_temporary_exception",
+      "fields": [
+        "exceptionId",
+        "tenantId",
+        "branchId",
+        "resourceId",
+        "reason",
+        "reviewReason",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/breakglass/close",
+      "realm": "platform",
+      "boundary": "platform_temporary_exception",
+      "fields": [
+        "exceptionId"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/breakglass/open",
+      "realm": "platform",
+      "boundary": "platform_temporary_exception",
+      "fields": [
+        "tenantId",
+        "branchId",
+        "resourceId",
+        "reason",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/breakglass/read",
+      "realm": "platform",
+      "boundary": "platform_temporary_exception",
+      "fields": [
+        "exceptionId",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/case",
+      "realm": "platform",
+      "boundary": "platform_privileged",
+      "fields": [
+        "caseId"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/cases/find",
+      "realm": "platform",
+      "boundary": "platform_privileged",
+      "fields": [
+        "mailbox",
+        "realm",
+        "reason",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/factor/confirm",
+      "realm": "platform",
+      "boundary": "platform_operator",
+      "fields": [
+        "challenge",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/factor/replace",
+      "realm": "platform",
+      "boundary": "platform_operator",
+      "fields": [
+        "currentPassword",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/incidents/report",
+      "realm": "platform",
+      "boundary": "platform_recovery_or_challenge",
+      "fields": [
+        "token"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "platform/login",
+      "realm": "platform",
+      "boundary": "platform_recovery_or_challenge",
+      "fields": [
+        "mailbox",
+        "password"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "platform/logout",
+      "realm": "platform",
+      "boundary": "platform_session",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/mailbox/complete",
+      "realm": "platform",
+      "boundary": "platform_operator",
+      "fields": [
+        "token",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/mailbox/request",
+      "realm": "platform",
+      "boundary": "platform_operator",
+      "fields": [
+        "mailbox",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/mfa",
+      "realm": "platform",
+      "boundary": "platform_recovery_or_challenge",
+      "fields": [
+        "challenge",
+        "code"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "platform/operator-recovery/complete",
+      "realm": "platform",
+      "boundary": "platform_recovery_or_challenge",
+      "fields": [
+        "caseId",
+        "shareA",
+        "shareB",
+        "newPassword"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "platform/operator-recovery/enroll",
+      "realm": "platform",
+      "boundary": "platform_recovery_or_challenge",
+      "fields": [
+        "caseId",
+        "token",
+        "code"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "platform/operator-recovery/request",
+      "realm": "platform",
+      "boundary": "platform_recovery_or_challenge",
+      "fields": [
+        "mailbox",
+        "automaticMethodsUnavailable"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "platform/password/change",
+      "realm": "platform",
+      "boundary": "platform_operator",
+      "fields": [
+        "currentPassword",
+        "newPassword",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/profile/photo",
+      "realm": "platform",
+      "boundary": "platform_operator",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/profile/photo-remove",
+      "realm": "platform",
+      "boundary": "platform_operator",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/profile/photo-upload",
+      "realm": "platform",
+      "boundary": "platform_operator",
+      "fields": [
+        "pixels"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/profile/read",
+      "realm": "platform",
+      "boundary": "platform_operator",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/profile/save",
+      "realm": "platform",
+      "boundary": "platform_operator",
+      "fields": [
+        "displayName",
+        "language",
+        "timeZone"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/release-share",
+      "realm": "platform",
+      "boundary": "platform_privileged",
+      "fields": [
+        "caseId",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/restore",
+      "realm": "platform",
+      "boundary": "platform_session",
+      "fields": [],
+      "mode": "browser_session"
+    },
+    {
+      "operation": "platform/review",
+      "realm": "platform",
+      "boundary": "platform_privileged",
+      "fields": [
+        "caseId",
+        "decision",
+        "identityVerified",
+        "evidenceHash",
+        "reason",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/session",
+      "realm": "platform",
+      "boundary": "platform_session",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/session-policy",
+      "realm": "platform",
+      "boundary": "platform_session",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/session-policy/update",
+      "realm": "platform",
+      "boundary": "platform_privileged",
+      "fields": [
+        "minutes",
+        "expectedRevision",
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/sessions",
+      "realm": "platform",
+      "boundary": "platform_session",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/sessions/keepalive",
+      "realm": "platform",
+      "boundary": "platform_session",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/sessions/revoke",
+      "realm": "platform",
+      "boundary": "platform_session",
+      "fields": [
+        "sessionId"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/sessions/revoke-all",
+      "realm": "platform",
+      "boundary": "platform_session",
+      "fields": [
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "platform/sessions/rotate",
+      "realm": "platform",
+      "boundary": "platform_session",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "private/read",
+      "realm": "tenant",
+      "boundary": "tenant_branch_resource_grant",
+      "fields": [
+        "branchId",
+        "resourceId"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "profile/photo",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "profile/photo-remove",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "profile/photo-upload",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [
+        "pixels"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "profile/read",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "profile/save",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [
+        "displayName",
+        "language",
+        "timeZone"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "recovery/complete",
+      "realm": "tenant",
+      "boundary": "tenant_preauth_or_proof",
+      "fields": [
+        "token",
+        "code",
+        "newPassword"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "recovery/request",
+      "realm": "tenant",
+      "boundary": "tenant_preauth_or_proof",
+      "fields": [
+        "mailbox"
+      ],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "security/events",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "sessions",
+      "realm": "tenant",
+      "boundary": "tenant_own_session",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "sessions/keepalive",
+      "realm": "tenant",
+      "boundary": "tenant_own_session",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "sessions/revoke",
+      "realm": "tenant",
+      "boundary": "tenant_own_session",
+      "fields": [
+        "sessionId"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "sessions/revoke-all",
+      "realm": "tenant",
+      "boundary": "tenant_own_session",
+      "fields": [
+        "code"
+      ],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "sessions/rotate",
+      "realm": "tenant",
+      "boundary": "tenant_own_session",
+      "fields": [],
+      "mode": "bearer_session"
+    },
+    {
+      "operation": "terms",
+      "realm": "tenant",
+      "boundary": "tenant_preauth_or_proof",
+      "fields": [],
+      "mode": "proof_regression"
+    },
+    {
+      "operation": "terms/accept",
+      "realm": "tenant",
+      "boundary": "tenant_own_account",
+      "fields": [
+        "version",
+        "hash",
+        "accepted"
+      ],
+      "mode": "bearer_session"
+    }
+  ],
+  "other_http": [
+    {
+      "action": "identity.registration.complete",
+      "path": "/api/v1/identity/registration-completions",
+      "mode": "prior_registration_or_public_regression"
+    },
+    {
+      "action": "identity.registration.intent",
+      "path": "/api/v1/identity/registration-intents",
+      "mode": "prior_registration_or_public_regression"
+    },
+    {
+      "action": "identity.registration.proof.confirm",
+      "path": "/api/v1/identity/registration-proofs/confirm",
+      "mode": "prior_registration_or_public_regression"
+    },
+    {
+      "action": "private.case.read.harness_only",
+      "path": "/api/v1/private/cases/{resourceId}",
+      "mode": "not_registered_negative_C06_09"
+    },
+    {
+      "action": "public.platform_brand.read",
+      "path": "/api/v1/public/branding/platform",
+      "mode": "prior_registration_or_public_regression"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 // Adversarial real HTTP over disposable MySQL fixtures. No new product routes.
 import { randomBytes, randomUUID, createHmac } from 'node:crypto';
-export async function verifyScopedQueries({api,check,sql,A,B,actor,token,key,memberId,reserveTestWindow,confidential}) {
+import { verifyCrossTenantObjects } from './c06_10_offensive_checks.mjs';
+export async function verifyScopedQueries({api,check,sql,A,B,actor,token,key,memberId,reserveTestWindow,confidential,c06Offensive=false,nextProof}) {
   const hex = () => randomUUID().replaceAll('-','');
   const digest = value => createHmac('sha256',Buffer.from(key,'hex')).update('C05/session:'+value).digest('hex');
   const hash = digest(token);
@@ -74,6 +75,7 @@ export async function verifyScopedQueries({api,check,sql,A,B,actor,token,key,mem
     const fresh=await inbox('start');
     check(fresh.status===200 && typeof cursorOf(fresh)==='string','C06-08 new authorized page after grant revision');
     confidential.push(cursorOf(fresh));
+    if(c06Offensive) await verifyCrossTenantObjects({api,sql,check,A,B,token,foreignToken,foreignSession,sameTenantSession,foreignMember:[...foreignMembers][0],nextProof,reserveTestWindow});
     // Revoke only the exact fixture B grant; no grant from A
     // or another branch may keep the B continuation usable.
     sql(`UPDATE c05_identity_resource_grant SET revoked_at_utc=UTC_TIMESTAMP(6),grant_revision=grant_revision+1 WHERE tenant_id=UNHEX('${B}') AND grant_id=UNHEX('${foreignGrant}')`);
