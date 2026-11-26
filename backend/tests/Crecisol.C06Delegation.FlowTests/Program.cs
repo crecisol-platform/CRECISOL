@@ -19,7 +19,9 @@ static MySqlConnectionStringBuilder Isolated(string variable,string user)
 }
 var fixture=Isolated("C06_DELEGATION_FIXTURE_DSN","c06_delegation_fixture_test");
 var runtime=Isolated("C06_DELEGATION_FLOW_DSN","c06_delegation_flow_test");
-if(fixture.Port!=runtime.Port) throw new InvalidOperationException("Fixture and runtime must share isolated database.");
+var rollbackRuntime=Isolated("C06_DELEGATION_ROLLBACK_DSN","c06_delegation_rollback_test");
+if(fixture.Port!=runtime.Port || fixture.Port!=rollbackRuntime.Port)
+    throw new InvalidOperationException("All isolated fixture connections must use the same random port.");
 await using var admin=new MySqlConnection(fixture.ConnectionString);
 await admin.OpenAsync();
 static Guid Id(string hex)=>new(Convert.FromHexString(string.Concat(Enumerable.Repeat(hex,16))),true);
@@ -27,7 +29,7 @@ static byte[] Key(Guid id)=>id.ToByteArray(true);
 static string Hex(byte[] b)=>Convert.ToHexString(b);
 var tenant=Key(Id("11"));var foreign=Key(Id("22"));
 var actor=Key(Id("31"));var subject=Key(Id("34"));var other=Key(Id("32"));
-var member=Key(Id("41"));
+var member=Key(Id("41"));var sourceGrant=Key(Guid.NewGuid());
 var factor=Key(Guid.NewGuid());var session=Key(Guid.NewGuid());var session2=Key(Guid.NewGuid());
 var token=Hex(RandomNumberGenerator.GetBytes(32));var token2=Hex(RandomNumberGenerator.GetBytes(32));
 var subjectToken=Hex(RandomNumberGenerator.GetBytes(32));var otherToken=Hex(RandomNumberGenerator.GetBytes(32));
@@ -133,6 +135,10 @@ var crypto=new OperationalIdentityCrypto(new Argon2idPasswordHasher(PasswordHash
     new KnownCompromisedPasswordScreen()));
 using var flow=new MySqlOperationalIdentityFlow(runtime.ConnectionString,tokenKey,encKey,loginKey,
     crypto,new OperationalPasskeyCrypto(),mailboxKey);
+// Same production flow, with a disposable SQL principal lacking the
+// final provenance INSERT permission. A real late failure must roll back.
+using var rollbackFlow=new MySqlOperationalIdentityFlow(rollbackRuntime.ConnectionString,tokenKey,encKey,loginKey,
+    crypto,new OperationalPasskeyCrypto(),mailboxKey);
 Task<OperationalIdentityResult> Call(string op,Dictionary<string,string> f,string? bearer=null,
     string host="delegation-a.example.test") =>
     flow.ExecuteAsync(new(host,"::ffff:127.0.0.1",op,f,bearer??token),CancellationToken.None);
@@ -172,7 +178,7 @@ try
          granted_at_utc,expires_at_utc)
         VALUES(@t,@g,@a,@b,NULL,2,'RESOURCE_READ',@a,UTC_TIMESTAMP(6)-INTERVAL 1 MINUTE,
                UTC_TIMESTAMP(6)+INTERVAL 1 HOUR)
-        """,("t",tenant),("g",Key(Guid.NewGuid())),("a",actor),("b",Key(Id("71"))));
+        """,("t",tenant),("g",sourceGrant),("a",actor),("b",Key(Id("71"))));
     Check(await Denied("delegation/prepare",fields,host:"delegation-b.example.test"),"foreign host session denied");
     Check(await Denied("delegation/prepare",fields,Hex(RandomNumberGenerator.GetBytes(32))),"forged bearer denied");
     Check(await Denied("delegation/prepare",Change(fields,"membershipId",Id("43").ToString("D"))),"foreign subject denied");
@@ -195,7 +201,7 @@ try
     // Choose the previous currently accepted RFC6238 step, then the current step
     // for revocation. No waiting for a real user's authenticator.
     var phase=DateTimeOffset.UtcNow.ToUnixTimeSeconds()%30;
-    if(phase>=24)await Task.Delay(TimeSpan.FromSeconds(31-phase));
+    if(phase>=18)await Task.Delay(TimeSpan.FromSeconds(31-phase));
     var step=TotpSha1Verifier.StepAt(DateTimeOffset.UtcNow);
     var first=TotpSha1Verifier.ComputeCode(seed,step-1);
     var second=TotpSha1Verifier.ComputeCode(seed,step);
@@ -206,6 +212,28 @@ try
         "denials preserve authorization ledger");
     Check(await Scalar("SELECT last_accepted_step FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_id=@f",
         ("a",actor),("f",factor)) is DBNull,"failed confirmations do not consume TOTP");
+    var successAuditsBefore=Convert.ToInt64(await Scalar(
+        "SELECT COUNT(*) FROM c05_identity_audit WHERE tenant_id=@t AND action_code='delegation/confirm' AND outcome_code=1",("t",tenant)));
+    bool provenanceDenied=false;
+    try
+    {
+        await rollbackFlow.ExecuteAsync(new("delegation-a.example.test","::ffff:127.0.0.1",
+            "delegation/confirm",Confirm(fields,prepared,first),token),CancellationToken.None);
+    }
+    catch(MySqlException ex) when(ex.Number==1142 &&
+        ex.Message.Contains("INSERT",StringComparison.OrdinalIgnoreCase) &&
+        ex.Message.Contains("c06_delegation_authority",StringComparison.Ordinal))
+    { provenanceDenied=true; }
+    Check(provenanceDenied,"real SQL provenance insert permission failure");
+    Check(await Count("c06_delegation_grant")==0 && await Count("c06_delegation_authority")==0 &&
+        await Count("c06_delegation_revocation")==0,"failed provenance rolls back grant and events");
+    Check(await Scalar("SELECT last_accepted_step FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_id=@f",
+        ("a",actor),("f",factor)) is DBNull,"failed provenance rolls back actual MFA consumption");
+    Check(Convert.ToInt64(await Scalar("SELECT COUNT(*) FROM c06_delegation_confirmation WHERE consumed_at_utc IS NOT NULL"))==0,
+        "failed provenance rolls back challenge consumption");
+    Check(Convert.ToInt64(await Scalar(
+        "SELECT COUNT(*) FROM c05_identity_audit WHERE tenant_id=@t AND action_code='delegation/confirm' AND outcome_code=1",
+        ("t",tenant)))==successAuditsBefore,"failed provenance commits no success audit");
     var issued=await Call("delegation/confirm",Confirm(fields,prepared,first));
     Check(issued.Allowed && await Count("c06_delegation_grant")==1,"real SHA1 TOTP and issuance commit together");
     Check(Convert.ToInt64(await Scalar("SELECT last_accepted_step FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_id=@f",
@@ -228,6 +256,55 @@ try
     Check(await Denied("delegation/read",readFields,subjectToken),"candidate disabled denies even active grant");
     Environment.SetEnvironmentVariable("CRECISOL_C06_DELEGATION_LAB_ENABLED","true");
     Check((await Call("delegation/read",readFields,subjectToken)).Allowed,"same live scope revalidated");
+
+    // Independent committed fixture mutations; restore synthetic baseline
+    // ONLY between cases, not a production reactivation or lifecycle API.
+    async Task VerifyInvalidation(string label,string mutate,string restore,params (string,object)[] ps)
+    {
+        Check(await Exec(mutate,ps)==1,label+" fixture changed exactly one row");
+        try
+        {
+            var denied=await Call("delegation/read",readFields,subjectToken);
+            Check(!denied.Allowed && denied.Value is null,label+" same-session read denied without payload");
+            Check(await Count("c06_delegation_grant")==1 && await Count("c06_delegation_authority")==1 &&
+                await Count("c06_delegation_revocation")==0,label+" immutable events preserved");
+        }
+        finally
+        {
+            if(await Exec(restore,ps)!=1)
+                throw new InvalidOperationException("C06-11 fixture baseline restoration failed: "+label);
+        }
+        Check((await Call("delegation/read",readFields,subjectToken)).Allowed,label+" isolated baseline verified");
+    }
+    await VerifyInvalidation("branch inactive",
+        "UPDATE c05_identity_branch SET active=0 WHERE tenant_id=@t AND branch_id=@b",
+        "UPDATE c05_identity_branch SET active=1 WHERE tenant_id=@t AND branch_id=@b",
+        ("t",tenant),("b",Key(Id("71"))));
+    await VerifyInvalidation("resource inactive",
+        "UPDATE c05_identity_private_resource SET resource_state=0 WHERE tenant_id=@t AND branch_id=@b AND resource_id=@r",
+        "UPDATE c05_identity_private_resource SET resource_state=1 WHERE tenant_id=@t AND branch_id=@b AND resource_id=@r",
+        ("t",tenant),("b",Key(Id("71"))),("r",Key(Id("73"))));
+    await VerifyInvalidation("resource ownership changed",
+        "UPDATE c05_identity_private_resource SET owner_account_id=@newOwner WHERE tenant_id=@t AND branch_id=@b AND resource_id=@r",
+        "UPDATE c05_identity_private_resource SET owner_account_id=@originalOwner WHERE tenant_id=@t AND branch_id=@b AND resource_id=@r",
+        ("t",tenant),("b",Key(Id("71"))),("r",Key(Id("73"))),("newOwner",actor),("originalOwner",other));
+    await VerifyInvalidation("issuer account revision changed",
+        "UPDATE c05_identity_account SET security_revision=security_revision+1 WHERE account_id=@a",
+        "UPDATE c05_identity_account SET security_revision=security_revision-1 WHERE account_id=@a",
+        ("a",actor));
+    await VerifyInvalidation("issuer membership revision changed",
+        "UPDATE c05_identity_membership SET approval_revision=approval_revision+1 WHERE tenant_id=@t AND membership_id=@m",
+        "UPDATE c05_identity_membership SET approval_revision=approval_revision-1 WHERE tenant_id=@t AND membership_id=@m",
+        ("t",tenant),("m",member));
+    await VerifyInvalidation("original source revision changed",
+        "UPDATE c05_identity_resource_grant SET grant_revision=grant_revision+1 WHERE tenant_id=@t AND grant_id=@g",
+        "UPDATE c05_identity_resource_grant SET grant_revision=grant_revision-1 WHERE tenant_id=@t AND grant_id=@g",
+        ("t",tenant),("g",sourceGrant));
+    await VerifyInvalidation("original source revoked",
+        "UPDATE c05_identity_resource_grant SET revoked_at_utc=UTC_TIMESTAMP(6) WHERE tenant_id=@t AND grant_id=@g",
+        "UPDATE c05_identity_resource_grant SET revoked_at_utc=NULL WHERE tenant_id=@t AND grant_id=@g",
+        ("t",tenant),("g",sourceGrant));
+
 
     var revoke=Change(Change(Change(fields,"command","revoke"),"grantRevision","1"),"expiresAtUtc","none");
     var revokeProof=await Prepare(revoke);

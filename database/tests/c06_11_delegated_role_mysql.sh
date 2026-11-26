@@ -127,8 +127,10 @@ if [[ "${C06_DELEGATION_FLOW_TESTS:-0}" == 1 ]]; then
   apply "$authority_up"
   runtime_password="$(openssl rand -hex 24)"
   fixture_password="$(openssl rand -hex 24)"
+  rollback_password="$(openssl rand -hex 24)"
   sql "CREATE USER 'c06_delegation_flow_test'@'%' IDENTIFIED BY '$runtime_password';
        CREATE USER 'c06_delegation_fixture_test'@'%' IDENTIFIED BY '$fixture_password';
+       CREATE USER 'c06_delegation_rollback_test'@'%' IDENTIFIED BY '$rollback_password';
        GRANT 'c05_identity_local_runtime' TO 'c06_delegation_flow_test'@'%';
        SET DEFAULT ROLE 'c05_identity_local_runtime' TO 'c06_delegation_flow_test'@'%';
        GRANT SELECT ON crecisol_c05.c06_delegation_role TO 'c06_delegation_flow_test'@'%';
@@ -139,6 +141,24 @@ if [[ "${C06_DELEGATION_FLOW_TESTS:-0}" == 1 ]]; then
        GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_authority TO 'c06_delegation_flow_test'@'%';
        GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_confirmation TO 'c06_delegation_flow_test'@'%';
        GRANT UPDATE(consumed_at_utc) ON crecisol_c05.c06_delegation_confirmation TO 'c06_delegation_flow_test'@'%';
+       GRANT 'c05_identity_local_runtime' TO 'c06_delegation_rollback_test'@'%';
+       SET DEFAULT ROLE 'c05_identity_local_runtime' TO 'c06_delegation_rollback_test'@'%';
+       GRANT SELECT ON crecisol_c05.c06_delegation_role TO 'c06_delegation_rollback_test'@'%';
+       GRANT SELECT ON crecisol_c05.c06_delegation_ceiling TO 'c06_delegation_rollback_test'@'%';
+       GRANT SELECT ON crecisol_c05.c06_delegation_lab_entitlement TO 'c06_delegation_rollback_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_grant TO 'c06_delegation_rollback_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_revocation TO 'c06_delegation_rollback_test'@'%';
+       GRANT SELECT ON crecisol_c05.c06_delegation_authority TO 'c06_delegation_rollback_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_confirmation TO 'c06_delegation_rollback_test'@'%';
+       GRANT UPDATE(consumed_at_utc) ON crecisol_c05.c06_delegation_confirmation TO 'c06_delegation_rollback_test'@'%';
+       GRANT UPDATE(active) ON crecisol_c05.c05_identity_branch TO 'c06_delegation_fixture_test'@'%';
+       GRANT UPDATE(resource_state,owner_account_id) ON crecisol_c05.c05_identity_private_resource TO 'c06_delegation_fixture_test'@'%';
+       GRANT SELECT ON crecisol_c05.c05_identity_account TO 'c06_delegation_fixture_test'@'%';
+       GRANT UPDATE(security_revision) ON crecisol_c05.c05_identity_account TO 'c06_delegation_fixture_test'@'%';
+       GRANT SELECT ON crecisol_c05.c05_identity_membership TO 'c06_delegation_fixture_test'@'%';
+       GRANT UPDATE(approval_revision) ON crecisol_c05.c05_identity_membership TO 'c06_delegation_fixture_test'@'%';
+       GRANT UPDATE(grant_revision,revoked_at_utc) ON crecisol_c05.c05_identity_resource_grant TO 'c06_delegation_fixture_test'@'%';
+       GRANT SELECT ON crecisol_c05.c05_identity_branch TO 'c06_delegation_fixture_test'@'%';
        GRANT SELECT,INSERT ON crecisol_c05.c04_verified_tenant_host TO 'c06_delegation_fixture_test'@'%';
        GRANT SELECT,INSERT ON crecisol_c05.c05_identity_mfa_factor TO 'c06_delegation_fixture_test'@'%';
        GRANT SELECT,INSERT ON crecisol_c05.c05_identity_session TO 'c06_delegation_fixture_test'@'%';
@@ -156,6 +176,7 @@ if [[ "${C06_DELEGATION_FLOW_TESTS:-0}" == 1 ]]; then
   [[ "$flow_port" =~ ^[0-9]+$ && "$flow_port" != 3306 ]]
   C06_DELEGATION_FLOW_DSN="Server=127.0.0.1;Port=$flow_port;Database=crecisol_c05;User ID=c06_delegation_flow_test;Password=$runtime_password;SslMode=None;Pooling=False" \
   C06_DELEGATION_FIXTURE_DSN="Server=127.0.0.1;Port=$flow_port;Database=crecisol_c05;User ID=c06_delegation_fixture_test;Password=$fixture_password;SslMode=None;Pooling=False" \
+  C06_DELEGATION_ROLLBACK_DSN="Server=127.0.0.1;Port=$flow_port;Database=crecisol_c05;User ID=c06_delegation_rollback_test;Password=$rollback_password;SslMode=None;Pooling=False" \
     dotnet run -c Release --project "$ROOT/backend/tests/Crecisol.C06Delegation.FlowTests/Crecisol.C06Delegation.FlowTests.csproj"
   assert "SELECT COUNT(*) FROM c06_delegation_confirmation WHERE consumed_at_utc IS NOT NULL" "3" "three confirmations committed"
   assert "SELECT COUNT(*) FROM c06_delegation_authority" "2" "two immutable issuance provenance rows"
@@ -169,7 +190,7 @@ if [[ "${C06_DELEGATION_FLOW_TESTS:-0}" == 1 ]]; then
   if error="$(apply "$proof_down" 2>&1)"; then echo "FAIL C06-11 FLOW populated rollback succeeded" >&2; exit 1; fi
   [[ "$error" == *"ERROR 1644 "* ]]
   [[ "$(sql "SHOW GRANTS FOR 'c05_identity_local_runtime'")" == "$before_grants" ]]
-  sql "DROP USER 'c06_delegation_flow_test'@'%','c06_delegation_fixture_test'@'%'"
+  sql "DROP USER 'c06_delegation_flow_test'@'%','c06_delegation_fixture_test'@'%','c06_delegation_rollback_test'@'%'"
   echo "PASS C06-11 FLOW real MFA, immutable confirmations and original runtime role preserved"
   exit 0
 fi
