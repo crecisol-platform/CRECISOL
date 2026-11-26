@@ -8,7 +8,7 @@ export interface DelegationSelection {
 export interface DelegationInspection {
   readonly roleCode: 'tenant-staff' | 'tenant-viewer' | 'tenant-branch-manager';
   readonly roleRevision: string; readonly membershipRevision: string;
-  readonly ceilingRevision: string; readonly grantRevision: '0' | '1';
+  readonly ceilingRevision: string; readonly grantRevision: string;
   readonly canAssign: boolean; readonly canRevoke: boolean;
   readonly maxExpiresAtUtc: string | null;
 }
@@ -31,6 +31,13 @@ const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
 const zero = '00000000-0000-0000-0000-000000000000';
 const guid = (v: unknown): v is string => typeof v === 'string' && guidPattern.test(v) && v !== zero;
 const revision = (v: unknown): v is string => typeof v === 'string' && /^[1-9][0-9]{0,18}$/.test(v) && BigInt(v) < 9223372036854775807n;
+// Revisions are canonical decimal strings, never JS Number values.
+const cycleRevision = (v: unknown, assigning: boolean): v is string => {
+  if (typeof v !== 'string' || !/^(0|[1-9][0-9]{0,18})$/.test(v)) return false;
+  const n=BigInt(v);
+  return assigning ? n<=9223372036854775804n && n%2n===0n
+                   : n>=1n && n<=9223372036854775805n && n%2n===1n;
+};
 const utc = (v: unknown): v is string => typeof v === 'string' &&
   /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,7})?(?:Z|\+00:00)$/.test(v) &&
   Number.isFinite(Date.parse(v));
@@ -46,8 +53,9 @@ export function decodeInspection(value: unknown): DelegationInspection {
   if (!['tenant-staff','tenant-viewer','tenant-branch-manager'].includes(String(r['roleCode'])) ||
       !revision(r['roleRevision']) || !revision(r['membershipRevision']) || !revision(r['ceilingRevision']) ||
       typeof r['canAssign'] !== 'boolean' || typeof r['canRevoke'] !== 'boolean' || r['canAssign'] === r['canRevoke'] ||
-      (r['canAssign'] ? r['grantRevision'] !== '0' || !utc(r['maxExpiresAtUtc']) || Date.parse(r['maxExpiresAtUtc']) <= Date.now()
-        : r['grantRevision'] !== '1' || r['maxExpiresAtUtc'] !== null)) throw new Error('delegation_invalid');
+      !cycleRevision(r['grantRevision'], r['canAssign']) ||
+      (r['canAssign'] ? !utc(r['maxExpiresAtUtc']) || Date.parse(r['maxExpiresAtUtc']) <= Date.now()
+        : r['maxExpiresAtUtc'] !== null)) throw new Error('delegation_invalid');
   return Object.freeze({ ...r }) as unknown as DelegationInspection;
 }
 export function decodeDelegationPage(value: unknown): DelegationPage {
