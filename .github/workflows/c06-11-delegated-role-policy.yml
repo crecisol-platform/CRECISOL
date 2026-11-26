@@ -10,6 +10,7 @@ on:
       - '.github/workflows/c06-11-delegated-role-policy.yml'
       - 'qa/c06_11_delegated_role_scope.py'
       - 'qa/c06_02_role_model_audit.py'
+      - 'qa/c06_06_exceptional_scope.py'
       - 'backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs'
       - 'backend/src/Crecisol.Api/Contracts/C06DelegationHttpContract.cs'
       - 'docs/c06/C06_11_CATALOGO_DELEGACION_V1.json'
@@ -78,6 +79,7 @@ jobs:
         run: |
           set -euo pipefail
           for gate in A B C D; do
+            python3 qa/c06_06_exceptional_audits.py "$gate"
             python3 qa/c06_07_privacy_audits.py "$gate"
             python3 qa/c06_08_query_audits.py "$gate"
             python3 qa/c06_09_delivery_audits.py "$gate"
