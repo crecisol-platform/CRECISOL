@@ -3,7 +3,7 @@ using Crecisol.Application.Identity;
 
 namespace Crecisol.Api.Contracts;
 
-/// <summary>Version 2 laboratory transport overlay, not a grant source.
+/// <summary>Version 3 laboratory transport overlay, not a grant source.
 /// The canonical historical 79 contracts remain unchanged. No generic
 /// serialization, anonymous role claim, or arbitrary capability is accepted.
 /// </summary>
@@ -15,6 +15,7 @@ public static class C06DelegationHttpContract
         ["delegation/confirm"] = ["command", "branchId", "resourceId", "membershipId", "roleId", "roleRevision", "membershipRevision", "ceilingRevision", "grantRevision", "expiresAtUtc", "reason", "challenge", "code"],
         ["delegation/read"] = ["branchId", "resourceId"],
         ["delegation/inspect"] = ["branchId", "resourceId", "membershipId", "roleId"],
+        ["delegation/catalog"] = ["cursor"],
     };
 
     public static bool Enabled =>
@@ -34,6 +35,29 @@ public static class C06DelegationHttpContract
         if(result.SessionIdleMinutes is not (>=5 and <=120) ||
            result.SessionExpiresAtUtc is not { } sessionUntil || sessionUntil.Offset!=TimeSpan.Zero)
             return false;
+        if(operation=="delegation/catalog")
+        {
+            if(result.Value is not C06DelegationCatalog catalog || catalog.Items is null ||
+               catalog.Items.Count>8 ||
+               (catalog.NextCursor is { } cursor && (cursor.Length!=136 ||
+                   cursor.Any(ch=>!(char.IsAsciiLetterOrDigit(ch) || ch is '+' or '/' or '=')))))
+                return false;
+            var rows=new List<object>(catalog.Items.Count);
+            var seen=new HashSet<(Guid,Guid,Guid,Guid)>();
+            foreach(var item in catalog.Items)
+            {
+                if(item is null || item.BranchId==Guid.Empty || item.ResourceId==Guid.Empty ||
+                   item.MembershipId==Guid.Empty || item.RoleId==Guid.Empty ||
+                   !seen.Add((item.BranchId,item.ResourceId,item.MembershipId,item.RoleId)) ||
+                   !TryApply("delegation/inspect",result with {Value=item.Inspection},out var projected) ||
+                   !projected.Allowed || projected.Value is null)return false;
+                rows.Add(new {branchId=item.BranchId,resourceId=item.ResourceId,membershipId=item.MembershipId,
+                    roleId=item.RoleId,inspection=projected.Value});
+            }
+            safe=new(true,new {items=rows,nextCursor=catalog.NextCursor})
+                {SessionExpiresAtUtc=sessionUntil,SessionIdleMinutes=result.SessionIdleMinutes};
+            return true;
+        }
         if(operation=="delegation/inspect")
         {
             if(result.Value is not C06DelegationInspection inspection ||

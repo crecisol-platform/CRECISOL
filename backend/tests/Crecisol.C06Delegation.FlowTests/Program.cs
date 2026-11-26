@@ -239,11 +239,35 @@ try
         await Scalar("SELECT last_accepted_step FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_id=@f",
             ("a",actor),("f",factor)) is DBNull,"inspection creates no authority or MFA proof");
     Check(await Count("c06_delegation_confirmation")==0,"initial denials create no confirmation");
+    var catalogFields=new Dictionary<string,string>{{"cursor","start"}};
+    var catalog=await WireAllowed("delegation/catalog",catalogFields,token,["items","nextCursor"],browser:true);
+    var entries=catalog.GetProperty("items").EnumerateArray().ToArray();
+    var continuation=catalog.GetProperty("nextCursor").GetString()!;
+    Check(entries.Length==8 && continuation.Length==136,"catalog bounded first page and opaque cursor");
+    var nextPage=await WireAllowed("delegation/catalog",Change(catalogFields,"cursor",continuation),token,["items","nextCursor"]);
+    var nextEntries=nextPage.GetProperty("items").EnumerateArray().ToArray();
+    Check(nextEntries.Length==2 && nextPage.GetProperty("nextCursor").ValueKind==JsonValueKind.Null,
+        "catalog stable keyset final page");
+    var allEntries=entries.Concat(nextEntries).ToArray();
+    Check(allEntries.Select(x=>x.GetProperty("membershipId").GetGuid()).Distinct().Count()==10 &&
+        allEntries.All(x=>x.GetProperty("branchId").GetGuid()==Id("71") &&
+            x.GetProperty("resourceId").GetGuid()==Id("73") && x.GetProperty("roleId").GetGuid()==Id("61") &&
+            x.EnumerateObject().Select(p=>p.Name).Order().SequenceEqual(
+                new[]{"branchId","resourceId","membershipId","roleId","inspection"}.Order()) &&
+            x.GetProperty("inspection").EnumerateObject().Select(p=>p.Name).Order().SequenceEqual(inspectionShape.Order()) &&
+            x.GetProperty("inspection").GetProperty("canAssign").GetBoolean()),
+        "catalog only exact authorized unique selectors and closed inspection");
+    await WireDenied("delegation/catalog",Change(catalogFields,"cursor",continuation),HttpStatusCode.Unauthorized,token2);
+    var tampered=(continuation[0]=='A'?'B':'A')+continuation[1..];
+    await WireDenied("delegation/catalog",Change(catalogFields,"cursor",tampered),HttpStatusCode.Unauthorized,token);
+    Check(await Count("c06_delegation_confirmation")==0 && await Count("c06_delegation_grant")==0,
+        "catalog creates no authority");
     var stale=await Prepare(fields);
     await Exec("UPDATE c06_delegation_lab_entitlement SET revision=2,enabled=0 WHERE tenant_id=@t",("t",tenant));
     Check(await Denied("delegation/confirm",Confirm(fields,stale,"000000")),"suspended entitlement denied");
     await Exec("UPDATE c06_delegation_lab_entitlement SET revision=3,enabled=1 WHERE tenant_id=@t",("t",tenant));
     Check(await Denied("delegation/confirm",Confirm(fields,stale,"000000")),"changed entitlement invalidates confirmation");
+    await WireDenied("delegation/catalog",Change(catalogFields,"cursor",continuation),HttpStatusCode.Unauthorized,token);
     // Real HTTP negative matrix for all three operations; no authority from
     // caller-provided tenant/header/extra property or malformed JSON.
     var confirmShape=Confirm(fields,stale,"000000");
@@ -485,6 +509,24 @@ try
         "inspection preserves BIGINT revision precision at HTTP boundary");
     Check(await Count("c06_delegation_grant")==2 && await Count("c06_delegation_revocation")==1 &&
         await Count("c06_delegation_authority")==2,"inspection denials preserve authorization history");
+    await WireDenied("delegation/catalog",catalogFields,HttpStatusCode.Unauthorized);
+    await WireDenied("delegation/catalog",catalogFields,HttpStatusCode.Unauthorized,Hex(RandomNumberGenerator.GetBytes(32)));
+    await WireDenied("delegation/catalog",catalogFields,HttpStatusCode.Unauthorized,token,"delegation-b.example.test");
+    await WireDenied("delegation/catalog",catalogFields,HttpStatusCode.BadRequest,token,extraHeader:"X-Tenant-Id");
+    await WireDenied("delegation/catalog",Change(catalogFields,"tenantId",Id("22").ToString("D")),HttpStatusCode.BadRequest,token);
+    await WireDenied("delegation/catalog",catalogFields,HttpStatusCode.BadRequest,token,raw:"{\"cursor\":\"start\",\"cursor\":\"start\"}");
+    await WireDenied("delegation/catalog",catalogFields,HttpStatusCode.BadRequest,token,origin:"https://untrusted.example.test");
+    await WireDenied("delegation/catalog",catalogFields,HttpStatusCode.BadRequest,token,browser:true,csrf:false);
+    await WireDenied("delegation/catalog",catalogFields,HttpStatusCode.Unauthorized,otherToken);
+    var pageAfter=await WireAllowed("delegation/catalog",catalogFields,token,["items","nextCursor"]);
+    Check(pageAfter.GetProperty("items").EnumerateArray().All(x=>x.GetProperty("membershipId").GetGuid()!=Id("44")),
+        "revoked issuance absent from actionable catalog");
+    var invalidRow=new C06DelegationCatalogItem(Id("71"),Id("73"),Id("42"),Id("61"),
+        new C06DelegationInspection("tenant-admin",1,1,1,0,true,false,DateTimeOffset.UtcNow.AddMinutes(1)));
+    Check(!C06DelegationHttpContract.TryApply("delegation/catalog",invalidInspection with
+        {Value=new C06DelegationCatalog([invalidRow],null)},out _),"catalog projection rejects escalated nested row");
+    Check(await Count("c06_delegation_grant")==2 && await Count("c06_delegation_revocation")==1 &&
+        await Count("c06_delegation_authority")==2,"catalog denials preserve authorization history");
     Console.WriteLine($"PASS C06-11 FLOW MYSQL checks={checks}; actual C05 session, SHA1 TOTP, one-use confirmation, isolated exact read and revocation");
 
 }

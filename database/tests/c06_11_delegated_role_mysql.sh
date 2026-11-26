@@ -113,6 +113,17 @@ assert "SELECT COUNT(*) FROM c06_delegation_ceiling" "2" "colliding tenant scope
 
 # Separate actual C05+MFA test mode. D and E-writer still execute every original SQL case.
 if [[ "${C06_DELEGATION_FLOW_TESTS:-0}" == 1 ]]; then
+  # Eight additional synthetic recipient memberships exercise actual keyset
+  # continuation, without altering the historical D/E-writer fixtures.
+  for n in $(seq 101 108); do
+    aid="$(printf '%032x' "$n")"
+    mid="$(printf '%032x' "$((n+100))")"
+    lookup="$(printf '%064x' "$n")"
+    sql "INSERT INTO c05_identity_account(account_id,login_lookup_hmac,mailbox_ciphertext,mailbox_nonce,mailbox_tag,mailbox_key_version,password_phc,mailbox_verified_at_utc,account_state,created_at_utc,updated_at_utc)
+      VALUES(UNHEX('$aid'),UNHEX('$lookup'),X'00',REPEAT(X'00',12),REPEAT(X'00',16),1,'synthetic',UTC_TIMESTAMP(6),1,UTC_TIMESTAMP(6),UTC_TIMESTAMP(6));
+      INSERT INTO c05_identity_membership(tenant_id,membership_id,account_id,membership_state,role_code,granted_at_utc,expires_at_utc,created_at_utc)
+      VALUES($T,UNHEX('$mid'),UNHEX('$aid'),1,'MEMBER',$PAST,UTC_TIMESTAMP(6)+INTERVAL 1 DAY,$PAST);"
+  done
   proof_up="$ROOT/database/migrations/025_c06_delegation_confirmation.sql"
   proof_down="$ROOT/database/migrations/025_c06_delegation_confirmation.down.sql"
   apply "$proof_up"
