@@ -112,6 +112,52 @@ def verify_exception_overlay(source):
          "expectedFields" in source and 'context.Response.Headers.CacheControl = "no-store, private"' in source,
          "exception registration or privacy drift")
 
+def verify_delegation_overlay(source):
+    """C06-11 is an explicit isolated successor, never a normative grant."""
+    path=ROOT/"docs/c06/C06_11_CATALOGO_DELEGACION_V1.json"
+    marker="foreach (var operation in C06DelegationHttpContract.Operations)"
+    contract_path=ROOT/"backend/src/Crecisol.Api/Contracts/C06DelegationHttpContract.cs"
+    if marker not in source:
+        need(not path.exists() and not contract_path.exists(),"delegation overlay without route registration")
+        return
+    need(source.count(marker)==1 and path.is_file() and contract_path.is_file(),"delegation overlay missing")
+    contract=contract_path.read_text(encoding="utf-8")
+    pairs=re.findall(r'\["([^"]+)"\]\s*=\s*\[([^\]]*)\]',contract)
+    actual={name:re.findall(r'"([^"]+)"',fields) for name,fields in pairs}
+    expected={"delegation/prepare":["command","branchId","resourceId","membershipId","roleId","roleRevision","membershipRevision","ceilingRevision","grantRevision","expiresAtUtc","reason"],"delegation/confirm":["command","branchId","resourceId","membershipId","roleId","roleRevision","membershipRevision","ceilingRevision","grantRevision","expiresAtUtc","reason","challenge","code"],"delegation/read":["branchId","resourceId"]}
+    responses={"delegation/prepare":["challenge","expiresAtUtc"],"delegation/confirm":["accepted"],"delegation/read":["reference"]}
+    boundaries={"delegation/prepare":"tenant_administrator_exact_scope","delegation/confirm":"tenant_administrator_exact_scope_fresh_mfa","delegation/read":"tenant_recipient_exact_resource_live_provenance"}
+    need(len(pairs)==3 and actual==expected,"delegation request inventory drift")
+    data=json.loads(path.read_text(encoding="utf-8"))
+    need(data["schema_version"]==1 and data["authority"]=="DOCUMENTATION_ONLY_NOT_RUNTIME_AUTHORIZATION" and
+         data["base_operational_contracts"]==79 and data["activated_normative"]==[] and
+         data["feature_gate"]=="CRECISOL_C06_DELEGATION_LAB_ENABLED=true_and_C05_LOCAL_IDENTITY_ENABLED=true_and_local_isolation",
+         "delegation feature gate or premature normative activation")
+    seen=set()
+    for row in data["actions"]:
+        op=row["operation_code"]
+        need(op in expected and op not in seen and row["required_fields"]==expected[op] and
+             row["response_fields"]==responses[op] and row["boundary"]==boundaries[op] and
+             row["action_id"]=="identity."+op.replace("/",".") and row["http_method"]=="POST" and
+             row["http_route"]=="/api/v1/identity/"+op and row["source_file"]==SOURCE and row["realm"]=="tenant" and
+             row["authorization_from"]=="backend_only" and row["general_role_grantable"] is False and
+             row["ui_grant_source"] is False and row["registered_in_local_api"] is True and
+             row["denied_payload"]=="empty" and row["cache_control"]=="no-store, private",
+             "delegation route/response boundary drift")
+        seen.add(op)
+    need(seen==set(expected),"delegation routes missing")
+    need(data["negative_scenarios"]==["anonymous","forged_bearer","wrong_host","injected_tenant","extra_field","duplicate_field","wrong_origin","browser_without_csrf"],"delegation negative matrix drift")
+    for token in ('if (C06DelegationHttpContract.Enabled)',marker,'endpoints.MapPost("/api/v1/identity/" + selected,',
+                  'if (delegated && !C06DelegationHttpContract.Enabled) return Results.NotFound();',
+                  'C06DelegationHttpContract.TryApply(operation, result, out var delegationSafe)',
+                  'browserTransport.Receipt(context, operation, delegationSafe, browserSession)'):
+        need(token in source,"delegation transport gate missing "+token)
+    need(source.index("C06DelegationHttpContract.TryApply(operation, result, out var delegationSafe)")<
+         source.index("Results.Ok(delegationSafe.Value)"),"delegation raw response bypass")
+    need('Environment.GetEnvironmentVariable("CRECISOL_C06_DELEGATION_LAB_ENABLED") == "true"' in contract and
+         "if(!result.Allowed) return true" in contract and "C06IdentityResponseProjection.TryApply(" in contract and
+         "JsonSerializer.Serialize" not in contract,"delegation projection/privacy drift")
+
 def verify_catalog(data, source, program):
     need(data.get("schema_version") == 1 and data.get("authority") == "DOCUMENTATION_ONLY_NOT_RUNTIME_AUTHORIZATION",
          "inventory masquerades as a runtime authorization service")
@@ -124,6 +170,7 @@ def verify_catalog(data, source, program):
          "harness private route now exposed in production composition")
     found = operations(source)
     verify_exception_overlay(source)
+    verify_delegation_overlay(source)
     rows = data.get("api_actions")
     need(isinstance(rows, list), "missing catalog")
     ids, routes, codes, extras = set(), set(), set(), []

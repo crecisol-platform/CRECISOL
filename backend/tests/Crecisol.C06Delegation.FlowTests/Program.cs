@@ -1,4 +1,8 @@
 using System.Globalization;
+using System.Net;
+using System.Text.Json;
+using Crecisol.C06Delegation.FlowTests;
+using Crecisol.Api.Contracts;
 using System.Security.Cryptography;
 using System.Text;
 using Crecisol.Application.Identity;
@@ -158,6 +162,36 @@ try
     Environment.SetEnvironmentVariable("CRECISOL_C06_DELEGATION_LAB_ENABLED",null);
     Check(await Denied("delegation/prepare",fields),"disabled composition denied");
     Environment.SetEnvironmentVariable("CRECISOL_C06_DELEGATION_LAB_ENABLED","true");
+    await using var wire=await DelegationWireFixture.Start(runtime.ConnectionString,flow,tokenKey,encKey,loginKey,mailboxKey);
+    async Task WireDenied(string operation,Dictionary<string,string> body,HttpStatusCode status,
+        string? bearer=null,string host="delegation-a.example.test",string? raw=null,
+        string? extraHeader=null,string? origin=null,bool browser=false,bool csrf=true)
+    {
+        using var response=await wire.Send(operation,body,bearer,host,raw,extraHeader,origin,browser,csrf);
+        Check(response.StatusCode==status && (await response.Content.ReadAsByteArrayAsync()).Length==0 &&
+            response.Headers.CacheControl is {NoStore:true,Private:true} && !response.Headers.Contains("Set-Cookie"),
+            "HTTP neutral "+operation+" "+(int)status);
+    }
+    async Task<JsonElement> WireAllowed(string operation,Dictionary<string,string> body,string bearer,
+        string[] exactFields,bool browser=false)
+    {
+        using var response=await wire.Send(operation,body,bearer,browser:browser);
+        Check(response.StatusCode==HttpStatusCode.OK && response.Headers.CacheControl is {NoStore:true,Private:true},
+            "HTTP allowed private "+operation);
+        Check(response.Headers.Contains("Set-Cookie")==browser,"HTTP cookie isolation "+operation);
+        if(browser)
+        {
+            var cookie=response.Headers.GetValues("Set-Cookie").Single();
+            Check(cookie.Contains("httponly",StringComparison.OrdinalIgnoreCase) &&
+                cookie.Contains("secure",StringComparison.OrdinalIgnoreCase) &&
+                cookie.Contains("samesite=strict",StringComparison.OrdinalIgnoreCase),"HTTP browser secure cookie");
+        }
+        using var json=JsonDocument.Parse(await response.Content.ReadAsByteArrayAsync());
+        Check(json.RootElement.ValueKind==JsonValueKind.Object &&
+            json.RootElement.EnumerateObject().Select(p=>p.Name).Order().SequenceEqual(exactFields.Order()),
+            "HTTP exact response "+operation);
+        return json.RootElement.Clone();
+    }
     Check(await Denied("delegation/prepare",fields),"terms acceptance required");
     await Exec("INSERT INTO c05_identity_terms_acceptance VALUES(@t,@a,'delegation-v1',@h,UTC_TIMESTAMP(6))",
         ("t",tenant),("a",actor),("h",termsHash));
@@ -190,7 +224,29 @@ try
     Check(await Denied("delegation/confirm",Confirm(fields,stale,"000000")),"suspended entitlement denied");
     await Exec("UPDATE c06_delegation_lab_entitlement SET revision=3,enabled=1 WHERE tenant_id=@t",("t",tenant));
     Check(await Denied("delegation/confirm",Confirm(fields,stale,"000000")),"changed entitlement invalidates confirmation");
-    var prepared=await Prepare(fields);
+    // Real HTTP negative matrix for all three operations; no authority from
+    // caller-provided tenant/header/extra property or malformed JSON.
+    var confirmShape=Confirm(fields,stale,"000000");
+    foreach(var entry in new[]{(Op:"delegation/prepare",Body:fields),(Op:"delegation/confirm",Body:confirmShape),
+                               (Op:"delegation/read",Body:readFields)})
+    {
+        await WireDenied(entry.Op,entry.Body,HttpStatusCode.Unauthorized);
+        await WireDenied(entry.Op,entry.Body,HttpStatusCode.Unauthorized,Hex(RandomNumberGenerator.GetBytes(32)));
+        await WireDenied(entry.Op,entry.Body,HttpStatusCode.Unauthorized,token,"delegation-b.example.test");
+        await WireDenied(entry.Op,entry.Body,HttpStatusCode.BadRequest,token,extraHeader:"X-Tenant-Id");
+        await WireDenied(entry.Op,Change(entry.Body,"tenantId",Id("22").ToString("D")),HttpStatusCode.BadRequest,token);
+        var firstField=entry.Body.First();
+        var duplicate=JsonSerializer.Serialize(entry.Body).TrimEnd('}')+","+
+            JsonSerializer.Serialize(firstField.Key)+":"+JsonSerializer.Serialize(firstField.Value)+"}";
+        await WireDenied(entry.Op,entry.Body,HttpStatusCode.BadRequest,token,raw:duplicate);
+        await WireDenied(entry.Op,entry.Body,HttpStatusCode.BadRequest,token,origin:"https://untrusted.example.test");
+        await WireDenied(entry.Op,entry.Body,HttpStatusCode.BadRequest,token,browser:true,csrf:false);
+    }
+    Check(await Count("c06_delegation_confirmation")==1 && await Count("c06_delegation_grant")==0,
+        "HTTP negative matrix leaves authority unchanged");
+    var receipt=await WireAllowed("delegation/prepare",fields,token,["challenge","expiresAtUtc"],browser:true);
+    var prepared=new C06DelegationPreparation(receipt.GetProperty("challenge").GetString()!,
+        receipt.GetProperty("expiresAtUtc").GetDateTimeOffset());
     Check(prepared.Challenge.Length==64 && prepared.ExpiresAtUtc>now &&
         prepared.ExpiresAtUtc<=now.AddMinutes(6),"bounded opaque confirmation");
     Check(await Denied("delegation/confirm",Confirm(fields,prepared,"000000"),token2),"confirmation bound to actual session ID");
@@ -234,8 +290,9 @@ try
     Check(Convert.ToInt64(await Scalar(
         "SELECT COUNT(*) FROM c05_identity_audit WHERE tenant_id=@t AND action_code='delegation/confirm' AND outcome_code=1",
         ("t",tenant)))==successAuditsBefore,"failed provenance commits no success audit");
-    var issued=await Call("delegation/confirm",Confirm(fields,prepared,first));
-    Check(issued.Allowed && await Count("c06_delegation_grant")==1,"real SHA1 TOTP and issuance commit together");
+    var issued=await WireAllowed("delegation/confirm",Confirm(fields,prepared,first),token,["accepted"]);
+    Check(issued.GetProperty("accepted").GetBoolean() && await Count("c06_delegation_grant")==1,
+        "real SHA1 TOTP and issuance commit together");
     Check(Convert.ToInt64(await Scalar("SELECT last_accepted_step FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_id=@f",
         ("a",actor),("f",factor)))==step-1,"real monotonic MFA counter committed");
     Check(Convert.ToInt64(await Scalar("SELECT COUNT(*) FROM c06_delegation_confirmation WHERE consumed_at_utc IS NOT NULL"))==1,
@@ -245,6 +302,23 @@ try
     var delegated=await Call("delegation/read",readFields,subjectToken);
     Check(delegated.Allowed && System.Text.Json.JsonSerializer.Serialize(delegated.Value)=="{\"reference\":\"SYNTHETIC-A\"}",
         "real recipient non-owner reads exact authorized reference");
+    var wireRead=await WireAllowed("delegation/read",readFields,subjectToken,["reference"],browser:true);
+    Check(wireRead.GetProperty("reference").GetString()=="SYNTHETIC-A","HTTP recipient exact reference");
+    await WireDenied("delegation/read",readFields,HttpStatusCode.Unauthorized,otherToken);
+    await WireDenied("delegation/read",readFields,HttpStatusCode.Unauthorized,subjectToken,"delegation-b.example.test");
+    // Pure closed-projection negatives are independent of the live wire test.
+    var denial=new OperationalIdentityResult(false,new {reference="SYNTHETIC-A",secret="forbidden"});
+    Check(C06DelegationHttpContract.TryApply("delegation/read",denial,out var safeDenial) &&
+        !safeDenial.Allowed && safeDenial.Value is null,"HTTP projection denial strips arbitrary payload");
+    var transportWindow=new OperationalIdentityResult(true,new {reference="SYNTHETIC-A",secret="forbidden"})
+        {SessionIdleMinutes=30,SessionExpiresAtUtc=DateTimeOffset.UtcNow.AddMinutes(20)};
+    Check(!C06DelegationHttpContract.TryApply("delegation/read",transportWindow,out _),"HTTP projection rejects extra private fields");
+    Check(!C06DelegationHttpContract.TryApply("delegation/confirm",transportWindow with {Value=null},out _),
+        "HTTP projection rejects null success acknowledgement");
+    Check(!C06DelegationHttpContract.TryApply("delegation/prepare",transportWindow with
+        {Value=new C06DelegationPreparation(new string('A',64),DateTimeOffset.UtcNow.AddMinutes(10))},out _),
+        "HTTP projection rejects excessive confirmation expiry");
+
     Check(await Denied("private/read",readFields,subjectToken),"historic private read does not activate candidate");
     Check(await Denied("delegation/read",readFields,otherToken),"another member cannot borrow delegated authority");
     Check(await Denied("delegation/read",readFields,subjectToken,"delegation-b.example.test"),"colliding foreign tenant denied");
@@ -254,6 +328,9 @@ try
     Check(await Denied("delegation/read",Change(readFields,"tenantId",Id("22").ToString("D")),subjectToken),"injected tenant field denied");
     Environment.SetEnvironmentVariable("CRECISOL_C06_DELEGATION_LAB_ENABLED",null);
     Check(await Denied("delegation/read",readFields,subjectToken),"candidate disabled denies even active grant");
+    await WireDenied("delegation/read",readFields,HttpStatusCode.NotFound,subjectToken);
+    await WireDenied("delegation/prepare",fields,HttpStatusCode.NotFound,token);
+    await WireDenied("delegation/confirm",confirmShape,HttpStatusCode.NotFound,token);
     Environment.SetEnvironmentVariable("CRECISOL_C06_DELEGATION_LAB_ENABLED","true");
     Check((await Call("delegation/read",readFields,subjectToken)).Allowed,"same live scope revalidated");
 
@@ -312,12 +389,13 @@ try
     Check(await Count("c06_delegation_revocation")==0,"replayed MFA cannot revoke");
     if(TotpSha1Verifier.StepAt(DateTimeOffset.UtcNow)>step)
         second=TotpSha1Verifier.ComputeCode(seed,TotpSha1Verifier.StepAt(DateTimeOffset.UtcNow));
-    Check((await Call("delegation/confirm",Confirm(revoke,revokeProof,second))).Allowed,
-        "fresh real TOTP commits exact revocation");
+    var revokedWire=await WireAllowed("delegation/confirm",Confirm(revoke,revokeProof,second),token,["accepted"],browser:true);
+    Check(revokedWire.GetProperty("accepted").GetBoolean(),"fresh real TOTP commits exact revocation");
     Check(await Count("c06_delegation_grant")==1 && await Count("c06_delegation_revocation")==1,
         "immutable grant and revocation retained");
     Check(await Denied("delegation/confirm",Confirm(revoke,revokeProof,second)),"revocation replay denied");
     Check(await Denied("delegation/read",readFields,subjectToken),"committed revocation denies next read using same session");
+    await WireDenied("delegation/read",readFields,HttpStatusCode.Unauthorized,subjectToken,browser:true);
     Check(await Count("c06_delegation_authority")==1,"revocation preserves immutable provenance");
 
     Check(await Denied("delegation/prepare",fields),"revoked scope cannot be reinstated");

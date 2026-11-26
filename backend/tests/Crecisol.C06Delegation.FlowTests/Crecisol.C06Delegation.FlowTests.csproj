@@ -7,6 +7,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../../src/Crecisol.Api/Crecisol.Api.csproj" />
     <ProjectReference Include="../../src/Crecisol.Infrastructure/Crecisol.Infrastructure.csproj" />
     <ProjectReference Include="../../src/Crecisol.CredentialSecurity/Crecisol.CredentialSecurity.csproj" />
   </ItemGroup>

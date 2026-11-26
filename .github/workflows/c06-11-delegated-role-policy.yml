@@ -10,6 +10,11 @@ on:
       - '.github/workflows/c06-11-delegated-role-policy.yml'
       - 'qa/c06_11_delegated_role_scope.py'
       - 'qa/c06_02_role_model_audit.py'
+      - 'backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs'
+      - 'backend/src/Crecisol.Api/Contracts/C06DelegationHttpContract.cs'
+      - 'docs/c06/C06_11_CATALOGO_DELEGACION_V1.json'
+      - 'qa/c06_01_permissions_catalog_audit.py'
+      - 'backend/tests/Crecisol.C06Delegation.FlowTests/DelegationWireFixture.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegatedRead.cs'
       - 'database/migrations/026_c06_delegation_authority.sql'
       - 'database/migrations/026_c06_delegation_authority.down.sql'
@@ -52,6 +57,9 @@ jobs:
           persist-credentials: false
       - run: python3 qa/master_source_guard.py
       - run: python3 qa/c06_11_delegated_role_scope.py
+      - run: python3 qa/c06_01_permissions_catalog_audit.py A
+      - run: python3 qa/c06_01_permissions_catalog_audit.py B
+      - run: python3 qa/c06_01_permissions_catalog_audit.py C
       - run: python3 qa/c06_02_role_model_audit.py A
       - run: python3 qa/c06_02_role_model_audit.py B
       - run: python3 qa/c06_02_role_model_audit.py C
@@ -90,7 +98,7 @@ jobs:
       - run: dotnet run --no-build -c Release --project backend/tests/Crecisol.C06Delegation.ContractsTests/Crecisol.C06Delegation.ContractsTests.csproj
       - run: dotnet run -c Release --project backend/tests/Crecisol.C06Abac.ContractsTests/Crecisol.C06Abac.ContractsTests.csproj
   c-architecture:
-    name: C | Domain and existing API compile, no activation
+    name: C | Domain and opt-in isolated HTTP overlay compile
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -126,7 +134,7 @@ jobs:
       - run: bash -n database/tests/c06_11_delegated_role_mysql.sh
       - run: C06_DELEGATION_WRITER_TESTS=1 bash database/tests/c06_11_delegated_role_mysql.sh
   e-confirmation:
-    name: E2 | Actual C05 session, SHA1 TOTP, provenance, delegated read and revocation
+    name: E2 | Actual C05 MFA, provenance, rollback, Kestrel HTTP and revocation
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
