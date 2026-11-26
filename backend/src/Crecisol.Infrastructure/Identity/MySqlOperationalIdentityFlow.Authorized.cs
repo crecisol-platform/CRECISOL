@@ -63,8 +63,8 @@ public sealed partial class MySqlOperationalIdentityFlow
 
         u.VerifiedActor = true;
         await SlideTenantSession(u, tenant, hash, idle);
-        // Candidate-only internal operations: the existing HTTP route inventory is unchanged.
-        if (r.Operation is "delegation/prepare" or "delegation/confirm")
+        // Explicit C06-11 laboratory overlay; historical HTTP operations remain unchanged.
+        if (r.Operation is "delegation/inspect" or "delegation/prepare" or "delegation/confirm")
             return await C06DelegationTransition(u, tenant, actor, account, member, session, factor, idle, r, ct);
         if (r.Operation == "delegation/read")
             return await C06ReadDelegatedCase(u, tenant, actor, account, member, session, factor, idle, r);

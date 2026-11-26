@@ -10,8 +10,8 @@ namespace Crecisol.Infrastructure.Identity;
 
 /// <summary>
 /// Isolated C06-11 preparation and confirmation inside the existing locked
-/// C05 transaction. Neither operation is registered as HTTP or browser API.
-/// No real commercial contract, role bootstrap or private-read activation.
+/// C05 transaction, exposed only through the opt-in laboratory HTTP overlay.
+/// No real commercial contract, role bootstrap or production activation.
 /// </summary>
 public sealed partial class MySqlOperationalIdentityFlow
 {
@@ -22,6 +22,21 @@ public sealed partial class MySqlOperationalIdentityFlow
         DateTimeOffset? Until, string Reason, string? Challenge, string? Code)
     {
         public override string ToString() => "DelegationSelection[redacted]";
+    }
+
+    // Exact selectors only. Revisions and available commands are resolved
+    // from locked server rows; inspection cannot provide a confirmation.
+    private static DelegationSelection? ParseDelegationInspection(OperationalIdentityRequest r)
+    {
+        string[] names=["branchId","resourceId","membershipId","roleId"];
+        if(r.Fields.Count!=names.Length ||
+           names.Any(n=>!r.Fields.TryGetValue(n,out var v) || v is null || v.Length!=36))
+            return null;
+        static bool Key(string value,out Guid id)=>Guid.TryParseExact(value,"D",out id) && id!=Guid.Empty;
+        if(!Key(r.Fields["branchId"],out var branch) || !Key(r.Fields["resourceId"],out var resource) ||
+           !Key(r.Fields["membershipId"],out var membership) || !Key(r.Fields["roleId"],out var role))
+            return null;
+        return new(C06DelegationCommand.Assign,branch,resource,membership,role,0,0,0,0,null,"",null,null);
     }
 
     private static DelegationSelection? ParseDelegation(OperationalIdentityRequest r)
@@ -77,7 +92,8 @@ public sealed partial class MySqlOperationalIdentityFlow
         if (Environment.GetEnvironmentVariable("CRECISOL_C06_DELEGATION_LAB_ENABLED")!="true" ||
             !r.Host.EndsWith(".example.test",StringComparison.Ordinal) || !u.VerifiedActor ||
             u.VerifiedHost is null) return new(false);
-        var s=ParseDelegation(r);
+        var inspecting=r.Operation=="delegation/inspect";
+        var s=inspecting ? ParseDelegationInspection(r) : ParseDelegation(r);
         if(s is null || !await HasCurrentTerms(u,tenant,actor)) return new(false);
         var branch=s.Branch.ToByteArray(true);
         var resource=s.Resource.ToByteArray(true);
@@ -133,11 +149,15 @@ public sealed partial class MySqlOperationalIdentityFlow
                   AND ((scope_kind=1 AND resource_id=@r) OR (scope_kind=2 AND resource_id IS NULL))
                 LIMIT 2 FOR SHARE
                 """,("t",tenant),("a",actor),("b",branch),("r",resource));
-            if(own is null) return new(false);
+            if(own is null && !inspecting) return new(false);
         }
         // The active TOTP row is locked before both eligibility and consumption.
         // The existing C05 verifier and monotonic last_accepted_step are reused.
-        var stepFactor=await u.One("""
+        var stepFactor=await u.One(inspecting ? """
+            SELECT factor_id,factor_revision FROM c05_identity_mfa_factor
+            WHERE account_id=@a AND factor_kind=1 AND factor_state=1
+              AND revoked_at_utc IS NULL FOR UPDATE
+            """ : """
             SELECT * FROM c05_identity_mfa_factor
             WHERE account_id=@a AND factor_kind=1 AND factor_state=1
               AND revoked_at_utc IS NULL FOR UPDATE
@@ -202,6 +222,34 @@ public sealed partial class MySqlOperationalIdentityFlow
             // A real StepUp is constructed ONLY after the locked C05 verifier succeeds.
             StepUp=null!
         };
+        if(inspecting)
+        {
+            // Reuse the same policy and the same locked evidence as prepare.
+            // No caller-selected revision, reason, expiry or proof participates.
+            var maxUntil=new[]{entUntil,e.Ceiling.UntilUtc,Utc(member,"expires_at_utc"),
+                e.SubjectMembershipUntilUtc,ownRead?.GrantExpiresAtUtc??default}.Min();
+            var current=intent with
+            {
+                ExpectedRoleRevision=e.RoleRevision,
+                ExpectedSubjectMembershipRevision=e.SubjectMembershipRevision,
+                ExpectedCeilingRevision=e.Ceiling.Revision,
+                ExpectedGrantRevision=existing?.Revision??0
+            };
+            var canAssign=C06ScopedRoleDelegationPolicy.CanPrepare(e with
+            {
+                Intent=current with {Command=C06DelegationCommand.Assign,UntilUtc=maxUntil}
+            });
+            var canRevoke=C06ScopedRoleDelegationPolicy.CanPrepare(e with
+            {
+                Intent=current with {Command=C06DelegationCommand.Revoke,UntilUtc=null}
+            });
+            if(!canAssign && !canRevoke) return new(false);
+            // No content, mailbox, account ID, grant ID, bearer or challenge.
+            u.Subject=Bytes(subject,"account_id");
+            return new(true,new C06DelegationInspection(e.TargetRoleCode,e.RoleRevision,
+                e.SubjectMembershipRevision,e.Ceiling.Revision,current.ExpectedGrantRevision,
+                canAssign,canRevoke,canAssign ? maxUntil : null));
+        }
         if(!C06ScopedRoleDelegationPolicy.CanPrepare(e)) return new(false);
         var binding=DelegationConfirmationBinding(e,DbId(sessionId),s.Reason,ent,stepFactor,own,
             Bytes(scoped,"owner_account_id"),Number(subject,"subject_security_revision"));

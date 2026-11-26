@@ -199,6 +199,13 @@ try
         await Exec("INSERT INTO c05_identity_terms_acceptance VALUES(@t,@a,'delegation-v1',@h,UTC_TIMESTAMP(6))",
             ("t",tenant),("a",reader),("h",termsHash));
     var readFields=new Dictionary<string,string>{{"branchId",Id("71").ToString("D")},{"resourceId",Id("73").ToString("D")}};
+    var inspectFields=new Dictionary<string,string>(readFields)
+    {
+        ["membershipId"]=fields["membershipId"],["roleId"]=fields["roleId"]
+    };
+    string[] inspectionShape=["roleCode","roleRevision","membershipRevision","ceilingRevision","grantRevision",
+        "canAssign","canRevoke","maxExpiresAtUtc"];
+    Check(await Denied("delegation/inspect",inspectFields),"inspection cannot bypass missing entitlement");
     Check(await Denied("delegation/read",readFields,subjectToken),"no delegation no private read");
     Check(await Denied("delegation/prepare",fields),"missing commercial laboratory evidence denied");
     await Exec("""
@@ -206,6 +213,7 @@ try
             UTC_TIMESTAMP(6)+INTERVAL 1 HOUR)
         """,("t",tenant));
     Check(await Denied("delegation/prepare",fields),"role and ceiling without own read denied");
+    Check(await Denied("delegation/inspect",inspectFields),"inspection cannot bypass missing own authority");
     await Exec("""
         INSERT INTO c05_identity_resource_grant
         (tenant_id,grant_id,account_id,branch_id,resource_id,scope_kind,permission_code,granted_by,
@@ -218,6 +226,18 @@ try
     Check(await Denied("delegation/prepare",Change(fields,"membershipId",Id("43").ToString("D"))),"foreign subject denied");
     Check(await Denied("delegation/prepare",Change(fields,"branchId",Id("72").ToString("D"))),"wrong branch denied");
     Check(await Denied("delegation/prepare",Change(fields,"roleRevision","2")),"stale role revision denied");
+    var offered=await WireAllowed("delegation/inspect",inspectFields,token,inspectionShape,browser:true);
+    Check(offered.GetProperty("roleCode").GetString()=="tenant-staff" &&
+        offered.GetProperty("roleRevision").GetString()=="1" &&
+        offered.GetProperty("membershipRevision").GetString()=="1" &&
+        offered.GetProperty("ceilingRevision").GetString()=="1" &&
+        offered.GetProperty("grantRevision").GetString()=="0" &&
+        offered.GetProperty("canAssign").GetBoolean() && !offered.GetProperty("canRevoke").GetBoolean() &&
+        offered.GetProperty("maxExpiresAtUtc").GetDateTimeOffset()>now.AddMinutes(20),
+        "inspection returns only server derived assign preconditions and bound");
+    Check(await Count("c06_delegation_confirmation")==0 && await Count("c06_delegation_grant")==0 &&
+        await Scalar("SELECT last_accepted_step FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_id=@f",
+            ("a",actor),("f",factor)) is DBNull,"inspection creates no authority or MFA proof");
     Check(await Count("c06_delegation_confirmation")==0,"initial denials create no confirmation");
     var stale=await Prepare(fields);
     await Exec("UPDATE c06_delegation_lab_entitlement SET revision=2,enabled=0 WHERE tenant_id=@t",("t",tenant));
@@ -304,6 +324,11 @@ try
         "real recipient non-owner reads exact authorized reference");
     var wireRead=await WireAllowed("delegation/read",readFields,subjectToken,["reference"],browser:true);
     Check(wireRead.GetProperty("reference").GetString()=="SYNTHETIC-A","HTTP recipient exact reference");
+    var revokeOffer=await WireAllowed("delegation/inspect",inspectFields,token,inspectionShape);
+    Check(!revokeOffer.GetProperty("canAssign").GetBoolean() && revokeOffer.GetProperty("canRevoke").GetBoolean() &&
+        revokeOffer.GetProperty("grantRevision").GetString()=="1" &&
+        revokeOffer.GetProperty("maxExpiresAtUtc").ValueKind==JsonValueKind.Null,
+        "inspection returns revoke only for existing exact grant");
     await WireDenied("delegation/read",readFields,HttpStatusCode.Unauthorized,otherToken);
     await WireDenied("delegation/read",readFields,HttpStatusCode.Unauthorized,subjectToken,"delegation-b.example.test");
     // Pure closed-projection negatives are independent of the live wire test.
@@ -424,6 +449,42 @@ try
     Check(await Denied("delegation/read",readFields,otherToken),"new entitlement revision cannot revive prior grant");
     Check(await Count("c06_delegation_grant")==2 && await Count("c06_delegation_authority")==2 &&
         await Count("c06_delegation_revocation")==1,"invalidation preserves grant and provenance history");
+    // Preserve the real C05 quota. Additional cases use a new natural
+    // window, not deletion of quota rows or increased runtime limits.
+    var nextWindow=DateTimeOffset.UtcNow.ToUnixTimeSeconds()/60+1;
+    while(DateTimeOffset.UtcNow.ToUnixTimeSeconds()/60<nextWindow)
+        await Task.Delay(TimeSpan.FromMilliseconds(250));
+    await WireDenied("delegation/inspect",inspectFields,HttpStatusCode.Unauthorized,token);
+    var otherInspect=Change(inspectFields,"membershipId",Id("42").ToString("D"));
+    await WireDenied("delegation/inspect",otherInspect,HttpStatusCode.Unauthorized);
+    await WireDenied("delegation/inspect",otherInspect,HttpStatusCode.Unauthorized,Hex(RandomNumberGenerator.GetBytes(32)));
+    await WireDenied("delegation/inspect",otherInspect,HttpStatusCode.Unauthorized,token,"delegation-b.example.test");
+    await WireDenied("delegation/inspect",otherInspect,HttpStatusCode.BadRequest,token,extraHeader:"X-Tenant-Id");
+    await WireDenied("delegation/inspect",Change(otherInspect,"tenantId",Id("22").ToString("D")),HttpStatusCode.BadRequest,token);
+    var duplicateInspection=JsonSerializer.Serialize(otherInspect).TrimEnd('}')+","+
+        JsonSerializer.Serialize("roleId")+":"+JsonSerializer.Serialize(otherInspect["roleId"])+"}";
+    await WireDenied("delegation/inspect",otherInspect,HttpStatusCode.BadRequest,token,raw:duplicateInspection);
+    await WireDenied("delegation/inspect",otherInspect,HttpStatusCode.BadRequest,token,origin:"https://untrusted.example.test");
+    await WireDenied("delegation/inspect",otherInspect,HttpStatusCode.BadRequest,token,browser:true,csrf:false);
+    await WireDenied("delegation/inspect",otherInspect,HttpStatusCode.Unauthorized,otherToken);
+    await WireDenied("delegation/inspect",Change(otherInspect,"membershipId",Id("43").ToString("D")),HttpStatusCode.Unauthorized,token);
+    await WireDenied("delegation/inspect",Change(otherInspect,"membershipId",Id("41").ToString("D")),HttpStatusCode.Unauthorized,token);
+    await WireDenied("delegation/inspect",Change(otherInspect,"branchId",Id("72").ToString("D")),HttpStatusCode.Unauthorized,token);
+    await WireDenied("delegation/inspect",Change(otherInspect,"roleId",Guid.NewGuid().ToString("D")),HttpStatusCode.Unauthorized,token);
+    await WireDenied("delegation/inspect",Change(otherInspect,"grantRevision","1"),HttpStatusCode.BadRequest,token);
+    var invalidInspection=new OperationalIdentityResult(true,
+        new C06DelegationInspection("tenant-admin",1,1,1,0,true,false,DateTimeOffset.UtcNow.AddMinutes(1)))
+        {SessionIdleMinutes=30,SessionExpiresAtUtc=DateTimeOffset.UtcNow.AddMinutes(20)};
+    Check(!C06DelegationHttpContract.TryApply("delegation/inspect",invalidInspection,out _),"inspection projection rejects escalated role");
+    Check(!C06DelegationHttpContract.TryApply("delegation/inspect",invalidInspection with
+        {Value=new C06DelegationInspection("tenant-staff",1,1,1,0,true,true,DateTimeOffset.UtcNow.AddMinutes(1))},out _),
+        "inspection projection rejects incompatible commands");
+    Check(C06DelegationHttpContract.TryApply("delegation/inspect",invalidInspection with
+        {Value=new C06DelegationInspection("tenant-staff",1,9007199254740993L,1,0,true,false,DateTimeOffset.UtcNow.AddMinutes(1))},out var precise) &&
+        JsonSerializer.Serialize(precise.Value).Contains("\"membershipRevision\":\"9007199254740993\"",StringComparison.Ordinal),
+        "inspection preserves BIGINT revision precision at HTTP boundary");
+    Check(await Count("c06_delegation_grant")==2 && await Count("c06_delegation_revocation")==1 &&
+        await Count("c06_delegation_authority")==2,"inspection denials preserve authorization history");
     Console.WriteLine($"PASS C06-11 FLOW MYSQL checks={checks}; actual C05 session, SHA1 TOTP, one-use confirmation, isolated exact read and revocation");
 
 }

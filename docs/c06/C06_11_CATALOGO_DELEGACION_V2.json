@@ -1,0 +1,146 @@
+{
+  "schema_version": 2,
+  "authority": "DOCUMENTATION_ONLY_NOT_RUNTIME_AUTHORIZATION",
+  "base_operational_contracts": 79,
+  "feature_gate": "CRECISOL_C06_DELEGATION_LAB_ENABLED=true_and_C05_LOCAL_IDENTITY_ENABLED=true_and_local_isolation",
+  "scope": "laboratory_only_no_production_or_commercial_activation",
+  "activated_normative": [],
+  "actions": [
+    {
+      "operation_code": "delegation/prepare",
+      "action_id": "identity.delegation.prepare",
+      "required_fields": [
+        "command",
+        "branchId",
+        "resourceId",
+        "membershipId",
+        "roleId",
+        "roleRevision",
+        "membershipRevision",
+        "ceilingRevision",
+        "grantRevision",
+        "expiresAtUtc",
+        "reason"
+      ],
+      "response_fields": [
+        "challenge",
+        "expiresAtUtc"
+      ],
+      "boundary": "tenant_administrator_exact_scope",
+      "http_method": "POST",
+      "http_route": "/api/v1/identity/delegation/prepare",
+      "realm": "tenant",
+      "authorization_from": "backend_only",
+      "ui_grant_source": false,
+      "general_role_grantable": false,
+      "source_file": "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs",
+      "denied_payload": "empty",
+      "cache_control": "no-store, private",
+      "registered_in_local_api": true
+    },
+    {
+      "operation_code": "delegation/confirm",
+      "action_id": "identity.delegation.confirm",
+      "required_fields": [
+        "command",
+        "branchId",
+        "resourceId",
+        "membershipId",
+        "roleId",
+        "roleRevision",
+        "membershipRevision",
+        "ceilingRevision",
+        "grantRevision",
+        "expiresAtUtc",
+        "reason",
+        "challenge",
+        "code"
+      ],
+      "response_fields": [
+        "accepted"
+      ],
+      "boundary": "tenant_administrator_exact_scope_fresh_mfa",
+      "http_method": "POST",
+      "http_route": "/api/v1/identity/delegation/confirm",
+      "realm": "tenant",
+      "authorization_from": "backend_only",
+      "ui_grant_source": false,
+      "general_role_grantable": false,
+      "source_file": "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs",
+      "denied_payload": "empty",
+      "cache_control": "no-store, private",
+      "registered_in_local_api": true
+    },
+    {
+      "operation_code": "delegation/read",
+      "action_id": "identity.delegation.read",
+      "required_fields": [
+        "branchId",
+        "resourceId"
+      ],
+      "response_fields": [
+        "reference"
+      ],
+      "boundary": "tenant_recipient_exact_resource_live_provenance",
+      "http_method": "POST",
+      "http_route": "/api/v1/identity/delegation/read",
+      "realm": "tenant",
+      "authorization_from": "backend_only",
+      "ui_grant_source": false,
+      "general_role_grantable": false,
+      "source_file": "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs",
+      "denied_payload": "empty",
+      "cache_control": "no-store, private",
+      "registered_in_local_api": true
+    },
+    {
+      "operation_code": "delegation/inspect",
+      "action_id": "identity.delegation.inspect",
+      "required_fields": [
+        "branchId",
+        "resourceId",
+        "membershipId",
+        "roleId"
+      ],
+      "response_fields": [
+        "roleCode",
+        "roleRevision",
+        "membershipRevision",
+        "ceilingRevision",
+        "grantRevision",
+        "canAssign",
+        "canRevoke",
+        "maxExpiresAtUtc"
+      ],
+      "boundary": "tenant_administrator_exact_candidate_advisory",
+      "http_method": "POST",
+      "http_route": "/api/v1/identity/delegation/inspect",
+      "realm": "tenant",
+      "authorization_from": "backend_only",
+      "ui_grant_source": false,
+      "general_role_grantable": false,
+      "source_file": "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs",
+      "denied_payload": "empty",
+      "cache_control": "no-store, private",
+      "registered_in_local_api": true
+    }
+  ],
+  "negative_scenarios": [
+    "anonymous",
+    "forged_bearer",
+    "wrong_host",
+    "injected_tenant",
+    "extra_field",
+    "duplicate_field",
+    "wrong_origin",
+    "browser_without_csrf"
+  ],
+  "limitations": [
+    "No actual platform-session replay case in this fixture yet",
+    "No browser UI or production entitlement",
+    "No regrant lifecycle or role catalog editor",
+    "Normative catalog remains historical until an approved activation overlay",
+    "Exact known selectors only; not a general role, member or resource directory"
+  ],
+  "previous_overlay": "docs/c06/C06_11_CATALOGO_DELEGACION_V1.json"
+}

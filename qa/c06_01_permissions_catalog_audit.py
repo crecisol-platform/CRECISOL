@@ -114,7 +114,7 @@ def verify_exception_overlay(source):
 
 def verify_delegation_overlay(source):
     """C06-11 is an explicit isolated successor, never a normative grant."""
-    path=ROOT/"docs/c06/C06_11_CATALOGO_DELEGACION_V1.json"
+    path=ROOT/"docs/c06/C06_11_CATALOGO_DELEGACION_V2.json"
     marker="foreach (var operation in C06DelegationHttpContract.Operations)"
     contract_path=ROOT/"backend/src/Crecisol.Api/Contracts/C06DelegationHttpContract.cs"
     if marker not in source:
@@ -124,12 +124,18 @@ def verify_delegation_overlay(source):
     contract=contract_path.read_text(encoding="utf-8")
     pairs=re.findall(r'\["([^"]+)"\]\s*=\s*\[([^\]]*)\]',contract)
     actual={name:re.findall(r'"([^"]+)"',fields) for name,fields in pairs}
-    expected={"delegation/prepare":["command","branchId","resourceId","membershipId","roleId","roleRevision","membershipRevision","ceilingRevision","grantRevision","expiresAtUtc","reason"],"delegation/confirm":["command","branchId","resourceId","membershipId","roleId","roleRevision","membershipRevision","ceilingRevision","grantRevision","expiresAtUtc","reason","challenge","code"],"delegation/read":["branchId","resourceId"]}
-    responses={"delegation/prepare":["challenge","expiresAtUtc"],"delegation/confirm":["accepted"],"delegation/read":["reference"]}
-    boundaries={"delegation/prepare":"tenant_administrator_exact_scope","delegation/confirm":"tenant_administrator_exact_scope_fresh_mfa","delegation/read":"tenant_recipient_exact_resource_live_provenance"}
-    need(len(pairs)==3 and actual==expected,"delegation request inventory drift")
+    expected={"delegation/prepare":["command","branchId","resourceId","membershipId","roleId","roleRevision","membershipRevision","ceilingRevision","grantRevision","expiresAtUtc","reason"],"delegation/confirm":["command","branchId","resourceId","membershipId","roleId","roleRevision","membershipRevision","ceilingRevision","grantRevision","expiresAtUtc","reason","challenge","code"],"delegation/read":["branchId","resourceId"],"delegation/inspect":["branchId","resourceId","membershipId","roleId"]}
+    responses={"delegation/prepare":["challenge","expiresAtUtc"],"delegation/confirm":["accepted"],"delegation/read":["reference"],"delegation/inspect":["roleCode","roleRevision","membershipRevision","ceilingRevision","grantRevision","canAssign","canRevoke","maxExpiresAtUtc"]}
+    boundaries={"delegation/prepare":"tenant_administrator_exact_scope","delegation/confirm":"tenant_administrator_exact_scope_fresh_mfa","delegation/read":"tenant_recipient_exact_resource_live_provenance","delegation/inspect":"tenant_administrator_exact_candidate_advisory"}
+    need(len(pairs)==4 and actual==expected,"delegation request inventory drift")
     data=json.loads(path.read_text(encoding="utf-8"))
-    need(data["schema_version"]==1 and data["authority"]=="DOCUMENTATION_ONLY_NOT_RUNTIME_AUTHORIZATION" and
+    previous=ROOT/"docs/c06/C06_11_CATALOGO_DELEGACION_V1.json"
+    need(previous.is_file(),"historical delegation overlay missing")
+    prior=json.loads(previous.read_text(encoding="utf-8"))
+    need(prior["schema_version"]==1 and prior["actions"]==data["actions"][:3],
+         "historical delegation contracts changed")
+    need(data["schema_version"]==2 and data["previous_overlay"]=="docs/c06/C06_11_CATALOGO_DELEGACION_V1.json" and
+         data["authority"]=="DOCUMENTATION_ONLY_NOT_RUNTIME_AUTHORIZATION" and
          data["base_operational_contracts"]==79 and data["activated_normative"]==[] and
          data["feature_gate"]=="CRECISOL_C06_DELEGATION_LAB_ENABLED=true_and_C05_LOCAL_IDENTITY_ENABLED=true_and_local_isolation",
          "delegation feature gate or premature normative activation")
@@ -156,7 +162,8 @@ def verify_delegation_overlay(source):
          source.index("Results.Ok(delegationSafe.Value)"),"delegation raw response bypass")
     need('Environment.GetEnvironmentVariable("CRECISOL_C06_DELEGATION_LAB_ENABLED") == "true"' in contract and
          "if(!result.Allowed) return true" in contract and "C06IdentityResponseProjection.TryApply(" in contract and
-         "JsonSerializer.Serialize" not in contract,"delegation projection/privacy drift")
+         "JsonSerializer.Serialize" not in contract and "inspection.CanAssign==inspection.CanRevoke" in contract and
+         "inspection.GrantRevision.ToString(CultureInfo.InvariantCulture)" in contract,"delegation projection/privacy drift")
 
 def verify_catalog(data, source, program):
     need(data.get("schema_version") == 1 and data.get("authority") == "DOCUMENTATION_ONLY_NOT_RUNTIME_AUTHORIZATION",

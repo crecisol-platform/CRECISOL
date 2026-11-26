@@ -1,8 +1,9 @@
+using System.Globalization;
 using Crecisol.Application.Identity;
 
 namespace Crecisol.Api.Contracts;
 
-/// <summary>Version 1 laboratory transport overlay, not a grant source.
+/// <summary>Version 2 laboratory transport overlay, not a grant source.
 /// The canonical historical 79 contracts remain unchanged. No generic
 /// serialization, anonymous role claim, or arbitrary capability is accepted.
 /// </summary>
@@ -13,6 +14,7 @@ public static class C06DelegationHttpContract
         ["delegation/prepare"] = ["command", "branchId", "resourceId", "membershipId", "roleId", "roleRevision", "membershipRevision", "ceilingRevision", "grantRevision", "expiresAtUtc", "reason"],
         ["delegation/confirm"] = ["command", "branchId", "resourceId", "membershipId", "roleId", "roleRevision", "membershipRevision", "ceilingRevision", "grantRevision", "expiresAtUtc", "reason", "challenge", "code"],
         ["delegation/read"] = ["branchId", "resourceId"],
+        ["delegation/inspect"] = ["branchId", "resourceId", "membershipId", "roleId"],
     };
 
     public static bool Enabled =>
@@ -32,6 +34,31 @@ public static class C06DelegationHttpContract
         if(result.SessionIdleMinutes is not (>=5 and <=120) ||
            result.SessionExpiresAtUtc is not { } sessionUntil || sessionUntil.Offset!=TimeSpan.Zero)
             return false;
+        if(operation=="delegation/inspect")
+        {
+            if(result.Value is not C06DelegationInspection inspection ||
+               inspection.RoleCode is not ("tenant-staff" or "tenant-viewer" or "tenant-branch-manager") ||
+               inspection.RoleRevision is <=0 or long.MaxValue ||
+               inspection.MembershipRevision is <=0 or long.MaxValue ||
+               inspection.CeilingRevision is <=0 or long.MaxValue ||
+               inspection.CanAssign==inspection.CanRevoke ||
+               (inspection.CanAssign && (inspection.GrantRevision!=0 ||
+                  inspection.MaxExpiresAtUtc is not { } max || max.Offset!=TimeSpan.Zero || max<=DateTimeOffset.UtcNow)) ||
+               (inspection.CanRevoke && (inspection.GrantRevision!=1 || inspection.MaxExpiresAtUtc is not null)))
+                return false;
+            // Decimal strings preserve exact BIGINT revisions in JavaScript.
+            safe=new(true,new
+            {
+                roleCode=inspection.RoleCode,
+                roleRevision=inspection.RoleRevision.ToString(CultureInfo.InvariantCulture),
+                membershipRevision=inspection.MembershipRevision.ToString(CultureInfo.InvariantCulture),
+                ceilingRevision=inspection.CeilingRevision.ToString(CultureInfo.InvariantCulture),
+                grantRevision=inspection.GrantRevision.ToString(CultureInfo.InvariantCulture),
+                canAssign=inspection.CanAssign,canRevoke=inspection.CanRevoke,
+                maxExpiresAtUtc=inspection.MaxExpiresAtUtc
+            }) {SessionExpiresAtUtc=sessionUntil,SessionIdleMinutes=result.SessionIdleMinutes};
+            return true;
+        }
         if(operation=="delegation/prepare")
         {
             var now=DateTimeOffset.UtcNow;
