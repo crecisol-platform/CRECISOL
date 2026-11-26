@@ -14,7 +14,7 @@ public sealed partial class MySqlOperationalIdentityFlow
     private string DelegationCursorPurpose(Unit u,byte[] tenant,byte[] actor,
         Dictionary<string,object> account,Dictionary<string,object> member,
         Dictionary<string,object> session,Dictionary<string,object> factor,long entitlementRevision) =>
-        string.Join(":", "c06-delegation-catalog/v1",Hex(tenant),Hex(actor),Hex(Bytes(member,"membership_id")),
+        string.Join(":", "c06-delegation-catalog/v2",Hex(tenant),Hex(actor),Hex(Bytes(member,"membership_id")),
             Hex(Bytes(session,"session_id")),Hex(Bytes(factor,"factor_id")),
             Number(account,"security_revision").ToString(CultureInfo.InvariantCulture),
             Number(member,"approval_revision").ToString(CultureInfo.InvariantCulture),
@@ -94,14 +94,22 @@ public sealed partial class MySqlOperationalIdentityFlow
             JOIN c05_identity_private_resource x ON x.tenant_id=c.tenant_id AND x.branch_id=c.branch_id AND x.resource_id=c.resource_id
             JOIN c05_identity_membership m ON m.tenant_id=c.tenant_id AND m.membership_id<>c.actor_membership_id
             JOIN c06_delegation_role role ON role.tenant_id=c.tenant_id AND role.retired_at_utc IS NULL
-            LEFT JOIN c06_delegation_grant g ON g.tenant_id=c.tenant_id AND g.branch_id=c.branch_id
-              AND g.resource_id=c.resource_id AND g.action_id=c.action_id AND g.subject_membership_id=m.membership_id
+            LEFT JOIN c06_delegation_cycle_head h ON h.tenant_id=c.tenant_id AND h.branch_id=c.branch_id
+              AND h.resource_id=c.resource_id AND h.action_id=c.action_id AND h.subject_membership_id=m.membership_id
+            LEFT JOIN c06_delegation_grant g ON g.tenant_id=h.tenant_id AND g.grant_id=h.grant_id
+              AND g.subject_membership_id=h.subject_membership_id AND g.branch_id=h.branch_id
+              AND g.resource_id=h.resource_id AND g.action_id=h.action_id AND g.role_id=h.role_id
+              AND g.revision=h.issuance_revision
             LEFT JOIN c06_delegation_revocation v ON v.tenant_id=g.tenant_id AND v.grant_id=g.grant_id
             WHERE c.tenant_id=@t AND c.actor_membership_id=@m AND m.account_id<>@a
               AND c.action_id='identity.private.read' AND c.revoked_at_utc IS NULL
               AND c.valid_from_utc<=UTC_TIMESTAMP(6) AND c.valid_until_utc>UTC_TIMESTAMP(6)
               AND role.created_at_utc<=UTC_TIMESTAMP(6) AND b.active=1 AND x.resource_state=1
-              AND ((g.grant_id IS NULL AND c.may_assign=1 AND m.membership_state=1
+              AND (((h.grant_id IS NULL OR
+                    (g.grant_id IS NOT NULL AND h.role_id=role.role_id AND h.terminal_at_utc=v.revoked_at_utc
+                     AND h.revision=v.revision AND h.revision=g.revision+1 AND MOD(h.revision,2)=0
+                     AND h.revision<=9223372036854775804))
+                    AND c.may_assign=1 AND m.membership_state=1
                     AND m.granted_at_utc<=UTC_TIMESTAMP(6) AND m.expires_at_utc>UTC_TIMESTAMP(6)
                     AND m.role_code IN('MEMBER','STAFF','VIEWER','MANAGER','tenant-staff','tenant-viewer','tenant-branch-manager')
                     AND EXISTS(SELECT 1 FROM c05_identity_resource_grant src
@@ -110,7 +118,8 @@ public sealed partial class MySqlOperationalIdentityFlow
                         AND src.granted_at_utc<=UTC_TIMESTAMP(6) AND src.expires_at_utc>UTC_TIMESTAMP(6)
                         AND ((src.scope_kind=2 AND src.resource_id IS NULL) OR
                              (src.scope_kind=1 AND src.resource_id=c.resource_id AND x.owner_account_id=@a))))
-                   OR (g.role_id=role.role_id AND v.grant_id IS NULL AND c.may_revoke=1))
+                   OR (g.role_id=role.role_id AND h.revision=g.revision AND h.terminal_at_utc IS NULL
+                       AND v.grant_id IS NULL AND c.may_revoke=1))
               AND (@first=1 OR (c.branch_id,c.resource_id,m.membership_id,role.role_id)>(@lb,@lr,@lm,@lrole))
             ORDER BY c.branch_id,c.resource_id,m.membership_id,role.role_id
             LIMIT 9 FOR SHARE
