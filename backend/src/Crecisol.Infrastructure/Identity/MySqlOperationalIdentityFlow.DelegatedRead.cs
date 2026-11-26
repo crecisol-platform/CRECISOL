@@ -36,7 +36,11 @@ public sealed partial class MySqlOperationalIdentityFlow
                    im.account_id AS issuer_account_id,a.source_grant_id,
                    LEAST(g.expires_at_utc,im.expires_at_utc,sm.expires_at_utc,
                          c.valid_until_utc,src.expires_at_utc,ent.valid_until_utc) AS effective_until_utc
-            FROM c06_delegation_grant g
+            FROM c06_delegation_cycle_head h
+            JOIN c06_delegation_grant g ON g.tenant_id=h.tenant_id AND g.grant_id=h.grant_id
+                AND g.subject_membership_id=h.subject_membership_id AND g.branch_id=h.branch_id
+                AND g.resource_id=h.resource_id AND g.action_id=h.action_id AND g.role_id=h.role_id
+                AND g.revision=h.issuance_revision
             JOIN c06_delegation_authority a ON a.tenant_id=g.tenant_id AND a.grant_id=g.grant_id
             JOIN c06_delegation_confirmation cf ON cf.tenant_id=a.tenant_id AND cf.challenge_hmac=a.challenge_hmac
             JOIN c05_identity_membership sm ON sm.tenant_id=g.tenant_id AND sm.membership_id=g.subject_membership_id
@@ -53,7 +57,8 @@ public sealed partial class MySqlOperationalIdentityFlow
             LEFT JOIN c06_delegation_revocation v ON v.tenant_id=g.tenant_id AND v.grant_id=g.grant_id
             WHERE g.tenant_id=@t AND g.branch_id=@b AND g.resource_id=@r
               AND g.subject_membership_id=@m AND sm.account_id=@a
-              AND g.action_id='identity.private.read' AND g.revision=1 AND v.grant_id IS NULL
+              AND g.action_id='identity.private.read' AND h.revision=g.revision
+              AND h.terminal_at_utc IS NULL AND MOD(g.revision,2)=1 AND v.grant_id IS NULL
               AND g.issued_at_utc<=UTC_TIMESTAMP(6) AND g.expires_at_utc>UTC_TIMESTAMP(6)
               AND sm.approval_revision=g.subject_revision AND sm.membership_state=1
               AND sm.granted_at_utc<=UTC_TIMESTAMP(6) AND sm.expires_at_utc>UTC_TIMESTAMP(6)
