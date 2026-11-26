@@ -3,6 +3,7 @@
  */
 import { test, expect, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { decodeInspection } from '../src/app/identity/delegation-client.model';
 const sizes=[{width:320,height:720},{width:390,height:844},{width:768,height:1024},{width:1024,height:768},{width:1440,height:900}];
 const selector={branchId:'11111111-2222-4333-8444-555555555555',resourceId:'22222222-3333-4444-8555-666666666666',
   membershipId:'33333333-4444-4555-8666-777777777777',roleId:'44444444-5555-4666-8777-888888888888'};
@@ -10,6 +11,16 @@ const other={...selector,membershipId:'55555555-6666-4777-8888-999999999999'};
 const rev=(canAssign:boolean,generation=canAssign?'0':'1')=>({roleCode:'tenant-staff',roleRevision:'1',membershipRevision:'9007199254740993',
   ceilingRevision:'1',grantRevision:generation,canAssign,canRevoke:!canAssign,
   maxExpiresAtUtc:canAssign?new Date(Date.now()+60*60_000).toISOString():null});
+test('C06 inspection decodes only canonical bounded lifecycle revisions',()=>{
+  for(const [command,version] of [[true,'0'],[true,'2'],[true,'9007199254740994'],
+    [false,'1'],[false,'3'],[false,'9007199254740995']] as const)
+    expect(decodeInspection(rev(command,version)).grantRevision).toBe(version);
+  for(const [command,version] of [[true,'1'],[false,'0'],[false,'2'],[true,'00'],
+    [true,'-2'],[true,'9223372036854775806'],[false,'9223372036854775807']] as const)
+    expect(()=>decodeInspection(rev(command,version))).toThrow('delegation_invalid');
+  expect(()=>decodeInspection({...rev(true),grantRevision:2})).toThrow('delegation_invalid');
+});
+
 async function setup(page:Page,denied=false,confirmDenied=false,reissue=false){
   let phase=0;const writes: Array<Record<string,string>>=[];
   await page.route('**/api/v1/**',route=>route.fulfill({status:404,body:''}));
