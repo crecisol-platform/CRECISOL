@@ -10,6 +10,9 @@ on:
       - '.github/workflows/c06-11-delegated-role-policy.yml'
       - 'qa/c06_11_delegated_role_scope.py'
       - 'qa/c06_02_role_model_audit.py'
+      - 'qa/c06_03_context_audits.py'
+      - 'qa/c06_04_abac_audits.py'
+      - 'qa/c06_05_stepup_audits.py'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Delegation.cs'
@@ -48,6 +51,14 @@ jobs:
       - run: python3 qa/c06_02_role_model_audit.py A
       - run: python3 qa/c06_02_role_model_audit.py B
       - run: python3 qa/c06_02_role_model_audit.py C
+      - name: Historical identity ABAC and step-up controls on current source
+        run: |
+          set -euo pipefail
+          for gate in A B C; do
+            python3 qa/c06_03_context_audits.py "$gate"
+            python3 qa/c06_04_abac_audits.py "$gate"
+            python3 qa/c06_05_stepup_audits.py "$gate"
+          done
       - name: Historical A/B/C/D controls on current source
         run: |
           set -euo pipefail
