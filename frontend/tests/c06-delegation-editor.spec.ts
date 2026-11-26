@@ -69,6 +69,16 @@ for(const viewport of sizes)test('C06 editor visual and secure interaction '+vie
   const section=page.getByRole('region',{name:'Administración de permisos'});
   await expect(section).toBeVisible();await section.getByRole('button',{name:'Gestionar permisos'}).click();
   await expect(section.getByRole('list',{name:'Candidatos autorizados'}).getByRole('listitem')).toHaveCount(2);
+  // No horizontal page overflow is insufficient: the two new panels must
+  // actually span the account grid rather than occupy a narrow half-column.
+  const widthRatio=await section.evaluate(el=>{
+    const grid=el.closest('.identity-workspace');
+    if(!grid)return 0;
+    const style=getComputedStyle(grid);
+    const available=grid.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
+    return available>0?el.getBoundingClientRect().width/available:0;
+  });
+  expect(widthRatio).toBeGreaterThanOrEqual(.95);
   await capture(page,info,'catalog-'+viewport.width);
   await section.getByRole('button',{name:/Revisar concesión/}).click();
   const dialog=page.getByRole('dialog',{name:'Revisión de permiso'});
@@ -100,7 +110,8 @@ test('C06 failed MFA clears challenge and prior authorized candidates',async({pa
   await dialog.getByRole('button',{name:'Preparar confirmación'}).click();
   await dialog.getByLabel('Código de seis dígitos').fill('123456');
   await dialog.getByRole('button',{name:'Confirmar revocación'}).click();
-  await expect(dialog.getByText('No se pudo confirmar el resultado.',{exact:false}).first()).toBeVisible();
+  await expect(dialog.getByText('No se pudo confirmar el resultado.',{exact:false})).toHaveCount(1);
+  await expect(dialog.getByText('No se pudo confirmar el resultado.',{exact:false})).toBeVisible();
   await expect(dialog.getByLabel('Código de seis dígitos')).toHaveCount(0);
   await capture(page,info,'denial-390');
   await dialog.getByRole('button',{name:'Cerrar ventana'}).click();
