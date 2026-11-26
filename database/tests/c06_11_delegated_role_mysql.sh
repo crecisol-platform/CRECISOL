@@ -266,6 +266,8 @@ if [[ "${C06_DELEGATION_LIFECYCLE_TESTS:-0}" == 1 ]]; then
   echo "PASS C06-11 D lifecycle representable rollback preserves immutable rows"
   apply "$cycle_up"
   ROLE2="UNHEX(REPEAT('62',16))"
+  MF="UNHEX(REPEAT('46',16))"
+  sql "INSERT INTO c05_identity_membership(tenant_id,membership_id,account_id,membership_state,role_code,granted_at_utc,expires_at_utc,created_at_utc) VALUES($T,$MF,$C,1,'MEMBER',$PAST,UTC_TIMESTAMP(6)+INTERVAL 1 DAY,$PAST)"
   G5="UNHEX(REPEAT('85',16))"
   H7="UNHEX(REPEAT('a7',32))"
   H8="UNHEX(REPEAT('a8',32))"
@@ -284,6 +286,7 @@ if [[ "${C06_DELEGATION_LIFECYCLE_TESTS:-0}" == 1 ]]; then
   reject "$(cycle_grant "$T" "$G3" "$MD" "$MA" "$ROLE" 3 "$H5")" "active predecessor cannot be overwritten" 1644
   reject "$(cycle_grant "$T" "$G3" "$MB" "$MA" "$ROLE2" 3 "$H5")" "different role cannot reissue" 1644
   reject "$(cycle_grant "$U" "$G3" "$MB" "$MC" "$ROLE" 3 "$H5")" "foreign subject cannot reissue" 1644
+  reject "$(cycle_grant "$T" "$G3" "$MF" "$MA" "$ROLE" 3 "$H5")" "no reissue without an existing terminal head" 1644
   assert "SELECT COUNT(*) FROM c06_delegation_grant" "3" "denied generation statements leave no partial issuance"
   sql "START TRANSACTION; $(cycle_grant "$T" "$G3" "$MB" "$MA" "$ROLE" 3 "$H5"); ROLLBACK;"
   assert "SELECT revision FROM c06_delegation_cycle_head WHERE tenant_id=$T AND subject_membership_id=$MB" "2" "head rolls back with new grant"
@@ -327,6 +330,16 @@ if [[ "${C06_DELEGATION_LIFECYCLE_TESTS:-0}" == 1 ]]; then
     [[ "$error" == *"ERROR 1142 "* ]]
     echo "PASS C06-11 D direct lifecycle head mutation denied"
   done
+  # Definer triggers maintain the derived head even for this limited writer.
+  # Test successful transitions within a transaction, then roll them back.
+  G6="UNHEX(REPEAT('86',16))"
+  H9="UNHEX(REPEAT('a9',32))"
+  H10="UNHEX(REPEAT('aa',32))"
+  actual="$(cycle_writer "START TRANSACTION; $(cycle_revoke "$T" "$G5" "$MA" 5 6 "$H9"); $(cycle_grant "$T" "$G6" "$MB" "$MA" "$ROLE" 7 "$H10"); SELECT CONCAT(revision,':',grant_id=$G6) FROM c06_delegation_cycle_head WHERE tenant_id=$T AND subject_membership_id=$MB; ROLLBACK;")"
+  [[ "$actual" == "7:1" ]]
+  echo "PASS C06-11 D restricted fixture writer transitions through triggers"
+  assert "SELECT revision FROM c06_delegation_cycle_head WHERE tenant_id=$T AND subject_membership_id=$MB" "5" "restricted writer rollback preserves head"
+  assert "SELECT COUNT(*) FROM c06_delegation_grant WHERE tenant_id=$T AND grant_id=$G6" "0" "restricted writer rollback preserves ledger"
   sql "DROP USER 'c06_cycle_test'@'localhost'"
   [[ "$(sql "SHOW GRANTS FOR 'c05_identity_local_runtime'")" == "$before_grants" ]]
   assert "SELECT COUNT(*) FROM c06_delegation_authority" "0" "bare SQL lifecycle never produces authority provenance"
