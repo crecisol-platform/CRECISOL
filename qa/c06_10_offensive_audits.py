@@ -9,6 +9,15 @@ def need(ok,msg):
     if not ok: raise AssertionError("C06-10 NO-GO "+msg)
 def read(p): return (ROOT/p).read_text(encoding="utf-8")
 def git(*args): return subprocess.check_output(["git",*args],cwd=ROOT,text=True).strip()
+def audited_product_end():
+    # Preserve the prior implementation's no-product-change invariant.
+    # Exact successor scope is independently checked; runtime controls use HEAD.
+    changed=git("diff","--name-only",BASE,"HEAD").splitlines()
+    if "docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md" in changed:
+        from c06_11_delegated_role_scope import historical_product_end
+        return historical_product_end()
+    return "HEAD"
+
 def scope():
     event=os.getenv("GITHUB_EVENT_NAME","")
     if event=="pull_request":
@@ -28,7 +37,7 @@ def scope():
     except AssertionError: pass
     else: raise AssertionError("missing path accepted")
     for path in ("frontend/","backend/","database/migrations/","database/operations/","docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx","docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf","docs/c06/C06_01_CATALOGO_ACCIONES.json","docs/c06/C06_02_MATRIZ_ROLES_CAPACIDADES.json"):
-        need(not git("diff","--name-only",BASE,"HEAD","--",path),"unapproved product/authority change "+path)
+        need(not git("diff","--name-only",BASE,audited_product_end(),"--",path),"unapproved product/authority change "+path)
 def inventory():
     from c06_01_permissions_catalog_audit import verify_catalog
     cat=json.loads(read("docs/c06/C06_01_CATALOGO_ACCIONES.json"))

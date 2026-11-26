@@ -251,6 +251,7 @@ public sealed partial class MySqlOperationalIdentityFlow : IOperationalIdentityF
             foreach (var (name, value) in parameters) command.Parameters.AddWithValue("@" + name, value);
             return command;
         }
+        public Crecisol.Infrastructure.Authorization.MySqlC06DelegationLedger DelegationLedger() => new(db, tx);
         public async Task<int> Run(string sql, params (string, object)[] parameters)
         {
             await using var command = Command(sql, parameters);

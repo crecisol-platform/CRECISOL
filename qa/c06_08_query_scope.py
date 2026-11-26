@@ -30,6 +30,9 @@ PATHS=frozenset([
   "qa/c06_08_query_scope.py"
 ])
 def require_exact(changed):
+    if "docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md" in changed:
+        from c06_11_delegated_role_scope import require_exact as require_delegation
+        return require_delegation(changed)
     if "docs/c06/C06_10_ESPECIFICACION.md" in changed:
         from c06_10_offensive_scope import require_exact as require_offensive
         return require_offensive(changed)
