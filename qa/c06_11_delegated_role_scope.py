@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 BASE="076118ab5370e1fcbc7bfe0f1caefe07a664365b"
-PATHS=frozenset(["backend/src/Crecisol.Domain/Authorization/C06ScopedRoleDelegationPolicy.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Program.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Crecisol.C06Delegation.ContractsTests.csproj","docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md",".github/workflows/c06-11-delegated-role-policy.yml","qa/c06_11_delegated_role_scope.py","qa/c06_02_role_model_audit.py","database/migrations/024_c06_delegated_role_ledger.sql","database/migrations/024_c06_delegated_role_ledger.down.sql","database/tests/c06_11_delegated_role_mysql.sh","qa/c06_07_privacy_scope.py","qa/c06_08_query_scope.py","qa/c06_09_delivery_scope.py","qa/c06_10_offensive_scope.py","qa/c06_07_privacy_audits.py","qa/c06_09_delivery_audits.py","qa/c06_10_offensive_audits.py","backend/src/Crecisol.Infrastructure/Authorization/MySqlC06DelegationLedger.cs","backend/tests/Crecisol.C06Delegation.MySqlTests/Crecisol.C06Delegation.MySqlTests.csproj","backend/tests/Crecisol.C06Delegation.MySqlTests/Program.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Delegation.cs","backend/src/Crecisol.Application/Identity/C06DelegationPreparation.cs","database/migrations/025_c06_delegation_confirmation.sql","database/migrations/025_c06_delegation_confirmation.down.sql","backend/tests/Crecisol.C06Delegation.FlowTests/Program.cs","backend/tests/Crecisol.C06Delegation.FlowTests/Crecisol.C06Delegation.FlowTests.csproj","qa/c06_03_context_audits.py","qa/c06_04_abac_audits.py","qa/c06_05_stepup_audits.py","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegatedRead.cs","database/migrations/026_c06_delegation_authority.sql","database/migrations/026_c06_delegation_authority.down.sql","qa/c05_sha1_exclusive_audits.py","backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs","backend/src/Crecisol.Api/Contracts/C06DelegationHttpContract.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V1.json","qa/c06_01_permissions_catalog_audit.py","backend/tests/Crecisol.C06Delegation.FlowTests/DelegationWireFixture.cs","qa/c06_06_exceptional_scope.py","backend/src/Crecisol.Application/Identity/C06DelegationInspection.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V2.json","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegationCatalog.cs","backend/src/Crecisol.Application/Identity/C06DelegationCatalog.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V3.json","frontend/src/app/identity/identity-api.service.ts","frontend/src/app/identity/delegation-client.model.ts","frontend/src/app/pages/delegation-editor.component.ts","frontend/src/app/pages/delegation-editor.component.html","frontend/src/app/pages/delegation-editor.component.css","frontend/src/app/pages/identity-flow-views.component.ts","frontend/src/app/pages/identity-workspace.component.html","frontend/tests/c06-delegation-editor.spec.ts","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.PrivacyRequests.cs","backend/src/Crecisol.Domain/Authorization/C06PrivacyRequestPolicy.cs","backend/src/Crecisol.Application/Identity/C06PrivacyRequestContracts.cs","backend/src/Crecisol.Api/Contracts/C06PrivacyRequestHttpContract.cs","database/migrations/027_c06_privacy_requests.sql","database/migrations/027_c06_privacy_requests.down.sql","docs/c06/C06_11_CATALOGO_PRIVACIDAD_V1.json","backend/tests/Crecisol.C06Delegation.FlowTests/PrivacyRequestFixture.cs","frontend/src/app/identity/privacy-request-client.model.ts","frontend/src/app/pages/privacy-requests.component.ts","frontend/src/app/pages/privacy-requests.component.html","frontend/src/app/pages/privacy-requests.component.css","frontend/tests/c06-privacy-requests.spec.ts","database/migrations/028_c06_delegation_cycle_head.sql","database/migrations/028_c06_delegation_cycle_head.down.sql","qa/c06_08_query_audits.py"])
+PATHS=frozenset(["backend/src/Crecisol.Domain/Authorization/C06ScopedRoleDelegationPolicy.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Program.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Crecisol.C06Delegation.ContractsTests.csproj","docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md",".github/workflows/c06-11-delegated-role-policy.yml","qa/c06_11_delegated_role_scope.py","qa/c06_02_role_model_audit.py","database/migrations/024_c06_delegated_role_ledger.sql","database/migrations/024_c06_delegated_role_ledger.down.sql","database/tests/c06_11_delegated_role_mysql.sh","qa/c06_07_privacy_scope.py","qa/c06_08_query_scope.py","qa/c06_09_delivery_scope.py","qa/c06_10_offensive_scope.py","qa/c06_07_privacy_audits.py","qa/c06_09_delivery_audits.py","qa/c06_10_offensive_audits.py","backend/src/Crecisol.Infrastructure/Authorization/MySqlC06DelegationLedger.cs","backend/tests/Crecisol.C06Delegation.MySqlTests/Crecisol.C06Delegation.MySqlTests.csproj","backend/tests/Crecisol.C06Delegation.MySqlTests/Program.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Delegation.cs","backend/src/Crecisol.Application/Identity/C06DelegationPreparation.cs","database/migrations/025_c06_delegation_confirmation.sql","database/migrations/025_c06_delegation_confirmation.down.sql","backend/tests/Crecisol.C06Delegation.FlowTests/Program.cs","backend/tests/Crecisol.C06Delegation.FlowTests/Crecisol.C06Delegation.FlowTests.csproj","qa/c06_03_context_audits.py","qa/c06_04_abac_audits.py","qa/c06_05_stepup_audits.py","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegatedRead.cs","database/migrations/026_c06_delegation_authority.sql","database/migrations/026_c06_delegation_authority.down.sql","qa/c05_sha1_exclusive_audits.py","backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs","backend/src/Crecisol.Api/Contracts/C06DelegationHttpContract.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V1.json","qa/c06_01_permissions_catalog_audit.py","backend/tests/Crecisol.C06Delegation.FlowTests/DelegationWireFixture.cs","qa/c06_06_exceptional_scope.py","backend/src/Crecisol.Application/Identity/C06DelegationInspection.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V2.json","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegationCatalog.cs","backend/src/Crecisol.Application/Identity/C06DelegationCatalog.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V3.json","frontend/src/app/identity/identity-api.service.ts","frontend/src/app/identity/delegation-client.model.ts","frontend/src/app/pages/delegation-editor.component.ts","frontend/src/app/pages/delegation-editor.component.html","frontend/src/app/pages/delegation-editor.component.css","frontend/src/app/pages/identity-flow-views.component.ts","frontend/src/app/pages/identity-workspace.component.html","frontend/tests/c06-delegation-editor.spec.ts","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.PrivacyRequests.cs","backend/src/Crecisol.Domain/Authorization/C06PrivacyRequestPolicy.cs","backend/src/Crecisol.Application/Identity/C06PrivacyRequestContracts.cs","backend/src/Crecisol.Api/Contracts/C06PrivacyRequestHttpContract.cs","database/migrations/027_c06_privacy_requests.sql","database/migrations/027_c06_privacy_requests.down.sql","docs/c06/C06_11_CATALOGO_PRIVACIDAD_V1.json","backend/tests/Crecisol.C06Delegation.FlowTests/PrivacyRequestFixture.cs","frontend/src/app/identity/privacy-request-client.model.ts","frontend/src/app/pages/privacy-requests.component.ts","frontend/src/app/pages/privacy-requests.component.html","frontend/src/app/pages/privacy-requests.component.css","frontend/tests/c06-privacy-requests.spec.ts","database/migrations/028_c06_delegation_cycle_head.sql","database/migrations/028_c06_delegation_cycle_head.down.sql","qa/c06_08_query_audits.py","qa/c06_06_exceptional_audits.py"])
 def git(*args):
     return subprocess.check_output(["git",*args],cwd=ROOT,text=True).strip()
 def need(ok,why):
@@ -48,6 +48,16 @@ HISTORICAL_EDITS={
         [
             "    end= \"3789224e49f3183563a7f8491a3b3101f161a6a1\" if any(p in changed for p in (\"docs/c06/C06_08_ESPECIFICACION.md\",\"docs/c06/C06_09_ESPECIFICACION.md\",\"docs/c06/C06_10_ESPECIFICACION.md\")) else \"HEAD\"",
             "    end= \"3789224e49f3183563a7f8491a3b3101f161a6a1\" if any(p in changed for p in (\"docs/c06/C06_08_ESPECIFICACION.md\",\"docs/c06/C06_09_ESPECIFICACION.md\",\"docs/c06/C06_10_ESPECIFICACION.md\",\"docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md\")) else \"HEAD\""
+        ]
+    ],
+    "qa/c06_06_exceptional_audits.py": [
+        [
+            "def architecture():\n    scope()",
+            "def audited_product_end():\n    # Preserve historical no-frontend/crypto edits while independently\n    # checking the exact authorized successor; live guards still use HEAD.\n    changed=subprocess.check_output([\"git\",\"diff\",\"--name-only\",BASE,\"HEAD\"],cwd=ROOT,text=True).splitlines()\n    if \"docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md\" in changed:\n        from c06_11_delegated_role_scope import historical_product_end\n        return historical_product_end()\n    return \"HEAD\"\n\ndef architecture():\n    scope()"
+        ],
+        [
+            "[\"git\",\"diff\",\"--name-only\",BASE,\"HEAD\",\"--\",p]",
+            "[\"git\",\"diff\",\"--name-only\",BASE,audited_product_end(),\"--\",p]"
         ]
     ],
     "qa/c06_08_query_audits.py": [
@@ -359,16 +369,16 @@ def main():
                       'Operation="delegation/inspect"',"Protect(plain,purpose)","Unprotect(envelope,purpose)",
                       'Number(session,"session_revision")',"entitlementRevision.ToString","u.Subject=originalSubject"):
         need(invariant in catalog,"catalog missing "+invariant)
-    for forbidden in ("u.Run(","AcceptTotp(","ledger.AppendAsync(","SELECT display_reference","protected_profile"):
+    for forbidden in ("u.Run(","AcceptTotp(","ledger.AppendAsync(","ledger.AppendCycleAsync(","SELECT display_reference","protected_profile"):
         need(forbidden not in catalog,"catalog writes authority or loads private content")
     need(git("rev-parse","472806a84508ae947f45b097280abbaafabb46c1:docs/c06/C06_11_CATALOGO_DELEGACION_V1.json")==git("rev-parse","HEAD:docs/c06/C06_11_CATALOGO_DELEGACION_V1.json"),"v1 HTTP overlay changed")
     inspection_source=(ROOT/"backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Delegation.cs").read_text(encoding="utf-8")
-    inspection=inspection_source.split("        if(inspecting)\n",1)[1].split("        if(!C06ScopedRoleDelegationPolicy.CanPrepare(e))",1)[0]
+    inspection=inspection_source.split("        if(inspecting)\n",1)[1].split("        if(!CanPrepareCycle(e,head))",1)[0]
     for invariant in ("ExpectedRoleRevision=e.RoleRevision","ExpectedGrantRevision=existing?.Revision??0",
-                      "C06ScopedRoleDelegationPolicy.CanPrepare(e with","if(!canAssign && !canRevoke) return new(false)",
+                      "CanPrepareCycle(e with","},head);","if(!canAssign && !canRevoke) return new(false)",
                       "new C06DelegationInspection"):
         need(invariant in inspection,"inspection bypass "+invariant)
-    for forbidden in ("u.Run(","AcceptTotp(","ledger.AppendAsync(","Token()","display_reference"):
+    for forbidden in ("u.Run(","AcceptTotp(","ledger.AppendAsync(","ledger.AppendCycleAsync(","Token()","display_reference"):
         need(forbidden not in inspection,"inspection writes authority or loads private content")
     need("C06DelegationHttpContract.Enabled" in transport and
          "C06DelegationHttpContract.TryApply(operation, result, out var delegationSafe)" in transport,
@@ -382,9 +392,9 @@ def main():
                       'await WireDenied("delegation/read",readFields,HttpStatusCode.Unauthorized,subjectToken,browser:true)'):
         need(invariant in tests,"wire oracle missing "+invariant)
     candidate=(ROOT/"backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Delegation.cs").read_text(encoding="utf-8")
-    for invariant in ("CRECISOL_C06_DELEGATION_LAB_ENABLED", "HasCurrentTerms(u,tenant,actor)", "C06ScopedRoleDelegationPolicy.CanPrepare(e)", "Number(count,\"pending\")>=3", "CryptographicOperations.FixedTimeEquals(", "await AcceptTotp(u,actor,stepFactor,s.Code!,activate:false)", "await ledger.AppendAsync(proved"):
+    for invariant in ("CRECISOL_C06_DELEGATION_LAB_ENABLED", "HasCurrentTerms(u,tenant,actor)", "C06ScopedRoleDelegationPolicy.CanPrepare(e)", "Number(count,\"pending\")>=3", "CryptographicOperations.FixedTimeEquals(", "await AcceptTotp(u,actor,stepFactor,s.Code!,activate:false)", "await ledger.AppendCycleAsync(proved"):
         need(invariant in candidate,"delegation confirmation missing "+invariant)
-    need(candidate.index("CryptographicOperations.FixedTimeEquals(")<candidate.index("await AcceptTotp(")<candidate.index("UPDATE c06_delegation_confirmation SET consumed_at_utc=@now")<candidate.index("await ledger.AppendAsync(proved"),"confirmation proof/write sequence drift")
+    need(candidate.index("CryptographicOperations.FixedTimeEquals(")<candidate.index("await AcceptTotp(")<candidate.index("UPDATE c06_delegation_confirmation SET consumed_at_utc=@now")<candidate.index("await ledger.AppendCycleAsync(proved"),"confirmation proof/write sequence drift")
     provenance=(ROOT/"database/migrations/026_c06_delegation_authority.sql").read_text(encoding="utf-8")
     need(no_authority_change(re.sub(r"(?m)^\s*--[^\n]*$", "", provenance)),"provenance migration expands historical authority")
     need(git("rev-parse","4267ea67dbf69f5c37fae1a2fd368cc8fe21d44e:database/migrations/025_c06_delegation_confirmation.sql")==git("rev-parse","HEAD:database/migrations/025_c06_delegation_confirmation.sql"),"approved confirmation migration changed")
@@ -395,7 +405,7 @@ def main():
                       "c.revision=g.ceiling_revision","role.revision=g.role_revision","sources.Count!=1"):
         need(invariant in reader,"missing delegated read invariant "+invariant)
     need(reader.index("C06CaseAbacPolicy.Allows(proof)")<reader.index("SELECT display_reference"),"private content selected before delegated ABAC")
-    need(candidate.index("await ledger.AppendAsync(proved")<candidate.index("INSERT INTO c06_delegation_authority"),"provenance written outside confirmed issuance")
+    need(candidate.index("await ledger.AppendCycleAsync(proved")<candidate.index("INSERT INTO c06_delegation_authority"),"provenance written outside confirmed issuance")
     for forbidden in ("GRANT SELECT ON sample TO sample_role",
                       "ALTER TABLE sample ADD COLUMN unsafe INT",
                       "DROP TABLE sample"):
@@ -458,15 +468,45 @@ def main():
                       "head.Revision != decision.NextRevision","CRECISOL/C06/delegation/intent/v2",
                       "writer.Write(Key(cycleHead.GrantId))"):
         need(invariant in ledger,"isolated lifecycle adapter missing "+invariant)
-    need("AppendCycleAsync" not in candidate and "ReadCycleEvidenceAsync" not in candidate,
-         "lifecycle writer must remain isolated until actual confirmation integration")
+    for invariant in ("await ledger.ReadCycleEvidenceAsync(intent,ct)","C06ScopedRoleDelegationPolicy.CanPrepareReissue(e,head)",
+                      "if(!CanPrepareCycle(e,head)) return new(false)",
+                      "await ledger.AppendCycleAsync(proved,head,DbId(sessionId),tokenKey,s.Reason,ct)",
+                      "if(appended is null)","g.grant_id=@grant","g.revision=@revision",
+                      "appended.Value.ToByteArray(true)","checked(intent.ExpectedGrantRevision+1)",
+                      "Digests(e,sessionId,tokenKey,reason,true,head)","CRECISOL/C06/delegation/confirmation/v3"):
+        need(invariant in candidate,"operational lifecycle guard missing "+invariant)
+    need("ledger.AppendAsync(" not in candidate and "ledger.ReadEvidenceAsync(" not in candidate and
+         "AND g.revision=1" not in candidate,"legacy issuance fallback in cycle-aware overlay")
+    for invariant in ("FROM c06_delegation_cycle_head h","g.grant_id=h.grant_id","g.subject_membership_id=h.subject_membership_id",
+                      "g.revision=h.issuance_revision","h.revision=g.revision","h.terminal_at_utc IS NULL","MOD(g.revision,2)=1"):
+        need(invariant in reader,"effective read missing cycle guard "+invariant)
+    for invariant in ("LEFT JOIN c06_delegation_cycle_head h","g.grant_id=h.grant_id","g.revision=h.issuance_revision",
+                      "h.terminal_at_utc=v.revoked_at_utc","h.revision=v.revision","h.revision=g.revision+1",
+                      "MOD(h.revision,2)=0","h.revision=g.revision","c06-delegation-catalog/v2"):
+        need(invariant in catalog,"catalog missing cycle guard "+invariant)
+    http=(ROOT/"backend/src/Crecisol.Api/Contracts/C06DelegationHttpContract.cs").read_text(encoding="utf-8")
+    client=(ROOT/"frontend/src/app/identity/delegation-client.model.ts").read_text(encoding="utf-8")
+    for invariant in ("inspection.GrantRevision%2!=0","inspection.GrantRevision%2!=1","inspection.GrantRevision>long.MaxValue-3",
+                      "inspection.GrantRevision>long.MaxValue-2","inspection.GrantRevision.ToString(CultureInfo.InvariantCulture)"):
+        need(invariant in http,"HTTP lifecycle projection missing "+invariant)
+    for invariant in ("cycleRevision","BigInt(v)","n<=9223372036854775804n","n<=9223372036854775805n","n%2n===0n","n%2n===1n"):
+        need(invariant in client,"client lifecycle precision missing "+invariant)
+    for invariant in ("late provenance failure rolls back head and reissue","late reissue rollback does not consume MFA",
+                      "original recipient session reads only newly authorized generation","old reissue and revocation replay denied after commit",
+                      "all five successful transitions have distinct consumed confirmation and audit"):
+        need(invariant in tests,"real lifecycle HTTP oracle missing "+invariant)
+    for principal in ("flow","rollback","fixture"):
+        need("GRANT SELECT ON crecisol_c05.c06_delegation_cycle_head TO 'c06_delegation_"+principal+"_test'" in harness,
+             "fixture cycle head SELECT missing")
+    need("GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_cycle_head" not in harness,
+         "runtime writer may not modify derived head directly")
     need("C06_DELEGATION_LIFECYCLE_TESTS=1 C06_DELEGATION_CYCLE_WRITER_TESTS=1 bash database/tests/c06_11_delegated_role_mysql.sh" in workflow,
          "lifecycle .NET writer not wired into real MySQL suite")
     writer_test=(ROOT/"backend/tests/Crecisol.C06Delegation.MySqlTests/Program.cs").read_text(encoding="utf-8")
     for invariant in ("forged head rejected by actual independent read","terminal reissue replay denied",
                       "old revoke cannot target later generation","caller rollback includes derived head"):
         need(invariant in writer_test,"cycle writer oracle missing "+invariant)
-    print("PASS C06-11 DELEGATION seventy isolated paths, six rejected mutations; exact successor routing, prior contracts and Master unchanged; lifecycle source checks only")
+    print("PASS C06-11 DELEGATION seventy-one isolated paths, six rejected mutations; exact successor routing, prior contracts and Master unchanged; lifecycle source checks only")
 
 if __name__=="__main__":
     main()
