@@ -58,7 +58,7 @@ async Task<object?> Scalar(string sql,params (string,object)[] ps)
 }
 async Task<long> Count(string table)
 {
-    if(table is not ("c06_delegation_grant" or "c06_delegation_revocation" or "c06_delegation_confirmation" or "c06_delegation_authority"))
+    if(table is not ("c06_delegation_grant" or "c06_delegation_revocation" or "c06_delegation_confirmation" or "c06_delegation_authority" or "c06_delegation_cycle_head"))
         throw new InvalidOperationException();
     return Convert.ToInt64(await Scalar("SELECT COUNT(*) FROM "+table));
 }
@@ -479,7 +479,11 @@ try
     var nextWindow=DateTimeOffset.UtcNow.ToUnixTimeSeconds()/60+1;
     while(DateTimeOffset.UtcNow.ToUnixTimeSeconds()/60<nextWindow)
         await Task.Delay(TimeSpan.FromMilliseconds(250));
-    await WireDenied("delegation/inspect",inspectFields,HttpStatusCode.Unauthorized,token);
+    var reissueOffer=await WireAllowed("delegation/inspect",inspectFields,token,inspectionShape);
+    Check(reissueOffer.GetProperty("canAssign").GetBoolean() &&
+        !reissueOffer.GetProperty("canRevoke").GetBoolean() &&
+        reissueOffer.GetProperty("grantRevision").GetString()=="2",
+        "terminal grant exposes only new issuance with current even revision");
     var otherInspect=Change(inspectFields,"membershipId",Id("42").ToString("D"));
     await WireDenied("delegation/inspect",otherInspect,HttpStatusCode.Unauthorized);
     await WireDenied("delegation/inspect",otherInspect,HttpStatusCode.Unauthorized,Hex(RandomNumberGenerator.GetBytes(32)));
@@ -520,15 +524,98 @@ try
     await WireDenied("delegation/catalog",catalogFields,HttpStatusCode.BadRequest,token,browser:true,csrf:false);
     await WireDenied("delegation/catalog",catalogFields,HttpStatusCode.Unauthorized,otherToken);
     var pageAfter=await WireAllowed("delegation/catalog",catalogFields,token,["items","nextCursor"]);
-    Check(pageAfter.GetProperty("items").EnumerateArray().All(x=>x.GetProperty("membershipId").GetGuid()!=Id("44")),
-        "revoked issuance absent from actionable catalog");
+    var cycleCandidates=pageAfter.GetProperty("items").EnumerateArray().ToList();
+    if(pageAfter.GetProperty("nextCursor").ValueKind==JsonValueKind.String)
+    {
+        var tail=await WireAllowed("delegation/catalog",
+            Change(catalogFields,"cursor",pageAfter.GetProperty("nextCursor").GetString()!),token,["items","nextCursor"]);
+        Check(tail.GetProperty("nextCursor").ValueKind==JsonValueKind.Null,"cycle catalog bounded final page");
+        cycleCandidates.AddRange(tail.GetProperty("items").EnumerateArray());
+    }
+    var terminalCandidates=cycleCandidates.Where(x=>x.GetProperty("membershipId").GetGuid()==Id("44")).ToArray();
+    Check(terminalCandidates.Length==1 &&
+        terminalCandidates[0].GetProperty("inspection").GetProperty("grantRevision").GetString()=="2" &&
+        terminalCandidates[0].GetProperty("inspection").GetProperty("canAssign").GetBoolean(),
+        "catalog exposes exactly one authorized terminal scope at its latest revision");
     var invalidRow=new C06DelegationCatalogItem(Id("71"),Id("73"),Id("42"),Id("61"),
         new C06DelegationInspection("tenant-admin",1,1,1,0,true,false,DateTimeOffset.UtcNow.AddMinutes(1)));
     Check(!C06DelegationHttpContract.TryApply("delegation/catalog",invalidInspection with
         {Value=new C06DelegationCatalog([invalidRow],null)},out _),"catalog projection rejects escalated nested row");
     Check(await Count("c06_delegation_grant")==2 && await Count("c06_delegation_revocation")==1 &&
         await Count("c06_delegation_authority")==2,"catalog denials preserve authorization history");
-    Console.WriteLine($"PASS C06-11 FLOW MYSQL checks={checks}; actual C05 session, SHA1 TOTP, one-use confirmation, isolated exact read and revocation");
+    // Real end-to-end lifecycle using the same original recipient session.
+    // No fixture edits to grants, MFA counters or quotas are permitted.
+    var reissueWindow=DateTimeOffset.UtcNow.ToUnixTimeSeconds()/60+1;
+    while(DateTimeOffset.UtcNow.ToUnixTimeSeconds()/60<reissueWindow)
+        await Task.Delay(TimeSpan.FromMilliseconds(250));
+    var reissue=Change(fields,"grantRevision","2");
+    var formerId=(byte[])(await Scalar("SELECT grant_id FROM c06_delegation_cycle_head WHERE tenant_id=@t AND subject_membership_id=@m",
+        ("t",tenant),("m",Key(Id("44")))))!;
+    Check(await Count("c06_delegation_cycle_head")==2,"one derived head per historical scope");
+    Check(await Denied("delegation/prepare",fields),"stale generation zero cannot reissue");
+    Check(await Denied("delegation/prepare",revoke),"stale first revoke cannot target terminal head");
+    var reissueProof=await Prepare(reissue);
+    await WireDenied("delegation/confirm",Confirm(reissue,reissueProof,fresh),HttpStatusCode.Unauthorized,token2);
+    await WireDenied("delegation/confirm",Confirm(reissue,reissueProof,fresh),HttpStatusCode.Unauthorized,token);
+    Check(await Count("c06_delegation_grant")==2,"reissue denial preserves all immutable rows");
+    var lastStep=Convert.ToInt64(await Scalar("SELECT last_accepted_step FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_id=@f",
+        ("a",actor),("f",factor)));
+    while(TotpSha1Verifier.StepAt(DateTimeOffset.UtcNow)<=lastStep)
+        await Task.Delay(TimeSpan.FromMilliseconds(250));
+    var newCode=TotpSha1Verifier.ComputeCode(seed,TotpSha1Verifier.StepAt(DateTimeOffset.UtcNow));
+    var beforeConsumed=Convert.ToInt64(await Scalar("SELECT COUNT(*) FROM c06_delegation_confirmation WHERE consumed_at_utc IS NOT NULL"));
+    var beforeAudit=Convert.ToInt64(await Scalar("SELECT COUNT(*) FROM c05_identity_audit WHERE tenant_id=@t AND action_code='delegation/confirm' AND outcome_code=1",("t",tenant)));
+    try
+    {
+        var rollbackResult=await rollbackFlow.ExecuteAsync(new("delegation-a.example.test","::ffff:127.0.0.1",
+            "delegation/confirm",Confirm(reissue,reissueProof,newCode),token),CancellationToken.None);
+        Check(!rollbackResult.Allowed,"late reissue provenance failure denies");
+    }
+    catch(MySqlException ex) when(ex.Number==1142)
+    {
+        Check(true,"late reissue provenance denied by restricted principal");
+    }
+    Check(await Count("c06_delegation_grant")==2 && await Count("c06_delegation_authority")==2 &&
+        Convert.ToInt64(await Scalar("SELECT revision FROM c06_delegation_cycle_head WHERE tenant_id=@t AND subject_membership_id=@m",("t",tenant),("m",Key(Id("44")))))==2,
+        "late provenance failure rolls back head and reissue");
+    Check(Convert.ToInt64(await Scalar("SELECT last_accepted_step FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_id=@f",("a",actor),("f",factor)))==lastStep &&
+        Convert.ToInt64(await Scalar("SELECT COUNT(*) FROM c06_delegation_confirmation WHERE consumed_at_utc IS NOT NULL"))==beforeConsumed &&
+        Convert.ToInt64(await Scalar("SELECT COUNT(*) FROM c05_identity_audit WHERE tenant_id=@t AND action_code='delegation/confirm' AND outcome_code=1",("t",tenant)))==beforeAudit,
+        "late reissue rollback does not consume MFA or commit successful audit");
+    // If the clock advanced during the rollback, obtain a fresh valid code.
+    newCode=TotpSha1Verifier.ComputeCode(seed,TotpSha1Verifier.StepAt(DateTimeOffset.UtcNow));
+    var reissued=await WireAllowed("delegation/confirm",Confirm(reissue,reissueProof,newCode),token,["accepted"],browser:true);
+    Check(reissued.GetProperty("accepted").GetBoolean(),"real fresh MFA commits new generation");
+    var newId=(byte[])(await Scalar("SELECT grant_id FROM c06_delegation_cycle_head WHERE tenant_id=@t AND subject_membership_id=@m AND revision=3",
+        ("t",tenant),("m",Key(Id("44")))))!;
+    Check(!formerId.SequenceEqual(newId) && await Count("c06_delegation_grant")==3 &&
+        await Count("c06_delegation_authority")==3 && await Count("c06_delegation_revocation")==1 &&
+        await Count("c06_delegation_cycle_head")==2,"new grant identity and immutable provenance, old history retained");
+    Check((await WireAllowed("delegation/read",readFields,subjectToken,["reference"],browser:true)).GetProperty("reference").GetString()=="SYNTHETIC-A",
+        "original recipient session reads only newly authorized generation");
+    Check(await Denied("delegation/read",readFields,otherToken),"reissue cannot revive another invalidated grant");
+    Check(await Denied("delegation/confirm",Confirm(reissue,reissueProof,newCode)) &&
+        await Denied("delegation/prepare",revoke),"old reissue and revocation replay denied after commit");
+    var activeOffer=await WireAllowed("delegation/inspect",inspectFields,token,inspectionShape);
+    Check(activeOffer.GetProperty("canRevoke").GetBoolean() &&
+        !activeOffer.GetProperty("canAssign").GetBoolean() &&
+        activeOffer.GetProperty("grantRevision").GetString()=="3","new generation only permits current revocation");
+    var newerRevoke=Change(revoke,"grantRevision","3");
+    var newerProof=await Prepare(newerRevoke);
+    var lastAccepted=Convert.ToInt64(await Scalar("SELECT last_accepted_step FROM c05_identity_mfa_factor WHERE account_id=@a AND factor_id=@f",("a",actor),("f",factor)));
+    while(TotpSha1Verifier.StepAt(DateTimeOffset.UtcNow)<=lastAccepted)
+        await Task.Delay(TimeSpan.FromMilliseconds(250));
+    var newerCode=TotpSha1Verifier.ComputeCode(seed,TotpSha1Verifier.StepAt(DateTimeOffset.UtcNow));
+    Check((await WireAllowed("delegation/confirm",Confirm(newerRevoke,newerProof,newerCode),token,["accepted"])).GetProperty("accepted").GetBoolean(),
+        "later generation revocation commits with distinct fresh MFA");
+    await WireDenied("delegation/read",readFields,HttpStatusCode.Unauthorized,subjectToken,browser:true);
+    Check(Convert.ToInt64(await Scalar("SELECT revision FROM c06_delegation_cycle_head WHERE tenant_id=@t AND subject_membership_id=@m",("t",tenant),("m",Key(Id("44")))))==4 &&
+        await Count("c06_delegation_revocation")==2 && await Count("c06_delegation_authority")==3,
+        "second committed revocation advances to terminal four, preserving provenance");
+    Check(Convert.ToInt64(await Scalar("SELECT COUNT(*) FROM c06_delegation_confirmation WHERE consumed_at_utc IS NOT NULL"))==5 &&
+        Convert.ToInt64(await Scalar("SELECT COUNT(*) FROM c05_identity_audit WHERE tenant_id=@t AND action_code='delegation/confirm' AND outcome_code=1",("t",tenant)))==5,
+        "all five successful transitions have distinct consumed confirmation and audit");
+    Console.WriteLine($"PASS C06-11 FLOW MYSQL checks={checks}; actual C05 session, SHA1 TOTP, one-use confirmation, isolated exact read and revocation; cycle 1-2-3-4");
     // Reset only time window naturally, never persisted quota or MFA counters.
     var privacyWindow=DateTimeOffset.UtcNow.ToUnixTimeSeconds()/60+1;
     while(DateTimeOffset.UtcNow.ToUnixTimeSeconds()/60<privacyWindow)
