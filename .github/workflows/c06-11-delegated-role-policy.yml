@@ -39,6 +39,7 @@ on:
       - 'backend/src/Crecisol.Application/Identity/C06DelegationInspection.cs'
       - 'docs/c06/C06_11_CATALOGO_DELEGACION_V2.json'
       - 'qa/c06_06_exceptional_scope.py'
+      - 'qa/c06_06_exceptional_audits.py'
       - 'backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs'
       - 'backend/src/Crecisol.Api/Contracts/C06DelegationHttpContract.cs'
       - 'docs/c06/C06_11_CATALOGO_DELEGACION_V1.json'
