@@ -33,10 +33,20 @@ var identity=C06OperationalMembershipContext.VerifyLockedServerEvidence(new C06L
     ServerNowUtc=now,ServerIdleMinutes=30
 });
 var scope=new C06DelegationScope(tenant,branch,resource,TenantRequiredAction.FromServerPolicy("identity.private.read"));
-var assign=new C06DelegationIntent(C06DelegationCommand.Assign,scope,subject,subjectMembership,role,3,0,now.AddHours(1));
+var assign=new C06DelegationIntent(C06DelegationCommand.Assign,scope,subject,subjectMembership,role,3,4,2,0,now.AddHours(1));
 var ceiling=new C06DelegationCeiling(scope,actor,actorMembership,2,true,true,now.AddHours(-1),now.AddHours(2),null);
 C06DelegationStepUp Proof(C06DelegationIntent i) => new(i,tenant,actor,actorMembership,
     identity.SessionRevision,identity.AccountRevision,identity.MembershipRevision,now);
+C06CaseAbacEvidence OwnRead(string roleCode="tenant-owner") => new()
+{
+    Identity=identity,ResourceTenant=tenant,ResourceBranch=branch,ResourceId=resource,
+    ResourceOwner=subject,SelectorBranch=branch,SelectorResource=resource,
+    BranchActive=true,ResourceActive=true,RoleCode=roleCode,RequiredAction=scope.Action,
+    GrantTenant=tenant,GrantActor=actor,GrantBranch=branch,GrantResource=null,
+    GrantPermissionCode="RESOURCE_READ",GrantScope=2,GrantRevision=5,
+    GrantIssuedAtUtc=now.AddHours(-1),GrantExpiresAtUtc=now.AddHours(2),
+    GrantRevokedAtUtc=null,Assignment=null,CheckedAtUtc=now
+};
 C06LockedDelegationEvidence Valid(C06DelegationIntent i) => new()
 {
     Identity=identity,Intent=i,VerifiedResourceScope=scope,BranchActive=true,ResourceActive=true,
@@ -44,7 +54,7 @@ C06LockedDelegationEvidence Valid(C06DelegationIntent i) => new()
     SubjectActor=subject,SubjectMembershipId=subjectMembership,SubjectMembershipRevision=4,
     SubjectMembershipActive=true,SubjectMembershipUntilUtc=now.AddDays(1),
     VerifiedRoleId=role,RoleTenant=tenant,RoleRevision=3,TargetRoleCode="tenant-staff",
-    RoleActive=true,Ceiling=ceiling,StepUp=Proof(i),Existing=null,NowUtc=now
+    RoleActive=true,Ceiling=ceiling,ActorEffectiveRead=OwnRead(),StepUp=Proof(i),Existing=null,NowUtc=now
 };
 var grant=new C06DelegationGrant(scope,subject,subjectMembership,role,1,now.AddMinutes(-1),now.AddHours(1),null);
 var revoke=assign with { Command=C06DelegationCommand.Revoke,ExpectedGrantRevision=1,UntilUtc=null };
@@ -60,7 +70,7 @@ void Allow(C06LockedDelegationEvidence e,C06DelegationCommand command,long expec
     Check(C06ScopedRoleDelegationPolicy.Decide(e) is { } d && d.Command==command &&
         d.ExpectedRevision==expected && d.NextRevision==next,name);
 Allow(a,C06DelegationCommand.Assign,0,1,"owner with explicit exact ceiling and bound proof");
-Allow(a with { ActorRoleCode="tenant-admin" },C06DelegationCommand.Assign,0,1,"admin requires same explicit ceiling");
+Allow(a with { ActorRoleCode="tenant-admin",ActorEffectiveRead=OwnRead("tenant-admin") },C06DelegationCommand.Assign,0,1,"admin requires same explicit ceiling");
 Allow(r,C06DelegationCommand.Revoke,1,2,"owner revokes exact current grant");
 Allow(r with { SubjectMembershipActive=false },C06DelegationCommand.Revoke,1,2,"revocation can close inactive subject");
 Allow(r with { Existing=grant with { UntilUtc=now } },C06DelegationCommand.Revoke,1,2,"revocation can close expired grant");
@@ -81,6 +91,7 @@ Deny(a with { RoleTenant=otherTenant },"foreign role tenant");
 Deny(a with { SubjectActor=otherSubject },"wrong actor selector");
 Deny(a with { SubjectMembershipId=Guid.NewGuid() },"wrong subject membership");
 Deny(a with { SubjectMembershipRevision=0 },"unversioned membership");
+Deny(a with { SubjectMembershipRevision=5 },"changed subject membership revision");
 Deny(a with { SubjectMembershipActive=false },"inactive member cannot receive grant");
 Deny(a with { SubjectMembershipUntilUtc=now },"expired membership");
 Deny(a with { SubjectMembershipUntilUtc=now.AddMinutes(1) },"grant cannot outlive membership");
@@ -99,6 +110,13 @@ Deny(a with { Ceiling=ceiling with { Scope=scope with { Resource=otherResource }
 Deny(a with { Ceiling=ceiling with { MayAssign=false } },"role label alone cannot grant");
 Deny(r with { Ceiling=ceiling with { MayRevoke=false } },"revoke outside ceiling");
 Deny(a with { Ceiling=ceiling with { Revision=0 } },"unversioned ceiling");
+Deny(a with { Ceiling=ceiling with { Revision=3 } },"changed ceiling revision");
+Deny(a with { ActorEffectiveRead=null },"ceiling does not substitute own read");
+Deny(a with { ActorEffectiveRead=OwnRead() with { GrantRevokedAtUtc=now } },"revoked own permission");
+Deny(a with { ActorEffectiveRead=OwnRead() with { GrantExpiresAtUtc=now.AddMinutes(1) } },"cannot grant longer than own authority");
+Deny(a with { ActorEffectiveRead=OwnRead() with { GrantActor=otherSubject } },"cannot borrow effective permission");
+Deny(a with { ActorEffectiveRead=OwnRead() with { SelectorResource=otherResource } },"own ABAC selector mismatch");
+Deny(a with { ActorEffectiveRead=OwnRead() with { RoleCode="tenant-admin" } },"inconsistent actor role evidence");
 Deny(a with { Ceiling=ceiling with { FromUtc=now.AddMinutes(1) } },"future ceiling");
 Deny(a with { Ceiling=ceiling with { UntilUtc=now } },"expired ceiling");
 Deny(a with { Ceiling=ceiling with { RevokedAtUtc=now } },"revoked ceiling");
@@ -107,7 +125,9 @@ Deny(a with { StepUp=null! },"missing consumed step-up");
 Deny(a with { StepUp=Proof(revoke) },"proof for other operation");
 Deny(a with { StepUp=Proof(assign with { Subject=otherSubject }) },"proof for other subject");
 Deny(a with { StepUp=Proof(assign with { RoleId=Guid.NewGuid() }) },"proof for other role");
-Deny(a with { StepUp=Proof(assign with { ExpectedRoleRevision=4 }) },"proof for other revision");
+Deny(a with { StepUp=Proof(assign with { ExpectedRoleRevision=4 }) },"proof for other role revision");
+Deny(a with { StepUp=Proof(assign with { ExpectedSubjectMembershipRevision=5 }) },"proof for other membership revision");
+Deny(a with { StepUp=Proof(assign with { ExpectedCeilingRevision=3 }) },"proof for other ceiling revision");
 Deny(a with { StepUp=Proof(assign with { UntilUtc=now.AddMinutes(30) }) },"proof for other expiry");
 Deny(a with { StepUp=a.StepUp with { Actor=otherSubject } },"proof actor mismatch");
 Deny(a with { StepUp=a.StepUp with { Tenant=otherTenant } },"proof tenant mismatch");

@@ -22,7 +22,8 @@ public sealed record C06DelegationScope(
 public sealed record C06DelegationIntent(
     C06DelegationCommand Command, C06DelegationScope Scope,
     TenantActorId Subject, Guid SubjectMembershipId, Guid RoleId,
-    long ExpectedRoleRevision, long ExpectedGrantRevision, DateTimeOffset? UntilUtc)
+    long ExpectedRoleRevision, long ExpectedSubjectMembershipRevision,
+    long ExpectedCeilingRevision, long ExpectedGrantRevision, DateTimeOffset? UntilUtc)
 {
     public override string ToString() => "C06DelegationIntent[redacted]";
 }
@@ -85,6 +86,7 @@ public sealed record C06LockedDelegationEvidence
     public required string TargetRoleCode { get; init; }
     public required bool RoleActive { get; init; }
     public required C06DelegationCeiling Ceiling { get; init; }
+    public required C06CaseAbacEvidence? ActorEffectiveRead { get; init; }
     public required C06DelegationStepUp StepUp { get; init; }
     public required C06DelegationGrant? Existing { get; init; }
     public required DateTimeOffset NowUtc { get; init; }
@@ -136,6 +138,7 @@ public static class C06ScopedRoleDelegationPolicy
             i.SubjectMembershipId == Guid.Empty || i.SubjectMembershipId != e.SubjectMembershipId ||
             i.SubjectMembershipId == e.Identity.MembershipId ||
             e.SubjectMembershipRevision <= 0 ||
+            i.ExpectedSubjectMembershipRevision != e.SubjectMembershipRevision ||
             i.RoleId == Guid.Empty || i.RoleId != e.VerifiedRoleId ||
             e.RoleTenant != i.Scope.Tenant || !e.RoleActive ||
             e.RoleRevision <= 0 || i.ExpectedRoleRevision != e.RoleRevision ||
@@ -144,6 +147,7 @@ public static class C06ScopedRoleDelegationPolicy
 
         if (!ValidScope(c.Scope) || c.Scope != i.Scope || c.Actor != e.Identity.ActorId ||
             c.ActorMembershipId != e.Identity.MembershipId || c.Revision <= 0 ||
+            i.ExpectedCeilingRevision != c.Revision ||
             !Utc(c.FromUtc) || !Utc(c.UntilUtc) ||
             c.FromUtc > now || c.UntilUtc <= now || c.RevokedAtUtc is not null ||
             (i.Command == C06DelegationCommand.Assign && !c.MayAssign) ||
@@ -182,10 +186,16 @@ public static class C06ScopedRoleDelegationPolicy
         {
             // No implicit extension, reactivation, or overwrite. New grants
             // require a separate reviewed lifecycle, not reuse of revoked rows.
-            if (g is not null || !e.SubjectMembershipActive ||
+            var own = e.ActorEffectiveRead;
+            if (own is null || own.Identity != e.Identity || own.RoleCode != e.ActorRoleCode ||
+                own.CheckedAtUtc != now || own.ResourceTenant != i.Scope.Tenant ||
+                own.ResourceBranch != i.Scope.Branch || own.ResourceId != i.Scope.Resource ||
+                own.RequiredAction != i.Scope.Action || !C06CaseAbacPolicy.Allows(own) ||
+                g is not null || !e.SubjectMembershipActive ||
                 !Utc(e.SubjectMembershipUntilUtc) || e.SubjectMembershipUntilUtc <= now ||
                 i.UntilUtc is not { } until || !Utc(until) || until <= now ||
-                until > c.UntilUtc || until > e.SubjectMembershipUntilUtc)
+                until > c.UntilUtc || until > e.SubjectMembershipUntilUtc ||
+                own.GrantExpiresAtUtc is not { } ownUntil || until > ownUntil)
                 return null;
         }
 

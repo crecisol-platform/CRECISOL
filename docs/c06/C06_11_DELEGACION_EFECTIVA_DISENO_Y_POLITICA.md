@@ -19,3 +19,7 @@ La política consume identidad C06-03 del mismo reloj de transacción, objeto/te
 ## Pruebas, alcance, impacto y reversión
 
 Se incorporan contratos ejecutables .NET10 con positivos y negativos independientes de tenant, sucursal, recurso, actor, rol, permiso, techo, prueba reforzada, ventana temporal, revisión, revocación y autoescalada. El workflow comprueba Maestro, diff exacto y seis rutas, ejecuta los contratos y compila API con warnings como errores. **Resultado pendiente al publicar.** No son pruebas HTTP/SQL, de MFA criptográfico ni de replay real. No hay nueva UI, migraciones, grant operativo, cambios en API, dependencias, datos, Maestro, main ni SOLQARYN. El PR integral #218 continúa aislado para conservar sus evidencias. Rollback: revertir exclusivamente los seis archivos del corte, sin impacto de datos. No fusionar esta candidata como certificación de administración efectiva.
+
+## Refuerzo previo a la ejecución
+
+La asignación exige también la autorización efectiva del propio delegador sobre el mismo recurso, evaluada por `C06CaseAbacPolicy` con identidad/rol/acción/recurso/reloj exactos. No se concede por techo aislado y la expiración del nuevo grant no supera la del acceso propio. La intención vinculada a MFA incorpora revisiones de la membresía destino y del techo, además de las del rol y grant. Revocar no necesita leer el contenido privado. Se añaden controles específicos para estos casos. Pendiente ejecución real.
