@@ -30,7 +30,7 @@
               @for (row of items(); track key(row)) {
                 <li class="delegation-row">
                   <div class="delegation-row__main">
-                    <span class="delegation-label" [class.delegation-label--revoke]="row.inspection.canRevoke">{{ row.inspection.canAssign ? 'Concesión disponible' : 'Revocación disponible' }}</span>
+                    <span class="delegation-label" [class.delegation-label--revoke]="row.inspection.canRevoke">{{ row.inspection.canAssign ? (row.inspection.grantRevision === '0' ? 'Concesión disponible' : 'Nuevo otorgamiento disponible') : 'Revocación disponible' }}</span>
                     <h4>{{ roleLabel(row.inspection.roleCode) }} · Consulta privada</h4>
                     <dl>
                       <div><dt>Sucursal</dt><dd>{{ reference(row.branchId) }}</dd></div>
@@ -65,6 +65,9 @@
           <div class="delegation-review__summary">
             <strong>{{ selected.inspection.canAssign ? 'Conceder consulta privada' : 'Revocar consulta privada' }}</strong>
             <p>{{ roleLabel(selected.inspection.roleCode) }}</p>
+            @if (selected.inspection.canAssign && selected.inspection.grantRevision !== '0') {
+              <p class="delegation-warning" role="note">Se registrará un permiso nuevo. La concesión revocada y su historial no se reactivan ni se eliminan.</p>
+            }
             <dl class="delegation-exact">
               <div><dt>Sucursal</dt><dd>{{ selected.branchId }}</dd></div>
               <div><dt>Expediente</dt><dd>{{ selected.resourceId }}</dd></div>
