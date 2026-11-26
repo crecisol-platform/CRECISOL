@@ -57,6 +57,15 @@ def guard():
          "GRANT INSERT ON crecisol_c05.c06_exception_audit" in role and
          not any(x in role for x in ("GRANT UPDATE","GRANT DELETE","GRANT ALL","GRANT SELECT,INSERT,UPDATE","GRANT SELECT,INSERT ON crecisol_c05.c06_exception_entitlement")),"runtime grant broadened")
     need("trg_c06_exception_audit_no_update" in schema and "trg_c06_exception_audit_no_delete" in schema and "trg_c06_exception_audit_guard" in schema,"audit integrity/immutability missing")
+def audited_product_end():
+    # Preserve historical no-frontend/crypto edits while independently
+    # checking the exact authorized successor; live guards still use HEAD.
+    changed=subprocess.check_output(["git","diff","--name-only",BASE,"HEAD"],cwd=ROOT,text=True).splitlines()
+    if "docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md" in changed:
+        from c06_11_delegated_role_scope import historical_product_end
+        return historical_product_end()
+    return "HEAD"
+
 def architecture():
     scope()
     policy=read("backend/src/Crecisol.Domain/Authorization/C06ExceptionalAccessPolicy.cs")
@@ -64,7 +73,7 @@ def architecture():
     need("NO CERTIFICADA" in read("docs/c06/C06_06_ESPECIFICACION.md"),"premature certification")
     need("contents: read" in read(".github/workflows/c06-06-exceptional-access.yml"),"workflow write permission")
     for p in ("frontend/","backend/src/Crecisol.CredentialSecurity/"):
-        diff=subprocess.check_output(["git","diff","--name-only",BASE,"HEAD","--",p],cwd=ROOT,text=True).strip()
+        diff=subprocess.check_output(["git","diff","--name-only",BASE,audited_product_end(),"--",p],cwd=ROOT,text=True).strip()
         need(not diff,"unapproved frontend or crypto change")
     need("DROP TABLE IF EXISTS c06_exception_audit;" in read("database/migrations/021_c06_exceptional_access.down.sql") and
          "DROP TABLE IF EXISTS c05_" not in read("database/migrations/021_c06_exceptional_access.down.sql"),"unsafe rollback")
