@@ -30,11 +30,20 @@ def scope():
     try: require_exact(changed[1:])
     except AssertionError: pass
     else: raise AssertionError("missing path accepted")
+def audited_product_end():
+    # Preserve the prior implementation's no-product-change invariant.
+    # Exact successor scope is independently checked; runtime controls use HEAD.
+    changed=git("diff","--name-only",BASE,"HEAD").splitlines()
+    if "docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md" in changed:
+        from c06_11_delegated_role_scope import historical_product_end
+        return historical_product_end()
+    return "HEAD"
+
 def inventory():
     from c06_01_permissions_catalog_audit import verify_catalog
     verify_catalog(json.loads(read("docs/c06/C06_01_CATALOGO_ACCIONES.json")),read("backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs"),read("backend/src/Crecisol.Api/Program.cs"))
     need("NO CERTIFICADA" in read("docs/c06/C06_08_ESPECIFICACION.md"),"premature certificate")
-    need(not git("diff","--name-only",BASE,"HEAD","--","docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx","docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf","frontend/","backend/src/Crecisol.CredentialSecurity/"),"unapproved layer/source change")
+    need(not git("diff","--name-only",BASE,audited_product_end(),"--","docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx","docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf","frontend/","backend/src/Crecisol.CredentialSecurity/"),"unapproved layer/source change")
 def boundary():
     a=read("backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs");p=read("backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Platform.cs");q=read("backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.PendingApprovals.cs");c=read("backend/src/Crecisol.Infrastructure/Identity/C06PendingCursor.cs")
     need(a.index("ResolveC06TenantContextFromLockedRows(")<a.index("return await PendingMemberships("),"page before authorization")
