@@ -2,6 +2,7 @@ import { canonicalPhotoPixels } from './canonical-photo-pixels';
 import { decodeDelegationPage, decodeInspection, decodeDelegationChallenge, decodeDelegationAccepted,
   exactSelection, type DelegationSelection, type DelegationIntent, type DelegationPage,
   type DelegationInspection, type DelegationChallenge } from './delegation-client.model';
+import { decodePrivacyPage, decodePrivacyReceipt, type PrivacyIntent, type PrivacyPage, type PrivacyReceipt } from './privacy-request-client.model';
 import { createTotpQr } from './totp-setup-qr';
 import { BrowserSessionWindow } from './browser-session-window';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
@@ -487,6 +488,24 @@ export class IdentityApiService {
   }
   async delegationConfirm(intent: DelegationIntent, challenge: string, code: string): Promise<void> {
     decodeDelegationAccepted(await this.delegationPost('confirm',{...intent,challenge,code}));
+  }
+
+  private async privacyPost(operation:'list'|'prepare'|'confirm',body:object):Promise<unknown>{
+    const revision=this.sessionRevision,context=this.delegationContext();
+    if(this.state()!=='authenticated')throw new Error('identity_unavailable');
+    const response=await this.post<unknown>('privacy/requests/'+operation,body);
+    if(revision!==this.sessionRevision||context!==this.delegationContext()||this.state()!=='authenticated')
+      throw new Error('identity_unavailable');
+    return response;
+  }
+  async privacyRequests(cursor:string):Promise<PrivacyPage>{
+    return decodePrivacyPage(await this.privacyPost('list',{cursor}));
+  }
+  async privacyPrepare(intent:PrivacyIntent):Promise<DelegationChallenge>{
+    return decodeDelegationChallenge(await this.privacyPost('prepare',intent));
+  }
+  async privacyConfirm(intent:PrivacyIntent,challenge:string,code:string):Promise<PrivacyReceipt>{
+    return decodePrivacyReceipt(await this.privacyPost('confirm',{...intent,challenge,code}));
   }
 
   async readPrivate(branchId: string, resourceId: string): Promise<void> {

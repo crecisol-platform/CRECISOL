@@ -83,7 +83,7 @@
               }
               <label for="delegation-reason">Motivo de la operación</label>
               <textarea class="cs-ui-control" id="delegation-reason" name="reason" required minlength="8" maxlength="240" rows="3" autocomplete="off" spellcheck="false" placeholder="Describe la finalidad autorizada, sin datos personales."></textarea>
-              <button class="delegation-primary" type="submit" [disabled]="busy() || !!modalError()">Preparar confirmación</button>
+              <button class="delegation-primary" type="submit" [disabled]="busy() || status() === 'error'">Preparar confirmación</button>
             </form>
           } @else if (challenge(); as proof) {
             <form (submit)="confirm($event)" class="delegation-form">

@@ -10,6 +10,11 @@ on:
       - '.github/workflows/c06-11-delegated-role-policy.yml'
       - 'qa/c06_11_delegated_role_scope.py'
       - 'qa/c06_02_role_model_audit.py'
+      - 'frontend/src/app/identity/privacy-request-client.model.ts'
+      - 'frontend/src/app/pages/privacy-requests.component.ts'
+      - 'frontend/src/app/pages/privacy-requests.component.html'
+      - 'frontend/src/app/pages/privacy-requests.component.css'
+      - 'frontend/tests/c06-privacy-requests.spec.ts'
       - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.PrivacyRequests.cs'
       - 'backend/src/Crecisol.Domain/Authorization/C06PrivacyRequestPolicy.cs'
       - 'backend/src/Crecisol.Application/Identity/C06PrivacyRequestContracts.cs'
@@ -171,7 +176,7 @@ jobs:
       - run: bash -n database/tests/c06_11_delegated_role_mysql.sh
       - run: C06_DELEGATION_FLOW_TESTS=1 bash database/tests/c06_11_delegated_role_mysql.sh
   e3-editor:
-    name: E3 | Angular 22 editor Chromium responsive and accessibility
+    name: E3 | Angular 22 delegation and privacy Chromium responsive and accessibility
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -186,12 +191,12 @@ jobs:
       - run: npm run build --prefix frontend
       - run: npx playwright install chromium
         working-directory: frontend
-      - run: npx playwright test tests/c06-delegation-editor.spec.ts --workers=1 --reporter=line
+      - run: npx playwright test tests/c06-delegation-editor.spec.ts tests/c06-privacy-requests.spec.ts --workers=1 --reporter=line
         working-directory: frontend
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: c06-11-delegation-editor-individual-captures
+          name: c06-11-delegation-and-privacy-individual-captures
           path: frontend/test-results/
           if-no-files-found: warn
           retention-days: 14

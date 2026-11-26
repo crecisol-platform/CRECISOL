@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 BASE="076118ab5370e1fcbc7bfe0f1caefe07a664365b"
-PATHS=frozenset(["backend/src/Crecisol.Domain/Authorization/C06ScopedRoleDelegationPolicy.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Program.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Crecisol.C06Delegation.ContractsTests.csproj","docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md",".github/workflows/c06-11-delegated-role-policy.yml","qa/c06_11_delegated_role_scope.py","qa/c06_02_role_model_audit.py","database/migrations/024_c06_delegated_role_ledger.sql","database/migrations/024_c06_delegated_role_ledger.down.sql","database/tests/c06_11_delegated_role_mysql.sh","qa/c06_07_privacy_scope.py","qa/c06_08_query_scope.py","qa/c06_09_delivery_scope.py","qa/c06_10_offensive_scope.py","qa/c06_07_privacy_audits.py","qa/c06_09_delivery_audits.py","qa/c06_10_offensive_audits.py","backend/src/Crecisol.Infrastructure/Authorization/MySqlC06DelegationLedger.cs","backend/tests/Crecisol.C06Delegation.MySqlTests/Crecisol.C06Delegation.MySqlTests.csproj","backend/tests/Crecisol.C06Delegation.MySqlTests/Program.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Delegation.cs","backend/src/Crecisol.Application/Identity/C06DelegationPreparation.cs","database/migrations/025_c06_delegation_confirmation.sql","database/migrations/025_c06_delegation_confirmation.down.sql","backend/tests/Crecisol.C06Delegation.FlowTests/Program.cs","backend/tests/Crecisol.C06Delegation.FlowTests/Crecisol.C06Delegation.FlowTests.csproj","qa/c06_03_context_audits.py","qa/c06_04_abac_audits.py","qa/c06_05_stepup_audits.py","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegatedRead.cs","database/migrations/026_c06_delegation_authority.sql","database/migrations/026_c06_delegation_authority.down.sql","qa/c05_sha1_exclusive_audits.py","backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs","backend/src/Crecisol.Api/Contracts/C06DelegationHttpContract.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V1.json","qa/c06_01_permissions_catalog_audit.py","backend/tests/Crecisol.C06Delegation.FlowTests/DelegationWireFixture.cs","qa/c06_06_exceptional_scope.py","backend/src/Crecisol.Application/Identity/C06DelegationInspection.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V2.json","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegationCatalog.cs","backend/src/Crecisol.Application/Identity/C06DelegationCatalog.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V3.json","frontend/src/app/identity/identity-api.service.ts","frontend/src/app/identity/delegation-client.model.ts","frontend/src/app/pages/delegation-editor.component.ts","frontend/src/app/pages/delegation-editor.component.html","frontend/src/app/pages/delegation-editor.component.css","frontend/src/app/pages/identity-flow-views.component.ts","frontend/src/app/pages/identity-workspace.component.html","frontend/tests/c06-delegation-editor.spec.ts","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.PrivacyRequests.cs","backend/src/Crecisol.Domain/Authorization/C06PrivacyRequestPolicy.cs","backend/src/Crecisol.Application/Identity/C06PrivacyRequestContracts.cs","backend/src/Crecisol.Api/Contracts/C06PrivacyRequestHttpContract.cs","database/migrations/027_c06_privacy_requests.sql","database/migrations/027_c06_privacy_requests.down.sql","docs/c06/C06_11_CATALOGO_PRIVACIDAD_V1.json","backend/tests/Crecisol.C06Delegation.FlowTests/PrivacyRequestFixture.cs"])
+PATHS=frozenset(["backend/src/Crecisol.Domain/Authorization/C06ScopedRoleDelegationPolicy.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Program.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Crecisol.C06Delegation.ContractsTests.csproj","docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md",".github/workflows/c06-11-delegated-role-policy.yml","qa/c06_11_delegated_role_scope.py","qa/c06_02_role_model_audit.py","database/migrations/024_c06_delegated_role_ledger.sql","database/migrations/024_c06_delegated_role_ledger.down.sql","database/tests/c06_11_delegated_role_mysql.sh","qa/c06_07_privacy_scope.py","qa/c06_08_query_scope.py","qa/c06_09_delivery_scope.py","qa/c06_10_offensive_scope.py","qa/c06_07_privacy_audits.py","qa/c06_09_delivery_audits.py","qa/c06_10_offensive_audits.py","backend/src/Crecisol.Infrastructure/Authorization/MySqlC06DelegationLedger.cs","backend/tests/Crecisol.C06Delegation.MySqlTests/Crecisol.C06Delegation.MySqlTests.csproj","backend/tests/Crecisol.C06Delegation.MySqlTests/Program.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Delegation.cs","backend/src/Crecisol.Application/Identity/C06DelegationPreparation.cs","database/migrations/025_c06_delegation_confirmation.sql","database/migrations/025_c06_delegation_confirmation.down.sql","backend/tests/Crecisol.C06Delegation.FlowTests/Program.cs","backend/tests/Crecisol.C06Delegation.FlowTests/Crecisol.C06Delegation.FlowTests.csproj","qa/c06_03_context_audits.py","qa/c06_04_abac_audits.py","qa/c06_05_stepup_audits.py","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegatedRead.cs","database/migrations/026_c06_delegation_authority.sql","database/migrations/026_c06_delegation_authority.down.sql","qa/c05_sha1_exclusive_audits.py","backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs","backend/src/Crecisol.Api/Contracts/C06DelegationHttpContract.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V1.json","qa/c06_01_permissions_catalog_audit.py","backend/tests/Crecisol.C06Delegation.FlowTests/DelegationWireFixture.cs","qa/c06_06_exceptional_scope.py","backend/src/Crecisol.Application/Identity/C06DelegationInspection.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V2.json","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegationCatalog.cs","backend/src/Crecisol.Application/Identity/C06DelegationCatalog.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V3.json","frontend/src/app/identity/identity-api.service.ts","frontend/src/app/identity/delegation-client.model.ts","frontend/src/app/pages/delegation-editor.component.ts","frontend/src/app/pages/delegation-editor.component.html","frontend/src/app/pages/delegation-editor.component.css","frontend/src/app/pages/identity-flow-views.component.ts","frontend/src/app/pages/identity-workspace.component.html","frontend/tests/c06-delegation-editor.spec.ts","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.PrivacyRequests.cs","backend/src/Crecisol.Domain/Authorization/C06PrivacyRequestPolicy.cs","backend/src/Crecisol.Application/Identity/C06PrivacyRequestContracts.cs","backend/src/Crecisol.Api/Contracts/C06PrivacyRequestHttpContract.cs","database/migrations/027_c06_privacy_requests.sql","database/migrations/027_c06_privacy_requests.down.sql","docs/c06/C06_11_CATALOGO_PRIVACIDAD_V1.json","backend/tests/Crecisol.C06Delegation.FlowTests/PrivacyRequestFixture.cs","frontend/src/app/identity/privacy-request-client.model.ts","frontend/src/app/pages/privacy-requests.component.ts","frontend/src/app/pages/privacy-requests.component.html","frontend/src/app/pages/privacy-requests.component.css","frontend/tests/c06-privacy-requests.spec.ts"])
 def git(*args):
     return subprocess.check_output(["git",*args],cwd=ROOT,text=True).strip()
 def need(ok,why):
@@ -200,6 +200,14 @@ HISTORICAL_EDITS={
         [
             "    ++this.sessionRevision;\n    ++this.pendingRequestRevision;",
             "    ++this.sessionRevision;\n    this.delegationContextValue.update(v => v + 1);\n    ++this.pendingRequestRevision;"
+        ],
+        [
+            "import { createTotpQr } from './totp-setup-qr';",
+            "import { decodePrivacyPage, decodePrivacyReceipt, type PrivacyIntent, type PrivacyPage, type PrivacyReceipt } from './privacy-request-client.model';\nimport { createTotpQr } from './totp-setup-qr';"
+        ],
+        [
+            "  async readPrivate(branchId: string, resourceId: string): Promise<void> {",
+            "  private async privacyPost(operation:'list'|'prepare'|'confirm',body:object):Promise<unknown>{\n    const revision=this.sessionRevision,context=this.delegationContext();\n    if(this.state()!=='authenticated')throw new Error('identity_unavailable');\n    const response=await this.post<unknown>('privacy/requests/'+operation,body);\n    if(revision!==this.sessionRevision||context!==this.delegationContext()||this.state()!=='authenticated')\n      throw new Error('identity_unavailable');\n    return response;\n  }\n  async privacyRequests(cursor:string):Promise<PrivacyPage>{\n    return decodePrivacyPage(await this.privacyPost('list',{cursor}));\n  }\n  async privacyPrepare(intent:PrivacyIntent):Promise<DelegationChallenge>{\n    return decodeDelegationChallenge(await this.privacyPost('prepare',intent));\n  }\n  async privacyConfirm(intent:PrivacyIntent,challenge:string,code:string):Promise<PrivacyReceipt>{\n    return decodePrivacyReceipt(await this.privacyPost('confirm',{...intent,challenge,code}));\n  }\n\n  async readPrivate(branchId: string, resourceId: string): Promise<void> {"
         ]
     ],
     "frontend/src/app/pages/identity-flow-views.component.ts": [
@@ -210,12 +218,24 @@ HISTORICAL_EDITS={
         [
             "  imports: [InstitutionalModalComponent, InstitutionalCardComponent, InstitutionalStateComponent, SecureFieldFeedbackDirective],",
             "  imports: [InstitutionalModalComponent, InstitutionalCardComponent, InstitutionalStateComponent, SecureFieldFeedbackDirective, DelegationEditorComponent],"
+        ],
+        [
+            "import { DelegationEditorComponent } from './delegation-editor.component';",
+            "import { DelegationEditorComponent } from './delegation-editor.component';\nimport { PrivacyRequestsComponent } from './privacy-requests.component';"
+        ],
+        [
+            "SecureFieldFeedbackDirective, DelegationEditorComponent],",
+            "SecureFieldFeedbackDirective, DelegationEditorComponent, PrivacyRequestsComponent],"
         ]
     ],
     "frontend/src/app/pages/identity-workspace.component.html": [
         [
             "  <!-- Permission details remain keyboard-accessible after the task-first queue. -->",
             "  <cs-delegation-editor />\n  <!-- Permission details remain keyboard-accessible after the task-first queue. -->"
+        ],
+        [
+            "} @else if (view() === 'historial') {",
+            "  <cs-privacy-requests />\n} @else if (view() === 'historial') {"
         ]
     ]
 }
@@ -291,6 +311,15 @@ def main():
     verify_delegation_overlay(transport)
     from c06_01_permissions_catalog_audit import verify_privacy_requests_overlay
     verify_privacy_requests_overlay(transport)
+    privacy_ui=(ROOT/"frontend/src/app/pages/privacy-requests.component.ts").read_text(encoding="utf-8")
+    privacy_template=(ROOT/"frontend/src/app/pages/privacy-requests.component.html").read_text(encoding="utf-8")
+    for invariant in ("privacyRequests('start')","privacyPrepare(intent)","privacyConfirm(intent,proof.challenge,code)",
+                      "this.intent=null","this.challenge.set(null)","this.identity.delegationContext()"):
+        need(invariant in privacy_ui,"privacy portal missing "+invariant)
+    for forbidden in ("localStorage","sessionStorage","indexedDB","innerHTML"):
+        need(forbidden not in privacy_ui and forbidden not in privacy_template,"privacy portal persists or injects private values")
+    need('@if (available())' in privacy_template and 'autocomplete="one-time-code"' in privacy_template and
+         "Evaluación pendiente" in privacy_template,"privacy portal gate or assessment presentation missing")
     privacy_source=(ROOT/"backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.PrivacyRequests.cs").read_text(encoding="utf-8")
     privacy_sql=(ROOT/"database/migrations/027_c06_privacy_requests.sql").read_text(encoding="utf-8")
     need(no_authority_change(re.sub(r"(?m)^\s*--[^\n]*$", "",privacy_sql)),"privacy migration expands authority")
@@ -371,7 +400,7 @@ def main():
          "ledger not empty; preserve history" in down,"unsafe down migration")
     for path in ("database/operations/c05_local_runtime_role.sql","database/operations/c06_04_local_runtime_role.sql"):
         need(git("rev-parse",BASE+":"+path)==git("rev-parse","HEAD:"+path),"runtime grant source changed")
-    print("PASS C06-11 DELEGATION sixty-two isolated paths, six rejected mutations; exact C06-02/07/08/09/10 successor routing, prior contracts and Master unchanged")
+    print("PASS C06-11 DELEGATION sixty-seven isolated paths, six rejected mutations; exact C06-02/07/08/09/10 successor routing, prior contracts and Master unchanged")
 
 if __name__=="__main__":
     main()

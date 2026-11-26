@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked, viewChild, OnDestroy } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, effect, inject, Injector, signal, untracked, viewChild, OnDestroy } from '@angular/core';
 import { IdentityApiService } from '../identity/identity-api.service';
 import { identityDateLabel, identityReferenceLabel } from '../identity/identity-presentation';
 import { delegationExpiry, delegationKey, delegationRoleLabel, exactSelection, type DelegationCandidate,
@@ -14,6 +14,7 @@ type EditorStatus='idle'|'loading'|'ready'|'error';
 })
 export class DelegationEditorComponent implements OnDestroy {
   private readonly identity=inject(IdentityApiService);
+  private readonly injector=inject(Injector);
   private readonly review=viewChild<InstitutionalModalComponent>('review');
   readonly available=signal(false);
   readonly opened=signal(false);
@@ -166,7 +167,9 @@ export class DelegationEditorComponent implements OnDestroy {
       await this.identity.delegationConfirm(intent,proof.challenge,code);
       if(!this.current(g))return;
       this.message.set(intent.command==='assign'?'Permiso registrado por el servidor.':'Revocación registrada por el servidor.');
-      this.busy.set(false);this.review()?.close();this.dismiss();await this.load('start');
+      this.busy.set(false);
+      afterNextRender(()=>this.review()?.close(),{injector:this.injector});
+      await this.load('start');
     }catch{
       if(this.current(g)){
         this.items.set([]);this.cursor.set(null);this.status.set('error');
