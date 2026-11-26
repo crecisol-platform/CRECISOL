@@ -67,7 +67,6 @@
       @if(chosen(); as right) {
         <div class="privacy-review">
           <p class="privacy-selected"><strong>{{ rightLabel(right) }}</strong></p>
-          @if(error()) {<p role="alert" class="privacy-error">{{ error() }}</p>}
           @if(step()===1) {
             <form class="privacy-form" (submit)="prepare($event)">
               <label for="privacy-category">Categoría de datos</label>
