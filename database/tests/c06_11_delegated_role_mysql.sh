@@ -251,6 +251,25 @@ if [[ "${C06_DELEGATION_LIFECYCLE_TESTS:-0}" == 1 ]]; then
   # Check both empty reversal and preservation of a populated 024 baseline.
   apply "$cycle_up"
   assert "SELECT COUNT(*) FROM c06_delegation_cycle_head" "0" "empty lifecycle head"
+  if [[ "${C06_DELEGATION_CYCLE_WRITER_TESTS:-0}" == 1 ]]; then
+    writer_password="$(openssl rand -hex 24)"
+    sql "CREATE USER 'c06_delegation_writer_test'@'%' IDENTIFIED BY '$writer_password';
+         GRANT SELECT ON crecisol_c05.c05_identity_membership TO 'c06_delegation_writer_test'@'%';
+         GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_grant TO 'c06_delegation_writer_test'@'%';
+         GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_revocation TO 'c06_delegation_writer_test'@'%';
+         GRANT SELECT ON crecisol_c05.c06_delegation_cycle_head TO 'c06_delegation_writer_test'@'%';"
+    writer_port="$(docker port "$NAME" 3306/tcp | sed -n 's/^127\.0\.0\.1://p')"
+    [[ "$writer_port" =~ ^[0-9]+$ && "$writer_port" != 3306 ]]
+    C06_DELEGATION_TEST_DSN="Server=127.0.0.1;Port=$writer_port;Database=crecisol_c05;User ID=c06_delegation_writer_test;Password=$writer_password;SslMode=None;Pooling=False" \
+    C06_DELEGATION_CYCLE_WRITER_TESTS=1 \
+      dotnet run -c Release --project "$ROOT/backend/tests/Crecisol.C06Delegation.MySqlTests/Crecisol.C06Delegation.MySqlTests.csproj"
+    sql "DROP USER 'c06_delegation_writer_test'@'%'"
+    assert "SELECT (SELECT COUNT(*) FROM c06_delegation_grant)+(SELECT COUNT(*) FROM c06_delegation_revocation)+(SELECT COUNT(*) FROM c06_delegation_cycle_head)" "0" "cycle writer rollback preserves empty fixture"
+    [[ "$(sql "SHOW GRANTS FOR 'c05_identity_local_runtime'")" == "$before_grants" ]]
+    apply "$cycle_down"
+    echo "PASS C06-11 CYCLE WRITER real MySQL transaction, no runtime role change"
+    exit 0
+  fi
   apply "$cycle_down"
   assert "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='crecisol_c05' AND table_name='c06_delegation_cycle_head'" "0" "empty lifecycle reversal"
   sql "$(grant_sql "$T" "$G1" "$BR" "$RES" "$MB" "$MA" "$END" "$H2"); $(revoke_sql "$T" "$G1" "$BR" "$RES" "$MA" "$H3"); $(grant_sql "$T" "$G2" "$BR" "$RES" "$MD" "$MA" "$END" "$H4");"
