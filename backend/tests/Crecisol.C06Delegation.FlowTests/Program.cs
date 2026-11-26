@@ -512,6 +512,22 @@ try
         {Value=new C06DelegationInspection("tenant-staff",1,9007199254740993L,1,0,true,false,DateTimeOffset.UtcNow.AddMinutes(1))},out var precise) &&
         JsonSerializer.Serialize(precise.Value).Contains("\"membershipRevision\":\"9007199254740993\"",StringComparison.Ordinal),
         "inspection preserves BIGINT revision precision at HTTP boundary");
+    foreach(var invalidCycle in new[]{(Revision:-1L,Assign:true),(Revision:1L,Assign:true),
+             (Revision:0L,Assign:false),(Revision:2L,Assign:false),
+             (Revision:long.MaxValue-1,Assign:true),(Revision:long.MaxValue,Assign:false)})
+        Check(!C06DelegationHttpContract.TryApply("delegation/inspect",invalidInspection with
+            {Value=new C06DelegationInspection("tenant-staff",1,1,1,invalidCycle.Revision,invalidCycle.Assign,
+                !invalidCycle.Assign,invalidCycle.Assign?DateTimeOffset.UtcNow.AddMinutes(1):null)},out _),
+            "inspection rejects illegal lifecycle revision and command combination");
+    Check(C06DelegationHttpContract.TryApply("delegation/inspect",invalidInspection with
+        {Value=new C06DelegationInspection("tenant-staff",1,1,1,9007199254740994L,true,false,
+            DateTimeOffset.UtcNow.AddMinutes(1))},out var preciseCycle) &&
+        JsonSerializer.Serialize(preciseCycle.Value).Contains("\"grantRevision\":\"9007199254740994\"",StringComparison.Ordinal),
+        "inspection preserves large even grant revision without rounding");
+    Check(C06DelegationHttpContract.TryApply("delegation/inspect",invalidInspection with
+        {Value=new C06DelegationInspection("tenant-staff",1,1,1,9007199254740995L,false,true,null)},out var preciseRevoke) &&
+        JsonSerializer.Serialize(preciseRevoke.Value).Contains("\"grantRevision\":\"9007199254740995\"",StringComparison.Ordinal),
+        "inspection preserves large odd grant revision without rounding");
     Check(await Count("c06_delegation_grant")==2 && await Count("c06_delegation_revocation")==1 &&
         await Count("c06_delegation_authority")==2,"inspection denials preserve authorization history");
     await WireDenied("delegation/catalog",catalogFields,HttpStatusCode.Unauthorized);
