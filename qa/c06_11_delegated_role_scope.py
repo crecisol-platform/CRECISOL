@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 BASE="076118ab5370e1fcbc7bfe0f1caefe07a664365b"
-PATHS=frozenset(["backend/src/Crecisol.Domain/Authorization/C06ScopedRoleDelegationPolicy.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Program.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Crecisol.C06Delegation.ContractsTests.csproj","docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md",".github/workflows/c06-11-delegated-role-policy.yml","qa/c06_11_delegated_role_scope.py","qa/c06_02_role_model_audit.py","database/migrations/024_c06_delegated_role_ledger.sql","database/migrations/024_c06_delegated_role_ledger.down.sql","database/tests/c06_11_delegated_role_mysql.sh"])
+PATHS=frozenset(["backend/src/Crecisol.Domain/Authorization/C06ScopedRoleDelegationPolicy.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Program.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Crecisol.C06Delegation.ContractsTests.csproj","docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md",".github/workflows/c06-11-delegated-role-policy.yml","qa/c06_11_delegated_role_scope.py","qa/c06_02_role_model_audit.py","database/migrations/024_c06_delegated_role_ledger.sql","database/migrations/024_c06_delegated_role_ledger.down.sql","database/tests/c06_11_delegated_role_mysql.sh","qa/c06_07_privacy_scope.py","qa/c06_08_query_scope.py","qa/c06_09_delivery_scope.py","qa/c06_10_offensive_scope.py","qa/c06_07_privacy_audits.py","qa/c06_09_delivery_audits.py","qa/c06_10_offensive_audits.py"])
 def git(*args):
     return subprocess.check_output(["git",*args],cwd=ROOT,text=True).strip()
 def need(ok,why):
@@ -18,7 +18,84 @@ def require_exact(paths):
          "scope drift: "+repr(sorted(actual ^ PATHS)))
     return paths
 
+# Precisely reviewed historical source edits only.
+HISTORICAL_EDITS={
+    "qa/c06_07_privacy_scope.py": [
+        [
+            "def require_exact(changed):\n",
+            "def require_exact(changed):\n    if \"docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md\" in changed:\n        from c06_11_delegated_role_scope import require_exact as require_delegation\n        return require_delegation(changed)\n"
+        ]
+    ],
+    "qa/c06_08_query_scope.py": [
+        [
+            "def require_exact(changed):\n",
+            "def require_exact(changed):\n    if \"docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md\" in changed:\n        from c06_11_delegated_role_scope import require_exact as require_delegation\n        return require_delegation(changed)\n"
+        ]
+    ],
+    "qa/c06_09_delivery_scope.py": [
+        [
+            "def require_exact(changed):\n",
+            "def require_exact(changed):\n    if \"docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md\" in changed:\n        from c06_11_delegated_role_scope import require_exact as require_delegation\n        return require_delegation(changed)\n"
+        ]
+    ],
+    "qa/c06_10_offensive_scope.py": [
+        [
+            "def require_exact(changed):\n",
+            "def require_exact(changed):\n    if \"docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md\" in changed:\n        from c06_11_delegated_role_scope import require_exact as require_delegation\n        return require_delegation(changed)\n"
+        ]
+    ],
+    "qa/c06_07_privacy_audits.py": [
+        [
+            "    end= \"3789224e49f3183563a7f8491a3b3101f161a6a1\" if any(p in changed for p in (\"docs/c06/C06_08_ESPECIFICACION.md\",\"docs/c06/C06_09_ESPECIFICACION.md\",\"docs/c06/C06_10_ESPECIFICACION.md\")) else \"HEAD\"",
+            "    end= \"3789224e49f3183563a7f8491a3b3101f161a6a1\" if any(p in changed for p in (\"docs/c06/C06_08_ESPECIFICACION.md\",\"docs/c06/C06_09_ESPECIFICACION.md\",\"docs/c06/C06_10_ESPECIFICACION.md\",\"docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md\")) else \"HEAD\""
+        ]
+    ],
+    "qa/c06_09_delivery_audits.py": [
+        [
+            "def inventory():\n",
+            "def audited_product_end():\n    # Preserve the prior implementation's no-product-change invariant.\n    # Exact successor scope is independently checked; runtime controls use HEAD.\n    changed=git(\"diff\",\"--name-only\",BASE,\"HEAD\").splitlines()\n    if \"docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md\" in changed:\n        from c06_11_delegated_role_scope import historical_product_end\n        return historical_product_end()\n    return \"HEAD\"\n\ndef inventory():\n"
+        ],
+        [
+            "need(not git(\"diff\",\"--name-only\",BASE,\"HEAD\",\"--\",\"frontend/\",\"database/migrations/\",\"database/operations/\",\"backend/src/Crecisol.CredentialSecurity/\",\"docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx\",\"docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf\",\"docs/c06/C06_01_CATALOGO_ACCIONES.json\",\"docs/c06/C06_02_MATRIZ_ROLES_CAPACIDADES.json\"),\"unapproved source or persistence change\")",
+            "need(not git(\"diff\",\"--name-only\",BASE,audited_product_end(),\"--\",\"frontend/\",\"database/migrations/\",\"database/operations/\",\"backend/src/Crecisol.CredentialSecurity/\",\"docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx\",\"docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf\",\"docs/c06/C06_01_CATALOGO_ACCIONES.json\",\"docs/c06/C06_02_MATRIZ_ROLES_CAPACIDADES.json\"),\"unapproved source or persistence change\")"
+        ],
+        [
+            "need(not git(\"diff\",\"--name-only\",BASE,\"HEAD\",\"--\",\"database/migrations/\",\"database/operations/\"),\"persistence privilege drift\")",
+            "need(not git(\"diff\",\"--name-only\",BASE,audited_product_end(),\"--\",\"database/migrations/\",\"database/operations/\"),\"persistence privilege drift\")"
+        ]
+    ],
+    "qa/c06_10_offensive_audits.py": [
+        [
+            "def scope():\n",
+            "def audited_product_end():\n    # Preserve the prior implementation's no-product-change invariant.\n    # Exact successor scope is independently checked; runtime controls use HEAD.\n    changed=git(\"diff\",\"--name-only\",BASE,\"HEAD\").splitlines()\n    if \"docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md\" in changed:\n        from c06_11_delegated_role_scope import historical_product_end\n        return historical_product_end()\n    return \"HEAD\"\n\ndef scope():\n"
+        ],
+        [
+            "need(not git(\"diff\",\"--name-only\",BASE,\"HEAD\",\"--\",path),\"unapproved product/authority change \"+path)",
+            "need(not git(\"diff\",\"--name-only\",BASE,audited_product_end(),\"--\",path),\"unapproved product/authority change \"+path)"
+        ]
+    ]
+}
+HISTORICAL_MODS=frozenset(HISTORICAL_EDITS) | {"qa/c06_02_role_model_audit.py"}
+
+def historical_product_end():
+    need(subprocess.run(["git","merge-base","--is-ancestor",BASE,"HEAD"],cwd=ROOT).returncode==0,
+         "missing ratified historical baseline")
+    paths=git("diff","--name-only",BASE,"HEAD").splitlines()
+    require_exact(paths)
+    status=git("diff","--name-status","--no-renames",BASE,"HEAD").splitlines()
+    expected={"M\t"+p if p in HISTORICAL_MODS else "A\t"+p for p in PATHS}
+    need(len(status)==len(expected) and set(status)==expected,"unapproved path status")
+    for path,pairs in HISTORICAL_EDITS.items():
+        expected_text=git("show",BASE+":"+path)
+        for old,new in pairs:
+            need(expected_text.count(old)==1,"historical marker drift "+path)
+            expected_text=expected_text.replace(old,new)
+        need((ROOT/path).read_text(encoding="utf-8").strip()==expected_text,
+             "historical audit modified beyond exact successor change: "+path)
+    return BASE
+
 def main():
+    historical_product_end()
     need(subprocess.run(["git","merge-base","--is-ancestor",BASE,"HEAD"],cwd=ROOT).returncode==0,"missing verified base")
     need(os.environ.get("GITHUB_EVENT_NAME")=="pull_request" and os.environ.get("GITHUB_BASE_REF")=="dev","only draft candidate PR to dev")
     paths=git("diff","--name-only",BASE,"HEAD").splitlines()
@@ -73,7 +150,7 @@ def main():
          "ledger not empty; preserve history" in down,"unsafe down migration")
     for path in ("database/operations/c05_local_runtime_role.sql","database/operations/c06_04_local_runtime_role.sql"):
         need(git("rev-parse",BASE+":"+path)==git("rev-parse","HEAD:"+path),"runtime grant source changed")
-    print("PASS C06-11 DELEGATION ten isolated paths, six rejected mutations; exact C06-02 successor routing, prior contracts and Master unchanged")
+    print("PASS C06-11 DELEGATION seventeen isolated paths, six rejected mutations; exact C06-02/07/08/09/10 successor routing, prior contracts and Master unchanged")
 
 if __name__=="__main__":
     main()

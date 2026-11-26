@@ -30,6 +30,15 @@ def scope():
     try: require_exact(changed[1:])
     except AssertionError: pass
     else: raise AssertionError("missing path accepted")
+def audited_product_end():
+    # Preserve the prior implementation's no-product-change invariant.
+    # Exact successor scope is independently checked; runtime controls use HEAD.
+    changed=git("diff","--name-only",BASE,"HEAD").splitlines()
+    if "docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md" in changed:
+        from c06_11_delegated_role_scope import historical_product_end
+        return historical_product_end()
+    return "HEAD"
+
 def inventory():
     from c06_01_permissions_catalog_audit import verify_catalog
     catalog=json.loads(read("docs/c06/C06_01_CATALOGO_ACCIONES.json"))
@@ -39,7 +48,7 @@ def inventory():
     for action in ("media.private.read","media.private.export","finance.report.export"):
         rows=[a for a in catalog["normative_actions"] if a["action_id"]==action]
         need(len(rows)==1 and rows[0]["http_registered"] is False and rows[0]["grantable"] is False,"future action exposed "+action)
-    need(not git("diff","--name-only",BASE,"HEAD","--","frontend/","database/migrations/","database/operations/","backend/src/Crecisol.CredentialSecurity/","docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx","docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf","docs/c06/C06_01_CATALOGO_ACCIONES.json","docs/c06/C06_02_MATRIZ_ROLES_CAPACIDADES.json"),"unapproved source or persistence change")
+    need(not git("diff","--name-only",BASE,audited_product_end(),"--","frontend/","database/migrations/","database/operations/","backend/src/Crecisol.CredentialSecurity/","docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx","docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.pdf","docs/c06/C06_01_CATALOGO_ACCIONES.json","docs/c06/C06_02_MATRIZ_ROLES_CAPACIDADES.json"),"unapproved source or persistence change")
     need("NO CERTIFICADA" in read("docs/c06/C06_09_ESPECIFICACION.md"),"premature certificate")
 def boundary():
     content=read("backend/src/Crecisol.Application/Identity/C06ProtectedContent.cs")
@@ -72,7 +81,7 @@ def persistence():
     script=read("database/tests/c06_09_delivery_mysql.sh")
     for marker in ("SHOW GRANTS FOR","--protocol=SOCKET","app_sql","ERROR $3","tenant audit update","tenant audit deletion","raw platform audit read","platform audit update","platform audit deletion","profile without matching tenant membership","inconsistent photo state","1452","3819","PASS C06-09 D MYSQL"):
         need(marker in script,"MySQL boundary case missing "+marker)
-    need(not git("diff","--name-only",BASE,"HEAD","--","database/migrations/","database/operations/"),"persistence privilege drift")
+    need(not git("diff","--name-only",BASE,audited_product_end(),"--","database/migrations/","database/operations/"),"persistence privilege drift")
 if __name__=="__main__":
     stage=sys.argv[1] if len(sys.argv)==2 else ""
     need(stage in ("A","B","C","D"),"stage")

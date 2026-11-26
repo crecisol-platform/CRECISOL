@@ -10,6 +10,13 @@ on:
       - '.github/workflows/c06-11-delegated-role-policy.yml'
       - 'qa/c06_11_delegated_role_scope.py'
       - 'qa/c06_02_role_model_audit.py'
+      - 'qa/c06_07_privacy_scope.py'
+      - 'qa/c06_08_query_scope.py'
+      - 'qa/c06_09_delivery_scope.py'
+      - 'qa/c06_10_offensive_scope.py'
+      - 'qa/c06_07_privacy_audits.py'
+      - 'qa/c06_09_delivery_audits.py'
+      - 'qa/c06_10_offensive_audits.py'
       - 'database/migrations/024_c06_delegated_role_ledger.sql'
       - 'database/migrations/024_c06_delegated_role_ledger.down.sql'
       - 'database/tests/c06_11_delegated_role_mysql.sh'
@@ -30,6 +37,15 @@ jobs:
       - run: python3 qa/c06_02_role_model_audit.py A
       - run: python3 qa/c06_02_role_model_audit.py B
       - run: python3 qa/c06_02_role_model_audit.py C
+      - name: Historical A/B/C/D controls on current source
+        run: |
+          set -euo pipefail
+          for gate in A B C D; do
+            python3 qa/c06_07_privacy_audits.py "$gate"
+            python3 qa/c06_08_query_audits.py "$gate"
+            python3 qa/c06_09_delivery_audits.py "$gate"
+            python3 qa/c06_10_offensive_audits.py "$gate"
+          done
   b-contracts:
     name: B | Delegation policy real .NET 10 positive and negative contracts
     runs-on: ubuntu-24.04
