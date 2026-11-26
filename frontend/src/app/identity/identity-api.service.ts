@@ -1,4 +1,7 @@
 import { canonicalPhotoPixels } from './canonical-photo-pixels';
+import { decodeDelegationPage, decodeInspection, decodeDelegationChallenge, decodeDelegationAccepted,
+  exactSelection, type DelegationSelection, type DelegationIntent, type DelegationPage,
+  type DelegationInspection, type DelegationChallenge } from './delegation-client.model';
 import { createTotpQr } from './totp-setup-qr';
 import { BrowserSessionWindow } from './browser-session-window';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
@@ -33,6 +36,8 @@ export class IdentityApiService {
   private csrfValue: string | null = null;
   // Invalidate responses created under an older session or MFA enrollment.
   private sessionRevision = 0;
+  private readonly delegationContextValue = signal(0);
+  readonly delegationContext = this.delegationContextValue.asReadonly();
   // A later denial or decision invalidates older pending-approval responses.
   private pendingRequestRevision = 0;
   private enrollmentRevision = 0;
@@ -80,6 +85,7 @@ export class IdentityApiService {
         this.sessionWindow.establish(result.expiresAtUtc, result.idleMinutes);
         this.idleMinutes.set(result.idleMinutes);
         this.activityLastSent = Date.now();
+        this.delegationContextValue.update(v => v + 1);
         this.stateValue.set('authenticated');
       }
     } catch { if (revision === this.sessionRevision) this.clear(); }
@@ -290,6 +296,7 @@ export class IdentityApiService {
     this.enrollmentSecret.set('');
     this.enrollmentQr.set('');
     this.enrollmentRequired.set(false);
+    this.delegationContextValue.update(v => v + 1);
     this.stateValue.set('authenticated');
     this.sessionWindow.establish(result.expiresAtUtc, result.idleMinutes);
     this.idleMinutes.set(result.idleMinutes);
@@ -459,6 +466,29 @@ export class IdentityApiService {
     try { await this.loadPendingMemberships(); } catch { /* The approved decision stays committed; reload can be retried. */ }
   }
 
+  // Only the four closed operations are callable by this editor. Check
+  // both C05 session revision and context epoch before accepting a response.
+  private async delegationPost(operation: 'catalog'|'inspect'|'prepare'|'confirm', body: object): Promise<unknown> {
+    const revision=this.sessionRevision, context=this.delegationContext();
+    if(this.state()!=='authenticated') throw new Error('identity_unavailable');
+    const response=await this.post<unknown>('delegation/'+operation,body);
+    if(revision!==this.sessionRevision || context!==this.delegationContext() ||
+        this.state()!=='authenticated') throw new Error('identity_unavailable');
+    return response;
+  }
+  async delegationCatalog(cursor: string): Promise<DelegationPage> {
+    return decodeDelegationPage(await this.delegationPost('catalog',{cursor}));
+  }
+  async delegationInspect(selection: DelegationSelection): Promise<DelegationInspection> {
+    return decodeInspection(await this.delegationPost('inspect',exactSelection(selection)));
+  }
+  async delegationPrepare(intent: DelegationIntent): Promise<DelegationChallenge> {
+    return decodeDelegationChallenge(await this.delegationPost('prepare',intent));
+  }
+  async delegationConfirm(intent: DelegationIntent, challenge: string, code: string): Promise<void> {
+    decodeDelegationAccepted(await this.delegationPost('confirm',{...intent,challenge,code}));
+  }
+
   async readPrivate(branchId: string, resourceId: string): Promise<void> {
     const revision = this.sessionRevision;
     this.privateReference.set('');
@@ -532,6 +562,7 @@ export class IdentityApiService {
   clear(): void {
     this.sessionEndedNotice.set(false);
     ++this.sessionRevision;
+    this.delegationContextValue.update(v => v + 1);
     ++this.pendingRequestRevision;
     ++this.enrollmentRevision;
     ++this.pairingRevision;

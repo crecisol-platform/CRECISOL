@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 BASE="076118ab5370e1fcbc7bfe0f1caefe07a664365b"
-PATHS=frozenset(["backend/src/Crecisol.Domain/Authorization/C06ScopedRoleDelegationPolicy.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Program.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Crecisol.C06Delegation.ContractsTests.csproj","docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md",".github/workflows/c06-11-delegated-role-policy.yml","qa/c06_11_delegated_role_scope.py","qa/c06_02_role_model_audit.py","database/migrations/024_c06_delegated_role_ledger.sql","database/migrations/024_c06_delegated_role_ledger.down.sql","database/tests/c06_11_delegated_role_mysql.sh","qa/c06_07_privacy_scope.py","qa/c06_08_query_scope.py","qa/c06_09_delivery_scope.py","qa/c06_10_offensive_scope.py","qa/c06_07_privacy_audits.py","qa/c06_09_delivery_audits.py","qa/c06_10_offensive_audits.py","backend/src/Crecisol.Infrastructure/Authorization/MySqlC06DelegationLedger.cs","backend/tests/Crecisol.C06Delegation.MySqlTests/Crecisol.C06Delegation.MySqlTests.csproj","backend/tests/Crecisol.C06Delegation.MySqlTests/Program.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Delegation.cs","backend/src/Crecisol.Application/Identity/C06DelegationPreparation.cs","database/migrations/025_c06_delegation_confirmation.sql","database/migrations/025_c06_delegation_confirmation.down.sql","backend/tests/Crecisol.C06Delegation.FlowTests/Program.cs","backend/tests/Crecisol.C06Delegation.FlowTests/Crecisol.C06Delegation.FlowTests.csproj","qa/c06_03_context_audits.py","qa/c06_04_abac_audits.py","qa/c06_05_stepup_audits.py","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegatedRead.cs","database/migrations/026_c06_delegation_authority.sql","database/migrations/026_c06_delegation_authority.down.sql","qa/c05_sha1_exclusive_audits.py","backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs","backend/src/Crecisol.Api/Contracts/C06DelegationHttpContract.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V1.json","qa/c06_01_permissions_catalog_audit.py","backend/tests/Crecisol.C06Delegation.FlowTests/DelegationWireFixture.cs","qa/c06_06_exceptional_scope.py","backend/src/Crecisol.Application/Identity/C06DelegationInspection.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V2.json","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegationCatalog.cs","backend/src/Crecisol.Application/Identity/C06DelegationCatalog.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V3.json"])
+PATHS=frozenset(["backend/src/Crecisol.Domain/Authorization/C06ScopedRoleDelegationPolicy.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Program.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Crecisol.C06Delegation.ContractsTests.csproj","docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md",".github/workflows/c06-11-delegated-role-policy.yml","qa/c06_11_delegated_role_scope.py","qa/c06_02_role_model_audit.py","database/migrations/024_c06_delegated_role_ledger.sql","database/migrations/024_c06_delegated_role_ledger.down.sql","database/tests/c06_11_delegated_role_mysql.sh","qa/c06_07_privacy_scope.py","qa/c06_08_query_scope.py","qa/c06_09_delivery_scope.py","qa/c06_10_offensive_scope.py","qa/c06_07_privacy_audits.py","qa/c06_09_delivery_audits.py","qa/c06_10_offensive_audits.py","backend/src/Crecisol.Infrastructure/Authorization/MySqlC06DelegationLedger.cs","backend/tests/Crecisol.C06Delegation.MySqlTests/Crecisol.C06Delegation.MySqlTests.csproj","backend/tests/Crecisol.C06Delegation.MySqlTests/Program.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Delegation.cs","backend/src/Crecisol.Application/Identity/C06DelegationPreparation.cs","database/migrations/025_c06_delegation_confirmation.sql","database/migrations/025_c06_delegation_confirmation.down.sql","backend/tests/Crecisol.C06Delegation.FlowTests/Program.cs","backend/tests/Crecisol.C06Delegation.FlowTests/Crecisol.C06Delegation.FlowTests.csproj","qa/c06_03_context_audits.py","qa/c06_04_abac_audits.py","qa/c06_05_stepup_audits.py","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegatedRead.cs","database/migrations/026_c06_delegation_authority.sql","database/migrations/026_c06_delegation_authority.down.sql","qa/c05_sha1_exclusive_audits.py","backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs","backend/src/Crecisol.Api/Contracts/C06DelegationHttpContract.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V1.json","qa/c06_01_permissions_catalog_audit.py","backend/tests/Crecisol.C06Delegation.FlowTests/DelegationWireFixture.cs","qa/c06_06_exceptional_scope.py","backend/src/Crecisol.Application/Identity/C06DelegationInspection.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V2.json","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegationCatalog.cs","backend/src/Crecisol.Application/Identity/C06DelegationCatalog.cs","docs/c06/C06_11_CATALOGO_DELEGACION_V3.json","frontend/src/app/identity/identity-api.service.ts","frontend/src/app/identity/delegation-client.model.ts","frontend/src/app/pages/delegation-editor.component.ts","frontend/src/app/pages/delegation-editor.component.html","frontend/src/app/pages/delegation-editor.component.css","frontend/src/app/pages/identity-flow-views.component.ts","frontend/src/app/pages/identity-workspace.component.html","frontend/tests/c06-delegation-editor.spec.ts"])
 def git(*args):
     return subprocess.check_output(["git",*args],cwd=ROOT,text=True).strip()
 def need(ok,why):
@@ -143,6 +143,48 @@ HISTORICAL_EDITS={
             "def require_exact(changed):\n",
             "def require_exact(changed):\n    if \"docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md\" in changed:\n        from c06_11_delegated_role_scope import require_exact\n        return require_exact(changed)\n"
         ]
+    ],
+    "frontend/src/app/identity/identity-api.service.ts": [
+        [
+            "import { canonicalPhotoPixels } from './canonical-photo-pixels';",
+            "import { canonicalPhotoPixels } from './canonical-photo-pixels';\nimport { decodeDelegationPage, decodeInspection, decodeDelegationChallenge, decodeDelegationAccepted,\n  exactSelection, type DelegationSelection, type DelegationIntent, type DelegationPage,\n  type DelegationInspection, type DelegationChallenge } from './delegation-client.model';"
+        ],
+        [
+            "  private sessionRevision = 0;",
+            "  private sessionRevision = 0;\n  private readonly delegationContextValue = signal(0);\n  readonly delegationContext = this.delegationContextValue.asReadonly();"
+        ],
+        [
+            "        this.stateValue.set('authenticated');",
+            "        this.delegationContextValue.update(v => v + 1);\n        this.stateValue.set('authenticated');"
+        ],
+        [
+            "    this.enrollmentRequired.set(false);\n    this.stateValue.set('authenticated');",
+            "    this.enrollmentRequired.set(false);\n    this.delegationContextValue.update(v => v + 1);\n    this.stateValue.set('authenticated');"
+        ],
+        [
+            "  async readPrivate(branchId: string, resourceId: string): Promise<void> {",
+            "  // Only the four closed operations are callable by this editor. Check\n  // both C05 session revision and context epoch before accepting a response.\n  private async delegationPost(operation: 'catalog'|'inspect'|'prepare'|'confirm', body: object): Promise<unknown> {\n    const revision=this.sessionRevision, context=this.delegationContext();\n    if(this.state()!=='authenticated') throw new Error('identity_unavailable');\n    const response=await this.post<unknown>('delegation/'+operation,body);\n    if(revision!==this.sessionRevision || context!==this.delegationContext() ||\n        this.state()!=='authenticated') throw new Error('identity_unavailable');\n    return response;\n  }\n  async delegationCatalog(cursor: string): Promise<DelegationPage> {\n    return decodeDelegationPage(await this.delegationPost('catalog',{cursor}));\n  }\n  async delegationInspect(selection: DelegationSelection): Promise<DelegationInspection> {\n    return decodeInspection(await this.delegationPost('inspect',exactSelection(selection)));\n  }\n  async delegationPrepare(intent: DelegationIntent): Promise<DelegationChallenge> {\n    return decodeDelegationChallenge(await this.delegationPost('prepare',intent));\n  }\n  async delegationConfirm(intent: DelegationIntent, challenge: string, code: string): Promise<void> {\n    decodeDelegationAccepted(await this.delegationPost('confirm',{...intent,challenge,code}));\n  }\n\n  async readPrivate(branchId: string, resourceId: string): Promise<void> {"
+        ],
+        [
+            "    ++this.sessionRevision;\n    ++this.pendingRequestRevision;",
+            "    ++this.sessionRevision;\n    this.delegationContextValue.update(v => v + 1);\n    ++this.pendingRequestRevision;"
+        ]
+    ],
+    "frontend/src/app/pages/identity-flow-views.component.ts": [
+        [
+            "import { IdentityApiService } from '../identity/identity-api.service';",
+            "import { IdentityApiService } from '../identity/identity-api.service';\nimport { DelegationEditorComponent } from './delegation-editor.component';"
+        ],
+        [
+            "  imports: [InstitutionalModalComponent, InstitutionalCardComponent, InstitutionalStateComponent, SecureFieldFeedbackDirective],",
+            "  imports: [InstitutionalModalComponent, InstitutionalCardComponent, InstitutionalStateComponent, SecureFieldFeedbackDirective, DelegationEditorComponent],"
+        ]
+    ],
+    "frontend/src/app/pages/identity-workspace.component.html": [
+        [
+            "  <!-- Permission details remain keyboard-accessible after the task-first queue. -->",
+            "  <cs-delegation-editor />\n  <!-- Permission details remain keyboard-accessible after the task-first queue. -->"
+        ]
     ]
 }
 HISTORICAL_MODS=frozenset(HISTORICAL_EDITS) | {"qa/c06_02_role_model_audit.py"}
@@ -215,6 +257,17 @@ def main():
     transport=read_text=(ROOT/"backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs").read_text(encoding="utf-8")
     from c06_01_permissions_catalog_audit import verify_delegation_overlay
     verify_delegation_overlay(transport)
+    editor=(ROOT/"frontend/src/app/pages/delegation-editor.component.ts").read_text(encoding="utf-8")
+    template=(ROOT/"frontend/src/app/pages/delegation-editor.component.html").read_text(encoding="utf-8")
+    client=(ROOT/"frontend/src/app/identity/identity-api.service.ts").read_text(encoding="utf-8")
+    for invariant in ("delegationCatalog('start')","delegationInspect(row)","delegationPrepare(intent)",
+                      "delegationConfirm(intent,proof.challenge,code)","this.intent=null","this.challenge.set(null)",
+                      "this.identity.delegationContext()"):
+        need(invariant in editor,"missing editor protection "+invariant)
+    for forbidden in ("localStorage","sessionStorage","indexedDB","innerHTML"):
+        need(forbidden not in editor and forbidden not in template,"editor persists or injects private values")
+    need('@if (available())' in template and 'autocomplete="one-time-code"' in template and
+         "context!==this.delegationContext()" in client,"editor capability or session gate missing")
     need(git("rev-parse","ade79ca72b353824fe46ee98782b2390111446ac:docs/c06/C06_11_CATALOGO_DELEGACION_V2.json")==git("rev-parse","HEAD:docs/c06/C06_11_CATALOGO_DELEGACION_V2.json"),"v2 HTTP overlay changed")
     catalog=(ROOT/"backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegationCatalog.cs").read_text(encoding="utf-8")
     for invariant in ("c.tenant_id=@t AND c.actor_membership_id=@m","LIMIT 9 FOR SHARE","rows.Take(DelegationPageSize)",
@@ -272,7 +325,7 @@ def main():
          "ledger not empty; preserve history" in down,"unsafe down migration")
     for path in ("database/operations/c05_local_runtime_role.sql","database/operations/c06_04_local_runtime_role.sql"):
         need(git("rev-parse",BASE+":"+path)==git("rev-parse","HEAD:"+path),"runtime grant source changed")
-    print("PASS C06-11 DELEGATION forty-six isolated paths, six rejected mutations; exact C06-02/07/08/09/10 successor routing, prior contracts and Master unchanged")
+    print("PASS C06-11 DELEGATION fifty-four isolated paths, six rejected mutations; exact C06-02/07/08/09/10 successor routing, prior contracts and Master unchanged")
 
 if __name__=="__main__":
     main()

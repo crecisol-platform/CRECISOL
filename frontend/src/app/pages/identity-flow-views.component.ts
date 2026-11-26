@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { identityDateLabel, identityEventLabel, identityOutcomeLabel, identityReferenceLabel, identityFactorLabel, identityTimeZoneLabel } from '../identity/identity-presentation';
 import { IdentityApiService } from '../identity/identity-api.service';
+import { DelegationEditorComponent } from './delegation-editor.component';
 import { InstitutionalModalComponent } from '../ui/institutional-modal/institutional-modal.component';
 import { SecureFieldFeedbackDirective } from '../ui/feedback/secure-field-feedback.directive';
 import { InstitutionalCardComponent, InstitutionalStateComponent } from '../ui/institutional-system';
@@ -43,7 +44,7 @@ export class IdentityMfaComponent {
 
 @Component({
   selector: 'cs-identity-workspace', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [InstitutionalModalComponent, InstitutionalCardComponent, InstitutionalStateComponent, SecureFieldFeedbackDirective],
+  imports: [InstitutionalModalComponent, InstitutionalCardComponent, InstitutionalStateComponent, SecureFieldFeedbackDirective, DelegationEditorComponent],
   templateUrl: './identity-workspace.component.html',
   styleUrls: ['./identity-flow.component.css', './identity-workspace.component.css']
 })
