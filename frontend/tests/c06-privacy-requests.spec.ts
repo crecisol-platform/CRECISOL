@@ -41,6 +41,16 @@ for(const viewport of sizes)test('C06 privacy portal receipt and secure review '
   await expect(section.getByRole('button',{name:/Acceso a mis datos/})).toBeVisible();
   await expect(section.getByRole('button',{name:/Rectificación/})).toBeVisible();
   await expect(section.getByRole('button',{name:/Oposición/})).toBeVisible();
+  // No horizontal page overflow is insufficient: the two new panels must
+  // actually span the account grid rather than occupy a narrow half-column.
+  const widthRatio=await section.evaluate(el=>{
+    const grid=el.closest('.identity-workspace');
+    if(!grid)return 0;
+    const style=getComputedStyle(grid);
+    const available=grid.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
+    return available>0?el.getBoundingClientRect().width/available:0;
+  });
+  expect(widthRatio).toBeGreaterThanOrEqual(.95);
   await capture(page,info,'privacy-home-'+viewport.width);
   await section.getByRole('button',{name:/Eliminación/}).click();
   const dialog=page.getByRole('dialog',{name:'Nueva solicitud de privacidad'});
@@ -69,7 +79,8 @@ test('C06 uncertain confirmation clears proof and does not imply receipt',async(
   await dialog.getByLabel('Categoría de datos').selectOption('profile');await dialog.getByLabel('Detalle de la solicitud').fill('Evaluación sintética de mis datos');
   await dialog.getByRole('button',{name:'Preparar verificación'}).click();
   await dialog.getByLabel('Código de seis dígitos').fill('123456');await dialog.getByRole('button',{name:'Confirmar solicitud'}).click();
-  await expect(dialog.getByText('No se pudo confirmar el resultado.',{exact:false}).first()).toBeVisible();
+  await expect(dialog.getByText('No se pudo confirmar el resultado.',{exact:false})).toHaveCount(1);
+  await expect(dialog.getByText('No se pudo confirmar el resultado.',{exact:false})).toBeVisible();
   await expect(dialog.getByLabel('Código de seis dígitos')).toHaveCount(0);await capture(page,info,'privacy-denial-390');
   await dialog.getByRole('button',{name:'Cerrar ventana'}).click();
   await expect(section.getByText('Consulta no disponible')).toBeVisible();await expect(section.getByText('Solicitud recibida',{exact:true})).toHaveCount(0);
