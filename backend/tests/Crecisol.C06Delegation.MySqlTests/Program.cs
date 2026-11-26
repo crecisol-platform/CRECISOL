@@ -7,6 +7,7 @@ using MySqlConnector;
 
 // Synthetic disposable schema only. No actual bearer, customer data or MFA.
 // This tests the real internal writer, not the still-unimplemented proof loader.
+var cycleMode=Environment.GetEnvironmentVariable("C06_DELEGATION_CYCLE_WRITER_TESTS")=="1";
 var dsn=Environment.GetEnvironmentVariable("C06_DELEGATION_TEST_DSN") ??
     throw new InvalidOperationException("Disposable test DSN required.");
 var config=new MySqlConnectionStringBuilder(dsn);
@@ -65,13 +66,90 @@ void Check(bool ok,string label)
 }
 async Task<long> Count(string table)
 {
-    if(table is not ("c06_delegation_grant" or "c06_delegation_revocation"))throw new InvalidOperationException();
+    if(table is not ("c06_delegation_grant" or "c06_delegation_revocation") &&
+       !(cycleMode && table=="c06_delegation_cycle_head"))throw new InvalidOperationException();
     await using var cmd=new MySqlCommand("SELECT COUNT(*) FROM "+table,connection,tx);
     return Convert.ToInt64(await cmd.ExecuteScalarAsync());
 }
 Task<bool> Append(C06LockedDelegationEvidence x, string why=reason)=>writer.AppendAsync(x,session,key,why,CancellationToken.None);
+Task<Guid?> AppendCycle(C06LockedDelegationEvidence x,C06DelegationCycleHead? head,string why=reason)=>
+    writer.AppendCycleAsync(x,head,session,key,why,CancellationToken.None);
 try
 {
+    if(cycleMode)
+    {
+        Check(await Count("c06_delegation_grant")==0 && await Count("c06_delegation_cycle_head")==0,
+            "cycle fixture empty");
+        var absence=await writer.ReadCycleEvidenceAsync(intent,CancellationToken.None);
+        Check(absence.Grant is null && absence.Head is null,"independent absence of head and grant");
+        Check(await AppendCycle(e with { CommercialAccessVerified=false },null) is null,"cycle cannot bypass commercial authority");
+        Check(await AppendCycle(e with { SubjectTenant=otherTenant },null) is null,"cycle cannot cross tenant");
+        var firstId=await AppendCycle(e,null) ?? throw new InvalidOperationException("First cycle issuance denied.");
+        var active=await writer.ReadCycleEvidenceAsync(intent,CancellationToken.None);
+        var firstGrant=active.Grant ?? throw new InvalidOperationException("Cycle grant missing.");
+        var firstHead=active.Head ?? throw new InvalidOperationException("Cycle head missing.");
+        Check(firstId!=Guid.Empty && firstGrant.GrantId==firstId && firstHead.GrantId==firstId &&
+            firstGrant.Revision==1 && firstHead.Revision==1 && firstGrant.RevokedAtUtc is null,
+            "first issuance and head share immutable ID and revision");
+        Check(await AppendCycle(e,null) is null,"stale absence denied after first issuance");
+        var cycleRevoke=intent with { Command=C06DelegationCommand.Revoke,ExpectedGrantRevision=1,UntilUtc=null };
+        var cycleRevEvidence=Evidence(cycleRevoke) with { Existing=firstGrant,ActorEffectiveRead=null };
+        Check(await AppendCycle(cycleRevEvidence,firstHead with { GrantId=Guid.NewGuid() }) is null,
+            "forged head rejected by actual independent read");
+        Check(await AppendCycle(cycleRevEvidence,firstHead with { Revision=3 }) is null,"stale head revision denied");
+        Check(await AppendCycle(cycleRevEvidence,firstHead)==firstId,"actual first revocation through cycle writer");
+        var terminal=await writer.ReadCycleEvidenceAsync(intent,CancellationToken.None);
+        var terminalGrant=terminal.Grant ?? throw new InvalidOperationException("Terminal grant missing.");
+        var terminalHead=terminal.Head ?? throw new InvalidOperationException("Terminal head missing.");
+        Check(terminalGrant.Revision==2 && terminalHead.Revision==2 && terminalGrant.RevokedAtUtc==now &&
+            terminalGrant.GrantId==firstId,"revocation retains immutable issuance identity");
+        var nextIntent=intent with { ExpectedGrantRevision=2 };
+        var nextEvidence=Evidence(nextIntent) with { Existing=terminalGrant };
+        Check(await AppendCycle(nextEvidence with { StepUp=Proof(intent) },terminalHead) is null,
+            "old intent proof cannot reissue");
+        Check(await AppendCycle(nextEvidence with { ActorEffectiveRead=null },terminalHead) is null,
+            "reissue still requires current own ABAC");
+        Check(await AppendCycle(nextEvidence,firstHead) is null,"old active head cannot authorize reissue");
+        Check(await AppendCycle(nextEvidence,terminalHead,"short") is null,"reissue reason is validated");
+        var legacyDigest=MySqlC06DelegationLedger.Digests(nextEvidence,session,key,reason);
+        var cycleDigest=MySqlC06DelegationLedger.Digests(nextEvidence,session,key,reason,true,terminalHead);
+        var foreignDigest=MySqlC06DelegationLedger.Digests(nextEvidence,session,key,reason,true,
+            terminalHead with { GrantId=Guid.NewGuid() });
+        try
+        {
+            Check(!legacyDigest.Intent.SequenceEqual(cycleDigest.Intent),"cycle metadata domain separated from legacy");
+            Check(!cycleDigest.Intent.SequenceEqual(foreignDigest.Intent),"cycle metadata bound to predecessor ID");
+        }
+        finally
+        {
+            foreach(var digestPair in new[]{legacyDigest,cycleDigest,foreignDigest})
+            {
+                CryptographicOperations.ZeroMemory(digestPair.Purpose);
+                CryptographicOperations.ZeroMemory(digestPair.Intent);
+            }
+        }
+        var secondId=await AppendCycle(nextEvidence,terminalHead) ?? throw new InvalidOperationException("Reissue denied.");
+        var second=await writer.ReadCycleEvidenceAsync(nextIntent,CancellationToken.None);
+        var secondGrant=second.Grant ?? throw new InvalidOperationException("Reissue missing.");
+        var secondHead=second.Head ?? throw new InvalidOperationException("Reissue head missing.");
+        Check(secondId!=firstId && secondGrant.GrantId==secondId && secondHead.GrantId==secondId &&
+            secondGrant.Revision==3 && secondHead.Revision==3 && secondGrant.RevokedAtUtc is null,
+            "new issuance replaces only derived head, not immutable history");
+        Check(await AppendCycle(nextEvidence,terminalHead) is null,"terminal reissue replay denied");
+        Check(await AppendCycle(cycleRevEvidence,firstHead) is null,"old revoke cannot target later generation");
+        Check(await Count("c06_delegation_grant")==2 && await Count("c06_delegation_revocation")==1 &&
+            await Count("c06_delegation_cycle_head")==1,"old and new issuances retained");
+        var revokeSecond=cycleRevoke with { ExpectedGrantRevision=3 };
+        Check(await AppendCycle(Evidence(revokeSecond) with { Existing=secondGrant,ActorEffectiveRead=null },secondHead)==secondId,
+            "later issuance revocable by its own revision");
+        var last=await writer.ReadCycleEvidenceAsync(revokeSecond,CancellationToken.None);
+        Check(last.Head?.Revision==4 && last.Grant?.RevokedAtUtc==now,"second revocation advances head");
+        await tx.RollbackAsync();
+        await using var cycleVerify=new MySqlCommand("SELECT (SELECT COUNT(*) FROM c06_delegation_grant)+(SELECT COUNT(*) FROM c06_delegation_revocation)+(SELECT COUNT(*) FROM c06_delegation_cycle_head)",connection);
+        Check(Convert.ToInt64(await cycleVerify.ExecuteScalarAsync())==0,"caller rollback includes derived head");
+        Console.WriteLine($"PASS C06-11 CYCLE WRITER MYSQL checks={checks}; synthetic proof only, no HTTP or effective grant claim");
+        return;
+    }
     Check(await Count("c06_delegation_grant")==0,"empty fixture");
     Check(!await Append(e with { CommercialAccessVerified=false }),"commercial unknown denied");
     Check(!await Append(e with { SubjectTenant=otherTenant }),"foreign subject tenant denied");
