@@ -1,0 +1,335 @@
+name: CRECISOL C06-11 integral chapter five audits A-B-C-D-E
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - '.github/workflows/c06-11-integral-certification.yml'
+      - 'docs/c06/C06_11_ESPECIFICACION.md'
+      - 'docs/c06/C06_11_MATRIZ_CIERRE.json'
+      - 'qa/c06_11_integral_audits.py'
+  push:
+    branches: [dev]
+    paths:
+      - '.github/workflows/c06-11-integral-certification.yml'
+      - 'docs/c06/C06_11_ESPECIFICACION.md'
+      - 'docs/c06/C06_11_MATRIZ_CIERRE.json'
+      - 'qa/c06_11_integral_audits.py'
+permissions:
+  contents: read
+jobs:
+  a-source:
+    name: A | Word, ten acts, catalog and exact integral scope
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 qa/master_source_guard.py
+      - run: python3 qa/c06_01_permissions_catalog_audit.py A
+      - run: python3 qa/c06_11_integral_audits.py A
+  b-security:
+    name: B | Authorization invariants and seven real .NET contract suites
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 qa/c06_11_integral_audits.py B
+      - run: python3 qa/c06_01_permissions_catalog_audit.py B
+      - run: python3 qa/c06_02_role_matrix_audit.py B
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Seven .NET C06 suites, warnings as errors
+        run: |
+          set -euo pipefail
+          dotnet build backend/tests/Crecisol.C06Abac.ContractsTests/Crecisol.C06Abac.ContractsTests.csproj -c Release -warnaserror
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.C06Abac.ContractsTests/Crecisol.C06Abac.ContractsTests.csproj
+          dotnet build backend/tests/Crecisol.C06Delivery.ContractsTests/Crecisol.C06Delivery.ContractsTests.csproj -c Release -warnaserror
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.C06Delivery.ContractsTests/Crecisol.C06Delivery.ContractsTests.csproj
+          dotnet build backend/tests/Crecisol.C06ExceptionalAccess.ContractsTests/Crecisol.C06ExceptionalAccess.ContractsTests.csproj -c Release -warnaserror
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.C06ExceptionalAccess.ContractsTests/Crecisol.C06ExceptionalAccess.ContractsTests.csproj
+          dotnet build backend/tests/Crecisol.C06Membership.ContractsTests/Crecisol.C06Membership.ContractsTests.csproj -c Release -warnaserror
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.C06Membership.ContractsTests/Crecisol.C06Membership.ContractsTests.csproj
+          dotnet build backend/tests/Crecisol.C06Privacy.ContractsTests/Crecisol.C06Privacy.ContractsTests.csproj -c Release -warnaserror
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.C06Privacy.ContractsTests/Crecisol.C06Privacy.ContractsTests.csproj
+          dotnet build backend/tests/Crecisol.C06Query.ContractsTests/Crecisol.C06Query.ContractsTests.csproj -c Release -warnaserror
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.C06Query.ContractsTests/Crecisol.C06Query.ContractsTests.csproj
+          dotnet build backend/tests/Crecisol.C06StepUp.ContractsTests/Crecisol.C06StepUp.ContractsTests.csproj -c Release -warnaserror
+          dotnet run --no-build -c Release --project backend/tests/Crecisol.C06StepUp.ContractsTests/Crecisol.C06StepUp.ContractsTests.csproj
+  c-architecture:
+    name: C | Domain separation, .NET 10 Angular 22 compile and source integrity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 qa/c06_11_integral_audits.py C
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release -warnaserror
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - run: |
+          node --check qa/c05_operational_flow_e2e.mjs
+          node --check qa/c06_08_query_checks.mjs
+          node --check qa/c06_09_delivery_checks.mjs
+          node --check qa/c06_10_offensive_checks.mjs
+          node --check qa/c05_profile_browser_checks.mjs
+          node --check qa/c05_operator_recovery_checks.mjs
+          node --check qa/c06_07_privacy_response_checks.mjs
+          node --check qa/c06_07_privacy_relay.mjs
+          node --test qa/c06_07_privacy_oracle_tests.mjs qa/c06_07_privacy_relay_tests.mjs
+      - name: Angular 22 unchanged functional/regression compile
+        run: |
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+  d-persistence:
+    name: D | Seven isolated real MySQL 8.4 suites
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 qa/c06_11_integral_audits.py D
+      - name: Seven exact disposable SQL regressions
+        run: |
+          set -euo pipefail
+          bash -n database/tests/c06_02_prepared_roles_mysql.sh
+          bash database/tests/c06_02_prepared_roles_mysql.sh
+          bash -n database/tests/c06_04_abac_mysql.sh
+          bash database/tests/c06_04_abac_mysql.sh
+          bash -n database/tests/c06_06_exceptional_mysql.sh
+          bash database/tests/c06_06_exceptional_mysql.sh
+          bash -n database/tests/c06_07_privacy_mysql.sh
+          bash database/tests/c06_07_privacy_mysql.sh
+          bash -n database/tests/c06_08_scoped_query_mysql.sh
+          bash database/tests/c06_08_scoped_query_mysql.sh
+          bash -n database/tests/c06_09_delivery_mysql.sh
+          bash database/tests/c06_09_delivery_mysql.sh
+          bash -n database/tests/c06_10_offensive_mysql.sh
+          bash database/tests/c06_10_offensive_mysql.sh
+  e-e2e:
+    name: "E1 | Real E2E Chromium Angular Kestrel MySQL, all C05/C06 regressions"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile real API, local SMTP receiver and test-only provisioner
+        run: |
+          dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release -warnaserror
+          dotnet build backend/tests/Crecisol.LoopbackSmtpReceiver/Crecisol.LoopbackSmtpReceiver.csproj -c Release -warnaserror
+          dotnet build backend/tools/Crecisol.LocalIdentityProvisioner/Crecisol.LocalIdentityProvisioner.csproj -c Release -warnaserror
+      - name: Angular + Chromium test runner
+        run: |
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+          cd frontend
+          npx playwright install --with-deps chromium
+      - name: Real wire privacy and previous security regressions
+        run: |
+          set -euo pipefail
+          node qa/c05_operational_flow_e2e.mjs --c06-04 --c06-05 --c06-06 --c06-07 --c06-08 --c06-09 --c06-10 | tee "$RUNNER_TEMP/c06-11-e2e.txt"
+          grep -F 'PASS C06-10 MATRIX authenticated_operations=57 denied_cells=228 proof_operations=22' "$RUNNER_TEMP/c06-11-e2e.txt"
+          grep -F 'PASS C06-10 denied matrix preserves security and private resource state' "$RUNNER_TEMP/c06-11-e2e.txt"
+          grep -F 'PASS C06-07 HTTP response privacy checks=862' "$RUNNER_TEMP/c06-11-e2e.txt"
+          grep -F 'PASS C05 operational integrated assertions=921;' "$RUNNER_TEMP/c06-11-e2e.txt"
+  visual-65:
+    name: E2 | 439 original PNG visual comparisons, 65 individual 5-width scores
+    permissions:
+      contents: read
+      actions: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Integral scope and prior individual grade controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_ux_f07_final_audit_tests.py -v
+          python3 qa/c05_ux_f06_commercial_rating_tests.py -v
+          python3 qa/c06_11_integral_audits.py E
+      - name: Node 24
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Angular 22 production and TS compile
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+      - name: Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          timeout 360s npx playwright install chromium
+      - name: Capture inventory 65x5 on F07 SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f06-inventory65.config.ts --reporter=line
+      - name: Reject missing, clipped, duplicated and wrong-SHA PNG
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_ux_f06_65_coverage.py frontend/test-results-f06-inventory65 docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv
+      - name: Download approved F06 original PNG SHA and artifact 14862391857
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/f07-approved"
+          curl -fLSs --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/crecisol-platform/CRECISOL/actions/artifacts/14862391857/zip" \
+            -o "$RUNNER_TEMP/f07-approved.zip"
+          test "$(stat -c%s "$RUNNER_TEMP/f07-approved.zip")" -gt 1000000
+          unzip -q "$RUNNER_TEMP/f07-approved.zip" -d "$RUNNER_TEMP/f07-approved"
+          test -f "$RUNNER_TEMP/f07-approved/F06_65_COVERAGE_SUMMARY.json"
+      - name: Compare 439 PNG pixels, scene semantics, SHA and 65 grade records
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/f07-image-venv"
+          "$RUNNER_TEMP/f07-image-venv/bin/python" -m pip install --disable-pip-version-check --no-cache-dir 'Pillow==11.3.0'
+          "$RUNNER_TEMP/f07-image-venv/bin/python" qa/c05_ux_f07_visual_comparison.py \
+            "$RUNNER_TEMP/f07-approved" frontend/test-results-f06-inventory65 \
+            docs/c05/ux/F06_65_SUPERFICIES_VALORACION.csv \
+            frontend/test-results-f06-inventory65/f07-final
+      - name: Preserve 439 PNG, matrix CSV and actual pixel diff report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: c06-11-65-visual-${{ github.sha }}
+          path: frontend/test-results-f06-inventory65/
+          retention-days: 21
+          if-no-files-found: error
+  full-chromium:
+    name: E3 | Angular 22 Chromium F02-F06, accessibility and secure modals
+    runs-on: ubuntu-24.04
+    timeout-minutes: 85
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Integral scope and inherited QA negative controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 qa/c05_ux_f07_final_audit_tests.py -v
+          python3 qa/c05_ux_f06_feedback_scope_tests.py -v
+          python3 qa/c05_ux_f06_commercial_rating_tests.py -v
+          python3 qa/c06_11_integral_audits.py E
+      - name: Node 24
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+          package-manager-cache: false
+      - name: Angular 22 TS production and institutional harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run check:types --prefix frontend
+          npm run build --prefix frontend
+          cd frontend
+          npx ng build --configuration institutional-harness
+      - name: Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          timeout 360s npx playwright install chromium
+      - name: F06 async errors, pending, results, privacy and reduced motion
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f06-feedback.config.ts --reporter=line
+          cd ..
+          python3 qa/c05_ux_f06_feedback_evidence.py frontend/test-results-f06-feedback
+          python3 qa/c05_ux_f06_premium_evidence.py frontend/test-results-f06-feedback
+      - name: F05 secure modals 11 scenarios, top bottom pending error result
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f05-modals.config.ts --reporter=line
+          cd ..
+          python3 qa/c05_ux_f05_modal_evidence.py frontend/test-results-f05-modals
+          python3 qa/c05_ux_f05_modal_audits.py deep-evidence frontend/test-results-f05-modals
+      - name: F04 operator console regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f04-operators.config.ts --reporter=line
+      - name: F03 authenticated account and navigation
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.c05-f03.config.ts --reporter=line
+          npx playwright test --config=playwright.c05-f03-account.config.ts --reporter=line
+      - name: F02 design system accessibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test --config=playwright.institutional.config.ts --reporter=line
+      - name: C05 original and deep modal accessibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npx playwright test tests/c05-institutional-modals.spec.ts --config=playwright.config.ts --reporter=line
+          npx playwright test tests/c05-modal-accessibility-deep.spec.ts --config=playwright.config.ts --reporter=line
+      - name: Preserve 447 browser proofs, screenshots and negative traces
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: c06-11-chromium-${{ github.sha }}
+          path: |
+            frontend/test-results-f06-feedback/
+            frontend/test-results-f05-modals/
+            frontend/test-results-f04-operators/
+            frontend/test-results-f03/
+            frontend/test-results-f03-account/
+            frontend/test-results-institutional/
+            frontend/test-results/
+          retention-days: 21
+          if-no-files-found: error

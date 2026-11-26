@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "status": "CANDIDATE_NOT_CERTIFIED",
+  "base_dev": "076118ab5370e1fcbc7bfe0f1caefe07a664365b",
+  "word_sha256": "ea5afc89e74915a9b18b9753ddb832f4be8e5d00f5e66b0f008e02e03476444c",
+  "prior_acts": [
+    {
+      "phase": "C06-01",
+      "path": "docs/c06/C06_01_ACTA_CIERRE.md",
+      "blob": "544407dd19a18b28f2476ca085ec84a6007c749b",
+      "authority": "previous_act_bounded_scope"
+    },
+    {
+      "phase": "C06-02",
+      "path": "docs/c06/C06_02_ACTA_CIERRE.md",
+      "blob": "964e58f2833b5c8c3ebcfb2cd335aba5d3c4c66c",
+      "authority": "previous_act_bounded_scope"
+    },
+    {
+      "phase": "C06-03",
+      "path": "docs/c06/C06_03_ACTA_CIERRE.md",
+      "blob": "80c26002d554fbfd2f1975b64e48ca6a0d73995f",
+      "authority": "previous_act_bounded_scope"
+    },
+    {
+      "phase": "C06-04",
+      "path": "docs/c06/ACTA_C06_04_ABAC.md",
+      "blob": "fa60baadf269642264ee29cd1bdc05b473073627",
+      "authority": "previous_act_bounded_scope"
+    },
+    {
+      "phase": "C06-05",
+      "path": "docs/c06/ACTA_C06_05_STEPUP.md",
+      "blob": "4f10adb66d9e5f0fd8f0c4a69e133794f743443a",
+      "authority": "previous_act_bounded_scope"
+    },
+    {
+      "phase": "C06-06",
+      "path": "docs/c06/ACTA_C06_06_EXCEPTIONAL_ACCESS.md",
+      "blob": "9d5452bd6426d296aae234f3172366a55394280e",
+      "authority": "previous_act_bounded_scope"
+    },
+    {
+      "phase": "C06-07",
+      "path": "docs/c06/ACTA_C06_07_PRIVACY.md",
+      "blob": "1b75a1375db1156069f0b7a794587c0276b81235",
+      "authority": "previous_act_bounded_scope"
+    },
+    {
+      "phase": "C06-08",
+      "path": "docs/c06/ACTA_C06_08_SCOPED_QUERIES.md",
+      "blob": "f45241c9188f428c7f4f9b1ed62e048375fbd055",
+      "authority": "previous_act_bounded_scope"
+    },
+    {
+      "phase": "C06-09",
+      "path": "docs/c06/ACTA_C06_09_PROTECTED_DELIVERY.md",
+      "blob": "6747e93b1c39946a70d719cc7a716d1ebb78299b",
+      "authority": "previous_act_bounded_scope"
+    },
+    {
+      "phase": "C06-10",
+      "path": "docs/c06/ACTA_C06_10_OFFENSIVE_REGRESSION.md",
+      "blob": "31caf7d3ed403dddd55374d1ff9a969156a73e5e",
+      "authority": "previous_act_bounded_scope"
+    }
+  ],
+  "c06_10_ratification": {
+    "technical_pr": 216,
+    "technical_sha": "ec0258b1d2c0738dbcb0c43aa305be18db0f9a3f",
+    "technical_tree": "9072c2694fa6e565503ac75c562390c35af0dacc",
+    "technical_pre_run": 45734643721,
+    "technical_post_run": 45737693483,
+    "technical_pre_workflows": 15,
+    "technical_post_workflows": 15,
+    "act_pr": 217,
+    "act_pre_sha": "3a42a8a5064e60d5542ec070a1d33243da0b955c",
+    "act_sha": "076118ab5370e1fcbc7bfe0f1caefe07a664365b",
+    "act_tree": "bec5595b14024c9b3e10a83774af00e9a2febc8f",
+    "act_pre_run": 45737829949,
+    "act_post_run": 45740302813,
+    "act_pre_workflows": 7,
+    "act_post_workflows": [
+      45740302818,
+      45740302830,
+      45740302823,
+      45740302931,
+      45740302813,
+      45740302833
+    ],
+    "post_jobs": [
+      139643362929,
+      139643363361,
+      139643363561
+    ],
+    "conclusion": "SUCCESS"
+  },
+  "scope": [
+    ".github/workflows/c06-11-integral-certification.yml",
+    "docs/c06/C06_11_ESPECIFICACION.md",
+    "docs/c06/C06_11_MATRIZ_CIERRE.json",
+    "qa/c06_11_integral_audits.py"
+  ],
+  "expected": {
+    "dynamic_operations": 79,
+    "session_operations": 57,
+    "proof_operations": 22,
+    "negative_matrix": 228,
+    "role_profiles": 10,
+    "role_actions": 108,
+    "inactive_normative_actions": 25,
+    "integrated_assertions": 921,
+    "http_privacy_checks": 862,
+    "sql_suites": 7,
+    "dotnet_contract_suites": 7,
+    "visual_surfaces": 65,
+    "visual_viewports": [
+      320,
+      390,
+      768,
+      1024,
+      1440
+    ],
+    "visual_scenes": 439,
+    "minimum_individual_visual_grade": 9.5
+  },
+  "visual_baseline": {
+    "sha": "96174cf1d401b66464c02ba3e0d3a0cc2dd88cdf",
+    "run": 45265008041,
+    "artifact": 14862391857,
+    "src_tree": "cc2530167bf9f4c4546ef431f83590bd6d367846",
+    "package_lock_blob": "7dd73b0e1d499ab8f157ebde93170e03c7940855",
+    "criteria": "original_F06_grades_carried_forward_only_after_exact_source_and_new_pixel_comparison"
+  },
+  "gates": [
+    "A-authority",
+    "B-security",
+    "C-architecture",
+    "D-mysql",
+    "E-real-integration",
+    "E-visual",
+    "E-browser"
+  ],
+  "limitations": [
+    "only isolated local identity and authorization actually implemented",
+    "25 normative future actions not activated; master requirements outside implemented surface must be mapped and explicitly dispositioned before chapter-level certificate",
+    "no production data or deployment",
+    "no manual physical device or screen-reader validation",
+    "no new aesthetic grade from CI",
+    "no productive load benchmark"
+  ],
+  "open_findings": "P0/P1 assessment pending integral evidence; do not prefill zero",
+  "certificate": "PENDING"
+}
