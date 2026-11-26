@@ -43,8 +43,11 @@ public sealed partial class MySqlOperationalIdentityFlow
             _ => (C06DelegationCommand)0
         };
         static bool Key(string value, out Guid id) => Guid.TryParseExact(value,"D",out id) && id!=Guid.Empty;
-        static bool Revision(string value,out long n) => value.Length<=19 &&
-            long.TryParse(value,NumberStyles.None,CultureInfo.InvariantCulture,out n) && n>=0;
+        static bool Revision(string value,out long n)
+        {
+            n=0;
+            return value.Length<=19 && long.TryParse(value,NumberStyles.None,CultureInfo.InvariantCulture,out n) && n>=0;
+        }
         if (!Enum.IsDefined(command) || !Key(F("branchId"),out var branch) || !Key(F("resourceId"),out var resource) ||
             !Key(F("membershipId"),out var membership) || !Key(F("roleId"),out var role) ||
             !Revision(F("roleRevision"),out var rr) || rr==0 ||
