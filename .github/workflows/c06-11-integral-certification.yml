@@ -172,7 +172,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 qa/c05_ux_f07_final_audit_tests.py -v
+          historical="$RUNNER_TEMP/c05-f07-historical"
+          git worktree add --detach "$historical" 659477eef45780d5b36ffac95162075dd0aded24
+          trap 'git worktree remove --force "$historical"' EXIT
+          (cd "$historical" && python3 qa/c05_ux_f07_final_audit_tests.py -v)
+          git worktree remove --force "$historical"
+          trap - EXIT
           python3 qa/c05_ux_f06_commercial_rating_tests.py -v
           python3 qa/c06_11_integral_audits.py E
       - name: Node 24
@@ -250,7 +255,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 qa/c05_ux_f07_final_audit_tests.py -v
+          historical="$RUNNER_TEMP/c05-f07-historical"
+          git worktree add --detach "$historical" 659477eef45780d5b36ffac95162075dd0aded24
+          trap 'git worktree remove --force "$historical"' EXIT
+          (cd "$historical" && python3 qa/c05_ux_f07_final_audit_tests.py -v)
+          git worktree remove --force "$historical"
+          trap - EXIT
           python3 qa/c05_ux_f06_feedback_scope_tests.py -v
           python3 qa/c05_ux_f06_commercial_rating_tests.py -v
           python3 qa/c06_11_integral_audits.py E

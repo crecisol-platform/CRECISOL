@@ -150,5 +150,25 @@
     "no productive load benchmark"
   ],
   "open_findings": "P0/P1 assessment pending integral evidence; do not prefill zero",
-  "certificate": "PENDING"
+  "certificate": "PENDING",
+  "initial_failed_run": {
+    "sha": "7e3dc8d22aed7ab3a682f6fe77c4d827649d35b3",
+    "run": 45741281318,
+    "passed_jobs": [
+      139646620099,
+      139646620356,
+      139646620394,
+      139646620400,
+      139646620527
+    ],
+    "failed_jobs": [
+      139646620518,
+      139646620447
+    ],
+    "cause": "historical F07 exact runner test was invoked against later C06 runner; browser jobs stopped before Chromium; missing artifacts were consequences",
+    "historical_c05_sha": "659477eef45780d5b36ffac95162075dd0aded24",
+    "historical_runner_blob": "c18e387e4c1943a6943556811d9798b3dbe86727",
+    "current_ratified_runner_blob": "48d49c2dfd458fcb0cac5316aaf69572b331d206",
+    "remediation": "run unchanged 13 historical F07 tests in detached worktree at certified C05 SHA; guard both historic and current runner provenance and current security assertions; real browser and E2E tests remain on current candidate; rerun all seven jobs"
+  }
 }

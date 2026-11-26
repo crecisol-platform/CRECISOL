@@ -11,6 +11,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 BASE = "076118ab5370e1fcbc7bfe0f1caefe07a664365b"
 UI = "96174cf1d401b66464c02ba3e0d3a0cc2dd88cdf"
+C05_FINAL = "659477eef45780d5b36ffac95162075dd0aded24"
+RUNNER = "qa/c05_operational_flow_e2e.mjs"
 PATHS = frozenset([".github/workflows/c06-11-integral-certification.yml","docs/c06/C06_11_ESPECIFICACION.md","docs/c06/C06_11_MATRIZ_CIERRE.json","qa/c06_11_integral_audits.py"])
 MATRIX = "docs/c06/C06_11_MATRIZ_CIERRE.json"
 
@@ -39,6 +41,8 @@ def scope():
         require_scope(git("diff","--name-only","HEAD^","HEAD").splitlines())
     paths = git("diff","--name-only",BASE,"HEAD").splitlines()
     require_scope(paths)
+    history = set(git("log","--format=","--name-only","--no-renames",BASE+"..HEAD").splitlines()) - {""}
+    need(history <= PATHS, "out-of-scope path touched even if reverted")
     for mutant in (paths[:-1], paths + ["frontend/src/unreviewed.ts"], paths + ["backend/src/unreviewed.cs"],
                    paths + ["database/migrations/unreviewed.sql"], paths + ["docs/CRECISOL_DOCUMENTO_MAESTRO_UNICO.docx"], paths + [paths[0]]):
         try:
@@ -92,6 +96,37 @@ def inventory():
          "normative baseline activated")
     print("PASS C06-11 79 operations, 57 session, 22 proof, 228 negative cells, 10 roles/108 actions, 25 inactive future actions")
 
+def historical_runner():
+    # Historical F07 allowed exactly one insertion into its original runner.
+    # Keep that test at its certified revision; check the C06 runner separately.
+    from c05_ux_f07_final_audits import validate_quota_window_change, ROTATION_QUOTA_RESERVATION
+    need(subprocess.run(["git","merge-base","--is-ancestor",C05_FINAL,BASE],cwd=ROOT).returncode==0,
+         "C05 final revision not ancestral")
+    need(git("rev-parse",UI+":"+RUNNER)=="5617ef7ad2dcde928aa1e9847889c1c4260ae923" and
+         git("rev-parse",C05_FINAL+":"+RUNNER)=="c18e387e4c1943a6943556811d9798b3dbe86727",
+         "historical F07 runner provenance")
+    for path, blob in (
+        ("qa/c05_ux_f07_final_audit_tests.py","056c1b724bf18dbc6c0c371ada11782afb98922b"),
+        ("qa/c05_ux_f07_final_audits.py","85482955e692c3adebff9431de35c4bd9a8558b4"),
+    ):
+        need(git("rev-parse",C05_FINAL+":"+path)==blob==git("rev-parse","HEAD:"+path),
+             "historical audit changed: "+path)
+    historical = git("show",C05_FINAL+":"+RUNNER)
+    original = git("show",UI+":"+RUNNER)
+    validate_quota_window_change(historical,original)
+    need(git("rev-parse",BASE+":"+RUNNER)=="48d49c2dfd458fcb0cac5316aaf69572b331d206"
+         ==git("rev-parse","HEAD:"+RUNNER),"C06-10 ratified runner changed")
+    current=read(RUNNER)
+    needle="  const rotations = await Promise.all(Array.from({ length: 8 }, () => api('sessions/rotate', {}, token)));"
+    need(current.count(needle)==1 and current.count(ROTATION_QUOTA_RESERVATION+needle)==1,
+         "current rotation cohort lost quota or concurrency guard")
+    for marker in ("if (peak + capacity > 80)", "await delay(60500 - Date.now() % 60000);",
+                   "rotations.filter(r => r.status === 200).length === 1",
+                   "rotated token cannot be replayed", "rotation winner remains usable",
+                   "concurrent login quota admits at most eight password challenges per account-minute"):
+        need(marker in current,"current runner lost historical security assertion: "+marker)
+    print("PASS C06-11 historical F07 runner exact quota insertion; current C06 runner exact ratified blob and original assertions")
+
 def visual_source():
     m=json.loads(read(MATRIX))["visual_baseline"]
     need(m["sha"]==UI and m["artifact"]==14862391857 and m["run"]==45265008041, "wrong visual provenance")
@@ -117,6 +152,7 @@ def main():
         evidence()
         inventory()
     elif stage=="B":
+        historical_runner()
         inventory()
     elif stage=="C":
         visual_source()
@@ -124,6 +160,7 @@ def main():
     elif stage=="D":
         need(len(list((ROOT/"database/tests").glob("c06_*_mysql.sh")))==7, "seven isolated MySQL suites required")
     else:
+        historical_runner()
         visual_source()
     print("PASS C06-11 "+stage+" source gate; real runtime and editorial decision separately required")
 
