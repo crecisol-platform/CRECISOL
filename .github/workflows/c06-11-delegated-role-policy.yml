@@ -164,6 +164,7 @@ jobs:
       - run: dotnet build backend/tests/Crecisol.C06Delegation.MySqlTests/Crecisol.C06Delegation.MySqlTests.csproj -c Release -warnaserror
       - run: bash -n database/tests/c06_11_delegated_role_mysql.sh
       - run: C06_DELEGATION_WRITER_TESTS=1 bash database/tests/c06_11_delegated_role_mysql.sh
+      - run: C06_DELEGATION_LIFECYCLE_TESTS=1 C06_DELEGATION_CYCLE_WRITER_TESTS=1 bash database/tests/c06_11_delegated_role_mysql.sh
   e-confirmation:
     name: E2 | Actual C05 MFA, provenance, rollback, Kestrel HTTP and revocation
     runs-on: ubuntu-24.04
