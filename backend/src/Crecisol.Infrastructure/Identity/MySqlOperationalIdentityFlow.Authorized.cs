@@ -63,6 +63,9 @@ public sealed partial class MySqlOperationalIdentityFlow
 
         u.VerifiedActor = true;
         await SlideTenantSession(u, tenant, hash, idle);
+        // Candidate-only internal operations: the existing HTTP route inventory is unchanged.
+        if (r.Operation is "delegation/prepare" or "delegation/confirm")
+            return await C06DelegationTransition(u, tenant, actor, account, member, session, factor, idle, r, ct);
         if (r.Operation == "sessions/keepalive")
             return new(true, new { expiresAtUtc = u.SessionExpiresAtUtc, idleMinutes = idle });
         if (r.Operation == "terms/accept")

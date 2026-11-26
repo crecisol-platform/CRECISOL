@@ -110,6 +110,56 @@ INSERT INTO c05_identity_private_resource VALUES($T,$BR,$RES,$B,1,'SYNTHETIC-A')
 INSERT INTO c06_delegation_role VALUES($T,$ROLE,'tenant-staff',1,$PAST,NULL),($U,$ROLE,'tenant-staff',1,$PAST,NULL);
 INSERT INTO c06_delegation_ceiling VALUES($T,$MA,$BR,$RES,$ACTION,1,1,1,$PAST,UTC_TIMESTAMP(6)+INTERVAL 2 HOUR,NULL),($U,$MC,$BR,$RES,$ACTION,1,1,1,$PAST,UTC_TIMESTAMP(6)+INTERVAL 2 HOUR,NULL);"
 assert "SELECT COUNT(*) FROM c06_delegation_ceiling" "2" "colliding tenant scope remains separate"
+
+# Separate actual C05+MFA test mode. D and E-writer still execute every original SQL case.
+if [[ "${C06_DELEGATION_FLOW_TESTS:-0}" == 1 ]]; then
+  proof_up="$ROOT/database/migrations/025_c06_delegation_confirmation.sql"
+  proof_down="$ROOT/database/migrations/025_c06_delegation_confirmation.down.sql"
+  apply "$proof_up"
+  apply "$proof_down"
+  assert "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='crecisol_c05' AND table_name IN('c06_delegation_confirmation','c06_delegation_lab_entitlement')" "0" "empty confirmation migration reversal"
+  apply "$proof_up"
+  runtime_password="$(openssl rand -hex 24)"
+  fixture_password="$(openssl rand -hex 24)"
+  sql "CREATE USER 'c06_delegation_flow_test'@'%' IDENTIFIED BY '$runtime_password';
+       CREATE USER 'c06_delegation_fixture_test'@'%' IDENTIFIED BY '$fixture_password';
+       GRANT 'c05_identity_local_runtime' TO 'c06_delegation_flow_test'@'%';
+       SET DEFAULT ROLE 'c05_identity_local_runtime' TO 'c06_delegation_flow_test'@'%';
+       GRANT SELECT ON crecisol_c05.c06_delegation_role TO 'c06_delegation_flow_test'@'%';
+       GRANT SELECT ON crecisol_c05.c06_delegation_ceiling TO 'c06_delegation_flow_test'@'%';
+       GRANT SELECT ON crecisol_c05.c06_delegation_lab_entitlement TO 'c06_delegation_flow_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_grant TO 'c06_delegation_flow_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_revocation TO 'c06_delegation_flow_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_confirmation TO 'c06_delegation_flow_test'@'%';
+       GRANT UPDATE(consumed_at_utc) ON crecisol_c05.c06_delegation_confirmation TO 'c06_delegation_flow_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c04_verified_tenant_host TO 'c06_delegation_fixture_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c05_identity_mfa_factor TO 'c06_delegation_fixture_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c05_identity_session TO 'c06_delegation_fixture_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c05_identity_terms TO 'c06_delegation_fixture_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c05_identity_terms_acceptance TO 'c06_delegation_fixture_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c05_identity_resource_grant TO 'c06_delegation_fixture_test'@'%';
+       GRANT SELECT,INSERT,UPDATE ON crecisol_c05.c06_delegation_lab_entitlement TO 'c06_delegation_fixture_test'@'%';
+       GRANT SELECT ON crecisol_c05.c06_delegation_grant TO 'c06_delegation_fixture_test'@'%';
+       GRANT SELECT ON crecisol_c05.c06_delegation_revocation TO 'c06_delegation_fixture_test'@'%';
+       GRANT SELECT ON crecisol_c05.c06_delegation_confirmation TO 'c06_delegation_fixture_test'@'%';
+       GRANT SELECT ON crecisol_c05.c05_identity_private_resource TO 'c06_delegation_fixture_test'@'%';
+       GRANT SELECT ON crecisol_c05.c05_identity_audit TO 'c06_delegation_fixture_test'@'%';"
+  flow_port="$(docker port "$NAME" 3306/tcp | sed -n 's/^127\.0\.0\.1://p')"
+  [[ "$flow_port" =~ ^[0-9]+$ && "$flow_port" != 3306 ]]
+  C06_DELEGATION_FLOW_DSN="Server=127.0.0.1;Port=$flow_port;Database=crecisol_c05;User ID=c06_delegation_flow_test;Password=$runtime_password;SslMode=None;Pooling=False" \
+  C06_DELEGATION_FIXTURE_DSN="Server=127.0.0.1;Port=$flow_port;Database=crecisol_c05;User ID=c06_delegation_fixture_test;Password=$fixture_password;SslMode=None;Pooling=False" \
+    dotnet run -c Release --project "$ROOT/backend/tests/Crecisol.C06Delegation.FlowTests/Crecisol.C06Delegation.FlowTests.csproj"
+  assert "SELECT COUNT(*) FROM c06_delegation_confirmation WHERE consumed_at_utc IS NOT NULL" "2" "two confirmations committed"
+  reject "UPDATE c06_delegation_confirmation SET consumed_at_utc=NULL WHERE consumed_at_utc IS NOT NULL" "confirmation cannot revive" 1644
+  reject "UPDATE c06_delegation_confirmation SET binding_hmac=UNHEX(REPEAT('aa',32)) WHERE consumed_at_utc IS NULL" "confirmation binding immutable" 1644
+  reject "DELETE FROM c06_delegation_confirmation" "confirmation history immutable" 1644
+  if error="$(apply "$proof_down" 2>&1)"; then echo "FAIL C06-11 FLOW populated rollback succeeded" >&2; exit 1; fi
+  [[ "$error" == *"ERROR 1644 "* ]]
+  [[ "$(sql "SHOW GRANTS FOR 'c05_identity_local_runtime'")" == "$before_grants" ]]
+  sql "DROP USER 'c06_delegation_flow_test'@'%','c06_delegation_fixture_test'@'%'"
+  echo "PASS C06-11 FLOW real MFA, immutable confirmations and original runtime role preserved"
+  exit 0
+fi
 reject "INSERT INTO c06_delegation_ceiling VALUES($T,$MC,$BR,$RES,$ACTION,1,1,1,$PAST,$END,NULL)" "foreign membership ceiling" 1452 fk_c06_dc_actor
 reject "INSERT INTO c06_delegation_ceiling VALUES($U,$MC,$BR2,$R2,$ACTION,1,1,1,$PAST,$END,NULL)" "foreign resource ceiling" 1452 fk_c06_dc_resource
 reject "INSERT INTO c06_delegation_role VALUES($T,UNHEX(REPEAT('62',16)),'tenant-admin',1,$PAST,NULL)" "privileged recipient role" 3819

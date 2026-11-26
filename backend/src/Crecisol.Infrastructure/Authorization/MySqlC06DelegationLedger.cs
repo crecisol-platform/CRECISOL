@@ -92,6 +92,9 @@ internal sealed class MySqlC06DelegationLedger(MySqlConnection connection, MySql
         }
     }
 
+    internal async Task<C06DelegationGrant?> ReadEvidenceAsync(C06DelegationIntent i, CancellationToken ct) =>
+        (await ReadExactAsync(i, ct))?.Evidence;
+
     private async Task<StoredGrant?> ReadExactAsync(C06DelegationIntent i, CancellationToken ct)
     {
         await using var command = Command("""
@@ -166,7 +169,7 @@ internal sealed class MySqlC06DelegationLedger(MySqlConnection connection, MySql
         catch { CryptographicOperations.ZeroMemory(purpose); throw; }
     }
 
-    private static bool ValidReason(string? reason)
+    internal static bool ValidReason(string? reason)
     {
         if (reason is null || reason.Length > 240 || reason.Trim().Length < 8 ||
             reason.Any(char.IsControl) || !reason.Any(char.IsLetterOrDigit)) return false;

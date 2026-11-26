@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 BASE="076118ab5370e1fcbc7bfe0f1caefe07a664365b"
-PATHS=frozenset(["backend/src/Crecisol.Domain/Authorization/C06ScopedRoleDelegationPolicy.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Program.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Crecisol.C06Delegation.ContractsTests.csproj","docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md",".github/workflows/c06-11-delegated-role-policy.yml","qa/c06_11_delegated_role_scope.py","qa/c06_02_role_model_audit.py","database/migrations/024_c06_delegated_role_ledger.sql","database/migrations/024_c06_delegated_role_ledger.down.sql","database/tests/c06_11_delegated_role_mysql.sh","qa/c06_07_privacy_scope.py","qa/c06_08_query_scope.py","qa/c06_09_delivery_scope.py","qa/c06_10_offensive_scope.py","qa/c06_07_privacy_audits.py","qa/c06_09_delivery_audits.py","qa/c06_10_offensive_audits.py","backend/src/Crecisol.Infrastructure/Authorization/MySqlC06DelegationLedger.cs","backend/tests/Crecisol.C06Delegation.MySqlTests/Crecisol.C06Delegation.MySqlTests.csproj","backend/tests/Crecisol.C06Delegation.MySqlTests/Program.cs"])
+PATHS=frozenset(["backend/src/Crecisol.Domain/Authorization/C06ScopedRoleDelegationPolicy.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Program.cs","backend/tests/Crecisol.C06Delegation.ContractsTests/Crecisol.C06Delegation.ContractsTests.csproj","docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md",".github/workflows/c06-11-delegated-role-policy.yml","qa/c06_11_delegated_role_scope.py","qa/c06_02_role_model_audit.py","database/migrations/024_c06_delegated_role_ledger.sql","database/migrations/024_c06_delegated_role_ledger.down.sql","database/tests/c06_11_delegated_role_mysql.sh","qa/c06_07_privacy_scope.py","qa/c06_08_query_scope.py","qa/c06_09_delivery_scope.py","qa/c06_10_offensive_scope.py","qa/c06_07_privacy_audits.py","qa/c06_09_delivery_audits.py","qa/c06_10_offensive_audits.py","backend/src/Crecisol.Infrastructure/Authorization/MySqlC06DelegationLedger.cs","backend/tests/Crecisol.C06Delegation.MySqlTests/Crecisol.C06Delegation.MySqlTests.csproj","backend/tests/Crecisol.C06Delegation.MySqlTests/Program.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs","backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Delegation.cs","backend/src/Crecisol.Application/Identity/C06DelegationPreparation.cs","database/migrations/025_c06_delegation_confirmation.sql","database/migrations/025_c06_delegation_confirmation.down.sql","backend/tests/Crecisol.C06Delegation.FlowTests/Program.cs","backend/tests/Crecisol.C06Delegation.FlowTests/Crecisol.C06Delegation.FlowTests.csproj"])
 def git(*args):
     return subprocess.check_output(["git",*args],cwd=ROOT,text=True).strip()
 def need(ok,why):
@@ -73,6 +73,18 @@ HISTORICAL_EDITS={
             "need(not git(\"diff\",\"--name-only\",BASE,\"HEAD\",\"--\",path),\"unapproved product/authority change \"+path)",
             "need(not git(\"diff\",\"--name-only\",BASE,audited_product_end(),\"--\",path),\"unapproved product/authority change \"+path)"
         ]
+    ],
+    "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs": [
+        [
+            "        if (r.Operation == \"sessions/keepalive\")",
+            "        // Candidate-only internal operations: the existing HTTP route inventory is unchanged.\n        if (r.Operation is \"delegation/prepare\" or \"delegation/confirm\")\n            return await C06DelegationTransition(u, tenant, actor, account, member, session, factor, idle, r, ct);\n        if (r.Operation == \"sessions/keepalive\")"
+        ]
+    ],
+    "backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs": [
+        [
+            "        public async Task<int> Run(string sql, params (string, object)[] parameters)",
+            "        public Crecisol.Infrastructure.Authorization.MySqlC06DelegationLedger DelegationLedger() => new(db, tx);\n        public async Task<int> Run(string sql, params (string, object)[] parameters)"
+        ]
     ]
 }
 HISTORICAL_MODS=frozenset(HISTORICAL_EDITS) | {"qa/c06_02_role_model_audit.py"}
@@ -136,6 +148,14 @@ def main():
         unquoted=re.sub(r"'(?:''|[^'])*'", "''", source)
         return re.search(r"\b(?:GRANT|ALTER\s+TABLE|DROP\s+TABLE)\b",unquoted,re.I) is None
     need(no_authority_change(sql),"new ledger changes old privileges/schema")
+    confirmation=(ROOT/"database/migrations/025_c06_delegation_confirmation.sql").read_text(encoding="utf-8")
+    executable=re.sub(r"(?m)^\s*--[^\n]*$", "", confirmation)
+    need(no_authority_change(executable),"confirmation migration expands legacy privileges/schema")
+    need(git("rev-parse","b66f5bd4e746c23b79ed468f06ee5a9ce26cfb53:database/migrations/024_c06_delegated_role_ledger.sql")==git("rev-parse","HEAD:database/migrations/024_c06_delegated_role_ledger.sql"),"approved ledger changed")
+    for invariant in ("uq_c06_dcf_token","fk_c06_dcf_member","fk_c06_dcf_session","trg_c06_dcf_consume","trg_c06_dcf_no_delete","TIMESTAMPDIFF(MICROSECOND"):
+        need(invariant in executable,"missing confirmation invariant "+invariant)
+    transport=read_text=(ROOT/"backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs").read_text(encoding="utf-8")
+    need("delegation/prepare" not in transport and "delegation/confirm" not in transport,"candidate exposed via HTTP")
     for forbidden in ("GRANT SELECT ON sample TO sample_role",
                       "ALTER TABLE sample ADD COLUMN unsafe INT",
                       "DROP TABLE sample"):
@@ -150,7 +170,7 @@ def main():
          "ledger not empty; preserve history" in down,"unsafe down migration")
     for path in ("database/operations/c05_local_runtime_role.sql","database/operations/c06_04_local_runtime_role.sql"):
         need(git("rev-parse",BASE+":"+path)==git("rev-parse","HEAD:"+path),"runtime grant source changed")
-    print("PASS C06-11 DELEGATION twenty isolated paths, six rejected mutations; exact C06-02/07/08/09/10 successor routing, prior contracts and Master unchanged")
+    print("PASS C06-11 DELEGATION twenty-eight isolated paths, six rejected mutations; exact C06-02/07/08/09/10 successor routing, prior contracts and Master unchanged")
 
 if __name__=="__main__":
     main()

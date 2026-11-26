@@ -114,10 +114,15 @@ public static class C06ScopedRoleDelegationPolicy
         { "MEMBER", "STAFF", "VIEWER", "MANAGER", "tenant-staff", "tenant-viewer",
           "tenant-branch-manager" };
 
-    public static C06DelegationDecision? Decide(C06LockedDelegationEvidence? e)
+    /// <summary>Checks eligibility only, never produces a mutation decision or proof.</summary>
+    public static bool CanPrepare(C06LockedDelegationEvidence? e) => DecideCore(e, false) is not null;
+
+    public static C06DelegationDecision? Decide(C06LockedDelegationEvidence? e) => DecideCore(e, true);
+
+    private static C06DelegationDecision? DecideCore(C06LockedDelegationEvidence? e, bool requireStepUp)
     {
         if (e is null || e.Identity is null || e.Intent is null ||
-            e.Ceiling is null || e.StepUp is null || e.SubjectTenant is null ||
+            e.Ceiling is null || (requireStepUp && e.StepUp is null) || e.SubjectTenant is null ||
             e.SubjectActor is null || e.RoleTenant is null ||
             e.ActorRoleCode is null || e.TargetRoleCode is null)
             return null;
@@ -156,12 +161,12 @@ public static class C06ScopedRoleDelegationPolicy
 
         // The one-use cryptographic verification belongs to the adapter.
         // Exact intent binding and same transaction clock are enforced here.
-        if (p.Intent != i || p.Tenant != e.Identity.TenantId || p.Actor != e.Identity.ActorId ||
+        if (requireStepUp && (p is null || p.Intent != i || p.Tenant != e.Identity.TenantId || p.Actor != e.Identity.ActorId ||
             p.ActorMembershipId != e.Identity.MembershipId ||
             p.SessionRevision != e.Identity.SessionRevision ||
             p.AccountRevision != e.Identity.AccountRevision ||
             p.MembershipRevision != e.Identity.MembershipRevision ||
-            p.ConsumedAtUtc != now)
+            p.ConsumedAtUtc != now))
             return null;
 
         var g = e.Existing;

@@ -10,6 +10,14 @@ on:
       - '.github/workflows/c06-11-delegated-role-policy.yml'
       - 'qa/c06_11_delegated_role_scope.py'
       - 'qa/c06_02_role_model_audit.py'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Delegation.cs'
+      - 'backend/src/Crecisol.Application/Identity/C06DelegationPreparation.cs'
+      - 'database/migrations/025_c06_delegation_confirmation.sql'
+      - 'database/migrations/025_c06_delegation_confirmation.down.sql'
+      - 'backend/tests/Crecisol.C06Delegation.FlowTests/Program.cs'
+      - 'backend/tests/Crecisol.C06Delegation.FlowTests/Crecisol.C06Delegation.FlowTests.csproj'
       - 'backend/src/Crecisol.Infrastructure/Authorization/MySqlC06DelegationLedger.cs'
       - 'backend/tests/Crecisol.C06Delegation.MySqlTests/Crecisol.C06Delegation.MySqlTests.csproj'
       - 'backend/tests/Crecisol.C06Delegation.MySqlTests/Program.cs'
@@ -99,3 +107,17 @@ jobs:
       - run: dotnet build backend/tests/Crecisol.C06Delegation.MySqlTests/Crecisol.C06Delegation.MySqlTests.csproj -c Release -warnaserror
       - run: bash -n database/tests/c06_11_delegated_role_mysql.sh
       - run: C06_DELEGATION_WRITER_TESTS=1 bash database/tests/c06_11_delegated_role_mysql.sh
+  e-confirmation:
+    name: E2 | Actual C05 session, SHA1 TOTP, one-use confirmation and MySQL transaction
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet build backend/tests/Crecisol.C06Delegation.FlowTests/Crecisol.C06Delegation.FlowTests.csproj -c Release -warnaserror
+      - run: bash -n database/tests/c06_11_delegated_role_mysql.sh
+      - run: C06_DELEGATION_FLOW_TESTS=1 bash database/tests/c06_11_delegated_role_mysql.sh
