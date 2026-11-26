@@ -159,4 +159,69 @@ Deny(Valid(revoke with { ExpectedGrantRevision=long.MaxValue }) with { Existing=
 Deny(Valid(revoke with { UntilUtc=now.AddHours(1) }) with { Existing=grant },"revoke cannot extend expiry");
 Check(!a.ToString().Contains(actor.Value.ToString(),StringComparison.OrdinalIgnoreCase) &&
       !assign.ToString().Contains(subject.Value.ToString(),StringComparison.OrdinalIgnoreCase),"redacted evidence representations");
+
+// Future cycle-aware contract: independent locked head + immutable terminal
+// row. This suite exercises domain decisions, not storage, MFA or SQL CAS.
+var previousId=Guid.NewGuid();
+var nextId=Guid.NewGuid();
+var terminal=grant with { GrantId=previousId, Revision=2, RevokedAtUtc=now };
+var head=new C06DelegationCycleHead(scope,subject,subjectMembership,previousId,2);
+var reissue=assign with { ExpectedGrantRevision=2 };
+var candidate=Valid(reissue) with { Existing=terminal };
+void DenyReissue(C06LockedDelegationEvidence? evidence,C06DelegationCycleHead? current,Guid id,string name) =>
+    Check(C06ScopedRoleDelegationPolicy.DecideReissue(evidence,current,id) is null,name);
+Check(C06ScopedRoleDelegationPolicy.CanPrepareReissue(candidate with { StepUp=null! },head),
+      "terminal generation eligible for preparation without consumed proof");
+Check(C06ScopedRoleDelegationPolicy.DecideReissue(candidate,head,nextId) is { } next &&
+      next.PreviousGrantId==previousId && next.NewGrantId==nextId &&
+      next.ExpectedRevision==2 && next.NextRevision==3,
+      "new grant ID and monotonic issuance after revocation");
+Check(!C06ScopedRoleDelegationPolicy.CanPrepare(candidate) &&
+      C06ScopedRoleDelegationPolicy.Decide(candidate) is null,
+      "legacy entry points remain closed to terminal grants");
+DenyReissue(null,head,nextId,"missing reissue evidence");
+DenyReissue(candidate,null,nextId,"missing independently loaded cycle head");
+DenyReissue(candidate with { Existing=null },head,nextId,"no terminal grant row");
+DenyReissue(candidate with { Existing=terminal with { GrantId=Guid.Empty } },head,nextId,"legacy grant lacks immutable row identity");
+DenyReissue(candidate with { Existing=terminal with { RevokedAtUtc=null } },head,nextId,"active predecessor cannot be overwritten");
+DenyReissue(candidate with { Existing=terminal with { RevokedAtUtc=null,UntilUtc=now } },head,nextId,"expiry alone does not establish immutable revocation");
+DenyReissue(candidate,head,previousId,"cannot reuse revoked grant identity");
+DenyReissue(candidate,head,Guid.Empty,"new grant identity mandatory");
+DenyReissue(candidate,head with { GrantId=Guid.NewGuid() },nextId,"head points to another grant");
+DenyReissue(candidate,head with { Revision=4 },nextId,"stale independently locked head");
+DenyReissue(candidate,head with { Scope=scope with { Tenant=otherTenant } },nextId,"foreign tenant cycle head");
+DenyReissue(candidate,head with { Scope=scope with { Branch=otherBranch } },nextId,"foreign branch cycle head");
+DenyReissue(candidate,head with { Scope=scope with { Resource=otherResource } },nextId,"foreign resource cycle head");
+DenyReissue(candidate,head with { Subject=otherSubject },nextId,"foreign cycle subject");
+DenyReissue(candidate,head with { SubjectMembershipId=Guid.NewGuid() },nextId,"foreign cycle membership");
+DenyReissue(candidate with { StepUp=Proof(assign) },head,nextId,"old generation MFA intent cannot reissue");
+DenyReissue(candidate with { StepUp=null! },head,nextId,"reissue requires consumed step-up");
+DenyReissue(candidate with { StepUp=candidate.StepUp with { ConsumedAtUtc=now.AddSeconds(-1) } },head,nextId,"reissue requires same transaction clock");
+DenyReissue(candidate with { CommercialAccessVerified=false },head,nextId,"commercial suspension blocks reissue");
+DenyReissue(candidate with { ActorEffectiveRead=null },head,nextId,"old grant cannot substitute current issuer ABAC");
+DenyReissue(candidate with { Ceiling=ceiling with { RevokedAtUtc=now } },head,nextId,"retired ceiling blocks reissue");
+DenyReissue(candidate with { SubjectMembershipActive=false },head,nextId,"inactive target cannot receive new grant");
+DenyReissue(candidate with { RoleActive=false },head,nextId,"retired role cannot be reissued");
+DenyReissue(candidate with { Existing=terminal with { RoleId=Guid.NewGuid() } },head,nextId,"initial reissue supports same exact role only");
+DenyReissue(candidate with { Existing=terminal with { RevokedAtUtc=now.AddSeconds(1) } },head,nextId,"future revocation rejected");
+var oddIntent=reissue with { ExpectedGrantRevision=3 };
+DenyReissue(Valid(oddIntent) with { Existing=terminal with { Revision=3 } },
+    head with { Revision=3 },nextId,"odd revision is not terminal");
+var exhausted=reissue with { ExpectedGrantRevision=long.MaxValue-1 };
+DenyReissue(Valid(exhausted) with { Existing=terminal with { Revision=long.MaxValue-1 } },
+    head with { Revision=long.MaxValue-1 },nextId,"reserve revision for eventual revocation");
+var revokeNext=revoke with { ExpectedGrantRevision=3 };
+var issuedNext=grant with { GrantId=nextId, Revision=3 };
+Allow(Valid(revokeNext) with { Existing=issuedNext },C06DelegationCommand.Revoke,3,4,
+      "later generation revocable without revision reset");
+Deny(Valid(revoke) with { Existing=issuedNext },"old revoke revision cannot close later generation");
+var thirdId=Guid.NewGuid();
+var terminalNext=issuedNext with { Revision=4,RevokedAtUtc=now };
+var reissueAgain=reissue with { ExpectedGrantRevision=4 };
+Check(C06ScopedRoleDelegationPolicy.DecideReissue(Valid(reissueAgain) with { Existing=terminalNext },
+    head with { GrantId=nextId,Revision=4 },thirdId) is { ExpectedRevision:4,NextRevision:5 },
+    "second reissue continues monotonic revisions");
+Check(!head.ToString().Contains(previousId.ToString(),StringComparison.OrdinalIgnoreCase),
+      "cycle head representation redacted");
+
 Console.WriteLine($"PASS C06-11 DELEGATION DOMAIN contracts={count}; no HTTP, DB or replay runtime claim");
