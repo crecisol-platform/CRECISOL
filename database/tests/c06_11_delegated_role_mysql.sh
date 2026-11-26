@@ -130,6 +130,12 @@ if [[ "${C06_DELEGATION_FLOW_TESTS:-0}" == 1 ]]; then
   apply "$proof_down"
   assert "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='crecisol_c05' AND table_name IN('c06_delegation_confirmation','c06_delegation_lab_entitlement')" "0" "empty confirmation migration reversal"
   apply "$proof_up"
+  privacy_up="$ROOT/database/migrations/027_c06_privacy_requests.sql"
+  privacy_down="$ROOT/database/migrations/027_c06_privacy_requests.down.sql"
+  apply "$privacy_up"
+  apply "$privacy_down"
+  assert "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='crecisol_c05' AND table_name IN('c06_privacy_request','c06_privacy_request_intent')" "0" "empty privacy intake reversal"
+  apply "$privacy_up"
   authority_up="$ROOT/database/migrations/026_c06_delegation_authority.sql"
   authority_down="$ROOT/database/migrations/026_c06_delegation_authority.down.sql"
   apply "$authority_up"
@@ -150,6 +156,11 @@ if [[ "${C06_DELEGATION_FLOW_TESTS:-0}" == 1 ]]; then
        GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_grant TO 'c06_delegation_flow_test'@'%';
        GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_revocation TO 'c06_delegation_flow_test'@'%';
        GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_authority TO 'c06_delegation_flow_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c06_privacy_request_intent TO 'c06_delegation_flow_test'@'%';
+       GRANT UPDATE(consumed_at_utc) ON crecisol_c05.c06_privacy_request_intent TO 'c06_delegation_flow_test'@'%';
+       GRANT SELECT,INSERT ON crecisol_c05.c06_privacy_request TO 'c06_delegation_flow_test'@'%';
+       GRANT SELECT ON crecisol_c05.c06_privacy_request_intent TO 'c06_delegation_fixture_test'@'%';
+       GRANT SELECT ON crecisol_c05.c06_privacy_request TO 'c06_delegation_fixture_test'@'%';
        GRANT SELECT,INSERT ON crecisol_c05.c06_delegation_confirmation TO 'c06_delegation_flow_test'@'%';
        GRANT UPDATE(consumed_at_utc) ON crecisol_c05.c06_delegation_confirmation TO 'c06_delegation_flow_test'@'%';
        GRANT 'c05_identity_local_runtime' TO 'c06_delegation_rollback_test'@'%';
@@ -201,6 +212,12 @@ if [[ "${C06_DELEGATION_FLOW_TESTS:-0}" == 1 ]]; then
   if error="$(apply "$proof_down" 2>&1)"; then echo "FAIL C06-11 FLOW populated rollback succeeded" >&2; exit 1; fi
   [[ "$error" == *"ERROR 1644 "* ]]
   [[ "$(sql "SHOW GRANTS FOR 'c05_identity_local_runtime'")" == "$before_grants" ]]
+  assert "SELECT COUNT(*) FROM c06_privacy_request" "4" "four self requests preserved"
+  reject "UPDATE c06_privacy_request SET disposition_state='complete'" "privacy intake cannot fabricate disposition" 1644
+  reject "DELETE FROM c06_privacy_request" "privacy intake cannot erase history" 1644
+  reject "UPDATE c06_privacy_request_intent SET consumed_at_utc=NULL WHERE consumed_at_utc IS NOT NULL" "privacy proof cannot revive" 1644
+  if error="$(apply "$privacy_down" 2>&1)"; then echo "FAIL C06-11 privacy populated rollback succeeded" >&2; exit 1; fi
+  [[ "$error" == *"ERROR 1644 "* ]]
   sql "DROP USER 'c06_delegation_flow_test'@'%','c06_delegation_fixture_test'@'%','c06_delegation_rollback_test'@'%'"
   echo "PASS C06-11 FLOW real MFA, immutable confirmations and original runtime role preserved"
   exit 0

@@ -63,6 +63,8 @@ public sealed partial class MySqlOperationalIdentityFlow
 
         u.VerifiedActor = true;
         await SlideTenantSession(u, tenant, hash, idle);
+        if (r.Operation is "privacy/requests/list" or "privacy/requests/prepare" or "privacy/requests/confirm")
+            return await C06OwnPrivacyRequest(u,tenant,actor,account,member,session,factor,idle,r,ct);
         // Explicit C06-11 laboratory overlay; historical HTTP operations remain unchanged.
         if (r.Operation == "delegation/catalog")
             return await C06DelegationCatalogPage(u, tenant, actor, account, member, session, factor, idle, r, ct);

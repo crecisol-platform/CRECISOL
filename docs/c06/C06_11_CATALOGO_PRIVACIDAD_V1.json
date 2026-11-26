@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "authority": "DOCUMENTATION_ONLY_NOT_RUNTIME_AUTHORIZATION",
+  "scope": "laboratory_self_service_intake_only",
+  "feature_gate": "CRECISOL_C06_PRIVACY_REQUESTS_LAB_ENABLED=true_and_C05_LOCAL_IDENTITY_ENABLED=true_and_local_isolation",
+  "rights": [
+    "access",
+    "rectify",
+    "erase",
+    "object"
+  ],
+  "categories": [
+    "profile",
+    "identity",
+    "security",
+    "case-records"
+  ],
+  "actions": [
+    {
+      "operation_code": "privacy/requests/list",
+      "required_fields": [
+        "cursor"
+      ],
+      "response_fields": [
+        "items",
+        "nextCursor"
+      ],
+      "boundary": "own_subject_tenant_metadata_only",
+      "action_id": "identity.privacy.requests.list",
+      "http_method": "POST",
+      "http_route": "/api/v1/identity/privacy/requests/list",
+      "realm": "tenant",
+      "source_file": "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs",
+      "authorization_from": "backend_only",
+      "denied_payload": "empty",
+      "cache_control": "no-store, private"
+    },
+    {
+      "operation_code": "privacy/requests/prepare",
+      "required_fields": [
+        "requestKey",
+        "right",
+        "category",
+        "reason"
+      ],
+      "response_fields": [
+        "challenge",
+        "expiresAtUtc"
+      ],
+      "boundary": "own_subject_exact_request_preparation",
+      "action_id": "identity.privacy.requests.prepare",
+      "http_method": "POST",
+      "http_route": "/api/v1/identity/privacy/requests/prepare",
+      "realm": "tenant",
+      "source_file": "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs",
+      "authorization_from": "backend_only",
+      "denied_payload": "empty",
+      "cache_control": "no-store, private"
+    },
+    {
+      "operation_code": "privacy/requests/confirm",
+      "required_fields": [
+        "requestKey",
+        "right",
+        "category",
+        "reason",
+        "challenge",
+        "code"
+      ],
+      "response_fields": [
+        "requestId",
+        "right",
+        "category",
+        "submittedAtUtc",
+        "status",
+        "assessment"
+      ],
+      "boundary": "own_subject_fresh_mfa_idempotent_receipt",
+      "action_id": "identity.privacy.requests.confirm",
+      "http_method": "POST",
+      "http_route": "/api/v1/identity/privacy/requests/confirm",
+      "realm": "tenant",
+      "source_file": "backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs",
+      "authorization_from": "backend_only",
+      "denied_payload": "empty",
+      "cache_control": "no-store, private"
+    }
+  ],
+  "assessment": {
+    "identity": "mfa-verified",
+    "purpose": "pending",
+    "legalBasis": "pending",
+    "retention": "pending",
+    "legalHold": "pending",
+    "disposition": "pending"
+  },
+  "activated_normative": [],
+  "limitations": [
+    "Intake only, no direct fulfilment, export, rectification, erasure or objection enforcement",
+    "Legal basis, retention policy, independent review, final disposition and verified response require further implementation",
+    "Existing active membership required; alternative intake for former members not implemented"
+  ]
+}

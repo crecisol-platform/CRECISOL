@@ -162,6 +162,7 @@ try
     Environment.SetEnvironmentVariable("CRECISOL_C06_DELEGATION_LAB_ENABLED",null);
     Check(await Denied("delegation/prepare",fields),"disabled composition denied");
     Environment.SetEnvironmentVariable("CRECISOL_C06_DELEGATION_LAB_ENABLED","true");
+    Environment.SetEnvironmentVariable("CRECISOL_C06_PRIVACY_REQUESTS_LAB_ENABLED","true");
     await using var wire=await DelegationWireFixture.Start(runtime.ConnectionString,flow,tokenKey,encKey,loginKey,mailboxKey);
     async Task WireDenied(string operation,Dictionary<string,string> body,HttpStatusCode status,
         string? bearer=null,string host="delegation-a.example.test",string? raw=null,
@@ -528,10 +529,18 @@ try
     Check(await Count("c06_delegation_grant")==2 && await Count("c06_delegation_revocation")==1 &&
         await Count("c06_delegation_authority")==2,"catalog denials preserve authorization history");
     Console.WriteLine($"PASS C06-11 FLOW MYSQL checks={checks}; actual C05 session, SHA1 TOTP, one-use confirmation, isolated exact read and revocation");
+    // Reset only time window naturally, never persisted quota or MFA counters.
+    var privacyWindow=DateTimeOffset.UtcNow.ToUnixTimeSeconds()/60+1;
+    while(DateTimeOffset.UtcNow.ToUnixTimeSeconds()/60<privacyWindow)
+        await Task.Delay(TimeSpan.FromMilliseconds(250));
+    checks+=await PrivacyRequestFixture.Run(wire,admin,tenant,actor,factor,seed,token,token2,otherToken);
+    Console.WriteLine($"PASS C06-11 TOTAL HTTP MYSQL checks={checks}");
+
 
 }
 finally
 {
     Environment.SetEnvironmentVariable("CRECISOL_C06_DELEGATION_LAB_ENABLED",null);
+    Environment.SetEnvironmentVariable("CRECISOL_C06_PRIVACY_REQUESTS_LAB_ENABLED",null);
     foreach(var bytes in new[]{seed,tokenKey,encKey,loginKey,mailboxKey,ciphertext})CryptographicOperations.ZeroMemory(bytes);
 }

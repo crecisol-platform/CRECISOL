@@ -132,6 +132,19 @@ public static class OperationalIdentityModule
                 endpoints.MapPost("/api/v1/platform-identity/" + selected[9..],
                     (HttpContext context, IOperationalIdentityFlow flow, CancellationToken ct) => Handle(context, flow, selected, ct));
             }
+        // Separate self-service privacy intake overlay. No delegation or
+        // platform claim can authorize a request about another subject.
+        if (C06PrivacyRequestHttpContract.Operations.Any(Operations.ContainsKey) ||
+            C06PrivacyRequestHttpContract.Operations.Any(C06BreakglassOperations.ContainsKey) ||
+            C06PrivacyRequestHttpContract.Operations.Any(C06DelegationHttpContract.Operations.Contains))
+            throw new InvalidOperationException("Privacy request route inventory collision.");
+        if (C06PrivacyRequestHttpContract.Enabled)
+            foreach (var operation in C06PrivacyRequestHttpContract.Operations)
+            {
+                var selected = operation;
+                endpoints.MapPost("/api/v1/identity/" + selected,
+                    (HttpContext context, IOperationalIdentityFlow flow, CancellationToken ct) => Handle(context, flow, selected, ct));
+            }
         // C06-11 overlay: exact separate inventory, opt-in only.
         if (C06DelegationHttpContract.Operations.Any(Operations.ContainsKey) ||
             C06DelegationHttpContract.Operations.Any(C06BreakglassOperations.ContainsKey))
@@ -152,11 +165,13 @@ public static class OperationalIdentityModule
         if (exceptional && Environment.GetEnvironmentVariable("CRECISOL_C06_BREAKGLASS_ENABLED") != "true")
             return Results.NotFound();
         var delegated = C06DelegationHttpContract.TryFields(operation, out var delegatedFields);
-        var expectedFields = delegated ? delegatedFields! : exceptional ? exceptionalFields! : Operations[operation];
+        var privacy = C06PrivacyRequestHttpContract.TryFields(operation, out var privacyFields);
+        var expectedFields = privacy ? privacyFields! : delegated ? delegatedFields! : exceptional ? exceptionalFields! : Operations[operation];
         // All identity responses, including denials and neutral receipts, are private.
         context.Response.Headers.CacheControl = "no-store, private";
         context.Response.Headers.Pragma = "no-cache";
         if (delegated && !C06DelegationHttpContract.Enabled) return Results.NotFound();
+        if (privacy && !C06PrivacyRequestHttpContract.Enabled) return Results.NotFound();
         var browser = OperationalBrowserSessionTransport.IsBrowser(request);
         try
         {
@@ -213,7 +228,7 @@ public static class OperationalIdentityModule
                 foreach (var (name, value) in fields)
                 {
                     if ((name is "challenge" or "token") && (value.Length != 64 || !value.All(Uri.IsHexDigit))) return Results.BadRequest();
-                    if (delegated && name == "code" && (value.Length != 6 || !value.All(char.IsAsciiDigit)))
+                    if ((delegated || privacy) && name == "code" && (value.Length != 6 || !value.All(char.IsAsciiDigit)))
                         return Results.BadRequest();
                     if (name == "code" && !(operation == "invitations/accept" && value == "enroll") && !((value.Length == 6 && value.All(char.IsAsciiDigit)) ||
                         (value.Length == 32 && value.All(Uri.IsHexDigit)))) return Results.BadRequest();
@@ -235,6 +250,13 @@ public static class OperationalIdentityModule
             if (operation is "assisted/request" or "platform/operator-recovery/request")
                 return Results.Accepted(value: C06IdentityResponseProjection.NeutralAssisted(result));
             if (operation == "platform/incidents/report") return Results.Accepted(value: new { accepted = true });
+            if (privacy)
+            {
+                if (!C06PrivacyRequestHttpContract.TryApply(operation, result, out var privacySafe))
+                    return Results.Unauthorized();
+                if (browser) return browserTransport.Receipt(context, operation, privacySafe, browserSession);
+                return privacySafe.Allowed ? Results.Ok(privacySafe.Value) : Results.Unauthorized();
+            }
             if (!delegated)
             {
                 if (!C06IdentityResponseProjection.TryApply(operation, result, out var safe))
