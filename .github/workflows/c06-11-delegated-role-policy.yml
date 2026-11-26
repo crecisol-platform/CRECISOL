@@ -1,0 +1,202 @@
+name: CRECISOL C06-11 delegated role domain and isolated ledger gate
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'backend/src/Crecisol.Domain/Authorization/C06ScopedRoleDelegationPolicy.cs'
+      - 'backend/tests/Crecisol.C06Delegation.ContractsTests/Program.cs'
+      - 'backend/tests/Crecisol.C06Delegation.ContractsTests/Crecisol.C06Delegation.ContractsTests.csproj'
+      - 'docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md'
+      - '.github/workflows/c06-11-delegated-role-policy.yml'
+      - 'qa/c06_11_delegated_role_scope.py'
+      - 'qa/c06_02_role_model_audit.py'
+      - 'frontend/src/app/identity/privacy-request-client.model.ts'
+      - 'frontend/src/app/pages/privacy-requests.component.ts'
+      - 'frontend/src/app/pages/privacy-requests.component.html'
+      - 'frontend/src/app/pages/privacy-requests.component.css'
+      - 'frontend/tests/c06-privacy-requests.spec.ts'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.PrivacyRequests.cs'
+      - 'backend/src/Crecisol.Domain/Authorization/C06PrivacyRequestPolicy.cs'
+      - 'backend/src/Crecisol.Application/Identity/C06PrivacyRequestContracts.cs'
+      - 'backend/src/Crecisol.Api/Contracts/C06PrivacyRequestHttpContract.cs'
+      - 'database/migrations/027_c06_privacy_requests.sql'
+      - 'database/migrations/027_c06_privacy_requests.down.sql'
+      - 'docs/c06/C06_11_CATALOGO_PRIVACIDAD_V1.json'
+      - 'backend/tests/Crecisol.C06Delegation.FlowTests/PrivacyRequestFixture.cs'
+      - 'frontend/src/app/identity/identity-api.service.ts'
+      - 'frontend/src/app/identity/delegation-client.model.ts'
+      - 'frontend/src/app/pages/delegation-editor.component.ts'
+      - 'frontend/src/app/pages/delegation-editor.component.html'
+      - 'frontend/src/app/pages/delegation-editor.component.css'
+      - 'frontend/src/app/pages/identity-flow-views.component.ts'
+      - 'frontend/src/app/pages/identity-workspace.component.html'
+      - 'frontend/tests/c06-delegation-editor.spec.ts'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegationCatalog.cs'
+      - 'backend/src/Crecisol.Application/Identity/C06DelegationCatalog.cs'
+      - 'docs/c06/C06_11_CATALOGO_DELEGACION_V3.json'
+      - 'backend/src/Crecisol.Application/Identity/C06DelegationInspection.cs'
+      - 'docs/c06/C06_11_CATALOGO_DELEGACION_V2.json'
+      - 'qa/c06_06_exceptional_scope.py'
+      - 'backend/src/Crecisol.Api/Modules/Identity/OperationalIdentityModule.cs'
+      - 'backend/src/Crecisol.Api/Contracts/C06DelegationHttpContract.cs'
+      - 'docs/c06/C06_11_CATALOGO_DELEGACION_V1.json'
+      - 'qa/c06_01_permissions_catalog_audit.py'
+      - 'backend/tests/Crecisol.C06Delegation.FlowTests/DelegationWireFixture.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.DelegatedRead.cs'
+      - 'database/migrations/026_c06_delegation_authority.sql'
+      - 'database/migrations/026_c06_delegation_authority.down.sql'
+      - 'qa/c05_sha1_exclusive_audits.py'
+      - 'qa/c06_03_context_audits.py'
+      - 'qa/c06_04_abac_audits.py'
+      - 'qa/c06_05_stepup_audits.py'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Authorized.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.cs'
+      - 'backend/src/Crecisol.Infrastructure/Identity/MySqlOperationalIdentityFlow.Delegation.cs'
+      - 'backend/src/Crecisol.Application/Identity/C06DelegationPreparation.cs'
+      - 'database/migrations/025_c06_delegation_confirmation.sql'
+      - 'database/migrations/025_c06_delegation_confirmation.down.sql'
+      - 'backend/tests/Crecisol.C06Delegation.FlowTests/Program.cs'
+      - 'backend/tests/Crecisol.C06Delegation.FlowTests/Crecisol.C06Delegation.FlowTests.csproj'
+      - 'backend/src/Crecisol.Infrastructure/Authorization/MySqlC06DelegationLedger.cs'
+      - 'backend/tests/Crecisol.C06Delegation.MySqlTests/Crecisol.C06Delegation.MySqlTests.csproj'
+      - 'backend/tests/Crecisol.C06Delegation.MySqlTests/Program.cs'
+      - 'qa/c06_07_privacy_scope.py'
+      - 'qa/c06_08_query_scope.py'
+      - 'qa/c06_09_delivery_scope.py'
+      - 'qa/c06_10_offensive_scope.py'
+      - 'qa/c06_07_privacy_audits.py'
+      - 'qa/c06_09_delivery_audits.py'
+      - 'qa/c06_10_offensive_audits.py'
+      - 'database/migrations/024_c06_delegated_role_ledger.sql'
+      - 'database/migrations/024_c06_delegated_role_ledger.down.sql'
+      - 'database/tests/c06_11_delegated_role_mysql.sh'
+permissions:
+  contents: read
+jobs:
+  a-source:
+    name: A | Exact delegated policy scope and approved Master
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 qa/master_source_guard.py
+      - run: python3 qa/c06_11_delegated_role_scope.py
+      - run: python3 qa/c06_01_permissions_catalog_audit.py A
+      - run: python3 qa/c06_01_permissions_catalog_audit.py B
+      - run: python3 qa/c06_01_permissions_catalog_audit.py C
+      - run: python3 qa/c06_02_role_model_audit.py A
+      - run: python3 qa/c06_02_role_model_audit.py B
+      - run: python3 qa/c06_02_role_model_audit.py C
+      - run: python3 qa/c05_sha1_exclusive_audits.py A
+      - run: python3 qa/c05_sha1_exclusive_audits.py B
+      - run: python3 qa/c05_sha1_exclusive_audits.py C
+      - name: Historical identity ABAC and step-up controls on current source
+        run: |
+          set -euo pipefail
+          for gate in A B C; do
+            python3 qa/c06_03_context_audits.py "$gate"
+            python3 qa/c06_04_abac_audits.py "$gate"
+            python3 qa/c06_05_stepup_audits.py "$gate"
+          done
+      - name: Historical A/B/C/D controls on current source
+        run: |
+          set -euo pipefail
+          for gate in A B C D; do
+            python3 qa/c06_06_exceptional_audits.py "$gate"
+            python3 qa/c06_07_privacy_audits.py "$gate"
+            python3 qa/c06_08_query_audits.py "$gate"
+            python3 qa/c06_09_delivery_audits.py "$gate"
+            python3 qa/c06_10_offensive_audits.py "$gate"
+          done
+  b-contracts:
+    name: B | Delegation policy real .NET 10 positive and negative contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet build backend/tests/Crecisol.C06Delegation.ContractsTests/Crecisol.C06Delegation.ContractsTests.csproj -c Release -warnaserror
+      - run: dotnet run --no-build -c Release --project backend/tests/Crecisol.C06Delegation.ContractsTests/Crecisol.C06Delegation.ContractsTests.csproj
+      - run: dotnet run -c Release --project backend/tests/Crecisol.C06Abac.ContractsTests/Crecisol.C06Abac.ContractsTests.csproj
+  c-architecture:
+    name: C | Domain and opt-in isolated HTTP overlay compile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet build backend/src/Crecisol.Api/Crecisol.Api.csproj -c Release -warnaserror
+  d-persistence:
+    name: D | MySQL 8.4 real immutable ledger, denial and concurrent CAS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: bash -n database/tests/c06_11_delegated_role_mysql.sh
+      - run: bash database/tests/c06_11_delegated_role_mysql.sh
+  e-writer:
+    name: E | Real MySQL .NET isolated transaction writer and rollback
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet build backend/tests/Crecisol.C06Delegation.MySqlTests/Crecisol.C06Delegation.MySqlTests.csproj -c Release -warnaserror
+      - run: bash -n database/tests/c06_11_delegated_role_mysql.sh
+      - run: C06_DELEGATION_WRITER_TESTS=1 bash database/tests/c06_11_delegated_role_mysql.sh
+  e-confirmation:
+    name: E2 | Actual C05 MFA, provenance, rollback, Kestrel HTTP and revocation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet build backend/tests/Crecisol.C06Delegation.FlowTests/Crecisol.C06Delegation.FlowTests.csproj -c Release -warnaserror
+      - run: bash -n database/tests/c06_11_delegated_role_mysql.sh
+      - run: C06_DELEGATION_FLOW_TESTS=1 bash database/tests/c06_11_delegated_role_mysql.sh
+  e3-editor:
+    name: E3 | Angular 22 delegation and privacy Chromium responsive and accessibility
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.15.0'
+      - run: npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+      - run: npm run check:types --prefix frontend
+      - run: npm run build --prefix frontend
+      - run: npx playwright install chromium
+        working-directory: frontend
+      - run: npx playwright test tests/c06-delegation-editor.spec.ts tests/c06-privacy-requests.spec.ts --workers=1 --reporter=line
+        working-directory: frontend
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: c06-11-delegation-and-privacy-individual-captures
+          path: frontend/test-results/
+          if-no-files-found: warn
+          retention-days: 14

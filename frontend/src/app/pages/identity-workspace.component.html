@@ -116,6 +116,7 @@
 }
 
           
+  <cs-privacy-requests />
 } @else if (view() === 'historial') {
 <section class="identity-history-shell" aria-label="Actividad de la cuenta">
   <section class="operator-readonly-panel identity-activity" aria-label="Historial de seguridad">
@@ -397,6 +398,7 @@
         message="Pulsa «Consultar solicitudes» para ver si hay decisiones por revisar."/>
     }
   </section>
+  <cs-delegation-editor />
   <!-- Permission details remain keyboard-accessible after the task-first queue. -->
   <details class="identity-approval-context identity-policy-disclosure">
     <summary>Solo el servidor puede autorizar la consulta y las decisiones.</summary>

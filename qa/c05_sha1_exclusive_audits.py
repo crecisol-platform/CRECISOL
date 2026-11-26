@@ -116,6 +116,10 @@ def is_c05_security_path(path):
 
 def check_current_scope(paths):
  ensure(bool(paths), "empty current change scope")
+ if "docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md" in paths:
+  from c06_11_delegated_role_scope import require_exact
+  require_exact(paths)
+  return len(paths)
  if "docs/c06/C06_10_ESPECIFICACION.md" in paths:
   from c06_10_offensive_scope import require_exact
   require_exact(paths)

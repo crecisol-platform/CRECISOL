@@ -1,0 +1,102 @@
+@if (available()) {
+  <section class="delegation-shell" aria-labelledby="delegation-heading">
+    <header class="delegation-heading">
+      <div class="delegation-heading__main">
+        <p class="delegation-kicker">CONTROL DE ACCESO · EMPRESA ACTUAL</p>
+        <h3 id="delegation-heading">Administración de permisos</h3>
+        <p>Concede o retira acceso de consulta a un expediente concreto. Las acciones disponibles las verifica el servidor.</p>
+      </div>
+      <button class="delegation-primary" type="button" (click)="toggle()" [attr.aria-expanded]="opened()"
+        aria-controls="delegation-content" [disabled]="busy()">{{ opened() ? 'Cerrar gestión' : 'Gestionar permisos' }}</button>
+    </header>
+    <div id="delegation-content" [hidden]="!opened()">
+      <div class="delegation-toolbar">
+        <div><strong>Alcances autorizados</strong><p>Referencias protegidas · Una sucursal, un expediente y una persona por operación.</p></div>
+        <button class="delegation-secondary" type="button" (click)="load()" [disabled]="busy() || status() === 'loading'">Actualizar catálogo</button>
+      </div>
+      @if (message()) { <p class="delegation-success" role="status">{{ message() }}</p> }
+      @switch (status()) {
+        @case ('loading') {
+          <cs-ui-state kind="loading" heading="Comprobando permisos" message="Consultando la autoridad vigente de esta sesión." />
+        }
+        @case ('error') {
+          <cs-ui-state kind="error" heading="Catálogo no disponible" message="No se conservaron datos anteriores. Actualiza el catálogo para comprobar el estado actual." />
+        }
+        @case ('ready') {
+          @if (items().length === 0) {
+            <cs-ui-state kind="empty" heading="Sin acciones en esta página" message="No hay candidatos autorizados en este tramo del catálogo." />
+          } @else {
+            <ol class="delegation-list" aria-label="Candidatos autorizados">
+              @for (row of items(); track key(row)) {
+                <li class="delegation-row">
+                  <div class="delegation-row__main">
+                    <span class="delegation-label" [class.delegation-label--revoke]="row.inspection.canRevoke">{{ row.inspection.canAssign ? 'Concesión disponible' : 'Revocación disponible' }}</span>
+                    <h4>{{ roleLabel(row.inspection.roleCode) }} · Consulta privada</h4>
+                    <dl>
+                      <div><dt>Sucursal</dt><dd>{{ reference(row.branchId) }}</dd></div>
+                      <div><dt>Expediente</dt><dd>{{ reference(row.resourceId) }}</dd></div>
+                      <div><dt>Membresía</dt><dd>{{ reference(row.membershipId) }}</dd></div>
+                    </dl>
+                    <details><summary>Ver referencias exactas para cotejo</summary><dl class="delegation-exact">
+                      <div><dt>Sucursal</dt><dd>{{ row.branchId }}</dd></div>
+                      <div><dt>Expediente</dt><dd>{{ row.resourceId }}</dd></div>
+                      <div><dt>Membresía</dt><dd>{{ row.membershipId }}</dd></div>
+                    </dl></details>
+                  </div>
+                  <button class="delegation-secondary" type="button" [disabled]="busy()" (click)="choose(row)"
+                    [attr.aria-label]="(row.inspection.canAssign ? 'Revisar concesión' : 'Revisar revocación') + ' · ' + reference(row.membershipId)">
+                    {{ row.inspection.canAssign ? 'Revisar concesión' : 'Revisar revocación' }}
+                  </button>
+                </li>
+              }
+            </ol>
+          }
+          @if (cursor(); as next) {
+            <button class="delegation-secondary delegation-next" type="button" [disabled]="busy()" (click)="load(next)">Siguientes candidatos</button>
+          }
+        }
+      }
+      <p class="delegation-footnote">Los permisos se vuelven a verificar al preparar y confirmar. El historial de concesiones y revocaciones se conserva.</p>
+    </div>
+    <cs-institutional-modal #review kind="wizard" title="Revisión de permiso" description="Confirma la persona, la sucursal y el expediente exactos."
+      [steps]="steps" [step]="step()" [busy]="busy()" [error]="modalError()" (dismissed)="dismiss()">
+      @if (selection(); as selected) {
+        <div class="delegation-review">
+          <div class="delegation-review__summary">
+            <strong>{{ selected.inspection.canAssign ? 'Conceder consulta privada' : 'Revocar consulta privada' }}</strong>
+            <p>{{ roleLabel(selected.inspection.roleCode) }}</p>
+            <dl class="delegation-exact">
+              <div><dt>Sucursal</dt><dd>{{ selected.branchId }}</dd></div>
+              <div><dt>Expediente</dt><dd>{{ selected.resourceId }}</dd></div>
+              <div><dt>Membresía</dt><dd>{{ selected.membershipId }}</dd></div>
+            </dl>
+          </div>
+          @if (modalError()) { <p class="delegation-error" role="alert">{{ modalError() }}</p> }
+          @if (step() === 1) {
+            <form (submit)="prepare($event)" class="delegation-form">
+              @if (selected.inspection.canAssign) {
+                <label for="delegation-duration">Vigencia solicitada</label>
+                <select class="cs-ui-control" id="delegation-duration" name="duration"><option value="15">15 minutos</option><option value="30">30 minutos</option><option value="60">1 hora</option></select>
+                <p class="delegation-help">Límite autorizado: {{ date(selected.inspection.maxExpiresAtUtc) }}. El permiso no superará ese límite.</p>
+              } @else {
+                <p class="delegation-warning" role="note">La próxima consulta deberá quedar denegada. La revocación no elimina el historial ni modifica el expediente.</p>
+              }
+              <label for="delegation-reason">Motivo de la operación</label>
+              <textarea class="cs-ui-control" id="delegation-reason" name="reason" required minlength="8" maxlength="240" rows="3" autocomplete="off" spellcheck="false" placeholder="Describe la finalidad autorizada, sin datos personales."></textarea>
+              <button class="delegation-primary" type="submit" [disabled]="busy() || status() === 'error'">Preparar confirmación</button>
+            </form>
+          } @else if (challenge(); as proof) {
+            <form (submit)="confirm($event)" class="delegation-form">
+              <p class="delegation-help">Confirmación válida hasta {{ date(proof.expiresAtUtc) }}. Usa un código nuevo de tu aplicación de autenticación.</p>
+              <label for="delegation-code">Código de seis dígitos</label>
+              <input class="cs-ui-control" id="delegation-code" name="code" type="password" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required>
+              <button class="delegation-primary" type="submit" [disabled]="busy()">{{ selected.inspection.canAssign ? 'Confirmar concesión' : 'Confirmar revocación' }}</button>
+            </form>
+          } @else {
+            <p class="delegation-help" role="status">{{ busy() ? 'Comprobando el resultado de la operación…' : 'Cierra esta ventana y consulta el catálogo antes de continuar.' }}</p>
+          }
+        </div>
+      }
+    </cs-institutional-modal>
+  </section>
+}

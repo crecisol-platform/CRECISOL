@@ -24,6 +24,9 @@ PATHS = frozenset([
   "database/tests/c06_06_exceptional_mysql.sh"
 ])
 def require_exact(changed):
+    if "docs/c06/C06_11_DELEGACION_EFECTIVA_DISENO_Y_POLITICA.md" in changed:
+        from c06_11_delegated_role_scope import require_exact
+        return require_exact(changed)
     if "docs/c06/C06_10_ESPECIFICACION.md" in changed:
         from c06_10_offensive_scope import require_exact
         require_exact(changed)

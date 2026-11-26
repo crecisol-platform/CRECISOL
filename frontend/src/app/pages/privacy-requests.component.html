@@ -1,0 +1,99 @@
+@if (available()) {
+  <section class="privacy-shell" aria-labelledby="privacy-heading">
+    <header class="privacy-heading">
+      <div>
+        <p class="privacy-kicker">CONTROL DE TUS DATOS · EMPRESA ACTUAL</p>
+        <h3 id="privacy-heading">Derechos de privacidad</h3>
+        <p>Presenta solicitudes sobre tus propios datos y consulta los recibos registrados por el servidor.</p>
+      </div>
+      <button class="privacy-primary" type="button" (click)="toggle()" [disabled]="busy()" [attr.aria-expanded]="opened()"
+        aria-controls="privacy-content">{{ opened() ? 'Cerrar solicitudes' : 'Gestionar mi privacidad' }}</button>
+    </header>
+    <div id="privacy-content" [hidden]="!opened()">
+      <aside class="privacy-notice" role="note">
+        <strong>Una solicitud no ejecuta cambios automáticamente.</strong>
+        <p>La finalidad, base legal, conservación, posibles bloqueos legales y disposición se deben revisar antes de responder. No se ofrecen plazos ni eliminación automática.</p>
+      </aside>
+      @if (receipt(); as sent) {
+        <div class="privacy-success" role="status">
+          <strong>Solicitud recibida</strong>
+          <p>{{ rightLabel(sent.right) }} · {{ categoryLabel(sent.category) }} · {{ reference(sent.requestId) }}</p>
+          <p>Identidad verificada. Evaluación pendiente.</p>
+        </div>
+      }
+      @if (status() === 'ready') {
+        <div class="privacy-actions" aria-label="Derechos disponibles">
+          @for (right of rights; track right.code) {
+            <button class="privacy-option" type="button" [disabled]="busy()" (click)="choose(right.code)">
+              <strong>{{ right.label }}</strong><span>{{ right.description }}</span><span class="privacy-option__link">Iniciar solicitud <span aria-hidden="true">›</span></span>
+            </button>
+          }
+        </div>
+      }
+      <div class="privacy-toolbar">
+        <div><h4>Mis solicitudes</h4><p>Solo se muestran recibos propios de esta empresa.</p></div>
+        <button class="privacy-secondary" type="button" (click)="load()" [disabled]="busy() || status() === 'loading'">Actualizar solicitudes</button>
+      </div>
+      @switch(status()) {
+        @case('loading') { <cs-ui-state kind="loading" heading="Consultando tus solicitudes" message="Verificamos el contexto de tu sesión."/> }
+        @case('error') { <cs-ui-state kind="error" heading="Consulta no disponible" message="No se conservaron datos anteriores. Actualiza para comprobar el estado real."/> }
+        @case('ready') {
+          @if(items().length === 0) {
+            <cs-ui-state kind="empty" heading="Aún no hay solicitudes en esta página" message="Cuando presentes una solicitud, verás aquí el recibo registrado."/>
+          } @else {
+            <ol class="privacy-list" aria-label="Mis recibos de privacidad">
+              @for(item of items(); track item.requestId) {
+                <li class="privacy-row">
+                  <div><span class="privacy-tag">Recibida · evaluación pendiente</span>
+                    <h5>{{ rightLabel(item.right) }}</h5><p>{{ categoryLabel(item.category) }} · <time [attr.datetime]="item.submittedAtUtc">{{ date(item.submittedAtUtc) }}</time></p>
+                    <details><summary>Ver referencia y estado</summary><dl>
+                      <div><dt>Referencia</dt><dd class="privacy-id">{{ item.requestId }}</dd></div>
+                      <div><dt>Identidad</dt><dd>Verificada mediante MFA</dd></div>
+                      <div><dt>Finalidad y base legal</dt><dd>Evaluación pendiente</dd></div>
+                      <div><dt>Conservación, bloqueo y disposición</dt><dd>Evaluación pendiente</dd></div>
+                    </dl></details>
+                  </div>
+                </li>
+              }
+            </ol>
+          }
+          @if(cursor(); as next) {<button class="privacy-secondary privacy-next" type="button" (click)="load(next)" [disabled]="busy()">Siguientes solicitudes</button>}
+        }
+      }
+    </div>
+    <cs-institutional-modal #review kind="wizard" title="Nueva solicitud de privacidad"
+      description="La solicitud pertenece únicamente a tu identidad en esta empresa." [steps]="steps" [step]="step()"
+      [busy]="busy()" [error]="error()" (dismissed)="dismiss()">
+      @if(chosen(); as right) {
+        <div class="privacy-review">
+          <p class="privacy-selected"><strong>{{ rightLabel(right) }}</strong></p>
+          @if(error()) {<p role="alert" class="privacy-error">{{ error() }}</p>}
+          @if(step()===1) {
+            <form class="privacy-form" (submit)="prepare($event)">
+              <label for="privacy-category">Categoría de datos</label>
+              <select class="cs-ui-control" id="privacy-category" name="category" required>
+                <option value="" selected disabled>Selecciona una categoría</option>
+                @for(category of categories; track category.code) {<option [value]="category.code">{{ category.label }}</option>}
+              </select>
+              <label for="privacy-reason">Detalle de la solicitud</label>
+              <textarea class="cs-ui-control" id="privacy-reason" name="reason" rows="3" minlength="8" maxlength="240" required
+                autocomplete="off" spellcheck="false" (input)="error.set('')" placeholder="Indica qué deseas que se evalúe."></textarea>
+              <p class="privacy-help">No incluyas contraseñas, códigos de autenticación, documentos ni datos de otras personas.</p>
+              <button class="privacy-primary" type="submit" [disabled]="busy() || status() !== 'ready'">Preparar verificación</button>
+            </form>
+          } @else if(challenge(); as proof) {
+            <form class="privacy-form" (submit)="confirm($event)">
+              <p class="privacy-help">Verificación válida hasta {{ date(proof.expiresAtUtc) }}.</p>
+              <label for="privacy-code">Código de seis dígitos</label>
+              <input class="cs-ui-control" id="privacy-code" name="code" type="password" inputmode="numeric" pattern="[0-9]{6}"
+                minlength="6" maxlength="6" required autocomplete="one-time-code">
+              <button class="privacy-primary" type="submit" [disabled]="busy()">Confirmar solicitud</button>
+            </form>
+          } @else {
+            <p class="privacy-help" role="status">{{ busy() ? 'Registrando la solicitud…' : 'Cierra y consulta el estado antes de continuar.' }}</p>
+          }
+        </div>
+      }
+    </cs-institutional-modal>
+  </section>
+}
