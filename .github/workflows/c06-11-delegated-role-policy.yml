@@ -21,6 +21,8 @@ on:
       - 'backend/src/Crecisol.Api/Contracts/C06PrivacyRequestHttpContract.cs'
       - 'database/migrations/027_c06_privacy_requests.sql'
       - 'database/migrations/027_c06_privacy_requests.down.sql'
+      - 'database/migrations/028_c06_delegation_cycle_head.sql'
+      - 'database/migrations/028_c06_delegation_cycle_head.down.sql'
       - 'docs/c06/C06_11_CATALOGO_PRIVACIDAD_V1.json'
       - 'backend/tests/Crecisol.C06Delegation.FlowTests/PrivacyRequestFixture.cs'
       - 'frontend/src/app/identity/identity-api.service.ts'
@@ -147,6 +149,7 @@ jobs:
           persist-credentials: false
       - run: bash -n database/tests/c06_11_delegated_role_mysql.sh
       - run: bash database/tests/c06_11_delegated_role_mysql.sh
+      - run: C06_DELEGATION_LIFECYCLE_TESTS=1 bash database/tests/c06_11_delegated_role_mysql.sh
   e-writer:
     name: E | Real MySQL .NET isolated transaction writer and rollback
     runs-on: ubuntu-24.04
